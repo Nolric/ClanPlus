@@ -660,6 +660,8 @@
   #viewClan table.pl tr:hover td{background:rgba(255,255,255,.015)}
   #viewClan .rk{color:var(--muted);width:20px}
   #viewClan .av{width:24px;height:24px;border-radius:50%;display:inline-grid;place-items:center;font-size:11px;font-weight:600;background:var(--raised);color:var(--ink-2);margin-right:8px}
+  #viewClan .av.rav{background:transparent;border-radius:0}
+  #viewClan .av.rav img{width:24px;height:24px;object-fit:contain;display:block}
   #viewClan .pn{font-weight:600;color:var(--ink)} #viewClan .pr{font-family:var(--fx);font-size:13px}
   #viewClan .pos{color:var(--good2)} #viewClan .neg{color:var(--bad)}
   #viewClan .toggle{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
@@ -2003,6 +2005,11 @@ async function openSearchedClan(clanId){
 }
 
 let MEM_EXPANDED=false;
+// vraies icônes de grade du jeu (extraites de gui-part*.pkg -> web/roles/) ; clés API -> ancien nom de fichier WoT
+const ROLE_ICON={commander:"leader",executive_officer:"vice_leader",deputy_commander:"vice_leader",
+  combat_officer:"commander",personnel_officer:"staff",intelligence_officer:"diplomat",quartermaster:"treasurer",
+  recruitment_officer:"recruiter",junior_officer:"junior",private:"private",recruit:"recruit",reservist:"reservist"};
+function roleIcon(role){ const k=ROLE_ICON[normRole(role)]; return k?("roles/"+k+".png"):""; }
 function renderMembers(){
   const el=document.getElementById("members"); if(!el) return;
   const stat={};
@@ -2013,6 +2020,7 @@ function renderMembers(){
     const st=stat[Number(m.account_id)];
     const ord=ROLE_ORDER[normRole(m.wg_role)]!=null?ROLE_ORDER[normRole(m.wg_role)]:9;
     return { name:m.nickname||"?", role:ROLE_FR[normRole(m.wg_role)]||m.wg_role||"", ord,
+      icon: roleIcon(m.wg_role),
       sr: st?Math.round(st.s/st.n):null, bat: st?st.bset.size:0, ts: st?st.ts:0,
       me:(ME_ID!=null && Number(m.account_id)===Number(ME_ID)) };
   }).sort((a,b)=>{
@@ -2027,7 +2035,9 @@ function renderMembers(){
   const shown=MEM_EXPANDED?list:list.slice(0,12);
   el.innerHTML=`<table class="memtbl"><thead><tr><th>Joueur</th><th>Grade</th><th>SR</th><th>Batailles</th><th>Vu le</th></tr></thead><tbody>`
     +shown.map(m=>{
-      const av=`<span class="av">${esc(String(m.name)[0].toUpperCase())}</span>`;
+      const av=m.icon
+        ? `<span class="av rav" title="${esc(m.role)}"><img src="${m.icon}" alt="${esc(m.role)}" onerror="this.parentNode.textContent='${esc(String(m.name)[0].toUpperCase())}';this.parentNode.classList.remove('rav')"></span>`
+        : `<span class="av">${esc(String(m.name)[0].toUpperCase())}</span>`;
       const sr=m.sr!=null?`<span class="pr" style="color:${srColor(m.sr)}">${fmt(m.sr)}</span>`:'<span style="color:var(--muted)">—</span>';
       const vu=m.ts?new Date(m.ts*1000).toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit"}):'<span style="color:var(--muted)">—</span>';
       return `<tr${m.me?' style="background:rgba(229,185,92,.06)"':''}><td><span class="pn">${av}${esc(m.name)}</span></td><td><span class="grade ${gCls(m.ord)}">${esc(m.role)}</span></td><td>${sr}</td><td>${m.bat||'<span style="color:var(--muted)">—</span>'}</td><td style="color:var(--ink-2)">${vu}</td></tr>`;
