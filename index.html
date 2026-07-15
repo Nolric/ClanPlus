@@ -1005,7 +1005,6 @@
     </span>
     <span class="spacer"></span>
     <span id="playerPick" class="hidden fld"><label>Joueur</label><select id="playerSel"></select></span>
-    <input type="search" id="search" placeholder="Rechercher un joueur…">
   </div>
 
   <div id="loading" class="hidden">
@@ -1843,7 +1842,7 @@ function switchView(v){
   document.getElementById("viewSearch").classList.toggle("hidden", v!=="search");
   document.getElementById("playerPick").classList.toggle("hidden", v!=="player");
   document.getElementById("subbar").classList.toggle("hidden", v!=="clan"&&v!=="player"&&v!=="battles");
-  document.getElementById("search").style.visibility = (v==="clan") ? "visible" : "hidden";
+  const _s=document.getElementById("search"); if(_s) _s.style.visibility = (v==="clan") ? "visible" : "hidden";
   placeSubbar(v);
   if(v==="battles") renderBattles();
   if(v==="player") renderPlayerView();
@@ -2572,7 +2571,7 @@ function rerender(){ render(); if(playerActive()) renderPlayerView(); if(battles
 function wireUI(){
   document.querySelectorAll(".cv-tab").forEach(b=>b.onclick=()=>switchClanSub(b.dataset.sub));
   document.getElementById("modeSel").onchange=e=>{state.mode=e.target.value;rerender();};
-  document.getElementById("search").oninput=e=>{state.search=e.target.value;render();};
+  { const _s=document.getElementById("search"); if(_s) _s.oninput=e=>{state.search=e.target.value;render();}; }
   document.getElementById("periodSeg").querySelectorAll("button").forEach(b=>b.onclick=()=>{
     document.getElementById("periodSeg").querySelectorAll("button").forEach(x=>x.classList.remove("on"));
     b.classList.add("on"); state.days=parseInt(b.dataset.d,10); rerender();
