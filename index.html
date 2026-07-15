@@ -673,10 +673,10 @@
   #viewClan .t5row .vv{width:44px;text-align:right;font-family:var(--fx);color:var(--ink)}
   #viewClan .mem-h{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 16px 8px;flex-wrap:wrap}
   #viewClan .mem-h h3{font-size:13px;margin:0;font-family:var(--fx);font-weight:600} #viewClan .mem-h .cnt{color:var(--muted);font-weight:400;font-size:12px;margin-left:6px}
-  #viewClan table.mem{width:100%;border-collapse:collapse}
-  #viewClan table.mem th{text-align:right;font-size:10px;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);font-weight:700;padding:7px 16px;border-bottom:1px solid var(--line)}
-  #viewClan table.mem th:nth-child(-n+2),#viewClan table.mem td:nth-child(-n+2){text-align:left}
-  #viewClan table.mem td{padding:9px 16px;text-align:right;border-bottom:1px solid var(--line-2);font-size:12.5px;font-variant-numeric:tabular-nums}
+  #viewClan table.memtbl{width:100%;border-collapse:collapse}
+  #viewClan table.memtbl th{text-align:right;font-size:10px;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);font-weight:700;padding:7px 16px;border-bottom:1px solid var(--line)}
+  #viewClan table.memtbl th:nth-child(-n+2),#viewClan table.memtbl td:nth-child(-n+2){text-align:left}
+  #viewClan table.memtbl td{padding:9px 16px;text-align:right;border-bottom:1px solid var(--line-2);font-size:12.5px;font-variant-numeric:tabular-nums}
   #viewClan .grade{font-size:11.5px} #viewClan .grade.g-cmd{color:var(--gold-2)} #viewClan .grade.g-off{color:#c4bda9} #viewClan .grade.g-sol{color:var(--ink-2)}
   #viewClan .more{text-align:center;padding:12px;color:var(--gold-2);font-weight:600;font-size:12.5px;cursor:pointer}
   #viewClan .more:hover{background:rgba(255,255,255,.02)}
@@ -2025,7 +2025,7 @@ function renderMembers(){
   if(!list.length){ el.innerHTML='<div style="color:var(--muted);padding:16px">Roster pas encore importé — il se remplit à la connexion d\'un membre.</div>'; return; }
   const gCls=o=>o<=1?"g-cmd":o<=3?"g-off":"g-sol";
   const shown=MEM_EXPANDED?list:list.slice(0,12);
-  el.innerHTML=`<table class="mem"><thead><tr><th>Joueur</th><th>Grade</th><th>SR</th><th>Batailles</th><th>Vu le</th></tr></thead><tbody>`
+  el.innerHTML=`<table class="memtbl"><thead><tr><th>Joueur</th><th>Grade</th><th>SR</th><th>Batailles</th><th>Vu le</th></tr></thead><tbody>`
     +shown.map(m=>{
       const av=`<span class="av">${esc(String(m.name)[0].toUpperCase())}</span>`;
       const sr=m.sr!=null?`<span class="pr" style="color:${srColor(m.sr)}">${fmt(m.sr)}</span>`:'<span style="color:var(--muted)">—</span>';
