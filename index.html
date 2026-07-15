@@ -827,6 +827,12 @@
   .lo-picker-h b{flex:0 0 auto;font-size:13px}
   .lo-search{flex:1;min-width:140px}
   .lo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;max-height:340px;overflow-y:auto}
+  .lo-fltrow{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+  .lo-fltrow select{font:inherit;font-size:12.5px;padding:8px 11px;border-radius:8px;border:1px solid var(--border);background:var(--surface-1);color:var(--ink);cursor:pointer}
+  .lo-grid.lo-grid-char{grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;max-height:460px}
+  .lo-popt-char{padding:10px 8px;gap:6px}
+  .lo-popt-char img{max-width:100%;width:150px;max-height:84px;object-fit:contain}
+  .lo-popt-char span{font-size:12px;font-weight:600;max-height:none}
   .lo-popt{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;border:1px solid var(--border);border-radius:9px;background:var(--card);cursor:pointer;font-size:10px;transition:transform .12s ease,border-color .12s ease,background .12s ease}
   .lo-popt img{max-width:54px;max-height:36px;object-fit:contain}
   .lo-popt span{color:var(--ink);text-align:center;line-height:1.1;max-height:24px;overflow:hidden}
@@ -3101,15 +3107,34 @@ function renderLoEditBody(){
    +`<div class="lo-sec"><div class="lo-sec-h">Compétences d'équipage</div><div class="lo-tilerow">${skHTML}</div></div>`
    +`<label class="lu-lab">Notes<textarea id="loNotes" maxlength="600" rows="3" placeholder="Pourquoi ces choix, quand l'utiliser…">${esc(E.notes||"")}</textarea></label>`;
 }
+const LO_CLS_OPT=[["heavyTank","Lourds"],["mediumTank","Moyens"],["lightTank","Légers"],["AT-SPG","Chasseurs"],["SPG","Artillerie"]];
+const LO_NATION_FR={ussr:"URSS",germany:"Allemagne",usa:"USA",france:"France",uk:"Royaume-Uni",china:"Chine",japan:"Japon",czech:"Tchéquie",sweden:"Suède",poland:"Pologne",italy:"Italie"};
 function openLoPicker(cat,slot){
   const src = cat==='char'?(LO_REF.tanks||[]):cat==='eq'?(LO_REF.equipment||[]):cat==='co'?(LO_REF.consumables||[]):(LO_REF.skills||[]);
-  const iconKey = cat==='char'?'icon':'image', idKey = cat==='char'?'tank_id':'id';
   const title = cat==='char'?'Choisir un char':cat==='eq'?'Choisir un équipement':cat==='co'?'Choisir un consommable':'Choisir une compétence (multi)';
-  const grid = src.map(x=>`<button class="lo-popt" type="button" data-id="${esc(String(x[idKey]))}"><img src="${esc(x[iconKey]||"")}" onerror="this.style.display='none'"><span>${esc(x.name)}</span></button>`).join("");
   const ov=document.getElementById("loPicker"); ov.className="lo-picker";
+  if(cat==='char'){
+    const grid=src.map(x=>`<button class="lo-popt lo-popt-char" type="button" data-id="${esc(String(x.tank_id))}" data-cls="${esc(x.type||"")}" data-nation="${esc(x.nation||"")}" data-name="${esc(String(x.name).toLowerCase())}"><img src="${esc(x.icon||"")}" onerror="this.style.display='none'"><span>${esc(x.name)}</span></button>`).join("");
+    const nats=[...new Set(src.map(x=>x.nation).filter(Boolean))].sort();
+    const natOpts='<option value="">Toutes nations</option>'+nats.map(n=>`<option value="${n}">${LO_NATION_FR[n]||n}</option>`).join("");
+    const clsOpts='<option value="">Toutes classes</option>'+LO_CLS_OPT.filter(c=>src.some(x=>x.type===c[0])).map(c=>`<option value="${c[0]}">${c[1]}</option>`).join("");
+    ov.innerHTML=`<div class="lo-picker-box">
+      <div class="lo-picker-h"><b>${title}</b><input class="lo-search" placeholder="Rechercher…"><button class="btn lo-picker-close" type="button">Fermer</button></div>
+      <div class="lo-fltrow"><select class="lo-fclass">${clsOpts}</select><select class="lo-fnation">${natOpts}</select></div>
+      <div class="lo-grid lo-grid-char">${grid}</div></div>`;
+    const s=ov.querySelector(".lo-search"), fc=ov.querySelector(".lo-fclass"), fn=ov.querySelector(".lo-fnation");
+    const applyF=()=>{ const qq=s.value.toLowerCase(), c=fc.value, n=fn.value;
+      ov.querySelectorAll(".lo-popt-char").forEach(b=>{ const ok=(!qq||b.dataset.name.indexOf(qq)>=0)&&(!c||b.dataset.cls===c)&&(!n||b.dataset.nation===n); b.style.display=ok?"":"none"; }); };
+    s.oninput=applyF; fc.onchange=applyF; fn.onchange=applyF;
+    ov.querySelector(".lo-picker-close").onclick=loClosePicker;
+    ov.querySelectorAll(".lo-popt").forEach(b=>b.onclick=()=>loAssign(cat,slot,b.dataset.id));
+    ov.scrollIntoView({behavior:"smooth",block:"nearest"}); s.focus();
+    return;
+  }
+  const grid = src.map(x=>`<button class="lo-popt" type="button" data-id="${esc(String(x.id))}"><img src="${esc(x.image||"")}" onerror="this.style.display='none'"><span>${esc(x.name)}</span></button>`).join("");
   ov.innerHTML=`<div class="lo-picker-box"><div class="lo-picker-h"><b>${title}</b><input class="lo-search" placeholder="Rechercher…"><button class="btn lo-picker-close" type="button">Fermer</button></div><div class="lo-grid">${grid}</div></div>`;
   const s=ov.querySelector(".lo-search");
-  s.oninput=()=>{ const q=s.value.toLowerCase(); ov.querySelectorAll(".lo-popt").forEach(b=>{ b.style.display=b.textContent.toLowerCase().indexOf(q)>=0?"":"none"; }); };
+  s.oninput=()=>{ const qq=s.value.toLowerCase(); ov.querySelectorAll(".lo-popt").forEach(b=>{ b.style.display=b.textContent.toLowerCase().indexOf(qq)>=0?"":"none"; }); };
   ov.querySelector(".lo-picker-close").onclick=loClosePicker;
   ov.querySelectorAll(".lo-popt").forEach(b=>b.onclick=()=>loAssign(cat,slot,b.dataset.id));
   ov.scrollIntoView({behavior:"smooth",block:"nearest"}); s.focus();
