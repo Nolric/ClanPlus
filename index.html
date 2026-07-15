@@ -431,6 +431,11 @@
   .bl-sc .v{font-size:23px;font-weight:800;margin-top:4px;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
   .bl-sc .u{font-size:13px;color:var(--muted);font-weight:400}
   .bl-list{display:flex;flex-direction:column;gap:10px}
+  .bl-filter{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
+  .bl-cat{border:1px solid var(--border);background:var(--card);color:var(--ink-2);font:inherit;font-size:13px;font-weight:600;padding:8px 15px;border-radius:9px;cursor:pointer;transition:.15s}
+  .bl-cat:hover:not(:disabled){border-color:var(--accent);color:var(--ink)}
+  .bl-cat.on{background:var(--accent-soft);color:var(--ink);border-color:var(--accent)}
+  .bl-cat:disabled{opacity:.4;cursor:default}
   .bl-pager{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:16px}
   .bl-pg{min-width:34px;height:34px;padding:0 10px;border:1px solid var(--border);background:var(--card);color:var(--ink-2);font:inherit;font-size:13px;font-weight:600;border-radius:8px;cursor:pointer;transition:.15s}
   .bl-pg:hover:not(:disabled){border-color:var(--accent);color:var(--ink)}
@@ -1074,6 +1079,7 @@
   <div id="viewBattles" class="hidden">
     <div class="sec-h">Nos confrontations Bastion</div>
     <p class="sec-desc">Chaque <b>bataille de clan</b> enregistrée par le mod, présentée comme une <b>confrontation</b> : notre clan contre le clan adverse. Clique sur une ligne pour dérouler le <b>détail des deux équipes</b>.</p>
+    <div class="bl-filter" id="blFilter"></div>
     <div class="bl-sum" id="blSummary"></div>
     <div class="bl-list" id="blList"></div>
     <div class="bl-pager" id="blPager"></div>
@@ -2031,9 +2037,29 @@ function blSummaryHTML(list){
     <div class="bl-sc"><div class="l">Dégâts moy./joueur</div><div class="v">${fmt(dmgAvg)}</div></div>
     <div class="bl-sc"><div class="l">Alliés survivants moy.</div><div class="v">${survAvg.toFixed(1)}<span class="u">/7</span></div></div>`;
 }
-let BL_PAGE=0; const BL_PER_PAGE=50;
+let BL_PAGE=0, BL_CAT=''; const BL_PER_PAGE=50;
+function battleCat(mode){
+  const m=String(mode||"").toUpperCase();
+  if(m.indexOf("FORT_BATTLE")>=0) return "manoeuvre";   // Manœuvres (avancées)
+  if(m.indexOf("SORTIE")>=0) return "bastion";          // Bastion (escarmouches)
+  if(m.indexOf("EPIC")>=0) return "assaut";
+  return "autre";
+}
+const CAT_FR={bastion:"Bastion",manoeuvre:"Manœuvres",assaut:"Assaut",autre:"Autre"};
+function renderBlFilter(cats,total){
+  const el=document.getElementById("blFilter"); if(!el) return;
+  const shown=["bastion","manoeuvre"].concat(["assaut","autre"].filter(c=>cats[c]));
+  let h=`<button class="bl-cat${BL_CAT===""?" on":""}" data-c="">Toutes (${fmt(total)})</button>`;
+  shown.forEach(c=>{ const n=cats[c]||0; h+=`<button class="bl-cat${BL_CAT===c?" on":""}" data-c="${c}"${n===0?" disabled":""}>${CAT_FR[c]} (${fmt(n)})</button>`; });
+  el.innerHTML=h;
+  el.querySelectorAll(".bl-cat:not([disabled])").forEach(b=>b.onclick=()=>{ BL_CAT=b.dataset.c; BL_PAGE=0; renderBattles(); });
+}
 function renderBattles(){
-  const list=groupBattles();
+  const all=groupBattles();
+  const cats={}; all.forEach(g=>{ const c=battleCat(g.mode); cats[c]=(cats[c]||0)+1; });
+  if(BL_CAT && !cats[BL_CAT]) BL_CAT="";
+  renderBlFilter(cats, all.length);
+  const list = BL_CAT ? all.filter(g=>battleCat(g.mode)===BL_CAT) : all;
   const sum=document.getElementById("blSummary"), wrap=document.getElementById("blList"), pg=document.getElementById("blPager");
   if(!list.length){ sum.innerHTML=""; wrap.innerHTML='<div class="empty">Aucune bataille sur cette période.</div>'; pg.innerHTML=""; return; }
   BL_BY_ID={}; list.forEach(g=>{ BL_BY_ID[g.id]=g; });
