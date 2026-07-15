@@ -892,6 +892,13 @@
   .wz-rtab.cur{background:rgba(229,185,92,.14);border-color:var(--wz-gold);color:var(--wz-ink)}
   .wz-rn{min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--wz-rai);color:var(--wz-gold);font-size:11px;font-weight:800;display:grid;place-items:center}
   .wz-rtab.cur .wz-rn{background:var(--wz-gold);color:#141310}
+  .wz-rtab em{font-style:normal;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:#6fb2ff;margin-left:2px}
+  .wz-rtab.bonus{border-style:dashed}
+  .wz-rtab.bonus.cur{border-style:solid;background:rgba(111,178,255,.12);border-color:#6fb2ff}
+  .wz-rtab.bonus.cur .wz-rn{background:#6fb2ff}
+  .wz-skln .wz-b{font-style:normal;font-size:8.5px;font-weight:800;text-transform:uppercase;color:#6fb2ff;margin-left:3px}
+  .lo-wiz .lo-skill.univ{border-style:dashed}
+  .lo-wiz .lo-skill.univ.sel{border-style:solid}
   .wz-notes{display:block;margin-top:14px;font-size:12px;font-weight:700;color:var(--wz-mut)}
   .wz-notes textarea{display:block;width:100%;margin-top:6px;background:var(--wz-pan);border:1px solid var(--wz-bd);border-radius:9px;color:var(--wz-ink);padding:9px 11px;font:inherit;font-size:13px;resize:vertical}
   .wz-side{background:var(--wz-pan);border:1px solid var(--wz-bd);border-radius:12px;padding:15px;align-self:start;position:sticky;top:12px}
@@ -3097,12 +3104,27 @@ async function deleteLineup(id){
    LOADOUTS (equipements/consommables recommandes par char) — officiers+
    ============================================================ */
 let LOADOUTS=[], LO_CANEDIT=false, LO_REF=null, LO_WIZ=null, LO_NEW=false;
-// Les competences sont stockees par role d'equipage. On aplatit pour l'affichage des cartes.
-const CREW_ROLES=[["commander","Chef de char"],["gunner","Tireur"],["driver","Pilote"],["radio","Opérateur radio"]];
+// Les competences sont stockees par role d'equipage (5 roles). On aplatit pour l'affichage des cartes.
+const CREW_ROLES=[["commander","Chef de char"],["gunner","Tireur"],["driver","Pilote"],["radioman","Opérateur radio"],["loader","Chargeur"]];
+const CREW_FR={commander:"Chef de char",gunner:"Tireur",driver:"Pilote",radioman:"Opérateur radio",loader:"Chargeur"};
+// Equipage par defaut si l'API ne renvoie pas le crew (4 membres, commander cumule la radio).
+const DEFAULT_CREW=[{member_id:"commander",roles:{commander:1,radioman:1}},{member_id:"gunner",roles:{gunner:1}},{member_id:"driver",roles:{driver:1}},{member_id:"loader",roles:{loader:1}}];
 function loFlatSkills(sk){
   if(Array.isArray(sk)) return sk;
-  if(sk&&typeof sk==='object') return CREW_ROLES.reduce((a,r)=>a.concat(sk[r[0]]||[]),[]);
+  if(sk&&typeof sk==='object') return CREW_ROLES.reduce((a,r)=>a.concat(sk[r[0]]||[]),(sk.radio||[]));
   return [];
+}
+// Membres/roles d'un char -> liste de créneaux {role, cap, bonus}. cap=6 (rôle principal) / 3 (qualification suppl.).
+function wizCrewSlots(){
+  const M=loMaps(), t=M.t[LO_WIZ.tank_id]||{};
+  const crew=(Array.isArray(t.crew)&&t.crew.length)?t.crew:DEFAULT_CREW;
+  const slots=[];
+  crew.forEach(mem=>{
+    const prim=mem.member_id;
+    slots.push({role:prim,cap:6,bonus:false});
+    Object.keys(mem.roles||{}).filter(r=>r!==prim).forEach(r=>slots.push({role:r,cap:3,bonus:true}));
+  });
+  return {slots, count:crew.length};
 }
 function loMaps(){
   const t={},e={},c={},s={};
@@ -3111,7 +3133,7 @@ function loMaps(){
     const em=LO_REF.equipmentMap||{}; Object.keys(em).forEach(k=>e[k]=em[k]);
     (LO_REF.equipment||[]).forEach(f=>(f.grades||[]).forEach(g=>{ if(!e[g.id]) e[g.id]=g; })); // secours si equipmentMap absent
     (LO_REF.consumables||[]).forEach(x=>c[x.id]=x);
-    (LO_REF.skills||[]).forEach(x=>s[x.id]=x);
+    (LO_REF.skills||[]).forEach(x=>s[x.id]={...x, image:'skills/'+x.id+'.png'});   // icone locale (API WG en 404)
   }
   return {t,e,c,s};
 }
@@ -3201,9 +3223,11 @@ async function openLoadoutEditor(lo){
   }
   LO_NEW=!lo;
   const eqp=(lo&&lo.equipment)||[], cop=(lo&&lo.consumables)||[], skp=(lo&&lo.skills);
-  const skills={commander:[],gunner:[],driver:[],radio:[]};
-  if(skp && !Array.isArray(skp) && typeof skp==='object') CREW_ROLES.forEach(r=>skills[r[0]]=(skp[r[0]]||[]).map(String));
-  else if(Array.isArray(skp)) skills.commander=skp.map(String);
+  const skills={commander:[],gunner:[],driver:[],radioman:[],loader:[]};
+  if(skp && !Array.isArray(skp) && typeof skp==='object'){
+    CREW_ROLES.forEach(r=>skills[r[0]]=(skp[r[0]]||[]).map(String));
+    if(!skills.radioman.length && skp.radio) skills.radioman=skp.radio.map(String);   // ancien nom "radio"
+  } else if(Array.isArray(skp)) skills.commander=skp.map(String);
   LO_WIZ={ step:1, tank_id:(lo&&lo.tank_id)||0,
     equipment:(eqp||[]).map(Number).filter(Boolean),
     consumables:(cop||[]).map(Number).filter(Boolean),
@@ -3359,16 +3383,23 @@ function wizPickGrade(key,id){
   wizCloseGrade(); renderWizard();
 }
 
-/* ---- Étape 4 : compétences par membre d'équipage (6 max chacun) ---- */
+/* ---- Étape 4 : compétences par membre d'équipage (réel selon le char) ---- */
+function wizCurCap(){ const cs=wizCrewSlots().slots, s=cs.find(x=>x.role===LO_WIZ.role); return s?s.cap:6; }
 function wizStep4(){
-  const W=LO_WIZ, src=(LO_REF.skills||[]), role=W.role, sel=W.skills[role]||[];
-  const tabs=CREW_ROLES.map(r=>{ const n=(W.skills[r[0]]||[]).length;
-    return `<button type="button" class="wz-rtab${r[0]===role?' cur':''}" data-role="${r[0]}">${r[1]}<span class="wz-rn">${n}</span></button>`; }).join("");
-  const grid=src.map(x=>{ const id=String(x.id), on=sel.indexOf(id)>=0;
-    return `<button type="button" class="lo-item lo-skill${on?' sel':''}${x.perk?' perk':''}" data-id="${esc(id)}" data-name="${esc(String(x.name).toLowerCase())}">
-      <img src="${esc(x.image||'')}" onerror="this.style.display='none'" loading="lazy">
+  const W=LO_WIZ, src=(LO_REF.skills||[]), cw=wizCrewSlots(), slots=cw.slots;
+  if(!slots.some(s=>s.role===W.role)) W.role=slots[0]?slots[0].role:'commander';
+  const cur=slots.find(s=>s.role===W.role)||{role:W.role,cap:6,bonus:false};
+  const sel=W.skills[W.role]||[];
+  const tabs=slots.map(s=>{ const n=(W.skills[s.role]||[]).length;
+    return `<button type="button" class="wz-rtab${s.role===W.role?' cur':''}${s.bonus?' bonus':''}" data-role="${s.role}">${CREW_FR[s.role]||s.role}${s.bonus?' <em>bonus</em>':''}<span class="wz-rn">${n}</span></button>`; }).join("");
+  // pool = perks du rôle courant + perks universels (dispo pour tous)
+  const pool=src.filter(x=> x.role===W.role || x.role==='universal');
+  const grid=pool.map(x=>{ const id=String(x.id), on=sel.indexOf(id)>=0;
+    return `<button type="button" class="lo-item lo-skill${on?' sel':''}${x.role==='universal'?' univ':''}" data-id="${esc(id)}" data-name="${esc(String(x.name).toLowerCase())}">
+      <img src="skills/${esc(id)}.png" onerror="this.style.display='none'" loading="lazy">
       <span>${esc(x.name)}</span><i class="lo-check">✓</i></button>`; }).join("");
-  return `<div class="wz-hdr"><h3>Compétences d’équipage</h3><p>Sélectionne les compétences de chaque membre (6 max). <b class="wz-cnt" id="wizCnt">${sel.length} / 6</b></p></div>
+  const capNote = cur.bonus ? `Qualification supplémentaire du char (moins d’équipage) : <b>3 perks bonus</b>.` : `Membre principal : <b>6 perks</b> max.`;
+  return `<div class="wz-hdr"><h3>Compétences d’équipage</h3><p><b>${cw.count} membres</b> d’équipage. ${capNote} <b class="wz-cnt" id="wizCnt">${sel.length} / ${cur.cap}</b></p></div>
     <div class="wz-rtabs">${tabs}</div>
     <div class="wz-flt"><input class="lo-search" id="wizIQ" placeholder="Rechercher une compétence…" value="${esc(W.sq||'')}"></div>
     <div class="lo-grid wz-grid wz-sgrid">${grid}</div>
@@ -3383,11 +3414,11 @@ function wizWire4(){
   const nt=document.getElementById("wizNotes"); if(nt) nt.oninput=()=>{ W.notes=nt.value; };
 }
 function wizToggleSkill(id,btn){
-  const W=LO_WIZ, sel=W.skills[W.role], i=sel.indexOf(id);
+  const W=LO_WIZ, sel=W.skills[W.role], cap=wizCurCap(), i=sel.indexOf(id);
   if(i>=0) sel.splice(i,1);
-  else { if(sel.length>=6){ wizFlashCnt(); return; } sel.push(id); }
+  else { if(sel.length>=cap){ wizFlashCnt(); return; } sel.push(id); }
   btn.classList.toggle('sel', sel.indexOf(id)>=0);
-  const cnt=document.getElementById("wizCnt"); if(cnt) cnt.textContent=sel.length+' / 6';
+  const cnt=document.getElementById("wizCnt"); if(cnt) cnt.textContent=sel.length+' / '+cap;
   const tab=document.querySelector('.wz-rtab[data-role="'+W.role+'"] .wz-rn'); if(tab) tab.textContent=sel.length;
   wizRefreshSide();
 }
@@ -3401,8 +3432,8 @@ function wizSideInner(){
   const eqRow=W.equipment.map(id=>{ const it=M.e[id]; if(!it)return''; const g=idx.idGr[id], col=g?EQ_GRADE_META[g][1]:'';
     return `<div class="wz-chip" title="${esc(it.name||'')}"${col?` style="--gcol:${col}"`:''}><img src="${esc(it.image||it.icon||'')}" onerror="this.style.display='none'"><span>${esc(it.name||'')}</span></div>`; }).join("")||'<span class="wz-mut">—</span>';
   const coRow=W.consumables.map(id=>M.c[id]).filter(Boolean).map(chip).join("")||'<span class="wz-mut">—</span>';
-  const skRows=CREW_ROLES.map(r=>{ const n=(W.skills[r[0]]||[]).length;
-    return `<div class="wz-skln"><span>${r[1]}</span><div class="wz-bar"><i style="width:${Math.round(n/6*100)}%"></i></div><b>${n}/6</b></div>`; }).join("");
+  const skRows=wizCrewSlots().slots.map(s=>{ const n=(W.skills[s.role]||[]).length;
+    return `<div class="wz-skln"><span>${CREW_FR[s.role]||s.role}${s.bonus?' <em class="wz-b">bonus</em>':''}</span><div class="wz-bar"><i style="width:${Math.round(n/s.cap*100)}%"></i></div><b>${n}/${s.cap}</b></div>`; }).join("");
   return `<div class="wz-side-h">Résumé</div>
     <div class="wz-tk">${t?`<img src="${esc(t.icon||'')}" onerror="this.style.display='none'"><div class="wz-tk-n">${esc(t.name)}</div><div class="wz-tk-m">${esc(CLS_FR[t.type]||'')} · Tier X</div>`:'<div class="wz-mut">Aucun char sélectionné</div>'}</div>
     <div class="wz-sblk"><div class="wz-sblk-h">Équipements</div><div class="wz-chips">${eqRow}</div></div>
@@ -3417,7 +3448,7 @@ async function saveLoadout(){
   const t=loMaps().t[W.tank_id]||{};
   const payload={ tank_id:Number(W.tank_id), tank_name:t.name||"",
     equipment:W.equipment.filter(Boolean), consumables:W.consumables.filter(Boolean),
-    skills:{ commander:W.skills.commander, gunner:W.skills.gunner, driver:W.skills.driver, radio:W.skills.radio },
+    skills:{ commander:W.skills.commander, gunner:W.skills.gunner, driver:W.skills.driver, radioman:W.skills.radioman, loader:W.skills.loader },
     notes:(W.notes||"").trim(), fieldmods:{} };
   const btn=document.getElementById("wizSave"); if(btn){ btn.disabled=true; btn.textContent="Enregistrement…"; }
   const r=await fnCall("loadouts",{session:localStorage.getItem(LS_SESSION),action:"save",loadout:payload});
