@@ -600,6 +600,7 @@
   #viewClan .d2sect{display:flex;align-items:center;gap:9px;margin:20px 2px 12px;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:var(--ink-2);font-weight:700}
   #viewClan .d2sect .si{width:22px;height:22px;border-radius:6px;background:var(--gold-soft);border:1px solid var(--gold-line);display:grid;place-items:center;color:var(--gold)}
   #viewClan .d2sect .si svg{width:13px;height:13px}
+  #viewClan .tti{width:14px;height:14px;color:var(--gold);vertical-align:-2px;margin-right:6px}
   #viewClan .kpi-h{display:flex;align-items:center;gap:8px;padding:12px 15px 0;font-size:10.5px;letter-spacing:.8px;text-transform:uppercase;color:var(--ink-2);font-weight:700}
   #viewClan .kpi-h .hi{color:var(--gold)} #viewClan .kpi-h svg{width:14px;height:14px;color:var(--gold)}
   #viewClan .health{padding:6px 15px 15px;display:flex;gap:16px;align-items:flex-end}
@@ -616,9 +617,11 @@
   #viewClan .lb-tx{flex:1;min-width:0}
   #viewClan .lb-res{font-family:var(--fx);font-size:19px}
   #viewClan .lb-sub{font-size:11.5px;color:var(--ink-2);margin-top:2px}
-  #viewClan .lb-map{width:104px;height:66px;flex:0 0 auto;border-radius:9px;overflow:hidden;border:1px solid var(--line);position:relative;background:#12140f}
-  #viewClan .lb-map img{width:100%;height:100%;object-fit:cover;display:block}
-  #viewClan .lb-map .mn{position:absolute;left:0;right:0;bottom:0;font-size:9.5px;color:#eee;background:linear-gradient(0deg,rgba(0,0,0,.75),transparent);padding:8px 6px 3px;text-align:center}
+  #viewClan #dashLast{position:relative;overflow:hidden}
+  #viewClan .lb-inner{position:relative;z-index:1}
+  #viewClan .lb-bg{position:absolute;inset:0;z-index:0;pointer-events:none}
+  #viewClan .lb-bg img{width:100%;height:100%;object-fit:cover;opacity:.22;
+    -webkit-mask-image:linear-gradient(100deg,transparent 8%,#000 92%);mask-image:linear-gradient(100deg,transparent 8%,#000 92%)}
   #viewClan .lb-mvp{margin:0 15px 14px;border-top:1px solid var(--line);padding-top:10px;display:flex;align-items:center;gap:11px}
   #viewClan .lb-mvp .ig{width:34px;height:34px;border-radius:9px;background:var(--raised);border:1px solid var(--line);display:grid;place-items:center;font-size:17px}
   #viewClan .lb-mvp .tl{font-size:9.5px;letter-spacing:.7px;text-transform:uppercase;color:var(--muted);font-weight:700}
@@ -776,6 +779,14 @@
   <symbol id="i-trophy2" viewBox="0 0 24 24"><path d="M8 4h8v4a4 4 0 0 1-8 0V4z"/><path d="M10 15h4M9 20h6M12 15v5"/></symbol>
   <symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></symbol>
   <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 3L5 13h6l-1 8 8-10h-6l1-8z"/></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-7-4.4-9.2-8.2C1.3 8.9 2.6 5.5 5.8 5.5c1.9 0 3.2 1.2 4.2 2.6 1-1.4 2.3-2.6 4.2-2.6 3.2 0 4.5 3.4 3 6.3C19 15.6 12 20 12 20z"/></symbol>
+  <symbol id="i-swords" viewBox="0 0 24 24"><path d="M14.5 3.5L21 3l-.5 6.5L9 21l-3-3L14.5 3.5z"/><path d="M3 3l6.5.5"/></symbol>
+  <symbol id="i-award" viewBox="0 0 24 24"><circle cx="12" cy="9" r="6"/><path d="M9 14l-2 7 5-3 5 3-2-7"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14 0 18M12 3c-3 3.5-3 14 0 18"/></symbol>
+  <symbol id="i-fort" viewBox="0 0 24 24"><path d="M4 21V8l3 2 3-4 2 2 2-2 3 4 3-2v13z"/><path d="M9 21v-4h6v4"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0M16 6a3 3 0 0 1 0 6M21 20a6 6 0 0 0-4-5"/></symbol>
+  <symbol id="i-doc" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 9h16M8 3v4M16 3v4"/></symbol>
 </svg>
 
 <!-- ======================= PAGE D'ACCUEIL PUBLIQUE ======================= -->
@@ -957,14 +968,14 @@
 
   <div class="d2two">
     <div class="d2card dash-anim" style="--di:2">
-      <div class="d2ttl"><h3>Classement des joueurs</h3><span class="hint">données mod · clique pour trier</span></div>
+      <div class="d2ttl"><h3><svg class="ic tti"><use href="#i-chart"/></svg>Classement des joueurs</h3><span class="hint">données mod · clique pour trier</span></div>
       <div class="d2tblwrap"><table class="pl" id="tbl"><thead><tr id="thead"></tr></thead><tbody id="tbody"></tbody></table></div>
     </div>
     <div class="d2card dash-anim" id="dashTop5" style="--di:3"></div>
   </div>
 
   <div class="d2card dash-anim" style="margin-top:16px;--di:3">
-    <div class="mem-h"><h3>Membres du clan <span class="cnt" id="memCount"></span></h3><span style="font-size:11px;color:var(--muted)">triés par SR</span></div>
+    <div class="mem-h"><h3><svg class="ic tti"><use href="#i-users"/></svg>Membres du clan <span class="cnt" id="memCount"></span></h3><span style="font-size:11px;color:var(--muted)">triés par SR</span></div>
     <div class="d2tblwrap" style="padding-bottom:0" id="members"></div>
     <div class="more hidden" id="memMore">Afficher tous les membres ↓</div>
   </div>
@@ -1107,11 +1118,20 @@ const ROLE_FR = {commander:"Commandant",deputy_commander:"Commandant adjoint",ex
 /* ============================================================
    FLUX DE CONNEXION
    ============================================================ */
+let DEV=false;   // mode test : débloque l'interface officier/commandant (côté client)
 async function boot(){
   const savedTheme = localStorage.getItem("clanplus_theme")
     || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark":"light");
   document.documentElement.setAttribute("data-theme", savedTheme);
   if(localStorage.getItem("cp_sidebar")==="1") document.getElementById("sidebar").classList.add("collapsed");
+
+  // Mode test : ?dev l'active (persiste), ?dev=0 le coupe.
+  const dv=new URLSearchParams(location.search).get("dev");
+  if(dv!=null){ if(dv==="0") localStorage.removeItem("cp_dev"); else localStorage.setItem("cp_dev","1"); }
+  DEV=localStorage.getItem("cp_dev")==="1";
+  if(DEV){ const b=document.createElement("div"); b.textContent="MODE TEST"; b.title="Interface officier débloquée (clic pour quitter)";
+    b.style.cssText="position:fixed;bottom:12px;right:12px;z-index:200;background:#e5b95c;color:#141310;font:700 11px system-ui;letter-spacing:.5px;padding:5px 11px;border-radius:20px;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.4)";
+    b.onclick=()=>{ localStorage.removeItem("cp_dev"); location.href=location.pathname; }; document.body.appendChild(b); }
 
   // 1) Retour de Wargaming ? (l'URL contient status=ok&access_token=…)
   const p = new URLSearchParams(location.search);
@@ -1207,7 +1227,7 @@ function renderClanInfo(){
   const desc=CLANINFO&&CLANINFO.description;
   if(!desc){ de.innerHTML=""; return; }
   de.innerHTML=`<div class="d2card desc2 dash-anim" style="--di:5">
-    <div class="dt"><b>Description du clan &amp; recrutement</b>${CLANINFO.motto?` — « ${esc(CLANINFO.motto)} »`:""}</div>
+    <div class="dt"><svg class="ic tti"><use href="#i-doc"/></svg><b>Description du clan &amp; recrutement</b>${CLANINFO.motto?` — « ${esc(CLANINFO.motto)} »`:""}</div>
     <button class="exp" id="descExp">Déplier ▾</button></div>
   <div class="d2card hidden" id="descBody" style="margin-top:8px"><div class="desc2-body">${fmtDesc(desc)}</div></div>`;
   const b=document.getElementById("descExp");
@@ -1256,8 +1276,10 @@ const langOf=c=>LANGS.find(l=>l[0]===c);
 async function loadClanProfile(){
   try{
     const r=await fnCall("clan-profile",{session:localStorage.getItem(LS_SESSION),action:"get"});
-    if(r.ok){ CLANPROFILE=r.j.profile||null; CPROF_CANEDIT=!!r.j.canEdit; renderDashHero(); }
+    if(r.ok){ CLANPROFILE=r.j.profile||null; CPROF_CANEDIT=!!r.j.canEdit; }
   }catch(e){}
+  if(DEV) CPROF_CANEDIT=true;
+  renderDashHero();
 }
 
 function renderDashHero(){
@@ -1285,8 +1307,15 @@ function renderDashHero(){
       <div class="h2-op-d">📅 ${esc(dstr)}</div>
       ${CPROF_CANEDIT?'<button class="h2-edit h2-op-edit" id="opEdit" title="Modifier l\'opération">✎</button>':""}
     </div>`;
-  }else if(CPROF_CANEDIT){
-    opHtml=`<button class="h2-op h2-op-add" id="opAdd">＋ Programmer une opération</button>`;
+  }else{
+    opHtml=`<div class="h2-op">
+      <span class="h2-star" style="opacity:.4;animation:none">★</span>
+      <div class="h2-op-l">Prochaine activité</div>
+      <div class="h2-op-t" style="color:var(--ink-2);font-size:14px">Aucune programmée</div>
+      ${CPROF_CANEDIT
+        ? '<button class="h2-op-add" id="opAdd" style="margin-top:9px;width:100%;padding:7px;border:1px dashed var(--gold-line);border-radius:8px;color:var(--gold);background:transparent;cursor:pointer;font-weight:700;font-size:12px">＋ Programmer une opération</button>'
+        : '<div class="h2-op-d" style="margin-top:6px;font-size:11px;color:var(--muted)">Un officier peut en programmer une</div>'}
+    </div>`;
   }
   el.innerHTML=`<div class="hero2 dash-anim" style="--di:0">
     ${emHtml}
@@ -1519,18 +1548,18 @@ function renderLast(){
   const week=RAW.filter(r=>r.isMember&&r.ts&&(now-r.ts)<=7*86400);
   const per={}; week.forEach(r=>{ const p=per[r.accId]=per[r.accId]||{name:r.name,n:0,s:0}; p.n++; p.s+=ceForRow(r,CE_REF); });
   const mvp=Object.values(per).filter(p=>p.n>=2).map(p=>({name:p.name,ce:Math.round(p.s/p.n),n:p.n})).sort((a,b)=>b.ce-a.ce)[0];
-  let lb;
+  let lb, bg="";
   if(last){
     const foeTag=(typeof BATTLE_ENEMY!=="undefined"&&BATTLE_ENEMY[last.id])||"?";
     const d=new Date(last.ts*1000).toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit"});
     const res=last.result===1?'<span class="pos">Victoire</span>':(last.result===0?'<span class="neg">Défaite</span>':'Égalité');
     const mapName=cleanMap(last.map||"");
-    lb=`<div class="lb"><div class="lb-tx"><div class="lb-res">${res} vs [${esc(foeTag)}]</div><div class="lb-sub">${esc(mapName)} · ${d}</div></div>
-      <div class="lb-map">${dashMapThumb(last.map)}<span class="mn">${esc(mapName)}</span></div></div>`;
+    bg=`<div class="lb-bg">${dashMapThumb(last.map)}</div>`;
+    lb=`<div class="lb"><div class="lb-tx"><div class="lb-res">${res} vs [${esc(foeTag)}]</div><div class="lb-sub">📍 ${esc(mapName)} · ${d}</div></div></div>`;
   } else lb=`<div class="lb"><div class="lb-tx"><div class="lb-res" style="color:var(--muted)">—</div><div class="lb-sub">Aucune bataille enregistrée</div></div></div>`;
   const mvpH=mvp?`<div class="lb-mvp"><div class="ig">👑</div><div style="flex:1"><div class="tl">MVP de la semaine</div><div class="tv">${esc(shortName(mvp.name))} <span class="srpill" style="background:${srColor(mvp.ce)}">${fmt(mvp.ce)} SR</span></div></div><div style="font-size:11px;color:var(--muted)">${mvp.n} bat.</div></div>`
     :`<div class="lb-mvp"><div class="ig">👑</div><div style="flex:1"><div class="tl">MVP de la semaine</div><div class="tv" style="color:var(--muted);font-size:12.5px">pas assez de batailles cette semaine</div></div></div>`;
-  el.innerHTML=`<div class="kpi-h"><svg class="ic"><use href="#i-swords"/></svg>Dernière bataille</div>${lb}${mvpH}`;
+  el.innerHTML=`${bg}<div class="lb-inner"><div class="kpi-h"><svg class="ic"><use href="#i-swords"/></svg>Dernière bataille</div>${lb}${mvpH}</div>`;
 }
 function ratVal(o,pct){ if(!o||o.value==null) return "—"; return pct?(fmt(o.value,2)+" %"):fmt(o.value); }
 function ratRank(o){ if(!o||o.rank==null) return ""; let d=""; if(o.rank_delta){const up=o.rank_delta>0; d=` <span class="${up?'up':'dn'}">${up?'▲':'▼'}${Math.abs(o.rank_delta)}</span>`;} return "Rang "+fmt(o.rank)+d; }
@@ -2706,7 +2735,7 @@ async function loadLoadouts(){
   try{
     const r=await fnCall("loadouts",{session:localStorage.getItem(LS_SESSION),action:"list"});
     if(!r.ok){ list.innerHTML='<div class="card"><div class="empty">Erreur loadouts : '+esc((r.j&&r.j.error)||String(r.status))+' — la fonction « loadouts » est-elle déployée ?</div></div>'; return; }
-    LOADOUTS=r.j.loadouts||[]; LO_CANEDIT=!!r.j.canEdit;
+    LOADOUTS=r.j.loadouts||[]; LO_CANEDIT=!!r.j.canEdit || DEV;
     document.getElementById("loNewBtn").classList.toggle("hidden",!LO_CANEDIT);
     document.getElementById("loRole").textContent = LO_CANEDIT
       ? "Tu peux créer et modifier les loadouts du clan."
