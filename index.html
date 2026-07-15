@@ -3107,6 +3107,8 @@ let LOADOUTS=[], LO_CANEDIT=false, LO_REF=null, LO_WIZ=null, LO_NEW=false;
 // Les competences sont stockees par role d'equipage (5 roles). On aplatit pour l'affichage des cartes.
 const CREW_ROLES=[["commander","Chef de char"],["gunner","Tireur"],["driver","Pilote"],["radioman","Opérateur radio"],["loader","Chargeur"]];
 const CREW_FR={commander:"Chef de char",gunner:"Tireur",driver:"Pilote",radioman:"Opérateur radio",loader:"Chargeur"};
+// Compétences universelles à NE PAS proposer sur les slots bonus (qualification supplémentaire).
+const BONUS_HIDE=new Set(["brotherhood","repair","camouflage"]);
 // Equipage par defaut si l'API ne renvoie pas le crew (4 membres, commander cumule la radio).
 const DEFAULT_CREW=[{member_id:"commander",roles:{commander:1,radioman:1}},{member_id:"gunner",roles:{gunner:1}},{member_id:"driver",roles:{driver:1}},{member_id:"loader",roles:{loader:1}}];
 function loFlatSkills(sk){
@@ -3393,7 +3395,7 @@ function wizStep4(){
   const tabs=slots.map(s=>{ const n=(W.skills[s.role]||[]).length;
     return `<button type="button" class="wz-rtab${s.role===W.role?' cur':''}${s.bonus?' bonus':''}" data-role="${s.role}">${CREW_FR[s.role]||s.role}${s.bonus?' <em>bonus</em>':''}<span class="wz-rn">${n}</span></button>`; }).join("");
   // pool = perks du rôle courant + perks universels (dispo pour tous)
-  const pool=src.filter(x=> x.role===W.role || x.role==='universal');
+  const pool=src.filter(x=> x.role===W.role || (x.role==='universal' && !(cur.bonus && BONUS_HIDE.has(String(x.id)))));
   const grid=pool.map(x=>{ const id=String(x.id), on=sel.indexOf(id)>=0;
     return `<button type="button" class="lo-item lo-skill${on?' sel':''}${x.role==='universal'?' univ':''}" data-id="${esc(id)}" data-name="${esc(String(x.name).toLowerCase())}">
       <img src="skills/${esc(id)}.png" onerror="this.style.display='none'" loading="lazy">
