@@ -918,6 +918,34 @@
   .wz-go,.wz-save{background:var(--wz-gold);border-color:var(--wz-gold);color:#141310}
   .wz-go:hover,.wz-save:hover{background:#f0cd82;box-shadow:0 4px 14px rgba(229,185,92,.3)}
   .wz-save{background:linear-gradient(180deg,#e9c876,#e0b04f);font-weight:800}
+  /* Familles d'équipement + sélecteur de grade */
+  .lo-wiz{position:relative}
+  .lo-gdots{display:flex;gap:3px;margin-top:1px;height:6px}
+  .lo-gdot{width:6px;height:6px;border-radius:50%;background:var(--d);opacity:.4}
+  .lo-gdot.on{opacity:1;box-shadow:0 0 0 2px rgba(255,255,255,.14)}
+  .lo-wiz .lo-eqfam.sel{border-color:var(--gcol,var(--wz-gold));box-shadow:0 0 0 1px var(--gcol,var(--wz-gold)) inset;background:rgba(255,255,255,.03)}
+  .lo-wiz .lo-eqfam.sel .lo-check{background:var(--gcol,var(--wz-gold))}
+  .wz-gpick{position:absolute;inset:0;background:rgba(6,7,8,.74);backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;z-index:30;padding:22px;animation:loIn .18s ease both}
+  .wz-gpick.hidden{display:none}
+  .wz-gpick-bx{background:var(--wz-pan);border:1px solid var(--wz-bdg);border-radius:14px;padding:18px;max-width:560px;width:100%;box-shadow:0 24px 64px rgba(0,0,0,.6)}
+  .wz-gpick-h{display:flex;align-items:baseline;gap:10px;margin-bottom:14px}
+  .wz-gpick-h b{font-size:16px;color:var(--wz-ink)}
+  .wz-gpick-h span{font-size:12px;color:var(--wz-mut);flex:1}
+  .wz-gpick-x{background:none;border:1px solid var(--wz-bd);color:var(--wz-mut);border-radius:8px;width:30px;height:30px;cursor:pointer;font-size:13px}
+  .wz-gpick-x:hover{border-color:#c9484a;color:#e46b6d}
+  .lo-gcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+  .lo-gcard{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;padding:15px 10px;border:1.5px solid var(--wz-bd);border-radius:12px;background:var(--wz-bg);cursor:pointer;color:var(--wz-ink);transition:transform .15s ease,border-color .15s ease,box-shadow .15s ease}
+  .lo-gcard:hover{transform:translateY(-2px);border-color:var(--gcol)}
+  .lo-gcard.on{border-color:var(--gcol);box-shadow:0 0 0 1px var(--gcol) inset,0 8px 22px -8px var(--gcol)}
+  .lo-gcard-ic{width:76px;height:56px;display:grid;place-items:center;border-radius:10px;background:var(--wz-rai);border:1px solid var(--wz-bd)}
+  .lo-gcard-ic img{max-width:64px;max-height:46px;object-fit:contain}
+  .lo-gcard.on .lo-gcard-ic{border-color:var(--gcol)}
+  .lo-gtag{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--gcol)}
+  .lo-gname{font-size:11px;color:var(--wz-mut);text-align:center;line-height:1.2}
+  .lo-gon{font-size:10px;font-weight:800;color:var(--gcol)}
+  .wz-gremove{margin-top:14px;width:100%;padding:9px;border-radius:9px;border:1px solid var(--wz-bd);background:none;color:var(--wz-mut);font:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:.15s}
+  .wz-gremove:hover{border-color:#c9484a;color:#e46b6d}
+  .wz-chip[style*="--gcol"] img{border-color:var(--gcol);box-shadow:0 0 0 1px var(--gcol)}
   @media(max-width:820px){ .wz-body{grid-template-columns:1fr} .wz-side{position:static} .wz-line{width:18px} }
 
   @media(max-width:840px){ .bl-metar{display:none} }
@@ -3078,9 +3106,18 @@ function loFlatSkills(sk){
 }
 function loMaps(){
   const t={},e={},c={},s={};
-  if(LO_REF){ (LO_REF.tanks||[]).forEach(x=>t[x.tank_id]=x); (LO_REF.equipment||[]).forEach(x=>e[x.id]=x); (LO_REF.consumables||[]).forEach(x=>c[x.id]=x); (LO_REF.skills||[]).forEach(x=>s[x.id]=x); }
+  if(LO_REF){
+    (LO_REF.tanks||[]).forEach(x=>t[x.tank_id]=x);
+    const em=LO_REF.equipmentMap||{}; Object.keys(em).forEach(k=>e[k]=em[k]);
+    (LO_REF.equipment||[]).forEach(f=>(f.grades||[]).forEach(g=>{ if(!e[g.id]) e[g.id]=g; })); // secours si equipmentMap absent
+    (LO_REF.consumables||[]).forEach(x=>c[x.id]=x);
+    (LO_REF.skills||[]).forEach(x=>s[x.id]=x);
+  }
   return {t,e,c,s};
 }
+// Index des familles d'equipements : id -> famille / grade, et grade -> libelle+couleur.
+const EQ_GRADE_META={standard:["Standard","#8b9099"],bounty:["Bounty","#e668b3"],improved:["Amélioré","#a874ff"]};
+function loEqFam(){ const idFam={},idGr={},fam={}; ((LO_REF&&LO_REF.equipment)||[]).forEach(f=>{ fam[f.key]=f; (f.grades||[]).forEach(g=>{ idFam[g.id]=f.key; idGr[g.id]=g.grade; }); }); return {idFam,idGr,fam}; }
 async function loadLoadouts(){
   const list=document.getElementById("loList");
   list.innerHTML='<div class="card">'+cpLoader()+'</div>';
@@ -3182,7 +3219,7 @@ function renderWizard(){
     return `<button type="button" class="wz-step${cur?' cur':''}${done?' done':''}${clk?'':' lock'}" data-step="${n}">
       <span class="wz-num">${done?'✓':n}</span><span class="wz-lbl">${s[0]}</span></button>`
     +(n<4?'<span class="wz-line'+(done?' on':'')+'"></span>':''); }).join("");
-  const main = W.step===1?wizStep1() : W.step===2?wizStepItems('eq') : W.step===3?wizStepItems('co') : wizStep4();
+  const main = W.step===1?wizStep1() : W.step===2?wizStepEquip() : W.step===3?wizStepItems('co') : wizStep4();
   const prev = W.step>1 ? `<button class="wz-btn" id="wizPrev">← Précédent</button>` : `<span></span>`;
   const next = W.step<4
     ? `<button class="wz-btn wz-go" id="wizNext">Continuer →</button>`
@@ -3203,7 +3240,7 @@ function wizWire(){
   const next=document.getElementById("wizNext"); if(next) next.onclick=()=>{ if(W.step===1&&!W.tank_id){ alert("Choisis d’abord un char."); return; } W.step=Math.min(4,W.step+1); renderWizard(); };
   const save=document.getElementById("wizSave"); if(save) save.onclick=saveLoadout;
   if(W.step===1) wizWire1();
-  else if(W.step===2) wizWireItems('eq');
+  else if(W.step===2) wizWireEquip();
   else if(W.step===3) wizWireItems('co');
   else if(W.step===4) wizWire4();
 }
@@ -3270,6 +3307,57 @@ function wizToggleItem(cat,id,btn){
 }
 function wizFlashCnt(){ const c=document.getElementById("wizCnt"); if(!c) return; c.classList.add("over"); setTimeout(()=>c.classList.remove("over"),500); }
 
+/* ---- Étape 2 : équipements par FAMILLE (clic -> choix du grade Standard/Bounty/Amélioré) ---- */
+function wizStepEquip(){
+  const W=LO_WIZ, fams=(LO_REF.equipment||[]), idx=loEqFam();
+  const grid=fams.map(f=>{
+    const selId=W.equipment.find(id=>idx.idFam[id]===f.key);
+    const g=selId?idx.idGr[selId]:null, col=g?EQ_GRADE_META[g][1]:'';
+    const dots=(f.grades||[]).map(gr=>`<i class="lo-gdot${g===gr.grade?' on':''}" style="--d:${EQ_GRADE_META[gr.grade][1]}"></i>`).join("");
+    return `<button type="button" class="lo-item lo-eqfam${selId?' sel':''}" data-key="${esc(f.key)}" data-name="${esc(String(f.name).toLowerCase())}"${selId?` style="--gcol:${col}"`:''}>
+      <img src="${esc(f.icon||'')}" onerror="this.style.display='none'" loading="lazy">
+      <span>${esc(f.name)}</span><div class="lo-gdots">${dots}</div><i class="lo-check">✓</i></button>`;
+  }).join("");
+  return `<div class="wz-hdr"><h3>Équipements</h3><p>Choisis jusqu’à 3 équipements. Clique un équipement pour choisir son grade : <b style="color:#8b9099">Standard</b> · <b style="color:#e668b3">Bounty</b> · <b style="color:#a874ff">Amélioré</b>. <b class="wz-cnt" id="wizCnt">${W.equipment.length} / 3</b></p></div>
+    <div class="wz-flt"><input class="lo-search" id="wizIQ" placeholder="Rechercher un équipement…" value="${esc(W.eq||'')}"></div>
+    <div class="lo-grid wz-grid wz-igrid">${grid}</div>
+    <div class="wz-gpick hidden" id="wizGpick"></div>`;
+}
+function wizWireEquip(){
+  const W=LO_WIZ, ed=document.getElementById("loEditor"), iq=document.getElementById("wizIQ");
+  const apply=()=>{ W.eq=iq.value; const v=iq.value.toLowerCase(); ed.querySelectorAll(".lo-eqfam").forEach(b=>{ b.style.display=(!v||b.dataset.name.indexOf(v)>=0)?'':'none'; }); };
+  iq.oninput=apply; apply();
+  ed.querySelectorAll(".lo-eqfam").forEach(b=> b.onclick=()=>wizOpenGrade(b.dataset.key));
+}
+function wizOpenGrade(key){
+  const W=LO_WIZ, idx=loEqFam(), f=idx.fam[key]; if(!f) return;
+  const selId=W.equipment.find(id=>idx.idFam[id]===key);
+  const cards=(f.grades||[]).map(g=>{ const meta=EQ_GRADE_META[g.grade], on=selId===g.id;
+    return `<button type="button" class="lo-gcard grade-${g.grade}${on?' on':''}" data-id="${g.id}" style="--gcol:${meta[1]}">
+      <div class="lo-gcard-ic"><img src="${esc(g.image||'')}" onerror="this.style.display='none'"></div>
+      <div class="lo-gtag">${meta[0]}</div><div class="lo-gname">${esc(g.name)}</div>
+      ${on?'<div class="lo-gon">✓ sélectionné</div>':''}</button>`; }).join("");
+  const box=document.getElementById("wizGpick"); box.className="wz-gpick";
+  box.innerHTML=`<div class="wz-gpick-bx">
+    <div class="wz-gpick-h"><b>${esc(f.name)}</b><span>Choisis le grade</span><button class="wz-gpick-x" id="wizGx">✕</button></div>
+    <div class="lo-gcards">${cards}</div>
+    ${selId?'<button class="wz-gremove" id="wizGrm">Retirer cet équipement</button>':''}</div>`;
+  box.onclick=(e)=>{ if(e.target===box) wizCloseGrade(); };
+  box.querySelector("#wizGx").onclick=wizCloseGrade;
+  box.querySelectorAll(".lo-gcard").forEach(b=> b.onclick=()=>wizPickGrade(key,Number(b.dataset.id)));
+  const rm=box.querySelector("#wizGrm"); if(rm) rm.onclick=()=>wizPickGrade(key,null);
+}
+function wizCloseGrade(){ const b=document.getElementById("wizGpick"); if(b){ b.className="wz-gpick hidden"; b.innerHTML=""; } }
+function wizPickGrade(key,id){
+  const W=LO_WIZ, idx=loEqFam(), had=W.equipment.some(x=>idx.idFam[x]===key);
+  W.equipment=W.equipment.filter(x=>idx.idFam[x]!==key);
+  if(id!==null){
+    if(W.equipment.length>=3 && !had){ wizCloseGrade(); wizFlashCnt(); renderWizard(); return; }
+    W.equipment.push(id);
+  }
+  wizCloseGrade(); renderWizard();
+}
+
 /* ---- Étape 4 : compétences par membre d'équipage (6 max chacun) ---- */
 function wizStep4(){
   const W=LO_WIZ, src=(LO_REF.skills||[]), role=W.role, sel=W.skills[role]||[];
@@ -3308,7 +3396,9 @@ function wizSide(){ return `<aside class="wz-side" id="wizSide">${wizSideInner()
 function wizSideInner(){
   const M=loMaps(), W=LO_WIZ, t=W.tank_id?M.t[W.tank_id]:null;
   const chip=(it)=>`<div class="wz-chip" title="${esc(it.name||'')}"><img src="${esc(it.image||it.icon||'')}" onerror="this.style.display='none'"><span>${esc(it.name||'')}</span></div>`;
-  const eqRow=W.equipment.map(id=>M.e[id]).filter(Boolean).map(chip).join("")||'<span class="wz-mut">—</span>';
+  const idx=loEqFam();
+  const eqRow=W.equipment.map(id=>{ const it=M.e[id]; if(!it)return''; const g=idx.idGr[id], col=g?EQ_GRADE_META[g][1]:'';
+    return `<div class="wz-chip" title="${esc(it.name||'')}"${col?` style="--gcol:${col}"`:''}><img src="${esc(it.image||it.icon||'')}" onerror="this.style.display='none'"><span>${esc(it.name||'')}</span></div>`; }).join("")||'<span class="wz-mut">—</span>';
   const coRow=W.consumables.map(id=>M.c[id]).filter(Boolean).map(chip).join("")||'<span class="wz-mut">—</span>';
   const skRows=CREW_ROLES.map(r=>{ const n=(W.skills[r[0]]||[]).length;
     return `<div class="wz-skln"><span>${r[1]}</span><div class="wz-bar"><i style="width:${Math.round(n/6*100)}%"></i></div><b>${n}/6</b></div>`; }).join("");
