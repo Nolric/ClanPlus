@@ -678,12 +678,14 @@
   #viewClan .t5head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:6px}
   #viewClan .t5head .nm{font-size:12.5px;color:var(--ink);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   #viewClan .t5head .vv{font-family:var(--fx);font-size:14.5px;color:#fff;flex:0 0 auto}
-  #viewClan .t5row .tk{height:10px;border-radius:6px;background:rgba(255,255,255,.05);overflow:hidden}
-  #viewClan .t5row .fl{height:100%;border-radius:6px;background:linear-gradient(90deg,#d87f34,#f6b96e);box-shadow:0 0 10px rgba(224,144,74,.5)}
+  #viewClan .t5row .tk{display:block;width:100%;height:10px;border-radius:6px;background:rgba(255,255,255,.06);overflow:hidden}
+  #viewClan .t5row .fl{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,#d87f34,#f6b96e);box-shadow:0 0 10px rgba(224,144,74,.5)}
   #viewClan .mem-h{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 16px 8px;flex-wrap:wrap}
   #viewClan .mem-h h3{font-size:13px;margin:0;font-family:var(--fx);font-weight:600} #viewClan .mem-h .cnt{color:var(--muted);font-weight:400;font-size:12px;margin-left:6px}
   #viewClan table.memtbl{width:100%;border-collapse:collapse}
-  #viewClan table.memtbl th{text-align:right;font-size:10px;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);font-weight:700;padding:7px 16px;border-bottom:1px solid var(--line)}
+  #viewClan table.memtbl th{text-align:right;font-size:10px;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);font-weight:700;padding:7px 16px;border-bottom:1px solid var(--line);cursor:pointer;user-select:none;white-space:nowrap}
+  #viewClan table.memtbl th:hover{color:var(--ink-2)}
+  #viewClan table.memtbl th.sorted{color:var(--gold-2)}
   #viewClan table.memtbl th:nth-child(-n+2),#viewClan table.memtbl td:nth-child(-n+2){text-align:left}
   #viewClan table.memtbl td{padding:9px 16px;text-align:right;border-bottom:1px solid var(--line-2);font-size:12.5px;font-variant-numeric:tabular-nums}
   #viewClan .grade{font-size:11.5px} #viewClan .grade.g-cmd{color:var(--gold-2)} #viewClan .grade.g-off{color:#c4bda9} #viewClan .grade.g-sol{color:var(--ink-2)}
@@ -984,7 +986,7 @@
   </div>
 
   <div class="d2card dash-anim" style="margin-top:16px;--di:3">
-    <div class="mem-h"><h3><svg class="ic tti"><use href="#i-users"/></svg>Membres du clan <span class="cnt" id="memCount"></span></h3><span style="font-size:11px;color:var(--muted)">triés par SR</span></div>
+    <div class="mem-h"><h3><svg class="ic tti"><use href="#i-users"/></svg>Membres du clan <span class="cnt" id="memCount"></span></h3><span style="font-size:11px;color:var(--muted)">clique une colonne pour trier</span></div>
     <div class="d2tblwrap" style="padding-bottom:0" id="members"></div>
     <div class="more hidden" id="memMore">Afficher tous les membres ↓</div>
   </div>
@@ -2016,6 +2018,15 @@ async function openSearchedClan(clanId){
 }
 
 let MEM_EXPANDED=false;
+let MEM_SORT={k:"sr",dir:-1};   // tri du tableau des membres
+function memCmp(a,b){
+  const k=MEM_SORT.k, d=MEM_SORT.dir;
+  if(k==="name") return d*String(a.name).localeCompare(String(b.name));
+  if(k==="ord")  return (a.ord-b.ord)*d || String(a.name).localeCompare(String(b.name));
+  const av=a[k]||0, bv=b[k]||0;                 // sr / bat / ts : numériques
+  if((av===0)!==(bv===0)) return av===0?1:-1;   // les "—" (sans données) toujours en bas
+  return d*(av-bv) || String(a.name).localeCompare(String(b.name));
+}
 // vraies icônes de grade du jeu (extraites de gui-part*.pkg -> web/roles/) ; clés API -> ancien nom de fichier WoT
 const ROLE_ICON={commander:"leader",executive_officer:"vice_leader",deputy_commander:"vice_leader",
   combat_officer:"commander",personnel_officer:"staff",intelligence_officer:"diplomat",quartermaster:"treasurer",
@@ -2034,17 +2045,15 @@ function renderMembers(){
       icon: roleIcon(m.wg_role),
       sr: st?Math.round(st.s/st.n):null, bat: st?st.bset.size:0, ts: st?st.ts:0,
       me:(ME_ID!=null && Number(m.account_id)===Number(ME_ID)) };
-  }).sort((a,b)=>{
-    if((b.sr!=null)-(a.sr!=null)) return (b.sr!=null)-(a.sr!=null);
-    if(a.sr!=null&&b.sr!=null&&a.sr!==b.sr) return b.sr-a.sr;
-    if(a.ord!==b.ord) return a.ord-b.ord;
-    return String(a.name).localeCompare(String(b.name));
-  });
+  }).sort(memCmp);
   const mc=document.getElementById("memCount"); if(mc) mc.textContent=list.length||"";
   if(!list.length){ el.innerHTML='<div style="color:var(--muted);padding:16px">Roster pas encore importé — il se remplit à la connexion d\'un membre.</div>'; return; }
   const gCls=o=>o<=1?"g-cmd":o<=3?"g-off":"g-sol";
   const shown=MEM_EXPANDED?list:list.slice(0,12);
-  el.innerHTML=`<table class="memtbl"><thead><tr><th>Joueur</th><th>Grade</th><th>SR</th><th>Batailles</th><th>Vu le</th></tr></thead><tbody>`
+  const mcols=[["name","Joueur"],["ord","Grade"],["sr","SR"],["bat","Batailles"],["ts","Vu le"]];
+  const mArw=k=>k===MEM_SORT.k?(MEM_SORT.dir<0?" ▼":" ▲"):"";
+  const mTh=mcols.map(c=>`<th data-k="${c[0]}" class="${c[0]===MEM_SORT.k?'sorted':''}">${c[1]}${mArw(c[0])}</th>`).join("");
+  el.innerHTML=`<table class="memtbl"><thead><tr>${mTh}</tr></thead><tbody>`
     +shown.map(m=>{
       const av=m.icon
         ? `<span class="av rav" title="${esc(m.role)}"><img src="${m.icon}" alt="${esc(m.role)}" onerror="this.parentNode.textContent='${esc(String(m.name)[0].toUpperCase())}';this.parentNode.classList.remove('rav')"></span>`
@@ -2053,6 +2062,11 @@ function renderMembers(){
       const vu=m.ts?new Date(m.ts*1000).toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit"}):'<span style="color:var(--muted)">—</span>';
       return `<tr${m.me?' style="background:rgba(229,185,92,.06)"':''}><td><span class="pn">${av}${esc(m.name)}</span></td><td><span class="grade ${gCls(m.ord)}">${esc(m.role)}</span></td><td>${sr}</td><td>${m.bat||'<span style="color:var(--muted)">—</span>'}</td><td style="color:var(--ink-2)">${vu}</td></tr>`;
     }).join("")+`</tbody></table>`;
+  el.querySelectorAll("thead th[data-k]").forEach(th=>th.onclick=()=>{
+    const k=th.dataset.k;
+    if(MEM_SORT.k===k) MEM_SORT.dir*=-1; else { MEM_SORT.k=k; MEM_SORT.dir=(k==="name"||k==="ord")?1:-1; }
+    renderMembers();
+  });
   const more=document.getElementById("memMore");
   if(more){ if(list.length>12){ more.classList.remove("hidden"); more.textContent=MEM_EXPANDED?"Réduire ▴":("Afficher les "+list.length+" membres ↓"); more.onclick=()=>{MEM_EXPANDED=!MEM_EXPANDED; renderMembers();}; } else more.classList.add("hidden"); }
 }
