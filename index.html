@@ -667,12 +667,19 @@
   #viewClan .toggle{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
   #viewClan .toggle button{background:transparent;border:0;color:var(--ink-2);font:inherit;font-size:11px;font-weight:600;padding:5px 10px;cursor:pointer}
   #viewClan .toggle button.on{background:var(--or-soft);color:var(--or)}
-  #viewClan .t5{padding:4px 16px 14px;display:flex;flex-direction:column;gap:9px}
-  #viewClan .t5row{display:flex;align-items:center;gap:10px;font-size:12px}
-  #viewClan .t5row .nm{width:96px;flex:0 0 auto;color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  #viewClan .t5row .tk{flex:1;height:8px;border-radius:5px;background:var(--raised);overflow:hidden}
-  #viewClan .t5row .fl{height:100%;border-radius:5px;background:linear-gradient(90deg,#e0904a,#f0b673)}
-  #viewClan .t5row .vv{width:44px;text-align:right;font-family:var(--fx);color:var(--ink)}
+  #viewClan #dashTop5{display:flex;flex-direction:column}
+  #viewClan .t5{flex:1;padding:8px 16px 16px;display:flex;flex-direction:column;justify-content:space-evenly;gap:12px}
+  #viewClan .t5row{display:flex;align-items:center;gap:11px}
+  #viewClan .t5rk{width:23px;height:23px;flex:0 0 auto;border-radius:6px;display:grid;place-items:center;font-family:var(--fx);font-size:12px;background:var(--raised);color:var(--ink-2)}
+  #viewClan .t5rk.r1{background:linear-gradient(180deg,#f4d78c,#e5b95c);color:#141310}
+  #viewClan .t5rk.r2{background:linear-gradient(180deg,#dfe4ea,#a9b1ba);color:#141310}
+  #viewClan .t5rk.r3{background:linear-gradient(180deg,#e3ac7d,#bf7942);color:#141310}
+  #viewClan .t5main{flex:1;min-width:0}
+  #viewClan .t5head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:6px}
+  #viewClan .t5head .nm{font-size:12.5px;color:var(--ink);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #viewClan .t5head .vv{font-family:var(--fx);font-size:14.5px;color:#fff;flex:0 0 auto}
+  #viewClan .t5row .tk{height:10px;border-radius:6px;background:rgba(255,255,255,.05);overflow:hidden}
+  #viewClan .t5row .fl{height:100%;border-radius:6px;background:linear-gradient(90deg,#d87f34,#f6b96e);box-shadow:0 0 10px rgba(224,144,74,.5)}
   #viewClan .mem-h{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 16px 8px;flex-wrap:wrap}
   #viewClan .mem-h h3{font-size:13px;margin:0;font-family:var(--fx);font-weight:600} #viewClan .mem-h .cnt{color:var(--muted);font-weight:400;font-size:12px;margin-left:6px}
   #viewClan table.memtbl{width:100%;border-collapse:collapse}
@@ -1612,7 +1619,11 @@ function renderTop5(){
   const mx=Math.max(1,...top.map(p=>p[key]));
   el.innerHTML=`<div class="d2ttl"><h3>Top 5 — ${key==="kills"?"Frags moyens":"Dégâts moyens"}</h3>
     <span class="toggle"><button data-m="dmg" class="${key==='dmg'?'on':''}">Dégâts</button><button data-m="kills" class="${key==='kills'?'on':''}">Frags</button></span></div>
-    <div class="t5">${top.map(p=>`<div class="t5row"><span class="nm">${esc(shortName(p.name))}</span><span class="tk"><span class="fl" style="width:${Math.round(p[key]/mx*100)}%"></span></span><span class="vv">${f(p[key])}</span></div>`).join("")||'<div style="color:var(--muted);font-size:12px;padding:8px 0">Aucune donnée</div>'}</div>`;
+    <div class="t5">${top.map((p,i)=>`<div class="t5row">
+      <span class="t5rk r${i+1}">${i+1}</span>
+      <div class="t5main"><div class="t5head"><span class="nm">${esc(shortName(p.name))}</span><span class="vv">${f(p[key])}</span></div>
+      <span class="tk"><span class="fl" style="width:${Math.round(p[key]/mx*100)}%"></span></span></div>
+    </div>`).join("")||'<div style="color:var(--muted);font-size:12px;padding:8px 0">Aucune donnée</div>'}</div>`;
   el.querySelectorAll(".toggle button").forEach(b=>b.onclick=()=>{ TOP5_MODE=b.dataset.m; renderTop5(); });
 }
 function renderDashboard(){ renderHealth(); renderLast(); renderWg(); renderMini(); renderOfficialCards(); renderTop5(); }
