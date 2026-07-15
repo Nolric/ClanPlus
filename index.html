@@ -171,14 +171,14 @@
   /* ---- Menu latéral (dépliant) ---- */
   .shell{display:flex;align-items:flex-start;min-height:100vh}
   .sidebar{position:sticky;top:0;height:100vh;flex:0 0 220px;width:220px;min-width:0;
-    background:linear-gradient(180deg,#111b26,#0e1620);border-right:1px solid rgba(229,185,92,.34);
+    background:linear-gradient(180deg,#151517,#0e0e0f);border-right:1px solid rgba(229,185,92,.34);
     display:flex;flex-direction:column;padding:14px 11px;gap:4px;overflow:visible}
   .sidebar.collapsed{flex-basis:66px;width:66px}
   .side-head{display:flex;align-items:center;gap:10px;padding:4px 6px 13px;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:8px}
   .side-brand{font-weight:700;font-size:16px;white-space:nowrap;overflow:hidden;flex:1;letter-spacing:.4px;color:#eaf1f8;font-family:"Bahnschrift","Segoe UI Semibold",system-ui,sans-serif;text-transform:uppercase}
   /* Bouton "poignée" rond, a cheval sur le bord droit, centre verticalement */
   .side-toggle{position:absolute;top:50%;right:-13px;transform:translateY(-50%);z-index:60;
-    appearance:none;cursor:pointer;background:#111b26;border:1px solid rgba(229,185,92,.5);border-radius:50%;
+    appearance:none;cursor:pointer;background:#151517;border:1px solid rgba(229,185,92,.5);border-radius:50%;
     width:26px;height:26px;color:#e5b95c;font-size:15px;line-height:1;display:grid;place-items:center;
     box-shadow:0 3px 10px rgba(0,0,0,.55);transition:.15s}
   .side-toggle:hover{background:rgba(229,185,92,.14);transform:translateY(-50%) scale(1.1)}
@@ -199,10 +199,11 @@
   .sidebar.collapsed .side-item{justify-content:center;padding:10px}
   /* bloc utilisateur (pseudo + déconnexion) en bas de la sidebar */
   .side-user{margin-top:auto;padding-top:12px;border-top:1px solid rgba(255,255,255,.08)}
-  .su-who{font-size:12px;color:#9aa7b6;padding:2px 6px 9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .su-who b{color:#eaf1f8;font-weight:600}
+  .su-who{display:flex;align-items:center;gap:8px;font-size:12px;color:#9b9b96;padding:2px 6px 9px;white-space:nowrap;overflow:hidden}
+  .su-who b{color:#ecebe8;font-weight:600}
+  .su-who .odot{width:9px;height:9px;border-radius:50%;flex:0 0 auto;background:#4cc077;box-shadow:0 0 8px #4cc077,0 0 2px #4cc077}
   .su-logout{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;border:1px solid rgba(255,255,255,.08);
-    background:#0e1620;color:#9aa7b6;font:inherit;font-size:12.5px;font-weight:600;padding:9px;border-radius:9px;cursor:pointer;transition:.15s}
+    background:#0e0e0f;color:#9b9b96;font:inherit;font-size:12.5px;font-weight:600;padding:9px;border-radius:9px;cursor:pointer;transition:.15s}
   .su-logout svg{width:15px;height:15px}
   .su-logout:hover{border-color:var(--bad,#e8626b);color:#e8626b;background:rgba(232,98,107,.10)}
   .sidebar.collapsed .su-who,.sidebar.collapsed .su-lbl{display:none}
@@ -534,93 +535,155 @@
   .plan-goals .pg-h{font-weight:700;font-size:13px;margin-bottom:4px}
   /* ================= Dashboard "Mon clan" — salle de commandement ================= */
   .dashx{
-    --plane:#0a0f16;--surface-1:#111b26;--surface-2:#16222f;--card:#111b26;
-    --ink:#eaf1f8;--ink-2:#9aa7b6;--muted:#6b7889;
+    --plane:#0b0c0c;--surface-1:#16171a;--surface-2:#1e1f22;--card:#16171a;
+    --ink:#ecebe8;--ink-2:#9b9b96;--muted:#66665f;
     --border:rgba(255,255,255,.08);--accent:#e5b95c;--accent-2:#f4d78c;--accent-soft:rgba(229,185,92,.12);
-    --good:#4cc077;--bad:#e8626b;
-    --panel:#111b26;--panel-2:#0e1620;--raised:#17232f;--line:rgba(255,255,255,.08);
-    --gold:#e5b95c;--gold-2:#f4d78c;--gold-soft:rgba(229,185,92,.12);--gold-line:rgba(229,185,92,.34);
+    --good:#4cc077;--good2:#7dd694;--bad:#e8626b;
+    --panel:#16171a;--panel-2:#101113;--raised:#1e1f22;--line:rgba(255,255,255,.08);--line-2:rgba(255,255,255,.045);
+    --gold:#e5b95c;--gold-2:#f4d78c;--gold-soft:rgba(229,185,92,.12);--gold-line:rgba(229,185,92,.32);
+    --or:#e0904a;--or-soft:rgba(224,144,74,.14);
+    --gr:#e5b95c;--gr2:#f4d78c;--gr-soft:rgba(229,185,92,.12);--gr-line:rgba(229,185,92,.32);--red:#e8626b;--red-soft:rgba(232,98,107,.14);
     --teal:#4bb6c6;--steel:#7f8ea0;--fx:"Bahnschrift","DIN Condensed","Segoe UI Semibold",system-ui,sans-serif;
   }
   #viewClan{color:var(--ink)}
-  @keyframes dashIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
-  .dash-anim{animation:dashIn .55s cubic-bezier(.2,.75,.25,1) both;animation-delay:calc(var(--di,0)*70ms)}
+  @keyframes dashIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  .dash-anim{animation:dashIn .5s cubic-bezier(.2,.75,.25,1) both;animation-delay:calc(var(--di,0)*60ms)}
   @keyframes starPulse{0%,100%{transform:scale(1) rotate(0)}50%{transform:scale(1.28) rotate(13deg)}}
-  @keyframes opGlow{50%{box-shadow:0 0 26px -2px rgba(229,185,92,.28)}}
-  /* Hero */
-  .hero2{position:relative;overflow:hidden;display:flex;align-items:center;gap:22px;margin-bottom:14px;
-    padding:22px 26px;border-radius:16px;border:1px solid var(--gold-line);color:#eaf1f8;
-    background:linear-gradient(103deg,#16273a 0%,#0d1622 52%,#0b1119 100%)}
+  /* Hero (noir/or) */
+  .hero2{position:relative;overflow:hidden;display:flex;align-items:center;gap:20px;margin-bottom:12px;
+    padding:20px 24px;border-radius:15px;border:1px solid var(--gold-line);color:#ecebe8;
+    background:linear-gradient(103deg,#221f18 0%,#141310 54%,#0d0d0b 100%)}
   .hero2::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.5;background-size:cover;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='760' height='280'%3E%3Cg fill='none' stroke='%23e5b95c' stroke-opacity='0.10' stroke-width='1.3'%3E%3Cpath d='M0 40 Q190 6 380 60 T760 40'/%3E%3Cpath d='M0 96 Q190 60 380 116 T760 96'/%3E%3Cpath d='M0 152 Q190 116 380 172 T760 152'/%3E%3Cpath d='M0 208 Q190 172 380 228 T760 208'/%3E%3Cpath d='M0 264 Q190 228 380 284 T760 264'/%3E%3C/g%3E%3C/svg%3E")}
   .hero2::after{content:"";position:absolute;left:-40px;top:-60px;width:300px;height:300px;border-radius:50%;pointer-events:none;
     background:radial-gradient(circle,rgba(229,185,92,.16),transparent 62%)}
-  .h2-em{position:relative;z-index:1;width:104px;height:104px;flex:0 0 auto;object-fit:contain;
-    border-radius:16px;background:#0b1119;border:1px solid var(--gold-line);padding:10px;box-shadow:0 10px 30px -10px rgba(0,0,0,.7)}
+  .h2-em{position:relative;z-index:1;width:100px;height:100px;flex:0 0 auto;object-fit:contain;
+    border-radius:15px;background:#0d0d0b;border:1px solid var(--gold-line);padding:9px;box-shadow:0 10px 30px -10px rgba(0,0,0,.7)}
   .h2-em-ph{display:grid;place-items:center;font-weight:800;font-size:20px;color:var(--gold)}
   .h2-ci{position:relative;z-index:1;flex:1;min-width:0}
-  .h2-tag{font-family:var(--fx);font-size:32px;font-weight:700;letter-spacing:1.5px;color:#fff;line-height:1}
-  .h2-name{font-family:var(--fx);font-size:18px;letter-spacing:2px;text-transform:uppercase;color:var(--gold-2);margin-left:11px}
-  .h2-motto{margin-top:7px;font-style:italic;color:#b9c6d4;font-size:13.5px}
-  .h2-meta{display:flex;gap:20px;flex-wrap:wrap;margin-top:13px;font-size:12.5px;color:var(--ink-2);align-items:center}
-  .h2-meta b{color:#e8eef5;font-weight:600}
+  .h2-tag{font-family:var(--fx);font-size:30px;font-weight:700;letter-spacing:1.4px;color:#fff;line-height:1}
+  .h2-name{font-family:var(--fx);font-size:17px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gold-2);margin-left:10px}
+  .h2-motto{margin-top:6px;font-style:italic;color:#b9b3a4;font-size:13px}
+  .h2-meta{display:flex;gap:18px;flex-wrap:wrap;margin-top:12px;font-size:12.5px;color:var(--ink-2);align-items:center}
+  .h2-meta b{color:#ecebe8;font-weight:600}
   .h2-langs{display:inline-flex;align-items:center;gap:3px}
   .h2-flag{font-size:15px}
-  .h2-nolang{color:#69727f;font-style:italic}
+  .h2-nolang{color:#69675f;font-style:italic}
   .h2-edit{appearance:none;border:1px solid var(--gold-line);background:transparent;color:var(--gold);border-radius:6px;
     width:22px;height:22px;line-height:1;cursor:pointer;font-size:11px;margin-left:5px;padding:0;transition:.15s}
   .h2-edit:hover{background:var(--gold-soft);transform:scale(1.1)}
-  .h2-op{position:relative;z-index:1;flex:0 0 auto;width:300px;max-width:44%;text-align:left;border:1px solid var(--gold-line);
-    border-radius:13px;padding:15px 17px;background:linear-gradient(180deg,rgba(229,185,92,.10),rgba(229,185,92,.02));animation:opGlow 3s ease-in-out infinite}
-  .h2-star{position:absolute;top:-13px;right:-9px;font-size:24px;color:var(--gold-2);text-shadow:0 0 9px rgba(244,215,140,.8);animation:starPulse 2s ease-in-out infinite}
-  .h2-op-l{font-size:10.5px;text-transform:uppercase;letter-spacing:1.1px;color:var(--gold);font-weight:700}
+  .h2-op{position:relative;z-index:1;flex:0 0 auto;width:280px;max-width:42%;text-align:left;border:1px solid var(--gold-line);
+    border-radius:12px;padding:14px 16px;background:linear-gradient(180deg,rgba(229,185,92,.10),rgba(229,185,92,.02))}
+  .h2-star{position:absolute;top:-12px;right:-8px;font-size:22px;color:var(--gold-2);text-shadow:0 0 9px rgba(244,215,140,.8);animation:starPulse 2s ease-in-out infinite}
+  .h2-op-l{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--gold);font-weight:700}
   .h2-op-in{background:var(--gold-soft);color:var(--gold-2);border-radius:12px;padding:1px 8px;font-size:10px;margin-left:5px;letter-spacing:0;text-transform:none}
-  .h2-op-t{font-family:var(--fx);font-size:18px;letter-spacing:.5px;color:var(--gold-2);margin:7px 0 3px}
-  .h2-op-d{font-size:12px;color:#b9c0cc}
+  .h2-op-t{font-family:var(--fx);font-size:17px;letter-spacing:.5px;color:var(--gold-2);margin:6px 0 2px}
+  .h2-op-d{font-size:11.5px;color:#b3aea0}
   .h2-op-edit{position:absolute;bottom:9px;right:9px}
-  .h2-op-add{cursor:pointer;font:inherit;font-size:13px;font-weight:700;color:var(--gold);background:transparent;border-style:dashed;animation:none;transition:.15s}
+  .h2-op-add{cursor:pointer;font:inherit;font-size:13px;font-weight:700;color:var(--gold);background:transparent;border-style:dashed;transition:.15s}
   .h2-op-add:hover{background:var(--gold-soft)}
-  .h2-editor{margin:0 0 14px;background:var(--card);border:1px solid var(--accent);border-radius:12px;padding:14px 16px;animation:dashIn .25s ease both}
+  .h2-editor{margin:0 0 12px;background:var(--card);border:1px solid var(--accent);border-radius:12px;padding:14px 16px;animation:dashIn .25s ease both}
   .h2-editor b{font-size:13px}
   .he-hint{font-size:11px;color:var(--muted);margin-left:8px}
   .he-row{display:flex;gap:8px;flex-wrap:wrap;margin:11px 0}
   .he-row select,.he-row input{font:inherit;font-size:13px;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--panel-2);color:var(--ink)}
   .he-row input[type=text]{flex:1;min-width:180px}
   .he-act{display:flex;gap:8px;justify-content:flex-end}
-  /* Barre de période sous le hero */
-  #dashSub .filters{margin-top:0;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:11px 16px}
-  /* Cartes-stats */
-  .dash-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin-bottom:14px}
-  .dk{position:relative;overflow:hidden;border:1px solid var(--gold-line);border-radius:13px;padding:14px 16px;
-    background:linear-gradient(180deg,rgba(229,185,92,.05),rgba(255,255,255,.006));transition:.18s}
-  .dk:hover{transform:translateY(-4px);border-color:var(--gold);box-shadow:0 14px 30px -16px rgba(229,185,92,.5)}
-  .dk-top{display:flex;align-items:center;gap:9px;margin-bottom:9px}
-  .dk-ic{width:30px;height:30px;border-radius:8px;background:var(--gold-soft);border:1px solid var(--gold-line);display:grid;place-items:center;color:var(--gold);flex:0 0 auto}
-  .dk-ic svg{width:16px;height:16px}
-  .dk-l{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--ink-2)}
-  .dk-v{font-family:var(--fx);font-size:29px;letter-spacing:.5px;color:#fff;line-height:1;font-variant-numeric:tabular-nums}
-  .dk.gold{background:linear-gradient(165deg,rgba(229,185,92,.16),rgba(229,185,92,.03))}
-  .dk.gold .dk-v{color:var(--gold-2)}
-  .dk-s{font-size:11px;color:var(--muted);margin-top:4px}
-  .dk-t{display:inline-flex;align-items:center;gap:2px;font-weight:700;font-size:10.5px;padding:1px 7px;border-radius:20px;margin-left:5px}
-  .dk-t.up{color:var(--good);background:rgba(76,192,119,.14)}
-  .dk-t.down{color:var(--bad);background:rgba(232,98,107,.14)}
-  .dk-t.eq{color:var(--muted)}
-  /* Évolution + à la une + description */
-  .dash-mid{margin-bottom:14px}
-  #viewClan .card{background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--line)}
-  .sp-star{color:var(--gold-2);text-shadow:0 0 7px rgba(232,183,58,.65);display:inline-block;animation:starPulse 2.2s ease-in-out infinite}
-  .sp-row{display:flex;align-items:center;gap:13px;padding:12px 0;border-top:1px solid var(--line)}
-  .sp-row:first-of-type{border-top:0}
-  .sp-ic{width:42px;height:42px;flex:0 0 auto;display:grid;place-items:center;font-size:20px;background:var(--raised);border:1px solid var(--line);border-radius:11px}
-  .sp-tx{flex:1;min-width:0}
-  .sp-l{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--ink-2)}
-  .sp-v{font-size:15px;font-weight:600;margin-top:2px}
-  .sp-side{font-size:11.5px;color:var(--muted);flex:0 0 auto;text-align:right}
-  .dash-desc{margin-bottom:16px}
-  .dash-desc .dd-t{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--ink-2);margin-bottom:6px}
-  @media (max-width:820px){.hero2{flex-wrap:wrap}.h2-op{width:100%;max-width:none}}
-  @media (prefers-reduced-motion:reduce){.dash-anim,.h2-op,.h2-star,.sp-star,.h2-editor{animation:none}}
+  #dashSub .filters{margin-top:0;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:10px 15px}
+
+  /* ============ Dashboard v2 (composants, scopés #viewClan) ============ */
+  #viewClan .d2card{background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--line);border-radius:13px}
+  #viewClan .d2top3{display:grid;grid-template-columns:1.15fr 1.25fr 1fr;gap:12px;margin-top:12px}
+  #viewClan .d2mini4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:12px}
+  #viewClan .d2off5{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+  #viewClan .d2two{display:grid;grid-template-columns:1.7fr 1fr;gap:16px;margin-top:16px}
+  #viewClan .d2sect{display:flex;align-items:center;gap:9px;margin:20px 2px 12px;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:var(--ink-2);font-weight:700}
+  #viewClan .d2sect .si{width:22px;height:22px;border-radius:6px;background:var(--gold-soft);border:1px solid var(--gold-line);display:grid;place-items:center;color:var(--gold)}
+  #viewClan .d2sect .si svg{width:13px;height:13px}
+  #viewClan .kpi-h{display:flex;align-items:center;gap:8px;padding:12px 15px 0;font-size:10.5px;letter-spacing:.8px;text-transform:uppercase;color:var(--ink-2);font-weight:700}
+  #viewClan .kpi-h .hi{color:var(--gold)} #viewClan .kpi-h svg{width:14px;height:14px;color:var(--gold)}
+  #viewClan .health{padding:6px 15px 15px;display:flex;gap:16px;align-items:flex-end}
+  #viewClan .big{font-family:var(--fx);font-size:42px;line-height:1;color:var(--gold-2)}
+  #viewClan .big-s{font-size:11.5px;color:var(--ink-2);margin-top:5px}
+  #viewClan .streak{display:inline-block;margin-top:8px;font-size:10.5px;font-weight:700;border-radius:20px;padding:2px 9px}
+  #viewClan .streak.bad{color:var(--bad);background:var(--red-soft)} #viewClan .streak.good{color:var(--good2);background:rgba(76,192,119,.14)}
+  #viewClan .hbars{flex:1;display:flex;align-items:flex-end;gap:5px;height:64px;padding-bottom:2px}
+  #viewClan .hcol{flex:1;display:flex;flex-direction:column;gap:3px;align-items:center}
+  #viewClan .hbar{width:100%;border-radius:3px 3px 2px 2px;min-height:8px}
+  #viewClan .hbar.w{background:linear-gradient(180deg,var(--good2),var(--good))} #viewClan .hbar.l{background:linear-gradient(180deg,#e8626b,#b5424a)}
+  #viewClan .hbar-x{font-size:9px;color:var(--muted)}
+  #viewClan .lb{padding:6px 15px 15px;display:flex;gap:13px}
+  #viewClan .lb-tx{flex:1;min-width:0}
+  #viewClan .lb-res{font-family:var(--fx);font-size:19px}
+  #viewClan .lb-sub{font-size:11.5px;color:var(--ink-2);margin-top:2px}
+  #viewClan .lb-map{width:104px;height:66px;flex:0 0 auto;border-radius:9px;overflow:hidden;border:1px solid var(--line);position:relative;background:#12140f}
+  #viewClan .lb-map img{width:100%;height:100%;object-fit:cover;display:block}
+  #viewClan .lb-map .mn{position:absolute;left:0;right:0;bottom:0;font-size:9.5px;color:#eee;background:linear-gradient(0deg,rgba(0,0,0,.75),transparent);padding:8px 6px 3px;text-align:center}
+  #viewClan .lb-mvp{margin:0 15px 14px;border-top:1px solid var(--line);padding-top:10px;display:flex;align-items:center;gap:11px}
+  #viewClan .lb-mvp .ig{width:34px;height:34px;border-radius:9px;background:var(--raised);border:1px solid var(--line);display:grid;place-items:center;font-size:17px}
+  #viewClan .lb-mvp .tl{font-size:9.5px;letter-spacing:.7px;text-transform:uppercase;color:var(--muted);font-weight:700}
+  #viewClan .lb-mvp .tv{font-size:13.5px;font-weight:600;margin-top:1px}
+  #viewClan .srpill{font-family:var(--fx);font-size:12px;padding:0 7px;border-radius:6px;letter-spacing:.4px;color:#141310}
+  #viewClan .wg{padding:6px 15px 15px;display:flex;gap:16px}
+  #viewClan .wg-rank{font-family:var(--fx);font-size:34px;line-height:1;color:#fff}
+  #viewClan .wg-d{font-size:10.5px;font-weight:700;margin-top:4px}
+  #viewClan .wg-elo{font-size:11.5px;color:var(--ink-2);margin-top:6px} #viewClan .wg-elo b{color:var(--ink);font-family:var(--fx);font-size:14px}
+  #viewClan .wg-tiers{flex:1;display:flex;flex-direction:column;gap:6px;justify-content:center}
+  #viewClan .wg-tier{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:var(--ink-2)}
+  #viewClan .wg-tier b{color:var(--ink);font-family:var(--fx);font-size:13px}
+  #viewClan .up{color:var(--good)} #viewClan .dn{color:var(--bad)}
+  #viewClan .mini{padding:13px 15px;border:1px solid var(--line);border-radius:12px;background:var(--panel);transition:.16s}
+  #viewClan .mini:hover{transform:translateY(-3px);border-color:var(--gold-line)}
+  #viewClan .mini .l{font-size:10px;letter-spacing:.7px;text-transform:uppercase;color:var(--ink-2);font-weight:700}
+  #viewClan .mini .v{font-family:var(--fx);font-size:24px;color:#fff;margin-top:6px}
+  #viewClan .mini.hl{border-color:var(--gold-line);background:linear-gradient(165deg,rgba(229,185,92,.12),rgba(229,185,92,.02))}
+  #viewClan .mini.hl .v{color:var(--gold-2)}
+  #viewClan .mini .s{font-size:10.5px;color:var(--muted);margin-top:2px}
+  #viewClan .off{padding:12px 14px;border:1px solid var(--line);border-radius:11px;background:var(--panel-2)}
+  #viewClan .off-h{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+  #viewClan .off-ic{width:24px;height:24px;flex:0 0 auto;border-radius:6px;background:var(--gold-soft);border:1px solid var(--gold-line);display:grid;place-items:center;color:var(--gold)}
+  #viewClan .off-ic svg{width:13px;height:13px}
+  #viewClan .off .l{font-size:9.5px;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);font-weight:700}
+  #viewClan .off .v{font-family:var(--fx);font-size:20px;color:var(--ink);margin-top:2px}
+  #viewClan .off .r{font-size:10.5px;color:var(--ink-2);margin-top:3px}
+  #viewClan .d2ttl{display:flex;align-items:center;justify-content:space-between;padding:13px 16px 6px}
+  #viewClan .d2ttl h3{font-size:13px;letter-spacing:.5px;margin:0;font-family:var(--fx);font-weight:600} #viewClan .d2ttl .hint{font-size:11px;color:var(--muted)}
+  #viewClan .d2tblwrap{overflow-x:auto;padding:2px 8px 8px}
+  #viewClan table.pl{width:100%;border-collapse:collapse;min-width:440px}
+  #viewClan table.pl th{text-align:right;font-size:10px;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);font-weight:700;padding:7px 12px;border-bottom:1px solid var(--line);cursor:pointer;white-space:nowrap}
+  #viewClan table.pl th.sorted{color:var(--gold-2)}
+  #viewClan table.pl th:nth-child(-n+2),#viewClan table.pl td:nth-child(-n+2){text-align:left}
+  #viewClan table.pl td{padding:8px 12px;text-align:right;border-bottom:1px solid var(--line-2);font-size:12.5px;font-variant-numeric:tabular-nums}
+  #viewClan table.pl tr:hover td{background:rgba(255,255,255,.015)}
+  #viewClan .rk{color:var(--muted);width:20px}
+  #viewClan .av{width:24px;height:24px;border-radius:50%;display:inline-grid;place-items:center;font-size:11px;font-weight:600;background:var(--raised);color:var(--ink-2);margin-right:8px}
+  #viewClan .pn{font-weight:600;color:var(--ink)} #viewClan .pr{font-family:var(--fx);font-size:13px}
+  #viewClan .pos{color:var(--good2)} #viewClan .neg{color:var(--bad)}
+  #viewClan .toggle{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  #viewClan .toggle button{background:transparent;border:0;color:var(--ink-2);font:inherit;font-size:11px;font-weight:600;padding:5px 10px;cursor:pointer}
+  #viewClan .toggle button.on{background:var(--or-soft);color:var(--or)}
+  #viewClan .t5{padding:4px 16px 14px;display:flex;flex-direction:column;gap:9px}
+  #viewClan .t5row{display:flex;align-items:center;gap:10px;font-size:12px}
+  #viewClan .t5row .nm{width:96px;flex:0 0 auto;color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #viewClan .t5row .tk{flex:1;height:8px;border-radius:5px;background:var(--raised);overflow:hidden}
+  #viewClan .t5row .fl{height:100%;border-radius:5px;background:linear-gradient(90deg,#e0904a,#f0b673)}
+  #viewClan .t5row .vv{width:44px;text-align:right;font-family:var(--fx);color:var(--ink)}
+  #viewClan .mem-h{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 16px 8px;flex-wrap:wrap}
+  #viewClan .mem-h h3{font-size:13px;margin:0;font-family:var(--fx);font-weight:600} #viewClan .mem-h .cnt{color:var(--muted);font-weight:400;font-size:12px;margin-left:6px}
+  #viewClan table.mem{width:100%;border-collapse:collapse}
+  #viewClan table.mem th{text-align:right;font-size:10px;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);font-weight:700;padding:7px 16px;border-bottom:1px solid var(--line)}
+  #viewClan table.mem th:nth-child(-n+2),#viewClan table.mem td:nth-child(-n+2){text-align:left}
+  #viewClan table.mem td{padding:9px 16px;text-align:right;border-bottom:1px solid var(--line-2);font-size:12.5px;font-variant-numeric:tabular-nums}
+  #viewClan .grade{font-size:11.5px} #viewClan .grade.g-cmd{color:var(--gold-2)} #viewClan .grade.g-off{color:#c4bda9} #viewClan .grade.g-sol{color:var(--ink-2)}
+  #viewClan .more{text-align:center;padding:12px;color:var(--gold-2);font-weight:600;font-size:12.5px;cursor:pointer}
+  #viewClan .more:hover{background:rgba(255,255,255,.02)}
+  #viewClan .desc2{margin-top:12px;padding:13px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+  #viewClan .desc2 .dt{font-size:12px;color:var(--ink-2)} #viewClan .desc2 .dt b{color:var(--ink)}
+  #viewClan .desc2 .exp{border:1px solid var(--line);background:transparent;color:var(--gold-2);font:inherit;font-size:12px;font-weight:600;padding:6px 13px;border-radius:8px;cursor:pointer;white-space:nowrap}
+  #viewClan .desc2-body{padding:0 16px 16px;font-size:13px;color:#c2cdd9;line-height:1.6}
+  @media (max-width:900px){.hero2{flex-wrap:wrap}.h2-op{width:100%;max-width:none}
+    #viewClan .d2top3,#viewClan .d2mini4,#viewClan .d2off5,#viewClan .d2two{grid-template-columns:1fr}}
+  @media (prefers-reduced-motion:reduce){.dash-anim,.h2-star{animation:none}}
 
   /* Loadouts — cartes premium */
   .lo-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px}
@@ -880,34 +943,33 @@
   <div id="viewClan" class="dashx">
   <div id="dashHero"></div>
   <div id="dashSub"></div>
-  <section class="dash-kpis" id="dashKpis"></section>
-  <div class="grid2 dash-mid">
-    <div class="card dash-anim" style="--di:5"><h2>Évolution — % de victoires <span class="hint">par jour</span></h2>
-      <svg class="trend" id="dashEvo" preserveAspectRatio="none"></svg></div>
-    <div class="card dash-anim" id="dashSpot" style="--di:6"></div>
+
+  <div class="d2top3">
+    <div class="d2card dash-anim" id="dashHealth" style="--di:1"></div>
+    <div class="d2card dash-anim" id="dashLast" style="--di:2"></div>
+    <div class="d2card dash-anim" id="dashWg" style="--di:3"></div>
   </div>
+
+  <section class="d2mini4" id="dashMini"></section>
+
+  <div class="d2sect"><span class="si"><svg class="ic"><use href="#i-shield"/></svg></span>Niveau officiel Wargaming</div>
+  <section class="d2off5" id="dashOff"></section>
+
+  <div class="d2two">
+    <div class="d2card dash-anim" style="--di:2">
+      <div class="d2ttl"><h3>Classement des joueurs</h3><span class="hint">données mod · clique pour trier</span></div>
+      <div class="d2tblwrap"><table class="pl" id="tbl"><thead><tr id="thead"></tr></thead><tbody id="tbody"></tbody></table></div>
+    </div>
+    <div class="d2card dash-anim" id="dashTop5" style="--di:3"></div>
+  </div>
+
+  <div class="d2card dash-anim" style="margin-top:16px;--di:3">
+    <div class="mem-h"><h3>Membres du clan <span class="cnt" id="memCount"></span></h3><span style="font-size:11px;color:var(--muted)">triés par SR</span></div>
+    <div class="d2tblwrap" style="padding-bottom:0" id="members"></div>
+    <div class="more hidden" id="memMore">Afficher tous les membres ↓</div>
+  </div>
+
   <div id="dashDesc"></div>
-  <div id="clanInfo"></div>
-  <div class="sec-h">Détail par joueur</div>
-  <p class="sec-desc"><b>Uniquement les parties Bastion</b> jouées par les membres <b>ayant installé le mod Clan Plus</b> — vos vraies parties, enregistrées automatiquement (à distinguer des chiffres officiels ci-dessus).</p>
-
-  <div class="grid2">
-    <div class="card"><h2>Dégâts moyens par joueur <span class="hint">top 10</span></h2>
-      <div class="bars" id="barsDmg"></div></div>
-    <div class="card"><h2>Frags moyens par joueur <span class="hint">top 10</span></h2>
-      <div class="bars" id="barsKills"></div></div>
-  </div>
-
-  <div class="tablecard">
-    <h2 style="font-size:14px;margin:0 0 6px;font-weight:600">Classement des joueurs</h2>
-    <p class="sec-desc" style="margin:0 0 14px">Le <b>SR — Synergy Rating</b> reprend la mécanique du <b>WNX/WN8</b> (valeurs attendues → ratios → paliers) mais orientée <b>jeu d'équipe</b> : calculé <b>pour chaque bataille</b>, le score global est la <b>moyenne des batailles</b>. La référence est <b>globale</b> : la moyenne de <b>tous les joueurs enregistrés</b> (ton clan + tous les adversaires rencontrés). <b>≈ 1500 = niveau global moyen</b> ; au-dessus, le clan/joueur est meilleur que la moyenne. Clique une colonne pour trier.</p>
-    <table id="tbl"><thead><tr id="thead"></tr></thead><tbody id="tbody"></tbody></table>
-  </div>
-
-  <div class="card" style="margin-top:16px">
-    <h2>Membres du clan <span class="hint" id="memCount"></span></h2>
-    <div id="members" class="members"></div>
-  </div>
   </div><!-- /viewClan -->
 
   <div id="viewBattles" class="hidden">
@@ -1106,7 +1168,7 @@ async function openApp(){
   const clan = res.j.clan||{};
   document.getElementById("clanTitle").textContent = clan.tag ? ("["+clan.tag+"] "+(clan.name||"")) : "Ton clan";
   document.getElementById("clanSub").textContent = "Statistiques Bastion";
-  document.getElementById("who").innerHTML = "Connecté&nbsp;<b>"+esc(res.j.me?.nickname||"")+"</b>";
+  document.getElementById("who").innerHTML = '<span class="odot on"></span>Connecté&nbsp;<b>'+esc(res.j.me?.nickname||"")+"</b>";
   document.getElementById("subbar").classList.remove("hidden");
   document.getElementById("viewClan").classList.remove("hidden");
   placeSubbar("clan");
@@ -1142,11 +1204,14 @@ function ratCard(label,obj,meaning,isPct){
 function renderClanInfo(){
   renderDashHero();
   const de=document.getElementById("dashDesc");
-  de.innerHTML=(CLANINFO&&CLANINFO.description)
-    ? `<div class="clan-desc dash-desc dash-anim" style="--di:7"><div class="dd-t">📜 Description du clan</div>${fmtDesc(CLANINFO.description)}</div>` : "";
-  const el=document.getElementById("clanInfo");
-  if(!CLANRATINGS){ el.innerHTML=""; return; }
-  el.innerHTML=clanBlockHTML(null, CLANRATINGS);
+  const desc=CLANINFO&&CLANINFO.description;
+  if(!desc){ de.innerHTML=""; return; }
+  de.innerHTML=`<div class="d2card desc2 dash-anim" style="--di:5">
+    <div class="dt"><b>Description du clan &amp; recrutement</b>${CLANINFO.motto?` — « ${esc(CLANINFO.motto)} »`:""}</div>
+    <button class="exp" id="descExp">Déplier ▾</button></div>
+  <div class="d2card hidden" id="descBody" style="margin-top:8px"><div class="desc2-body">${fmtDesc(desc)}</div></div>`;
+  const b=document.getElementById("descExp");
+  if(b) b.onclick=()=>{ const body=document.getElementById("descBody"); const nowHidden=body.classList.toggle("hidden"); b.textContent=nowHidden?"Déplier ▾":"Replier ▴"; };
 }
 function clanBlockHTML(info, rt){
   let h="";
@@ -1419,7 +1484,107 @@ function renderDashSpot(){
                             : row("🔥","Série en cours","—");
   el.innerHTML=h;
 }
-function renderDashboard(){ renderDashKpis(); renderDashEvo(); renderDashSpot(); }
+/* ============ Rendu Dashboard v2 (noir/or dense) ============ */
+function srColor(v){ return ceTier(v).c; }
+function dashBattleList(){
+  const bat={};
+  RAW.forEach(r=>{ if(!r.isMember||!r.ts) return;
+    const b=bat[r.battleId]=bat[r.battleId]||{id:r.battleId,ts:0,result:r.result,map:r.mapName};
+    if(r.ts>b.ts) b.ts=r.ts; });
+  return Object.values(bat).sort((a,b)=>b.ts-a.ts);
+}
+function dashMapThumb(name){ const k=mapKey(name); return k?`<img src="maps/${k}.jpg" alt="" onerror="this.style.display='none'">`:""; }
+
+function renderHealth(){
+  const el=document.getElementById("dashHealth"); if(!el) return;
+  const cur=dashStats(dashFilterRows(state.days,0));
+  const list=dashBattleList().filter(b=>b.result!=null&&b.result!==-1);
+  const last10=list.slice(0,10).reverse();
+  let streak=0,kind=null;
+  for(const b of list){ const w=b.result===1; if(kind===null){kind=w;streak=1;} else if(w===kind)streak++; else break; }
+  const bars=last10.map((b,i)=>{ const w=b.result===1;
+    return `<div class="hcol"><div class="hbar ${w?'w':'l'}" style="height:${w?54:30}px"></div><div class="hbar-x">${last10.length-i}</div></div>`; }).join("");
+  const streakTxt=(kind!==null&&streak>0)?`<span class="streak ${kind?'good':'bad'}">${kind?'▲':'▼'} ${streak} ${kind?'victoire':'défaite'}${streak>1?'s':''} d'affilée</span>`:"";
+  el.innerHTML=`<div class="kpi-h"><svg class="ic"><use href="#i-heart"/></svg>Santé du clan <span class="hi">— Bastion</span></div>
+    <div class="health"><div class="health-l">
+      <div class="big">${(cur.winrate*100).toFixed(0)} %</div>
+      <div class="big-s">de victoires · ${cur.battles} bataille${cur.battles>1?'s':''}<br>${cur.wins} V – ${cur.tot-cur.wins} D</div>
+      ${streakTxt}
+    </div><div class="hbars">${bars||'<span style="color:var(--muted);font-size:12px">Pas de batailles</span>'}</div></div>`;
+}
+function renderLast(){
+  const el=document.getElementById("dashLast"); if(!el) return;
+  const last=dashBattleList()[0];
+  const now=Date.now()/1000;
+  const week=RAW.filter(r=>r.isMember&&r.ts&&(now-r.ts)<=7*86400);
+  const per={}; week.forEach(r=>{ const p=per[r.accId]=per[r.accId]||{name:r.name,n:0,s:0}; p.n++; p.s+=ceForRow(r,CE_REF); });
+  const mvp=Object.values(per).filter(p=>p.n>=2).map(p=>({name:p.name,ce:Math.round(p.s/p.n),n:p.n})).sort((a,b)=>b.ce-a.ce)[0];
+  let lb;
+  if(last){
+    const foeTag=(typeof BATTLE_ENEMY!=="undefined"&&BATTLE_ENEMY[last.id])||"?";
+    const d=new Date(last.ts*1000).toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit"});
+    const res=last.result===1?'<span class="pos">Victoire</span>':(last.result===0?'<span class="neg">Défaite</span>':'Égalité');
+    const mapName=cleanMap(last.map||"");
+    lb=`<div class="lb"><div class="lb-tx"><div class="lb-res">${res} vs [${esc(foeTag)}]</div><div class="lb-sub">${esc(mapName)} · ${d}</div></div>
+      <div class="lb-map">${dashMapThumb(last.map)}<span class="mn">${esc(mapName)}</span></div></div>`;
+  } else lb=`<div class="lb"><div class="lb-tx"><div class="lb-res" style="color:var(--muted)">—</div><div class="lb-sub">Aucune bataille enregistrée</div></div></div>`;
+  const mvpH=mvp?`<div class="lb-mvp"><div class="ig">👑</div><div style="flex:1"><div class="tl">MVP de la semaine</div><div class="tv">${esc(shortName(mvp.name))} <span class="srpill" style="background:${srColor(mvp.ce)}">${fmt(mvp.ce)} SR</span></div></div><div style="font-size:11px;color:var(--muted)">${mvp.n} bat.</div></div>`
+    :`<div class="lb-mvp"><div class="ig">👑</div><div style="flex:1"><div class="tl">MVP de la semaine</div><div class="tv" style="color:var(--muted);font-size:12.5px">pas assez de batailles cette semaine</div></div></div>`;
+  el.innerHTML=`<div class="kpi-h"><svg class="ic"><use href="#i-swords"/></svg>Dernière bataille</div>${lb}${mvpH}`;
+}
+function ratVal(o,pct){ if(!o||o.value==null) return "—"; return pct?(fmt(o.value,2)+" %"):fmt(o.value); }
+function ratRank(o){ if(!o||o.rank==null) return ""; let d=""; if(o.rank_delta){const up=o.rank_delta>0; d=` <span class="${up?'up':'dn'}">${up?'▲':'▼'}${Math.abs(o.rank_delta)}</span>`;} return "Rang "+fmt(o.rank)+d; }
+function renderWg(){
+  const el=document.getElementById("dashWg"); if(!el) return;
+  const rt=CLANRATINGS||{}; const fb=rt.fb_elo_rating||{};
+  const rkD=fb.rank_delta||0;
+  const tier=(o,lbl)=>{ if(!o||o.value==null) return ""; let d=""; if(o.rank_delta){const up=o.rank_delta>0;d=` <span class="${up?'up':'dn'}">${up?'▲':'▼'}${Math.abs(o.rank_delta)}</span>`;} return `<div class="wg-tier"><span>${lbl}</span><span><b>${fmt(o.value)}</b>${d}</span></div>`; };
+  el.innerHTML=`<div class="kpi-h"><svg class="ic"><use href="#i-award"/></svg>Classement Wargaming</div>
+    <div class="wg"><div class="wg-l">
+      <div class="wg-rank">${fb.rank?"#"+fmt(fb.rank):"—"}</div>
+      ${rkD?`<div class="wg-d ${rkD>0?'up':'dn'}">${rkD>0?'▲':'▼'} ${Math.abs(rkD)} place${Math.abs(rkD)>1?'s':''}</div>`:""}
+      <div class="wg-elo">Elo bastion <b>${fb.value?fmt(fb.value):"—"}</b></div>
+    </div><div class="wg-tiers">${tier(rt.fb_elo_rating_10,"Bastion tier 10")}${tier(rt.fb_elo_rating_8,"Bastion tier 8")}${tier(rt.fb_elo_rating_6,"Bastion tier 6")}</div></div>`;
+}
+function renderMini(){
+  const el=document.getElementById("dashMini"); if(!el) return;
+  const rows=dashFilterRows(state.days,0);
+  const cur=dashStats(rows);
+  const frags=rows.length? rows.reduce((s,r)=>s+(r.kills||0),0)/rows.length : 0;
+  const cards=[
+    {l:"SR moyen du clan",v:fmt(cur.sr),s:"réf. globale ≈ 1500",hl:true},
+    {l:"Dégâts moyens / joueur",v:fmt(cur.dmg),s:"par partie"},
+    {l:"Batailles enregistrées",v:fmt(cur.battles),s:state.days?("sur "+state.days+" j"):"via le mod"},
+    {l:"Frags moyens / partie",v:fmt(frags,2),s:"par joueur"},
+  ];
+  el.innerHTML=cards.map((c,i)=>`<div class="mini ${c.hl?'hl':''} dash-anim" style="--di:${i+1}"><div class="l">${c.l}</div><div class="v">${c.v}</div><div class="s">${c.s}</div></div>`).join("");
+}
+function renderOfficialCards(){
+  const el=document.getElementById("dashOff"); if(!el) return;
+  const rt=CLANRATINGS;
+  if(!rt){ el.innerHTML='<div class="off" style="grid-column:1/-1;color:var(--muted)">Chiffres officiels indisponibles</div>'; return; }
+  const cards=[
+    {ic:"i-fort",l:"Forteresse",o:rt.rating_fort},
+    {ic:"i-globe",l:"Carte globale",o:rt.gm_elo_rating},
+    {ic:"i-bolt",l:"Efficacité",o:rt.efficiency},
+    {ic:"i-flag",l:"% vict. moyen",o:rt.wins_ratio_avg,pct:true},
+    {ic:"i-award",l:"Niveau joueurs",o:rt.global_rating_avg},
+  ];
+  el.innerHTML=cards.map((c,i)=>`<div class="off dash-anim" style="--di:${i+2}"><div class="off-h"><span class="off-ic"><svg class="ic"><use href="#${c.ic}"/></svg></span><span class="l">${c.l}</span></div><div class="v">${ratVal(c.o,c.pct)}</div><div class="r">${ratRank(c.o)}</div></div>`).join("");
+}
+let TOP5_MODE="dmg";
+function renderTop5(){
+  const el=document.getElementById("dashTop5"); if(!el) return;
+  const agg=aggregate(dashFilterRows(state.days,0));
+  const key=TOP5_MODE, f=key==="kills"?(v=>fmt(v,2)):(v=>fmt(v));
+  const top=agg.slice().sort((a,b)=>b[key]-a[key]).slice(0,5);
+  const mx=Math.max(1,...top.map(p=>p[key]));
+  el.innerHTML=`<div class="d2ttl"><h3>Top 5 — ${key==="kills"?"Frags moyens":"Dégâts moyens"}</h3>
+    <span class="toggle"><button data-m="dmg" class="${key==='dmg'?'on':''}">Dégâts</button><button data-m="kills" class="${key==='kills'?'on':''}">Frags</button></span></div>
+    <div class="t5">${top.map(p=>`<div class="t5row"><span class="nm">${esc(shortName(p.name))}</span><span class="tk"><span class="fl" style="width:${Math.round(p[key]/mx*100)}%"></span></span><span class="vv">${f(p[key])}</span></div>`).join("")||'<div style="color:var(--muted);font-size:12px;padding:8px 0">Aucune donnée</div>'}</div>`;
+  el.querySelectorAll(".toggle button").forEach(b=>b.onclick=()=>{ TOP5_MODE=b.dataset.m; renderTop5(); });
+}
+function renderDashboard(){ renderHealth(); renderLast(); renderWg(); renderMini(); renderOfficialCards(); renderTop5(); }
 
 let SELP=null;   // account_id du joueur sélectionné dans "Ma progression"
 function populatePlayerSel(){
@@ -1808,21 +1973,38 @@ async function openSearchedClan(clanId){
   sc.innerHTML=h;
 }
 
+let MEM_EXPANDED=false;
 function renderMembers(){
-  const el=document.getElementById("members");
-  const list=(MEMBERS||[]).slice().sort((a,b)=>{
-    const ra=ROLE_ORDER[normRole(a.wg_role)]!=null?ROLE_ORDER[normRole(a.wg_role)]:9;
-    const rb=ROLE_ORDER[normRole(b.wg_role)]!=null?ROLE_ORDER[normRole(b.wg_role)]:9;
-    if(ra!==rb) return ra-rb;
-    return String(a.nickname||"").localeCompare(String(b.nickname||""));
+  const el=document.getElementById("members"); if(!el) return;
+  const stat={};
+  RAW.forEach(r=>{ if(!r.isMember||r.accId==null) return;
+    const s=stat[r.accId]=stat[r.accId]||{s:0,n:0,ts:0,bset:new Set()};
+    s.s+=ceForRow(r,CE_REF); s.n++; s.bset.add(r.battleId); if(r.ts>s.ts)s.ts=r.ts; });
+  const list=(MEMBERS||[]).map(m=>{
+    const st=stat[Number(m.account_id)];
+    const ord=ROLE_ORDER[normRole(m.wg_role)]!=null?ROLE_ORDER[normRole(m.wg_role)]:9;
+    return { name:m.nickname||"?", role:ROLE_FR[normRole(m.wg_role)]||m.wg_role||"", ord,
+      sr: st?Math.round(st.s/st.n):null, bat: st?st.bset.size:0, ts: st?st.ts:0,
+      me:(ME_ID!=null && Number(m.account_id)===Number(ME_ID)) };
+  }).sort((a,b)=>{
+    if((b.sr!=null)-(a.sr!=null)) return (b.sr!=null)-(a.sr!=null);
+    if(a.sr!=null&&b.sr!=null&&a.sr!==b.sr) return b.sr-a.sr;
+    if(a.ord!==b.ord) return a.ord-b.ord;
+    return String(a.name).localeCompare(String(b.name));
   });
-  document.getElementById("memCount").textContent=list.length?("("+list.length+")"):"";
-  if(!list.length){ el.innerHTML='<div class="empty">Roster pas encore importé — il se remplit à la connexion d\'un membre.</div>'; return; }
-  el.innerHTML=list.map(m=>{
-    const role=ROLE_FR[normRole(m.wg_role)]||m.wg_role||"";
-    const me=(ME_ID!=null && Number(m.account_id)===Number(ME_ID))?" me":"";
-    return `<div class="mem${me}"><span class="mn">${esc(m.nickname||"?")}</span><span class="mr">${esc(role)}</span></div>`;
-  }).join("");
+  const mc=document.getElementById("memCount"); if(mc) mc.textContent=list.length||"";
+  if(!list.length){ el.innerHTML='<div style="color:var(--muted);padding:16px">Roster pas encore importé — il se remplit à la connexion d\'un membre.</div>'; return; }
+  const gCls=o=>o<=1?"g-cmd":o<=3?"g-off":"g-sol";
+  const shown=MEM_EXPANDED?list:list.slice(0,12);
+  el.innerHTML=`<table class="mem"><thead><tr><th>Joueur</th><th>Grade</th><th>SR</th><th>Batailles</th><th>Vu le</th></tr></thead><tbody>`
+    +shown.map(m=>{
+      const av=`<span class="av">${esc(String(m.name)[0].toUpperCase())}</span>`;
+      const sr=m.sr!=null?`<span class="pr" style="color:${srColor(m.sr)}">${fmt(m.sr)}</span>`:'<span style="color:var(--muted)">—</span>';
+      const vu=m.ts?new Date(m.ts*1000).toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit"}):'<span style="color:var(--muted)">—</span>';
+      return `<tr${m.me?' style="background:rgba(229,185,92,.06)"':''}><td><span class="pn">${av}${esc(m.name)}</span></td><td><span class="grade ${gCls(m.ord)}">${esc(m.role)}</span></td><td>${sr}</td><td>${m.bat||'<span style="color:var(--muted)">—</span>'}</td><td style="color:var(--ink-2)">${vu}</td></tr>`;
+    }).join("")+`</tbody></table>`;
+  const more=document.getElementById("memMore");
+  if(more){ if(list.length>12){ more.classList.remove("hidden"); more.textContent=MEM_EXPANDED?"Réduire ▴":("Afficher les "+list.length+" membres ↓"); more.onclick=()=>{MEM_EXPANDED=!MEM_EXPANDED; renderMembers();}; } else more.classList.add("hidden"); }
 }
 
 let VEHMAP={}, MEMBERSET=new Set(), CLANTAG="", BATTLE_ENEMY={};
@@ -2047,13 +2229,12 @@ function render(){
   const agg=aggregate(rows);
   const battleIds=new Set(rows.map(r=>r.battleId));
   renderDashboard();
-  renderBars("barsDmg",agg.slice().sort((a,b)=>b.dmg-a.dmg).slice(0,10),"dmg",v=>fmt(v));
-  renderBars("barsKills",agg.slice().sort((a,b)=>b.kills-a.kills).slice(0,10),"kills",v=>fmt(v,2));
   renderTable(agg);
   const fc=document.getElementById("footCount"); if(fc) fc.textContent=rows.length+" lignes · "+battleIds.size+" batailles";
 }
 function renderBars(id,list,key,f){
   const el=document.getElementById(id);
+  if(!el) return;
   if(!list.length){ el.innerHTML='<div class="empty">Aucune donnée</div>'; return; }
   const max=Math.max(...list.map(x=>x[key]))||1;
   el.innerHTML=list.map(x=>{ const w=Math.max(3,x[key]/max*100);
@@ -2099,21 +2280,31 @@ const COLS=[
   {k:"survrate",t:"% Survie",f:v=>pct(v)},
   {k:"xp",t:"XP moy",f:v=>fmt(v)},
 ];
+const COLS2=[
+  {k:"ce",t:"SR",f:v=>`<span class="pr" style="color:${srColor(v)}">${fmt(v)}</span>`},
+  {k:"battles",t:"Bat.",f:v=>fmt(v)},
+  {k:"winrate",t:"% vic.",f:v=>pct(v),cls:v=>v>=0.5?"pos":"neg"},
+  {k:"dmg",t:"Dég. moy",f:v=>fmt(v)},
+  {k:"kills",t:"Frags",f:v=>fmt(v,2)},
+];
 function renderTable(agg){
-  const thead=document.getElementById("thead");
-  thead.innerHTML=COLS.map(c=>{ const on=c.k===state.sortKey; const arw=on?(state.sortDir<0?" ▼":" ▲"):"";
-    return `<th data-k="${c.k}" class="${on?'sorted':''}">${c.t}<span class="arw">${arw}</span></th>`; }).join("");
-  thead.querySelectorAll("th").forEach(th=>th.onclick=()=>{
+  const thead=document.getElementById("thead"); if(!thead) return;
+  if(!COLS2.some(c=>c.k===state.sortKey)) state.sortKey="ce";
+  thead.innerHTML=`<th class="rk">#</th><th>Joueur</th>`+COLS2.map(c=>{ const on=c.k===state.sortKey; const arw=on?(state.sortDir<0?" ▼":" ▲"):"";
+    return `<th data-k="${c.k}" class="${on?'sorted':''}">${c.t}${arw}</th>`; }).join("");
+  thead.querySelectorAll("th[data-k]").forEach(th=>th.onclick=()=>{
     const k=th.dataset.k;
-    if(state.sortKey===k) state.sortDir*=-1; else { state.sortKey=k; state.sortDir=(k==="name")?1:-1; }
+    if(state.sortKey===k) state.sortDir*=-1; else { state.sortKey=k; state.sortDir=-1; }
     render();
   });
-  const sorted=agg.slice().sort((a,b)=>{ let va=a[state.sortKey],vb=b[state.sortKey];
-    if(typeof va==="string") return state.sortDir*va.localeCompare(vb); return state.sortDir*(va-vb); });
+  const sorted=agg.slice().sort((a,b)=>state.sortDir*((a[state.sortKey]||0)-(b[state.sortKey]||0)));
   const tb=document.getElementById("tbody");
-  if(!sorted.length){ tb.innerHTML=`<tr><td colspan="${COLS.length}" class="empty">Aucun joueur</td></tr>`; return; }
-  tb.innerHTML=sorted.map((row,i)=>"<tr>"+COLS.map((c,ci)=>{ const v=row[c.k]; const cls=c.cls?c.cls(v):"";
-    const rank=(ci===0)?`<span class="rank">${i+1}</span>`:""; return `<td class="${cls}">${rank}${c.f(v)}</td>`; }).join("")+"</tr>").join("");
+  if(!sorted.length){ tb.innerHTML=`<tr><td colspan="7" style="color:var(--muted);text-align:center;padding:16px">Aucune bataille enregistrée pour cette période</td></tr>`; return; }
+  tb.innerHTML=sorted.map((row,i)=>{
+    const av=`<span class="av">${esc(String(row.name||'?')[0].toUpperCase())}</span>`;
+    return `<tr><td class="rk">${i+1}</td><td><span class="pn">${av}${esc(shortName(row.name))}</span></td>`
+      +COLS2.map(c=>{ const v=row[c.k]; return `<td class="${c.cls?c.cls(v):''}">${c.f(v)}</td>`; }).join("")+`</tr>`;
+  }).join("");
 }
 
 /* ============================================================
