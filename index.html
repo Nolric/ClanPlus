@@ -837,6 +837,89 @@
   .lo-popt img{max-width:54px;max-height:36px;object-fit:contain}
   .lo-popt span{color:var(--ink);text-align:center;line-height:1.1;max-height:24px;overflow:hidden}
   .lo-popt:hover{border-color:var(--accent);background:var(--accent-soft);transform:translateY(-2px) scale(1.03)}
+
+  /* ===== Loadouts — assistant étape par étape (thème noir/or) ===== */
+  .lo-wiz{--wz-bg:#101113;--wz-pan:#17181b;--wz-rai:#1f2124;--wz-gold:#e5b95c;--wz-ink:#ecebe8;--wz-mut:#8b9099;--wz-good:#4cc077;--wz-bd:#2b2d31;--wz-bdg:rgba(229,185,92,.34);
+    background:var(--wz-bg);border:1px solid var(--wz-bd);color:var(--wz-ink);padding:0;overflow:hidden}
+  .wz-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 20px;border-bottom:1px solid var(--wz-bd)}
+  .wz-htitle{font-size:15px;font-weight:800;color:var(--wz-gold);letter-spacing:.2px}
+  .wz-close{background:none;border:1px solid var(--wz-bd);color:var(--wz-mut);border-radius:8px;padding:6px 12px;font:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:.15s}
+  .wz-close:hover{border-color:#c9484a;color:#e46b6d}
+  .wz-steps{display:flex;align-items:center;justify-content:center;padding:16px 20px;background:var(--wz-pan);border-bottom:1px solid var(--wz-bd);flex-wrap:wrap}
+  .wz-step{display:flex;align-items:center;gap:9px;background:none;border:0;cursor:pointer;color:var(--wz-mut);font:inherit;padding:4px 8px}
+  .wz-step.lock{cursor:default;opacity:.55}
+  .wz-num{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:800;background:var(--wz-rai);border:1px solid var(--wz-bd);color:var(--wz-mut);transition:.18s}
+  .wz-lbl{font-size:12.5px;font-weight:700;letter-spacing:.2px}
+  .wz-step.cur .wz-num{background:var(--wz-gold);color:#141310;border-color:var(--wz-gold);box-shadow:0 0 0 4px rgba(229,185,92,.18)}
+  .wz-step.cur .wz-lbl{color:var(--wz-ink)}
+  .wz-step.done .wz-num{background:rgba(76,192,119,.18);color:var(--wz-good);border-color:rgba(76,192,119,.5)}
+  .wz-step.done .wz-lbl{color:var(--wz-ink)}
+  .wz-line{width:34px;height:2px;background:var(--wz-bd);margin:0 5px;border-radius:2px}
+  .wz-line.on{background:rgba(76,192,119,.5)}
+  .wz-body{display:grid;grid-template-columns:1fr 288px;gap:18px;padding:18px 20px}
+  .wz-main{min-width:0}
+  .wz-hdr{margin-bottom:14px}
+  .wz-hdr h3{font-size:17px;font-weight:800;color:var(--wz-ink);margin:0 0 3px}
+  .wz-hdr p{font-size:12.5px;color:var(--wz-mut);margin:0}
+  .wz-cnt{color:var(--wz-gold);font-weight:800;font-variant-numeric:tabular-nums}
+  .wz-cnt.over{color:#e46b6d;display:inline-block;animation:wzShake .4s}
+  @keyframes wzShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+  .wz-flt{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+  .wz-tier{font-size:12px;font-weight:800;color:#141310;background:var(--wz-gold);border-radius:7px;padding:7px 12px}
+  .wz-flt select,.wz-flt .lo-search{font:inherit;font-size:12.5px;padding:8px 11px;border-radius:8px;border:1px solid var(--wz-bd);background:var(--wz-pan);color:var(--wz-ink)}
+  .wz-flt .lo-search{flex:1;min-width:150px}
+  .wz-flt select{cursor:pointer}
+  .wz-grid{max-height:52vh}
+  .wz-igrid,.wz-sgrid{grid-template-columns:repeat(auto-fill,minmax(104px,1fr))}
+  .lo-wiz .lo-popt{background:var(--wz-pan);border-color:var(--wz-bd);color:var(--wz-ink)}
+  .lo-wiz .lo-popt:hover{border-color:var(--wz-bdg);background:var(--wz-rai)}
+  .lo-wiz .lo-popt-char.sel{border-color:var(--wz-gold);box-shadow:0 0 0 1px var(--wz-gold) inset;background:rgba(229,185,92,.10)}
+  .lo-wiz .lo-popt-char.dis{opacity:.34;cursor:not-allowed;filter:grayscale(.7)}
+  .lo-wiz .lo-popt-char.dis:hover{transform:none;border-color:var(--wz-bd);background:var(--wz-pan)}
+  .lo-used{font-size:9px;font-weight:700;color:var(--wz-mut);text-transform:uppercase;letter-spacing:.4px}
+  .lo-ok{font-size:9.5px;font-weight:800;color:var(--wz-gold)}
+  .lo-wiz .lo-item{position:relative;display:flex;flex-direction:column;align-items:center;gap:5px;padding:10px 6px;border:1px solid var(--wz-bd);border-radius:10px;background:var(--wz-pan);cursor:pointer;font-size:10.5px;color:var(--wz-ink);transition:transform .14s ease,border-color .14s ease,background .14s ease}
+  .lo-wiz .lo-item img{max-width:56px;max-height:40px;object-fit:contain}
+  .lo-wiz .lo-item span{text-align:center;line-height:1.15;max-height:26px;overflow:hidden}
+  .lo-wiz .lo-item:hover{border-color:var(--wz-bdg);transform:translateY(-2px)}
+  .lo-wiz .lo-item .lo-check{position:absolute;top:5px;right:5px;width:18px;height:18px;border-radius:50%;background:var(--wz-gold);color:#141310;font-size:11px;font-weight:800;display:grid;place-items:center;opacity:0;transform:scale(.4);transition:.16s}
+  .lo-wiz .lo-item.sel{border-color:var(--wz-gold);background:rgba(229,185,92,.12);box-shadow:0 0 0 1px var(--wz-gold) inset}
+  .lo-wiz .lo-item.sel .lo-check{opacity:1;transform:scale(1)}
+  .lo-skill.perk img{border-radius:50%;background:var(--wz-rai)}
+  .wz-rtabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+  .wz-rtab{display:flex;align-items:center;gap:7px;padding:8px 14px;border-radius:9px;border:1px solid var(--wz-bd);background:var(--wz-pan);color:var(--wz-mut);font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;transition:.15s}
+  .wz-rtab:hover{border-color:var(--wz-bdg);color:var(--wz-ink)}
+  .wz-rtab.cur{background:rgba(229,185,92,.14);border-color:var(--wz-gold);color:var(--wz-ink)}
+  .wz-rn{min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--wz-rai);color:var(--wz-gold);font-size:11px;font-weight:800;display:grid;place-items:center}
+  .wz-rtab.cur .wz-rn{background:var(--wz-gold);color:#141310}
+  .wz-notes{display:block;margin-top:14px;font-size:12px;font-weight:700;color:var(--wz-mut)}
+  .wz-notes textarea{display:block;width:100%;margin-top:6px;background:var(--wz-pan);border:1px solid var(--wz-bd);border-radius:9px;color:var(--wz-ink);padding:9px 11px;font:inherit;font-size:13px;resize:vertical}
+  .wz-side{background:var(--wz-pan);border:1px solid var(--wz-bd);border-radius:12px;padding:15px;align-self:start;position:sticky;top:12px}
+  .wz-side-h{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--wz-gold);margin-bottom:12px}
+  .wz-tk{text-align:center;padding-bottom:13px;margin-bottom:13px;border-bottom:1px solid var(--wz-bd)}
+  .wz-tk img{width:100%;max-width:170px;max-height:96px;object-fit:contain;filter:drop-shadow(0 3px 6px rgba(0,0,0,.5))}
+  .wz-tk-n{font-size:15px;font-weight:800;color:var(--wz-ink);margin-top:6px}
+  .wz-tk-m{font-size:11px;color:var(--wz-mut);margin-top:2px}
+  .wz-mut{color:var(--wz-mut);font-size:12px}
+  .wz-sblk{margin-bottom:13px}
+  .wz-sblk-h{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--wz-mut);margin-bottom:7px}
+  .wz-chips{display:flex;gap:6px;flex-wrap:wrap}
+  .wz-chip{display:flex;flex-direction:column;align-items:center;gap:2px;width:46px}
+  .wz-chip img{width:38px;height:38px;object-fit:contain;background:var(--wz-rai);border:1px solid var(--wz-bd);border-radius:9px;padding:3px}
+  .wz-chip span{font-size:8px;color:var(--wz-mut);text-align:center;line-height:1;max-height:18px;overflow:hidden}
+  .wz-skln{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:11px;color:var(--wz-ink)}
+  .wz-skln span{flex:0 0 92px}
+  .wz-skln b{flex:0 0 auto;font-size:10.5px;color:var(--wz-gold);font-variant-numeric:tabular-nums}
+  .wz-bar{flex:1;height:6px;border-radius:4px;background:var(--wz-rai);overflow:hidden}
+  .wz-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--wz-gold),#f0d08a);border-radius:4px;transition:width .25s ease}
+  .wz-nav{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 20px;border-top:1px solid var(--wz-bd);background:var(--wz-pan)}
+  .wz-btn{padding:11px 22px;border-radius:9px;border:1px solid var(--wz-bd);background:var(--wz-rai);color:var(--wz-ink);font:inherit;font-size:13px;font-weight:700;cursor:pointer;transition:.15s}
+  .wz-btn:hover{border-color:var(--wz-bdg)}
+  .wz-go,.wz-save{background:var(--wz-gold);border-color:var(--wz-gold);color:#141310}
+  .wz-go:hover,.wz-save:hover{background:#f0cd82;box-shadow:0 4px 14px rgba(229,185,92,.3)}
+  .wz-save{background:linear-gradient(180deg,#e9c876,#e0b04f);font-weight:800}
+  @media(max-width:820px){ .wz-body{grid-template-columns:1fr} .wz-side{position:static} .wz-line{width:18px} }
+
   @media(max-width:840px){ .bl-metar{display:none} }
   @media(max-width:720px){
     .bl-head{gap:10px;padding:10px 12px;min-height:78px}
@@ -2985,7 +3068,14 @@ async function deleteLineup(id){
 /* ============================================================
    LOADOUTS (equipements/consommables recommandes par char) — officiers+
    ============================================================ */
-let LOADOUTS=[], LO_CANEDIT=false, LO_REF=null, LO_EDITING=null;
+let LOADOUTS=[], LO_CANEDIT=false, LO_REF=null, LO_WIZ=null, LO_NEW=false;
+// Les competences sont stockees par role d'equipage. On aplatit pour l'affichage des cartes.
+const CREW_ROLES=[["commander","Chef de char"],["gunner","Tireur"],["driver","Pilote"],["radio","Opérateur radio"]];
+function loFlatSkills(sk){
+  if(Array.isArray(sk)) return sk;
+  if(sk&&typeof sk==='object') return CREW_ROLES.reduce((a,r)=>a.concat(sk[r[0]]||[]),[]);
+  return [];
+}
 function loMaps(){
   const t={},e={},c={},s={};
   if(LO_REF){ (LO_REF.tanks||[]).forEach(x=>t[x.tank_id]=x); (LO_REF.equipment||[]).forEach(x=>e[x.id]=x); (LO_REF.consumables||[]).forEach(x=>c[x.id]=x); (LO_REF.skills||[]).forEach(x=>s[x.id]=x); }
@@ -3033,7 +3123,7 @@ function renderLoadouts(){
     const col=CLS_COLOR[t.type]||"var(--accent)";
     const eq=(lo.equipment||[]).map(id=>M.e[id]).filter(Boolean);
     const co=(lo.consumables||[]).map(id=>M.c[id]).filter(Boolean);
-    const sk=(lo.skills||[]).map(id=>M.s[id]).filter(Boolean);
+    const sk=loFlatSkills(lo.skills).map(id=>M.s[id]).filter(Boolean);
     const pills=[];
     if(t.hp)pills.push(`<span class="lo-pill">${fmt(t.hp)} PV</span>`);
     if(t.view_range)pills.push(`<span class="lo-pill">${t.view_range} m</span>`);
@@ -3056,7 +3146,7 @@ function renderLoadouts(){
   el.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>openLoadoutEditor(LOADOUTS.find(x=>String(x.tank_id)===b.dataset.edit)));
   el.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>deleteLoadout(b.dataset.del));
 }
-let LO_NEW=false;
+const WIZ_STEPS=[["Char","i-grid"],["Équipements","i-tools"],["Consommables","i-heart"],["Équipage","i-users"]];
 async function openLoadoutEditor(lo){
   // charge la reference a la demande si elle n'est pas (encore) prete
   if(!LO_REF || !(LO_REF.tanks||[]).length){
@@ -3073,96 +3163,175 @@ async function openLoadoutEditor(lo){
     }
   }
   LO_NEW=!lo;
-  const eqp=(lo&&lo.equipment)||[], cop=(lo&&lo.consumables)||[], skp=(lo&&lo.skills)||[];
-  LO_EDITING={ tank_id:(lo&&lo.tank_id)||0,
-    equipment:[Number(eqp[0])||0,Number(eqp[1])||0,Number(eqp[2])||0],
-    consumables:[Number(cop[0])||0,Number(cop[1])||0,Number(cop[2])||0],
-    skills:(skp||[]).map(String), notes:(lo&&lo.notes)||"" };
+  const eqp=(lo&&lo.equipment)||[], cop=(lo&&lo.consumables)||[], skp=(lo&&lo.skills);
+  const skills={commander:[],gunner:[],driver:[],radio:[]};
+  if(skp && !Array.isArray(skp) && typeof skp==='object') CREW_ROLES.forEach(r=>skills[r[0]]=(skp[r[0]]||[]).map(String));
+  else if(Array.isArray(skp)) skills.commander=skp.map(String);
+  LO_WIZ={ step:1, tank_id:(lo&&lo.tank_id)||0,
+    equipment:(eqp||[]).map(Number).filter(Boolean),
+    consumables:(cop||[]).map(Number).filter(Boolean),
+    skills, notes:(lo&&lo.notes)||"", role:'commander',
+    tq:"", tcls:"", tnat:"", eq:"", cq:"", sq:"" };
   const ed=document.getElementById("loEditor"); ed.classList.remove("hidden");
-  ed.innerHTML=`<div class="card lu-editor">
-    <div class="lu-card-h"><h3>${LO_NEW?"Nouveau loadout":"Modifier le loadout"}</h3><button class="btn" id="loCancel">Annuler</button></div>
-    <div class="lo-ed" id="loBody"></div>
-    <div class="lu-form-actions"><button class="btn lu-save" id="loSave">Enregistrer</button></div>
-    <div id="loPicker" class="lo-picker hidden"></div></div>`;
-  renderLoEditBody();
-  document.getElementById("loCancel").onclick=()=>{ed.classList.add("hidden");ed.innerHTML="";};
-  document.getElementById("loSave").onclick=saveLoadout;
+  renderWizard();
   ed.scrollIntoView({behavior:"smooth",block:"start"});
 }
-function loSyncNotes(){ const n=document.getElementById("loNotes"); if(n) LO_EDITING.notes=n.value; }
-function renderLoEditBody(){
-  const M=loMaps(), E=LO_EDITING, t=E.tank_id?M.t[E.tank_id]:null;
-  const filled=(item,cat,slot)=>`<div class="lo-tile filled" title="${esc(item.name||"")}"><img src="${esc(item.image||item.icon||"")}" onerror="this.style.display='none'"><span>${esc(item.name||"")}</span><button class="lo-x" onclick="loClear('${cat}',${slot})" title="Retirer">✕</button></div>`;
-  const empty=(cat,slot,lbl)=>`<button class="lo-tile empty" onclick="openLoPicker('${cat}',${slot})">＋<small>${esc(lbl||"")}</small></button>`;
-  const charHTML = t
-    ? `<div class="lo-tile filled lo-chartile"><img src="${esc(t.icon||"")}" onerror="this.style.display='none'"><span>${esc(t.name)}</span>${LO_NEW?`<button class="lo-x" onclick="openLoPicker('char',-1)" title="Changer">✎</button>`:""}</div>`
-    : `<button class="lo-tile empty lo-chartile" onclick="openLoPicker('char',-1)">＋<small>Choisir un char</small></button>`;
-  const eqHTML=[0,1,2].map(i=> (E.equipment[i]&&M.e[E.equipment[i]]) ? filled(M.e[E.equipment[i]],'eq',i) : empty('eq',i,'Équip. '+(i+1))).join("");
-  const coHTML=[0,1,2].map(i=> (E.consumables[i]&&M.c[E.consumables[i]]) ? filled(M.c[E.consumables[i]],'co',i) : empty('co',i,'Conso. '+(i+1))).join("");
-  const skHTML=(E.skills||[]).map(id=>{ const s=M.s[id]; return s?`<div class="lo-tile filled" title="${esc(s.name)}"><img src="${esc(s.image||"")}" onerror="this.style.display='none'"><span>${esc(s.name)}</span><button class="lo-x" onclick="loSkillToggle('${esc(id)}')">✕</button></div>`:""; }).join("")+empty('sk',-1,'Ajouter');
-  document.getElementById("loBody").innerHTML=
-    `<div class="lo-sec"><div class="lo-sec-h">Char</div><div class="lo-tilerow">${charHTML}</div></div>`
-   +`<div class="lo-sec"><div class="lo-sec-h">Équipements (3)</div><div class="lo-tilerow">${eqHTML}</div></div>`
-   +`<div class="lo-sec"><div class="lo-sec-h">Consommables</div><div class="lo-tilerow">${coHTML}</div></div>`
-   +`<div class="lo-sec"><div class="lo-sec-h">Compétences d'équipage</div><div class="lo-tilerow">${skHTML}</div></div>`
-   +`<label class="lu-lab">Notes<textarea id="loNotes" maxlength="600" rows="3" placeholder="Pourquoi ces choix, quand l'utiliser…">${esc(E.notes||"")}</textarea></label>`;
+function renderWizard(){
+  const W=LO_WIZ, ed=document.getElementById("loEditor");
+  const steps=WIZ_STEPS.map((s,i)=>{ const n=i+1, done=n<W.step, cur=n===W.step, clk=(n===1||W.tank_id);
+    return `<button type="button" class="wz-step${cur?' cur':''}${done?' done':''}${clk?'':' lock'}" data-step="${n}">
+      <span class="wz-num">${done?'✓':n}</span><span class="wz-lbl">${s[0]}</span></button>`
+    +(n<4?'<span class="wz-line'+(done?' on':'')+'"></span>':''); }).join("");
+  const main = W.step===1?wizStep1() : W.step===2?wizStepItems('eq') : W.step===3?wizStepItems('co') : wizStep4();
+  const prev = W.step>1 ? `<button class="wz-btn" id="wizPrev">← Précédent</button>` : `<span></span>`;
+  const next = W.step<4
+    ? `<button class="wz-btn wz-go" id="wizNext">Continuer →</button>`
+    : `<button class="wz-btn wz-save" id="wizSave">✓ Enregistrer le loadout</button>`;
+  ed.innerHTML=`<div class="card lo-wiz dashx">
+    <div class="wz-head"><div class="wz-htitle">${LO_NEW?"Nouveau loadout":"Modifier le loadout"}</div>
+      <button class="wz-close" id="wizCancel">✕ Annuler</button></div>
+    <div class="wz-steps">${steps}</div>
+    <div class="wz-body"><div class="wz-main">${main}</div>${wizSide()}</div>
+    <div class="wz-nav">${prev}${next}</div></div>`;
+  wizWire();
+}
+function wizWire(){
+  const W=LO_WIZ, ed=document.getElementById("loEditor");
+  document.getElementById("wizCancel").onclick=()=>{ ed.classList.add("hidden"); ed.innerHTML=""; LO_WIZ=null; };
+  ed.querySelectorAll(".wz-step:not(.lock)").forEach(s=> s.onclick=()=>{ const n=Number(s.dataset.step); if(n===1||W.tank_id){ W.step=n; renderWizard(); } });
+  const prev=document.getElementById("wizPrev"); if(prev) prev.onclick=()=>{ W.step=Math.max(1,W.step-1); renderWizard(); };
+  const next=document.getElementById("wizNext"); if(next) next.onclick=()=>{ if(W.step===1&&!W.tank_id){ alert("Choisis d’abord un char."); return; } W.step=Math.min(4,W.step+1); renderWizard(); };
+  const save=document.getElementById("wizSave"); if(save) save.onclick=saveLoadout;
+  if(W.step===1) wizWire1();
+  else if(W.step===2) wizWireItems('eq');
+  else if(W.step===3) wizWireItems('co');
+  else if(W.step===4) wizWire4();
 }
 const LO_CLS_OPT=[["heavyTank","Lourds"],["mediumTank","Moyens"],["lightTank","Légers"],["AT-SPG","Chasseurs"],["SPG","Artillerie"]];
 const LO_NATION_FR={ussr:"URSS",germany:"Allemagne",usa:"USA",france:"France",uk:"Royaume-Uni",china:"Chine",japan:"Japon",czech:"Tchéquie",sweden:"Suède",poland:"Pologne",italy:"Italie"};
-function openLoPicker(cat,slot){
-  const src = cat==='char'?(LO_REF.tanks||[]):cat==='eq'?(LO_REF.equipment||[]):cat==='co'?(LO_REF.consumables||[]):(LO_REF.skills||[]);
-  const title = cat==='char'?'Choisir un char':cat==='eq'?'Choisir un équipement':cat==='co'?'Choisir un consommable':'Choisir une compétence (multi)';
-  const ov=document.getElementById("loPicker"); ov.className="lo-picker";
-  if(cat==='char'){
-    const grid=src.map(x=>`<button class="lo-popt lo-popt-char" type="button" data-id="${esc(String(x.tank_id))}" data-cls="${esc(x.type||"")}" data-nation="${esc(x.nation||"")}" data-name="${esc(String(x.name).toLowerCase())}"><img src="${esc(x.icon||"")}" onerror="this.style.display='none'"><span>${esc(x.name)}</span></button>`).join("");
-    const nats=[...new Set(src.map(x=>x.nation).filter(Boolean))].sort();
-    const natOpts='<option value="">Toutes nations</option>'+nats.map(n=>`<option value="${n}">${LO_NATION_FR[n]||n}</option>`).join("");
-    const clsOpts='<option value="">Toutes classes</option>'+LO_CLS_OPT.filter(c=>src.some(x=>x.type===c[0])).map(c=>`<option value="${c[0]}">${c[1]}</option>`).join("");
-    ov.innerHTML=`<div class="lo-picker-box">
-      <div class="lo-picker-h"><b>${title}</b><input class="lo-search" placeholder="Rechercher…"><button class="btn lo-picker-close" type="button">Fermer</button></div>
-      <div class="lo-fltrow"><select class="lo-fclass">${clsOpts}</select><select class="lo-fnation">${natOpts}</select></div>
-      <div class="lo-grid lo-grid-char">${grid}</div></div>`;
-    const s=ov.querySelector(".lo-search"), fc=ov.querySelector(".lo-fclass"), fn=ov.querySelector(".lo-fnation");
-    const applyF=()=>{ const qq=s.value.toLowerCase(), c=fc.value, n=fn.value;
-      ov.querySelectorAll(".lo-popt-char").forEach(b=>{ const ok=(!qq||b.dataset.name.indexOf(qq)>=0)&&(!c||b.dataset.cls===c)&&(!n||b.dataset.nation===n); b.style.display=ok?"":"none"; }); };
-    s.oninput=applyF; fc.onchange=applyF; fn.onchange=applyF;
-    ov.querySelector(".lo-picker-close").onclick=loClosePicker;
-    ov.querySelectorAll(".lo-popt").forEach(b=>b.onclick=()=>loAssign(cat,slot,b.dataset.id));
-    ov.scrollIntoView({behavior:"smooth",block:"nearest"}); s.focus();
-    return;
-  }
-  const grid = src.map(x=>`<button class="lo-popt" type="button" data-id="${esc(String(x.id))}"><img src="${esc(x.image||"")}" onerror="this.style.display='none'"><span>${esc(x.name)}</span></button>`).join("");
-  ov.innerHTML=`<div class="lo-picker-box"><div class="lo-picker-h"><b>${title}</b><input class="lo-search" placeholder="Rechercher…"><button class="btn lo-picker-close" type="button">Fermer</button></div><div class="lo-grid">${grid}</div></div>`;
-  const s=ov.querySelector(".lo-search");
-  s.oninput=()=>{ const qq=s.value.toLowerCase(); ov.querySelectorAll(".lo-popt").forEach(b=>{ b.style.display=b.textContent.toLowerCase().indexOf(qq)>=0?"":"none"; }); };
-  ov.querySelector(".lo-picker-close").onclick=loClosePicker;
-  ov.querySelectorAll(".lo-popt").forEach(b=>b.onclick=()=>loAssign(cat,slot,b.dataset.id));
-  ov.scrollIntoView({behavior:"smooth",block:"nearest"}); s.focus();
+
+/* ---- Étape 1 : choix du char (chars déjà réglés grisés) ---- */
+function wizStep1(){
+  const src=(LO_REF.tanks||[]), W=LO_WIZ;
+  const used=new Set(LOADOUTS.map(l=>Number(l.tank_id)));
+  const nats=[...new Set(src.map(x=>x.nation).filter(Boolean))].sort();
+  const natOpts='<option value="">Toutes nations</option>'+nats.map(n=>`<option value="${n}"${W.tnat===n?' selected':''}>${LO_NATION_FR[n]||n}</option>`).join("");
+  const clsOpts='<option value="">Toutes classes</option>'+LO_CLS_OPT.filter(c=>src.some(x=>x.type===c[0])).map(c=>`<option value="${c[0]}"${W.tcls===c[0]?' selected':''}>${c[1]}</option>`).join("");
+  const grid=src.map(x=>{
+    const id=Number(x.tank_id), dis=used.has(id)&&id!==Number(W.tank_id), sel=id===Number(W.tank_id);
+    return `<button type="button" class="lo-popt lo-popt-char${sel?' sel':''}${dis?' dis':''}" ${dis?'disabled':''} data-tank="${id}" data-cls="${esc(x.type||'')}" data-nat="${esc(x.nation||'')}" data-name="${esc(String(x.name).toLowerCase())}">
+      <img src="${esc(x.icon||'')}" onerror="this.style.display='none'" loading="lazy">
+      <span>${esc(x.name)}</span>${dis?'<em class="lo-used">déjà réglé</em>':(sel?'<em class="lo-ok">✓ choisi</em>':'')}</button>`;
+  }).join("");
+  return `<div class="wz-hdr"><h3>Choix du char</h3><p>Sélectionne le char tier X à configurer. Les chars déjà réglés sont grisés.</p></div>
+    <div class="wz-flt"><span class="wz-tier">Tier X</span>
+      <select class="lo-fclass" id="wizTCls">${clsOpts}</select>
+      <select class="lo-fnation" id="wizTNat">${natOpts}</select>
+      <input class="lo-search" id="wizTQ" placeholder="Rechercher un char…" value="${esc(W.tq||'')}"></div>
+    <div class="lo-grid lo-grid-char wz-grid">${grid}</div>`;
 }
-function loClosePicker(){ const ov=document.getElementById("loPicker"); if(ov){ ov.className="lo-picker hidden"; ov.innerHTML=""; } }
-function loAssign(cat,slot,id){
-  loSyncNotes();
-  if(cat==='char') LO_EDITING.tank_id=Number(id);
-  else if(cat==='eq') LO_EDITING.equipment[slot]=Number(id);
-  else if(cat==='co') LO_EDITING.consumables[slot]=Number(id);
-  else if(cat==='sk'){ if(LO_EDITING.skills.indexOf(id)<0) LO_EDITING.skills.push(id); }
-  if(cat!=='sk') loClosePicker();
-  renderLoEditBody();
+function wizWire1(){
+  const W=LO_WIZ, ed=document.getElementById("loEditor");
+  const q=document.getElementById("wizTQ"), fc=document.getElementById("wizTCls"), fn=document.getElementById("wizTNat");
+  const apply=()=>{ W.tq=q.value; W.tcls=fc.value; W.tnat=fn.value; const qq=(W.tq||'').toLowerCase();
+    ed.querySelectorAll(".lo-popt-char").forEach(b=>{ const ok=(!qq||b.dataset.name.indexOf(qq)>=0)&&(!W.tcls||b.dataset.cls===W.tcls)&&(!W.tnat||b.dataset.nat===W.tnat); b.style.display=ok?'':'none'; }); };
+  q.oninput=apply; fc.onchange=apply; fn.onchange=apply; apply();
+  ed.querySelectorAll(".lo-popt-char:not(.dis)").forEach(b=> b.onclick=()=>{ W.tank_id=Number(b.dataset.tank); W.step=2; renderWizard(); });
 }
-function loClear(cat,slot){ loSyncNotes(); if(cat==='eq')LO_EDITING.equipment[slot]=0; else if(cat==='co')LO_EDITING.consumables[slot]=0; renderLoEditBody(); }
-function loSkillToggle(id){ loSyncNotes(); const i=LO_EDITING.skills.indexOf(id); if(i>=0)LO_EDITING.skills.splice(i,1); renderLoEditBody(); }
+
+/* ---- Étapes 2 & 3 : équipements / consommables (3 max) ---- */
+function wizStepItems(cat){
+  const W=LO_WIZ, isEq=cat==='eq';
+  const src=isEq?(LO_REF.equipment||[]):(LO_REF.consumables||[]);
+  const sel=isEq?W.equipment:W.consumables, qv=isEq?(W.eq||''):(W.cq||'');
+  const grid=src.map(x=>{ const id=Number(x.id), on=sel.indexOf(id)>=0;
+    return `<button type="button" class="lo-item${on?' sel':''}" data-id="${id}" data-name="${esc(String(x.name).toLowerCase())}">
+      <img src="${esc(x.image||'')}" onerror="this.style.display='none'" loading="lazy">
+      <span>${esc(x.name)}</span><i class="lo-check">✓</i></button>`; }).join("");
+  const title=isEq?'Équipements':'Consommables';
+  return `<div class="wz-hdr"><h3>${title}</h3><p>Choisis jusqu’à 3 ${isEq?'équipements':'consommables'} recommandés. <b class="wz-cnt" id="wizCnt">${sel.length} / 3</b></p></div>
+    <div class="wz-flt"><input class="lo-search" id="wizIQ" placeholder="Rechercher…" value="${esc(qv)}"></div>
+    <div class="lo-grid wz-grid wz-igrid">${grid}</div>`;
+}
+function wizWireItems(cat){
+  const W=LO_WIZ, ed=document.getElementById("loEditor"), iq=document.getElementById("wizIQ");
+  const apply=()=>{ const v=iq.value.toLowerCase(); if(cat==='eq')W.eq=iq.value; else W.cq=iq.value;
+    ed.querySelectorAll(".lo-item").forEach(b=>{ b.style.display=(!v||b.dataset.name.indexOf(v)>=0)?'':'none'; }); };
+  iq.oninput=apply; apply();
+  ed.querySelectorAll(".lo-item").forEach(b=> b.onclick=()=>wizToggleItem(cat,Number(b.dataset.id),b));
+}
+function wizToggleItem(cat,id,btn){
+  const W=LO_WIZ, sel=cat==='eq'?W.equipment:W.consumables, i=sel.indexOf(id);
+  if(i>=0) sel.splice(i,1);
+  else { if(sel.length>=3){ wizFlashCnt(); return; } sel.push(id); }
+  btn.classList.toggle('sel', sel.indexOf(id)>=0);
+  const cnt=document.getElementById("wizCnt"); if(cnt) cnt.textContent=sel.length+' / 3';
+  wizRefreshSide();
+}
+function wizFlashCnt(){ const c=document.getElementById("wizCnt"); if(!c) return; c.classList.add("over"); setTimeout(()=>c.classList.remove("over"),500); }
+
+/* ---- Étape 4 : compétences par membre d'équipage (6 max chacun) ---- */
+function wizStep4(){
+  const W=LO_WIZ, src=(LO_REF.skills||[]), role=W.role, sel=W.skills[role]||[];
+  const tabs=CREW_ROLES.map(r=>{ const n=(W.skills[r[0]]||[]).length;
+    return `<button type="button" class="wz-rtab${r[0]===role?' cur':''}" data-role="${r[0]}">${r[1]}<span class="wz-rn">${n}</span></button>`; }).join("");
+  const grid=src.map(x=>{ const id=String(x.id), on=sel.indexOf(id)>=0;
+    return `<button type="button" class="lo-item lo-skill${on?' sel':''}${x.perk?' perk':''}" data-id="${esc(id)}" data-name="${esc(String(x.name).toLowerCase())}">
+      <img src="${esc(x.image||'')}" onerror="this.style.display='none'" loading="lazy">
+      <span>${esc(x.name)}</span><i class="lo-check">✓</i></button>`; }).join("");
+  return `<div class="wz-hdr"><h3>Compétences d’équipage</h3><p>Sélectionne les compétences de chaque membre (6 max). <b class="wz-cnt" id="wizCnt">${sel.length} / 6</b></p></div>
+    <div class="wz-rtabs">${tabs}</div>
+    <div class="wz-flt"><input class="lo-search" id="wizIQ" placeholder="Rechercher une compétence…" value="${esc(W.sq||'')}"></div>
+    <div class="lo-grid wz-grid wz-sgrid">${grid}</div>
+    <label class="wz-notes">Notes (optionnel)<textarea id="wizNotes" maxlength="600" rows="2" placeholder="Pourquoi ces choix, quand l’utiliser…">${esc(W.notes||'')}</textarea></label>`;
+}
+function wizWire4(){
+  const W=LO_WIZ, ed=document.getElementById("loEditor"), iq=document.getElementById("wizIQ");
+  ed.querySelectorAll(".wz-rtab").forEach(b=> b.onclick=()=>{ W.role=b.dataset.role; renderWizard(); });
+  const apply=()=>{ W.sq=iq.value; const v=iq.value.toLowerCase(); ed.querySelectorAll(".lo-skill").forEach(b=>{ b.style.display=(!v||b.dataset.name.indexOf(v)>=0)?'':'none'; }); };
+  iq.oninput=apply; apply();
+  ed.querySelectorAll(".lo-skill").forEach(b=> b.onclick=()=>wizToggleSkill(String(b.dataset.id),b));
+  const nt=document.getElementById("wizNotes"); if(nt) nt.oninput=()=>{ W.notes=nt.value; };
+}
+function wizToggleSkill(id,btn){
+  const W=LO_WIZ, sel=W.skills[W.role], i=sel.indexOf(id);
+  if(i>=0) sel.splice(i,1);
+  else { if(sel.length>=6){ wizFlashCnt(); return; } sel.push(id); }
+  btn.classList.toggle('sel', sel.indexOf(id)>=0);
+  const cnt=document.getElementById("wizCnt"); if(cnt) cnt.textContent=sel.length+' / 6';
+  const tab=document.querySelector('.wz-rtab[data-role="'+W.role+'"] .wz-rn'); if(tab) tab.textContent=sel.length;
+  wizRefreshSide();
+}
+
+/* ---- Panneau résumé (droite, persistant) ---- */
+function wizSide(){ return `<aside class="wz-side" id="wizSide">${wizSideInner()}</aside>`; }
+function wizSideInner(){
+  const M=loMaps(), W=LO_WIZ, t=W.tank_id?M.t[W.tank_id]:null;
+  const chip=(it)=>`<div class="wz-chip" title="${esc(it.name||'')}"><img src="${esc(it.image||it.icon||'')}" onerror="this.style.display='none'"><span>${esc(it.name||'')}</span></div>`;
+  const eqRow=W.equipment.map(id=>M.e[id]).filter(Boolean).map(chip).join("")||'<span class="wz-mut">—</span>';
+  const coRow=W.consumables.map(id=>M.c[id]).filter(Boolean).map(chip).join("")||'<span class="wz-mut">—</span>';
+  const skRows=CREW_ROLES.map(r=>{ const n=(W.skills[r[0]]||[]).length;
+    return `<div class="wz-skln"><span>${r[1]}</span><div class="wz-bar"><i style="width:${Math.round(n/6*100)}%"></i></div><b>${n}/6</b></div>`; }).join("");
+  return `<div class="wz-side-h">Résumé</div>
+    <div class="wz-tk">${t?`<img src="${esc(t.icon||'')}" onerror="this.style.display='none'"><div class="wz-tk-n">${esc(t.name)}</div><div class="wz-tk-m">${esc(CLS_FR[t.type]||'')} · Tier X</div>`:'<div class="wz-mut">Aucun char sélectionné</div>'}</div>
+    <div class="wz-sblk"><div class="wz-sblk-h">Équipements</div><div class="wz-chips">${eqRow}</div></div>
+    <div class="wz-sblk"><div class="wz-sblk-h">Consommables</div><div class="wz-chips">${coRow}</div></div>
+    <div class="wz-sblk"><div class="wz-sblk-h">Compétences</div>${skRows}</div>`;
+}
+function wizRefreshSide(){ const s=document.getElementById("wizSide"); if(s) s.innerHTML=wizSideInner(); }
+
 async function saveLoadout(){
-  loSyncNotes();
-  const E=LO_EDITING;
-  if(!E.tank_id){ alert("Choisis un char."); return; }
-  const t=loMaps().t[E.tank_id]||{};
-  const payload={ tank_id:Number(E.tank_id), tank_name:t.name||"",
-    equipment:E.equipment.filter(Boolean), consumables:E.consumables.filter(Boolean),
-    skills:E.skills, notes:(E.notes||"").trim(), fieldmods:{} };
-  const btn=document.getElementById("loSave"); btn.disabled=true; btn.textContent="…";
+  const W=LO_WIZ;
+  if(!W.tank_id){ alert("Choisis un char."); return; }
+  const t=loMaps().t[W.tank_id]||{};
+  const payload={ tank_id:Number(W.tank_id), tank_name:t.name||"",
+    equipment:W.equipment.filter(Boolean), consumables:W.consumables.filter(Boolean),
+    skills:{ commander:W.skills.commander, gunner:W.skills.gunner, driver:W.skills.driver, radio:W.skills.radio },
+    notes:(W.notes||"").trim(), fieldmods:{} };
+  const btn=document.getElementById("wizSave"); if(btn){ btn.disabled=true; btn.textContent="Enregistrement…"; }
   const r=await fnCall("loadouts",{session:localStorage.getItem(LS_SESSION),action:"save",loadout:payload});
-  if(!r.ok){ btn.disabled=false; btn.textContent="Enregistrer"; alert("Erreur : "+(r.j.error||r.status)); return; }
-  document.getElementById("loEditor").classList.add("hidden"); document.getElementById("loEditor").innerHTML="";
+  if(!r.ok){ if(btn){ btn.disabled=false; btn.textContent="✓ Enregistrer le loadout"; } alert("Erreur : "+(r.j.error||r.status)); return; }
+  const ed=document.getElementById("loEditor"); ed.classList.add("hidden"); ed.innerHTML=""; LO_WIZ=null;
   loadLoadouts();
 }
 async function deleteLoadout(tid){
