@@ -3278,8 +3278,9 @@ function wizWire1(){
 
 /* ---- Étapes 2 & 3 : équipements / consommables (3 max) ---- */
 function wizStepItems(cat){
-  const W=LO_WIZ, isEq=cat==='eq';
-  const src=isEq?(LO_REF.equipment||[]):(LO_REF.consumables||[]);
+  const W=LO_WIZ, isEq=cat==='eq', M=loMaps(), tnat=(M.t[W.tank_id]||{}).nation||'';
+  // consommables : on n'affiche la ration "nourriture" que pour la nation du char.
+  const src=isEq?(LO_REF.equipment||[]):((LO_REF.consumables||[]).filter(x=>!x.nation||x.nation===tnat));
   const sel=isEq?W.equipment:W.consumables, qv=isEq?(W.eq||''):(W.cq||'');
   const grid=src.map(x=>{ const id=Number(x.id), on=sel.indexOf(id)>=0;
     return `<button type="button" class="lo-item${on?' sel':''}" data-id="${id}" data-name="${esc(String(x.name).toLowerCase())}">
