@@ -695,6 +695,68 @@
   #viewClan .desc2 .dt{font-size:12px;color:var(--ink-2)} #viewClan .desc2 .dt b{color:var(--ink)}
   #viewClan .desc2 .exp{border:1px solid var(--line);background:transparent;color:var(--gold-2);font:inherit;font-size:12px;font-weight:600;padding:6px 13px;border-radius:8px;cursor:pointer;white-space:nowrap}
   #viewClan .desc2-body{padding:0 16px 16px;font-size:13px;color:#c2cdd9;line-height:1.6}
+  /* sous-onglets vue clan */
+  #viewClan .cv-tabs{display:flex;gap:6px;margin:0 0 14px}
+  #viewClan .cv-tab{display:inline-flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line);color:var(--ink-2);font:inherit;font-size:13px;font-weight:600;padding:9px 16px;border-radius:10px;cursor:pointer;transition:.15s}
+  #viewClan .cv-tab svg{width:15px;height:15px}
+  #viewClan .cv-tab:hover{color:var(--ink);border-color:var(--gold-line)}
+  #viewClan .cv-tab.on{background:var(--gold-soft);color:var(--gold-2);border-color:var(--gold-line)}
+  /* calendrier */
+  #viewClan .cal-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+  #viewClan .cal-nav{display:flex;align-items:center;gap:8px}
+  #viewClan .cal-nav h3{font-family:var(--fx);font-size:20px;letter-spacing:.5px;margin:0;min-width:170px;text-align:center;text-transform:capitalize}
+  #viewClan .cal-arrow{width:32px;height:32px;border-radius:9px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font-size:18px;cursor:pointer;line-height:1}
+  #viewClan .cal-arrow:hover{border-color:var(--gold-line);color:var(--gold-2)}
+  #viewClan .cal-today-btn{margin-left:6px;border:1px solid var(--line);background:var(--panel);color:var(--ink-2);font:inherit;font-size:12px;font-weight:600;padding:7px 12px;border-radius:9px;cursor:pointer}
+  #viewClan .cal-today-btn:hover{border-color:var(--gold-line);color:var(--gold-2)}
+  #viewClan .cal-add{border:1px solid var(--gold-line);background:var(--gold-soft);color:var(--gold-2);font:inherit;font-size:13px;font-weight:700;padding:9px 15px;border-radius:10px;cursor:pointer}
+  #viewClan .cal-add:hover{filter:brightness(1.12)}
+  #viewClan .cal-ro{font-size:11.5px;color:var(--muted)}
+  #viewClan .cal-legend{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:10px;font-size:11.5px;color:var(--ink-2)}
+  #viewClan .cal-lg{display:inline-flex;align-items:center;gap:6px}
+  #viewClan .cal-dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex:0 0 auto}
+  #viewClan .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+  #viewClan .cal-wd{text-align:center;font-size:10.5px;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);font-weight:700;padding:4px 0}
+  #viewClan .cal-cell{min-height:94px;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:6px;display:flex;flex-direction:column;gap:4px;overflow:hidden}
+  #viewClan .cal-cell.empty{background:transparent;border:0;min-height:0}
+  #viewClan .cal-cell[data-day]{cursor:pointer;transition:border-color .15s}
+  #viewClan .cal-cell[data-day]:hover{border-color:var(--gold-line)}
+  #viewClan .cal-cell.today{border-color:var(--gold)}
+  #viewClan .cal-d{font-family:var(--fx);font-size:13px;color:var(--ink-2)}
+  #viewClan .cal-cell.today .cal-d{color:var(--gold-2)}
+  #viewClan .cal-evs{display:flex;flex-direction:column;gap:3px;overflow:hidden}
+  #viewClan .cal-ev{font-size:10px;color:var(--ink);background:rgba(255,255,255,.05);border-left:3px solid var(--evc,#9b9b96);border-radius:0 5px 5px 0;padding:2px 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+  #viewClan .cal-ev b{color:var(--evc,#9b9b96);font-weight:700}
+  #viewClan .cal-ev:hover{background:rgba(255,255,255,.1)}
+  #viewClan .cal-up{margin-top:16px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  #viewClan .cal-up-h{font-family:var(--fx);font-size:14px;margin-bottom:8px}
+  #viewClan .cal-up-empty{color:var(--muted);font-size:12.5px}
+  #viewClan .cal-up-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line-2);font-size:12.5px;cursor:pointer}
+  #viewClan .cal-up-row:first-of-type{border-top:0}
+  #viewClan .cal-up-t{flex:1;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #viewClan .cal-up-k{font-size:11px;font-weight:600;flex:0 0 auto}
+  #viewClan .cal-up-d{color:var(--ink-2);flex:0 0 auto;font-size:11.5px}
+  #viewClan .cal-up-row:hover .cal-up-t{color:var(--gold-2)}
+  /* modale événement */
+  #viewClan .ev-modal{position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.6);display:grid;place-items:center;padding:20px}
+  #viewClan .ev-box{width:100%;max-width:460px;background:var(--panel);border:1px solid var(--gold-line);border-radius:14px;padding:22px 22px 18px;position:relative;box-shadow:0 20px 50px -20px rgba(0,0,0,.8)}
+  #viewClan .ev-box h3{font-family:var(--fx);font-size:18px;margin:0 0 16px;color:#fff;padding-right:34px}
+  #viewClan .ev-x{position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:8px;border:1px solid var(--line);background:var(--panel-2);color:var(--ink-2);cursor:pointer}
+  #viewClan .ev-x:hover{color:var(--ink);border-color:var(--gold-line)}
+  #viewClan .ev-row{margin-bottom:12px}
+  #viewClan .ev-row label,#viewClan .ev-row2 label{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:700;margin-bottom:5px}
+  #viewClan .ev-row input,#viewClan .ev-row textarea,#viewClan .ev-row2 input,#viewClan .ev-row2 select{width:100%;font:inherit;font-size:13px;padding:9px 11px;border-radius:9px;border:1px solid var(--line);background:var(--panel-2);color:var(--ink)}
+  #viewClan .ev-row2{display:flex;gap:10px;margin-bottom:12px}
+  #viewClan .ev-row2>span{flex:1;min-width:0}
+  #viewClan .ev-act{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}
+  #viewClan .ev-ro{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--ink-2);margin-bottom:8px}
+  #viewClan .ev-when{font-size:13.5px;color:var(--ink);margin-bottom:10px}
+  #viewClan .ev-notes{font-size:13px;color:var(--ink-2);background:var(--panel-2);border-radius:9px;padding:10px 12px;line-height:1.5;margin-bottom:8px}
+  #viewClan .ev-by{font-size:11px;color:var(--muted)}
+  #viewClan .h2-op.cal-link{cursor:pointer;transition:.15s}
+  #viewClan .h2-op.cal-link:hover{border-color:var(--gold)}
+  #viewClan .h2-op-cta{margin-top:8px;font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.3px}
+  @media (max-width:680px){#viewClan .cal-cell{min-height:70px}#viewClan .cal-ev{font-size:9px}#viewClan .ev-row2{flex-wrap:wrap}}
   @media (max-width:900px){.hero2{flex-wrap:wrap}.h2-op{width:100%;max-width:none}
     #viewClan .d2top3,#viewClan .d2mini4,#viewClan .d2off5,#viewClan .d2two{grid-template-columns:1fr}}
   @media (prefers-reduced-motion:reduce){.dash-anim,.h2-star{animation:none}}
@@ -964,6 +1026,11 @@
 
   <div id="viewClan" class="dashx">
   <div id="dashHero"></div>
+  <div class="cv-tabs">
+    <button class="cv-tab on" data-sub="board"><svg class="ic"><use href="#i-gauge"/></svg>Tableau de bord</button>
+    <button class="cv-tab" data-sub="cal"><svg class="ic"><use href="#i-cal"/></svg>Calendrier</button>
+  </div>
+  <div id="clanDash">
   <div id="dashSub"></div>
 
   <div class="d2top3">
@@ -992,6 +1059,10 @@
   </div>
 
   <div id="dashDesc"></div>
+  </div><!-- /clanDash -->
+
+  <div id="clanCal" class="hidden"></div>
+  <div id="evModal" class="ev-modal hidden"></div>
   </div><!-- /viewClan -->
 
   <div id="viewBattles" class="hidden">
@@ -1203,7 +1274,8 @@ async function openApp(){
   document.getElementById("subbar").classList.remove("hidden");
   document.getElementById("viewClan").classList.remove("hidden");
   placeSubbar("clan");
-  loadClanProfile();   // nationalité + prochaine opération (non bloquant)
+  loadClanProfile();   // nationalité (non bloquant)
+  loadClanEvents();    // calendrier + prochaine activité du bandeau (non bloquant)
   wireUI();
   rebuildFilters();
   render();
@@ -1293,6 +1365,124 @@ async function loadClanProfile(){
   renderDashHero();
 }
 
+/* ============================================================
+   CALENDRIER D'ÉVÉNEMENTS DE CLAN (2e sous-onglet de la vue clan)
+   ============================================================ */
+let CLAN_EVENTS=[], CAL_CANEDIT=false, CAL_MONTH=null, CLAN_SUB="board";
+const EV_KINDS={bastion:["Bastion","#e5b95c"],manoeuvres:["Manœuvres","#4bb6c6"],entrainement:["Entraînement","#4cc077"],autre:["Autre","#9b9b96"]};
+function nextClanEvent(){ const now=Date.now()/1000; return (CLAN_EVENTS||[]).filter(e=>e.event_ts>now).sort((a,b)=>a.event_ts-b.event_ts)[0]||null; }
+function switchClanSub(sub){
+  CLAN_SUB=sub;
+  document.querySelectorAll(".cv-tab").forEach(t=>t.classList.toggle("on",t.dataset.sub===sub));
+  document.getElementById("clanDash").classList.toggle("hidden",sub!=="board");
+  document.getElementById("clanCal").classList.toggle("hidden",sub!=="cal");
+  if(sub==="cal"){ if(!CAL_MONTH) CAL_MONTH=new Date(); renderCalendar(); }
+}
+async function loadClanEvents(){
+  try{
+    const r=await fnCall("clan-events",{session:localStorage.getItem(LS_SESSION),action:"list"});
+    if(r.ok){ CLAN_EVENTS=r.j.events||[]; CAL_CANEDIT=!!r.j.canEdit; }
+    else { CAL_LOAD_ERR=(r.j&&r.j.error)||String(r.status); }
+  }catch(e){ CAL_LOAD_ERR="réseau"; }
+  if(DEV) CAL_CANEDIT=true;
+  if(CLAN_SUB==="cal") renderCalendar();
+  renderDashHero();
+}
+let CAL_LOAD_ERR=null;
+function renderCalendar(){
+  const cal=document.getElementById("clanCal"); if(!cal) return;
+  if(!CAL_MONTH) CAL_MONTH=new Date();
+  const y=CAL_MONTH.getFullYear(), m=CAL_MONTH.getMonth();
+  const byDay={};
+  CLAN_EVENTS.forEach(e=>{ const d=new Date(e.event_ts*1000); (byDay[d.getFullYear()+"-"+d.getMonth()+"-"+d.getDate()]=byDay[d.getFullYear()+"-"+d.getMonth()+"-"+d.getDate()]||[]).push(e); });
+  const first=new Date(y,m,1), start=(first.getDay()+6)%7, dim=new Date(y,m+1,0).getDate();
+  const t=new Date(), todayK=t.getFullYear()+"-"+t.getMonth()+"-"+t.getDate();
+  let cells="";
+  for(let i=0;i<start;i++) cells+='<div class="cal-cell empty"></div>';
+  for(let d=1;d<=dim;d++){
+    const k=y+"-"+m+"-"+d, evs=(byDay[k]||[]).sort((a,b)=>a.event_ts-b.event_ts);
+    const evHtml=evs.map(e=>{ const kd=EV_KINDS[e.kind]||EV_KINDS.autre; const tm=new Date(e.event_ts*1000).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
+      return `<div class="cal-ev" data-id="${e.id}" style="--evc:${kd[1]}" title="${esc(e.title)} · ${tm}"><b>${tm}</b> ${esc(e.title)}</div>`; }).join("");
+    cells+=`<div class="cal-cell${k===todayK?' today':''}" data-day="${d}"><div class="cal-d">${d}</div><div class="cal-evs">${evHtml}</div></div>`;
+  }
+  const wd=["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"];
+  cal.innerHTML=`
+    <div class="cal-head">
+      <div class="cal-nav"><button class="cal-arrow" id="calPrev">‹</button><h3>${capFirst(CAL_MONTH.toLocaleDateString("fr-FR",{month:"long",year:"numeric"}))}</h3><button class="cal-arrow" id="calNext">›</button><button class="cal-today-btn" id="calToday">Aujourd'hui</button></div>
+      ${CAL_CANEDIT?'<button class="cal-add" id="calAdd">＋ Programmer un événement</button>':'<span class="cal-ro">Consultation — réservé aux officiers du personnel et +</span>'}
+    </div>
+    ${CAL_LOAD_ERR?`<div class="d2card" style="padding:14px;margin-bottom:12px;color:var(--bad)">Calendrier indisponible (${esc(CAL_LOAD_ERR)}) — la fonction « clan-events » est-elle déployée ?</div>`:""}
+    <div class="cal-legend">${Object.values(EV_KINDS).map(v=>`<span class="cal-lg"><span class="cal-dot" style="background:${v[1]}"></span>${v[0]}</span>`).join("")}</div>
+    <div class="cal-grid">${wd.map(d=>`<div class="cal-wd">${d}</div>`).join("")}${cells}</div>
+    <div class="cal-up" id="calUp"></div>`;
+  document.getElementById("calPrev").onclick=()=>{ CAL_MONTH=new Date(y,m-1,1); renderCalendar(); };
+  document.getElementById("calNext").onclick=()=>{ CAL_MONTH=new Date(y,m+1,1); renderCalendar(); };
+  document.getElementById("calToday").onclick=()=>{ CAL_MONTH=new Date(); renderCalendar(); };
+  const add=document.getElementById("calAdd"); if(add) add.onclick=()=>openEventEditor(null,null);
+  cal.querySelectorAll(".cal-ev").forEach(el=>el.onclick=(ev)=>{ ev.stopPropagation(); openEventEditor(CLAN_EVENTS.find(e=>String(e.id)===el.dataset.id)||null,null); });
+  if(CAL_CANEDIT) cal.querySelectorAll(".cal-cell[data-day]").forEach(el=>el.onclick=()=>openEventEditor(null,new Date(y,m,+el.dataset.day,20,0)));
+  renderCalUpcoming();
+}
+function renderCalUpcoming(){
+  const el=document.getElementById("calUp"); if(!el) return;
+  const now=Date.now()/1000;
+  const up=CLAN_EVENTS.filter(e=>e.event_ts>now-3600).sort((a,b)=>a.event_ts-b.event_ts).slice(0,6);
+  if(!up.length){ el.innerHTML='<div class="cal-up-h">À venir</div><div class="cal-up-empty">Aucun événement programmé.</div>'; return; }
+  el.innerHTML='<div class="cal-up-h">À venir</div>'+up.map(e=>{ const kd=EV_KINDS[e.kind]||EV_KINDS.autre; const d=new Date(e.event_ts*1000);
+    const ds=capFirst(d.toLocaleDateString("fr-FR",{weekday:"short",day:"numeric",month:"short"}))+" · "+d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
+    return `<div class="cal-up-row" data-id="${e.id}"><span class="cal-dot" style="background:${kd[1]}"></span><span class="cal-up-t">${esc(e.title)}</span><span class="cal-up-k" style="color:${kd[1]}">${kd[0]}</span><span class="cal-up-d">${ds}</span></div>`; }).join("");
+  el.querySelectorAll(".cal-up-row").forEach(r=>r.onclick=()=>openEventEditor(CLAN_EVENTS.find(e=>String(e.id)===r.dataset.id)||null,null));
+}
+function openEventEditor(ev, preset){
+  const ro=!CAL_CANEDIT, e=ev||{};
+  const d=e.event_ts?new Date(e.event_ts*1000):(preset||new Date());
+  const dv=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")+"T"+String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");
+  const kindOpts=Object.entries(EV_KINDS).map(([k,v])=>`<option value="${k}" ${e.kind===k?"selected":""}>${v[0]}</option>`).join("");
+  let body;
+  if(ro){
+    const kd=EV_KINDS[e.kind]||EV_KINDS.autre;
+    body=`<div class="ev-ro"><span class="cal-dot" style="background:${kd[1]}"></span> ${kd[0]}</div>
+      <div class="ev-when">📅 ${capFirst(d.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long",year:"numeric"}))} à ${d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})}</div>
+      ${e.notes?`<div class="ev-notes">${esc(e.notes)}</div>`:""}
+      ${e.created_by_name?`<div class="ev-by">Programmé par ${esc(e.created_by_name)}</div>`:""}`;
+  }else{
+    body=`<div class="ev-row"><label>Titre</label><input type="text" id="evTitle" maxlength="100" placeholder="Ex : Assaut Bastion T10" value="${esc(e.title||"")}"></div>
+      <div class="ev-row2"><span><label>Type</label><select id="evKind">${kindOpts}</select></span><span><label>Date &amp; heure</label><input type="datetime-local" id="evWhen" value="${dv}"></span><span><label>Durée (min)</label><input type="number" id="evDur" min="0" max="600" step="15" value="${e.duration_min||60}"></span></div>
+      <div class="ev-row"><label>Notes (optionnel)</label><textarea id="evNotes" maxlength="500" rows="2" placeholder="Consignes, chars, vocal…">${esc(e.notes||"")}</textarea></div>`;
+  }
+  const acts=ro?`<button class="btn primary" id="evClose">Fermer</button>`
+    :`<button class="btn" id="evCancel">Annuler</button>${e.id?'<button class="btn" id="evDel" style="color:var(--bad)">Supprimer</button>':""}<button class="btn primary" id="evSave">Enregistrer</button>`;
+  const ov=document.getElementById("evModal");
+  ov.innerHTML=`<div class="ev-box"><button class="ev-x" id="evX">✕</button><h3>${ro?esc(e.title||"Événement"):(e.id?"Modifier l'événement":"Nouvel événement")}</h3>${body}<div class="ev-act">${acts}</div></div>`;
+  ov.classList.remove("hidden");
+  const close=()=>ov.classList.add("hidden");
+  ov.onclick=( e2)=>{ if(e2.target===ov) close(); };
+  document.getElementById("evX").onclick=close;
+  const cc=document.getElementById("evClose")||document.getElementById("evCancel"); if(cc) cc.onclick=close;
+  const del=document.getElementById("evDel"); if(del) del.onclick=()=>{ if(confirm("Supprimer cet événement ?")) deleteClanEvent(e.id); };
+  const sv=document.getElementById("evSave"); if(sv) sv.onclick=()=>{
+    const title=document.getElementById("evTitle").value.trim();
+    const when=document.getElementById("evWhen").value;
+    if(!title||!when){ alert("Il faut un titre et une date."); return; }
+    saveClanEvent({id:e.id, title, kind:document.getElementById("evKind").value,
+      event_ts:Math.floor(new Date(when).getTime()/1000),
+      duration_min:parseInt(document.getElementById("evDur").value,10)||60,
+      notes:document.getElementById("evNotes").value.trim()});
+  };
+}
+async function saveClanEvent(evt){
+  const r=await fnCall("clan-events",{session:localStorage.getItem(LS_SESSION),action:"save",event:evt});
+  if(!r.ok){ alert("Erreur d'enregistrement : "+((r.j&&r.j.error)||r.status)); return; }
+  document.getElementById("evModal").classList.add("hidden");
+  await loadClanEvents();
+}
+async function deleteClanEvent(id){
+  const r=await fnCall("clan-events",{session:localStorage.getItem(LS_SESSION),action:"delete",id});
+  if(!r.ok){ alert("Erreur de suppression : "+((r.j&&r.j.error)||r.status)); return; }
+  document.getElementById("evModal").classList.add("hidden");
+  await loadClanEvents();
+}
+
 function renderDashHero(){
   const el=document.getElementById("dashHero");
   const info=CLANINFO;
@@ -1304,28 +1494,26 @@ function renderDashHero(){
   const flags=langs.length? langs.map(l=>`<span class="h2-flag" title="${esc(l[2])}">${l[1]}</span>`).join("") : `<span class="h2-nolang">non précisée</span>`;
   const editN=CPROF_CANEDIT?`<button class="h2-edit" id="langEdit" title="Modifier la nationalité">✎</button>`:"";
   const now=Date.now()/1000;
-  const hasOp=CLANPROFILE&&CLANPROFILE.op_title&&CLANPROFILE.op_ts&&CLANPROFILE.op_ts>now;
-  let opHtml="";
-  if(hasOp){
-    const d=new Date(CLANPROFILE.op_ts*1000);
+  const nx=nextClanEvent();
+  let opHtml;
+  if(nx){
+    const d=new Date(nx.event_ts*1000);
     const dstr=capFirst(d.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"}))+" à "+d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
-    const dh=CLANPROFILE.op_ts-now, days=Math.floor(dh/86400);
+    const dh=nx.event_ts-now, days=Math.floor(dh/86400);
     const inTxt=days>0?("dans "+days+" j"):(dh>3600?("dans "+Math.floor(dh/3600)+" h"):"bientôt !");
-    opHtml=`<div class="h2-op">
+    opHtml=`<div class="h2-op cal-link" id="opGo">
       <span class="h2-star">★</span>
-      <div class="h2-op-l">Prochaine opération <span class="h2-op-in">${inTxt}</span></div>
-      <div class="h2-op-t">${esc(CLANPROFILE.op_title)}</div>
+      <div class="h2-op-l">Prochaine activité <span class="h2-op-in">${inTxt}</span></div>
+      <div class="h2-op-t">${esc(nx.title)}</div>
       <div class="h2-op-d">📅 ${esc(dstr)}</div>
-      ${CPROF_CANEDIT?'<button class="h2-edit h2-op-edit" id="opEdit" title="Modifier l\'opération">✎</button>':""}
+      <div class="h2-op-cta">Voir le calendrier →</div>
     </div>`;
   }else{
-    opHtml=`<div class="h2-op">
+    opHtml=`<div class="h2-op cal-link" id="opGo">
       <span class="h2-star" style="opacity:.4;animation:none">★</span>
       <div class="h2-op-l">Prochaine activité</div>
       <div class="h2-op-t" style="color:var(--ink-2);font-size:14px">Aucune programmée</div>
-      ${CPROF_CANEDIT
-        ? '<button class="h2-op-add" id="opAdd" style="margin-top:9px;width:100%;padding:7px;border:1px dashed var(--gold-line);border-radius:8px;color:var(--gold);background:transparent;cursor:pointer;font-weight:700;font-size:12px">＋ Programmer une opération</button>'
-        : '<div class="h2-op-d" style="margin-top:6px;font-size:11px;color:var(--muted)">Un officier peut en programmer une</div>'}
+      <div class="h2-op-cta">${(CAL_CANEDIT||CPROF_CANEDIT)?"Ouvrir le calendrier →":"Voir le calendrier →"}</div>
     </div>`;
   }
   el.innerHTML=`<div class="hero2 dash-anim" style="--di:0">
@@ -1343,7 +1531,7 @@ function renderDashHero(){
   </div>
   <div id="heroEditor" class="hidden"></div>`;
   const le=document.getElementById("langEdit"); if(le) le.onclick=openLangEditor;
-  const oe=document.getElementById("opEdit")||document.getElementById("opAdd"); if(oe) oe.onclick=openOpEditor;
+  const og=document.getElementById("opGo"); if(og) og.onclick=()=>switchClanSub("cal");
 }
 
 /* --- éditeurs du hero (staff uniquement, vérifié aussi côté serveur) --- */
@@ -2382,6 +2570,7 @@ function playerActive(){ return !document.getElementById("viewPlayer").classList
 function battlesActive(){ return !document.getElementById("viewBattles").classList.contains("hidden"); }
 function rerender(){ render(); if(playerActive()) renderPlayerView(); if(battlesActive()) renderBattles(); }
 function wireUI(){
+  document.querySelectorAll(".cv-tab").forEach(b=>b.onclick=()=>switchClanSub(b.dataset.sub));
   document.getElementById("modeSel").onchange=e=>{state.mode=e.target.value;rerender();};
   document.getElementById("search").oninput=e=>{state.search=e.target.value;render();};
   document.getElementById("periodSeg").querySelectorAll("button").forEach(b=>b.onclick=()=>{
