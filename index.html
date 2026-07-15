@@ -1,0 +1,2731 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clan Plus — Statistiques Bastion</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20240%20240%22%3E%3Crect%20width%3D%22240%22%20height%3D%22240%22%20rx%3D%2254%22%20fill%3D%22%23141310%22%2F%3E%3Cg%20transform%3D%22translate%2830%2030%29%20scale%280.75%29%22%20fill%3D%22%23d8b566%22%3E%3Ccircle%20cx%3D%22120%22%20cy%3D%22120%22%20r%3D%22100%22%20fill%3D%22none%22%20stroke%3D%22%23d8b566%22%20stroke-width%3D%227%22%2F%3E%3Crect%20x%3D%2281%22%20y%3D%228%22%20width%3D%2218%22%20height%3D%2218%22%2F%3E%3Crect%20x%3D%22111%22%20y%3D%224%22%20width%3D%2218%22%20height%3D%2218%22%2F%3E%3Crect%20x%3D%22141%22%20y%3D%228%22%20width%3D%2218%22%20height%3D%2218%22%2F%3E%3Cpath%20d%3D%22M161%2C155%20A54%2C54%200%201%201%20161%2C85%22%20fill%3D%22none%22%20stroke%3D%22%23d8b566%22%20stroke-width%3D%2220%22%20stroke-linecap%3D%22round%22%2F%3E%3Crect%20x%3D%22112%22%20y%3D%2294%22%20width%3D%2216%22%20height%3D%2252%22%20rx%3D%225%22%2F%3E%3Crect%20x%3D%2294%22%20y%3D%22112%22%20width%3D%2252%22%20height%3D%2216%22%20rx%3D%225%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
+<style>
+  :root{
+    --plane:#f3f2ee; --surface-1:#faf9f6; --surface-2:#f1f0ea; --card:#ffffff;
+    --ink:#16150f; --ink-2:#565349; --muted:#8b887e;
+    --grid:#e8e6de; --axis:#cfccc2; --border:rgba(22,21,15,.10);
+    --series-1:#2a78d6; --good:#12a150; --bad:#d64545;
+    --accent:#bf8f34; --accent-2:#e2ba63; --accent-soft:rgba(191,143,52,.12);
+    --shadow-sm:0 1px 2px rgba(20,18,10,.05);
+    --shadow:0 1px 2px rgba(20,18,10,.04), 0 12px 30px -16px rgba(20,18,10,.20);
+    --radius:14px; --radius-sm:9px; --ring:rgba(191,143,52,.40);
+    color-scheme:light;
+  }
+  :root[data-theme="dark"]{
+    --plane:#0c0c0b; --surface-1:#151412; --surface-2:#201f1b; --card:#1a1917;
+    --ink:#f6f5f1; --ink-2:#bdb9af; --muted:#87847b;
+    --grid:#2b2a26; --axis:#3a3833; --border:rgba(255,255,255,.09);
+    --series-1:#4f97ee; --good:#2ec26e; --bad:#ec6a6a;
+    --accent:#d8b566; --accent-2:#ecd190; --accent-soft:rgba(216,181,102,.14);
+    --shadow-sm:0 1px 2px rgba(0,0,0,.45);
+    --shadow:0 2px 10px rgba(0,0,0,.40);
+    --ring:rgba(216,181,102,.45);
+    color-scheme:dark;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  img,svg{max-width:100%}
+  svg.ic{width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.12em}
+  body{background:var(--plane);color:var(--ink);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:14px;line-height:1.5;
+    -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  :focus-visible{outline:2px solid var(--ring);outline-offset:2px}
+  .wrap{max-width:1200px;margin:0 auto;padding:20px 20px 72px}
+  .hidden{display:none !important}
+
+  /* ---- Écran de connexion ---- */
+  .login{min-height:80vh;display:grid;place-items:center}
+  .login-card{
+    max-width:420px;width:100%;text-align:center;padding:34px 30px;
+    background:var(--card);border:1px solid var(--border);border-radius:16px;
+    border-top:3px solid var(--accent);
+  }
+  .login-card .logo{width:66px;height:66px;border-radius:16px;margin:0 auto 16px;background:#141310;
+    display:grid;place-items:center;overflow:hidden;padding:6px;box-shadow:inset 0 0 0 1px rgba(216,181,102,.28)}
+  .login-card h1{font-size:20px;margin:0 0 6px}
+  .login-card p{color:var(--ink-2);margin:0 0 22px;font-size:14px}
+  .wg-btn{
+    appearance:none;cursor:pointer;font:inherit;font-weight:700;font-size:15px;
+    color:#1a1608;background:linear-gradient(180deg,var(--accent),#b7923f);
+    border:0;border-radius:10px;padding:13px 20px;width:100%;
+    display:inline-flex;align-items:center;justify-content:center;gap:9px}
+  .wg-btn:hover{filter:brightness(1.06)}
+  .login-note{margin-top:16px;font-size:12px;color:var(--muted)}
+  .login-err{margin-top:16px;font-size:13px;color:var(--bad)}
+  .login-back{display:inline-block;margin-top:18px;font-size:13px;color:var(--muted);text-decoration:none}
+  .login-back:hover{color:var(--ink)}
+
+  /* ---- Page d'accueil publique ---- */
+  #landing{max-width:1100px;margin:0 auto;padding:0 20px 40px}
+  .lp-nav{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px 4px;position:sticky;top:0;z-index:20;
+    background:var(--plane);border-bottom:1px solid var(--border)}
+  .lp-brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:17px;letter-spacing:-.3px}
+  .lp-nav-r{display:flex;align-items:center;gap:8px}
+  .lp-nav-link{color:var(--ink-2);text-decoration:none;font-size:13px;font-weight:600;padding:8px 10px;border-radius:8px}
+  .lp-nav-link:hover{color:var(--ink);background:var(--surface-2)}
+  @media (max-width:640px){.lp-nav-link{display:none}}
+
+  .lp-btn{appearance:none;cursor:pointer;font:inherit;font-weight:700;font-size:15px;text-decoration:none;
+    border-radius:11px;padding:14px 22px;display:inline-flex;align-items:center;justify-content:center;gap:9px;
+    border:1px solid transparent;transition:transform .15s ease,filter .15s ease,background .15s ease,border-color .15s ease}
+  .lp-btn-sm{padding:9px 15px;font-size:13px;border-radius:9px}
+  .lp-btn-primary{color:#1a1608;background:linear-gradient(180deg,var(--accent-2),var(--accent));box-shadow:var(--shadow-sm)}
+  .lp-btn-primary:hover{filter:brightness(1.06);transform:translateY(-2px)}
+  .lp-btn-ghost{color:var(--ink);background:var(--card);border-color:var(--border)}
+  .lp-btn-ghost:hover{border-color:var(--accent);transform:translateY(-2px)}
+
+  .lp-hero{position:relative;text-align:center;padding:66px 16px 54px;overflow:hidden}
+  .lp-hero-glow{position:absolute;top:-40px;left:50%;transform:translateX(-50%);width:560px;height:340px;pointer-events:none;
+    background:radial-gradient(ellipse at center,var(--accent-soft),transparent 68%);filter:blur(10px)}
+  .lp-logo-xl{position:relative;width:104px;height:104px;margin:0 auto 22px;background:#141310;border-radius:24px;
+    display:grid;place-items:center;padding:12px;box-shadow:inset 0 0 0 1px rgba(216,181,102,.28),0 18px 44px -18px rgba(0,0,0,.55)}
+  .lp-title{position:relative;font-size:clamp(34px,7vw,58px);margin:0 0 14px;letter-spacing:-1.5px;line-height:1}
+  .lp-tag{position:relative;max-width:600px;margin:0 auto 30px;font-size:clamp(15px,2.3vw,18px);color:var(--ink-2)}
+  .lp-cta{position:relative;display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+  .lp-hero-note{position:relative;margin-top:20px;font-size:12.5px;color:var(--muted);letter-spacing:.2px}
+
+  .lp-h2{text-align:center;font-size:clamp(22px,3.4vw,30px);letter-spacing:-.6px;margin:0 0 30px}
+  .lp-feats{padding:44px 0 20px}
+  .lp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+  .lp-feat{background:var(--card);border:1px solid var(--border);border-radius:15px;padding:22px 20px;
+    transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
+  .lp-feat:hover{transform:translateY(-4px);box-shadow:var(--shadow);border-color:var(--accent)}
+  .lp-feat-ic{width:48px;height:48px;border-radius:13px;display:grid;place-items:center;font-size:24px;margin-bottom:13px;
+    background:var(--accent-soft);border:1px solid var(--border)}
+  .lp-feat h3{margin:0 0 6px;font-size:16px}
+  .lp-feat p{margin:0;font-size:13.5px;color:var(--ink-2);line-height:1.55}
+
+  .lp-install{padding:52px 0 20px}
+  .lp-steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-bottom:30px}
+  .lp-step{display:flex;gap:14px;align-items:flex-start;background:var(--surface-1);border:1px solid var(--border);border-radius:13px;padding:18px}
+  .lp-step-n{flex:0 0 auto;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:15px;
+    color:#1a1608;background:linear-gradient(180deg,var(--accent-2),var(--accent))}
+  .lp-step h4{margin:0 0 4px;font-size:15px}
+  .lp-step p{margin:0;font-size:13px;color:var(--ink-2)}
+  .lp-step code{background:var(--surface-2);border:1px solid var(--border);border-radius:5px;padding:1px 5px;font-size:12px}
+  .lp-install-cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+
+  .lp-foot{margin-top:56px;border-top:1px solid var(--border);padding:26px 4px 4px}
+  .lp-foot-in{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  .lp-foot-brand{display:flex;align-items:center;gap:9px;font-weight:800;color:var(--ink-2)}
+  .lp-foot-links{display:flex;gap:6px;flex-wrap:wrap}
+  .lp-foot-links a{color:var(--ink-2);text-decoration:none;font-size:13px;padding:7px 11px;border-radius:8px}
+  .lp-foot-links a:hover{color:var(--ink);background:var(--surface-2)}
+  .lp-disclaimer{margin:18px 0 0;font-size:11.5px;color:var(--muted);line-height:1.5}
+
+  /* ---- Modale légale ---- */
+  .lp-modal{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.55);display:grid;place-items:center;padding:20px;
+    animation:lpFade .2s ease both}
+  .lp-modal-box{position:relative;max-width:640px;width:100%;max-height:86vh;overflow-y:auto;background:var(--card);
+    border:1px solid var(--border);border-radius:16px;padding:30px 30px 34px;box-shadow:var(--shadow);
+    animation:lpPop .24s cubic-bezier(.2,.7,.2,1) both}
+  .lp-modal-x{position:absolute;top:14px;right:14px;width:34px;height:34px;border-radius:9px;border:1px solid var(--border);
+    background:var(--surface-2);color:var(--ink-2);cursor:pointer;font-size:15px;line-height:1}
+  .lp-modal-x:hover{color:var(--ink);border-color:var(--accent)}
+  .lp-legal h2{margin:0 0 4px;font-size:22px;letter-spacing:-.5px}
+  .lp-legal .lp-legal-upd{color:var(--muted);font-size:12px;margin:0 0 18px}
+  .lp-legal h3{font-size:15px;margin:20px 0 6px}
+  .lp-legal p,.lp-legal li{font-size:13.5px;color:var(--ink-2);line-height:1.6}
+  .lp-legal ul{margin:6px 0;padding-left:20px}
+  .lp-legal code{background:var(--surface-2);border:1px solid var(--border);border-radius:5px;padding:1px 5px;font-size:12px}
+  .lp-legal a{color:var(--accent);text-decoration:none} .lp-legal a:hover{text-decoration:underline}
+
+  /* ---- Bandeau cookies ---- */
+  .cookiebar{position:fixed;left:16px;right:16px;bottom:16px;z-index:55;max-width:820px;margin:0 auto;
+    display:flex;align-items:center;gap:16px;flex-wrap:wrap;justify-content:space-between;
+    background:var(--card);border:1px solid var(--border);border-radius:13px;padding:14px 18px;box-shadow:var(--shadow);
+    animation:lpUp .3s ease both}
+  .cookiebar span{font-size:12.5px;color:var(--ink-2);flex:1;min-width:220px}
+  .cookiebar a{color:var(--accent);text-decoration:none} .cookiebar a:hover{text-decoration:underline}
+  @keyframes lpFade{from{opacity:0}to{opacity:1}}
+  @keyframes lpPop{from{opacity:0;transform:scale(.96) translateY(10px)}to{opacity:1;transform:none}}
+  @keyframes lpUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){.lp-modal,.lp-modal-box,.cookiebar,.lp-btn,.lp-feat{animation:none;transition:none}}
+
+  /* ---- Boutons génériques ---- */
+  .logo-sm{width:38px;height:38px;border-radius:11px;flex:0 0 auto;background:#141310;display:grid;place-items:center;
+    overflow:hidden;padding:3px;box-shadow:inset 0 0 0 1px rgba(216,181,102,.22)}
+  .cp-mark{width:100%;height:100%;display:block}
+  /* micro-animation subtile au chargement du logo */
+  @keyframes cpIn{from{opacity:0;transform:scale(.82)}to{opacity:1;transform:scale(1)}}
+  @keyframes cpPlusPop{0%{opacity:0;transform:scale(0)}70%{transform:scale(1.18)}100%{opacity:1;transform:scale(1)}}
+  .cp-mark{animation:cpIn .55s ease both}
+  .cp-mark .cp-plus{transform-box:fill-box;transform-origin:center;animation:cpPlusPop .5s .35s ease both}
+  @media (prefers-reduced-motion:reduce){.cp-mark,.cp-mark .cp-plus{animation:none}}
+  .who{font-size:12px;color:var(--muted);text-align:right;line-height:1.25;white-space:nowrap}
+  .who b{color:var(--ink);font-weight:600}
+  .btn{appearance:none;cursor:pointer;font:inherit;font-size:13px;font-weight:600;color:var(--ink-2);
+    background:var(--card);border:1px solid var(--border);border-radius:9px;padding:8px 13px;
+    display:inline-flex;gap:6px;align-items:center;transition:.15s}
+  .btn:hover{color:var(--ink);border-color:var(--accent);background:var(--surface-2)}
+  .icon-btn{appearance:none;cursor:pointer;font-size:15px;color:var(--ink-2);background:var(--card);
+    border:1px solid var(--border);border-radius:9px;width:36px;height:36px;display:grid;place-items:center;transition:.15s}
+  .icon-btn:hover{border-color:var(--accent);color:var(--ink)}
+
+  /* ---- Menu latéral (dépliant) ---- */
+  .shell{display:flex;align-items:flex-start;min-height:100vh}
+  .sidebar{position:sticky;top:0;height:100vh;flex:0 0 220px;width:220px;min-width:0;
+    background:linear-gradient(180deg,#111b26,#0e1620);border-right:1px solid rgba(229,185,92,.34);
+    display:flex;flex-direction:column;padding:14px 11px;gap:4px;overflow:visible}
+  .sidebar.collapsed{flex-basis:66px;width:66px}
+  .side-head{display:flex;align-items:center;gap:10px;padding:4px 6px 13px;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:8px}
+  .side-brand{font-weight:700;font-size:16px;white-space:nowrap;overflow:hidden;flex:1;letter-spacing:.4px;color:#eaf1f8;font-family:"Bahnschrift","Segoe UI Semibold",system-ui,sans-serif;text-transform:uppercase}
+  /* Bouton "poignée" rond, a cheval sur le bord droit, centre verticalement */
+  .side-toggle{position:absolute;top:50%;right:-13px;transform:translateY(-50%);z-index:60;
+    appearance:none;cursor:pointer;background:#111b26;border:1px solid rgba(229,185,92,.5);border-radius:50%;
+    width:26px;height:26px;color:#e5b95c;font-size:15px;line-height:1;display:grid;place-items:center;
+    box-shadow:0 3px 10px rgba(0,0,0,.55);transition:.15s}
+  .side-toggle:hover{background:rgba(229,185,92,.14);transform:translateY(-50%) scale(1.1)}
+  .sidebar.collapsed .side-brand{display:none}
+  .sidebar.collapsed .side-head{justify-content:center;padding:4px 0 12px}
+  .sidebar.collapsed .side-toggle{transform:translateY(-50%) rotate(180deg)}   /* flèche vers "déplier" */
+  .side-nav{display:flex;flex-direction:column;gap:4px}
+  .side-item{appearance:none;cursor:pointer;font:inherit;font-size:13.5px;font-weight:600;color:#9aa7b6;
+    background:transparent;border:0;border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:12px;
+    text-align:left;transition:.15s;white-space:nowrap;overflow:hidden}
+  .side-item:hover{background:rgba(255,255,255,.04);color:#eaf1f8}
+  .side-item.on{background:rgba(229,185,92,.12);color:#f4d78c;box-shadow:inset 2px 0 0 #e5b95c}
+  .si-ic{width:24px;flex:0 0 auto;display:grid;place-items:center}
+  .si-ic svg{width:18px;height:18px;color:#e5b95c;opacity:.72;transition:opacity .15s}
+  .side-item:hover .si-ic svg,.side-item.on .si-ic svg{opacity:1}
+  .si-lbl{flex:1;overflow:hidden;text-overflow:ellipsis}
+  .sidebar.collapsed .si-lbl{display:none}
+  .sidebar.collapsed .side-item{justify-content:center;padding:10px}
+  /* bloc utilisateur (pseudo + déconnexion) en bas de la sidebar */
+  .side-user{margin-top:auto;padding-top:12px;border-top:1px solid rgba(255,255,255,.08)}
+  .su-who{font-size:12px;color:#9aa7b6;padding:2px 6px 9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .su-who b{color:#eaf1f8;font-weight:600}
+  .su-logout{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;border:1px solid rgba(255,255,255,.08);
+    background:#0e1620;color:#9aa7b6;font:inherit;font-size:12.5px;font-weight:600;padding:9px;border-radius:9px;cursor:pointer;transition:.15s}
+  .su-logout svg{width:15px;height:15px}
+  .su-logout:hover{border-color:var(--bad,#e8626b);color:#e8626b;background:rgba(232,98,107,.10)}
+  .sidebar.collapsed .su-who,.sidebar.collapsed .su-lbl{display:none}
+  .sidebar.collapsed .su-logout{padding:9px 0}
+  /* ---- Zone principale + barre haute ---- */
+  .main{flex:1 1 auto;min-width:0}
+  .topbar{position:sticky;top:0;z-index:40;background:var(--surface-1);border-bottom:1px solid var(--border);
+    display:flex;align-items:center;gap:14px;padding:11px 20px}
+  .tb-clan{margin-right:auto;min-width:0}
+  .tb-title{font-size:16px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.2px}
+  .tb-sub{font-size:12px;color:var(--muted)}
+  .tb-right{display:flex;align-items:center;gap:8px}
+  /* ---- Classements ---- */
+  .rk-mine{font-size:13px;color:var(--ink-2)}
+  .rk-mine b{color:var(--ink)}
+  .rk-me td{background:var(--accent-soft) !important;font-weight:600}
+  .rk-table th,.rk-table td{text-align:left;white-space:nowrap}
+  .rk-table .rk-num{text-align:right;font-variant-numeric:tabular-nums}
+  @media(max-width:720px){
+    .sidebar{flex-basis:58px;width:58px;padding:10px 7px}
+    .side-brand,.side-toggle{display:none}
+    .sidebar .si-lbl,.sidebar .su-who,.sidebar .su-lbl{display:none}
+    .sidebar .side-item{justify-content:center;padding:10px}
+    .sidebar .su-logout{padding:9px 0}
+    .side-head{justify-content:center;padding:4px 0 10px}
+    .topbar{padding:10px 14px}
+  }
+
+  /* ---- Barre de filtres ---- */
+  .filters{display:flex;gap:14px;flex-wrap:wrap;align-items:center;padding:11px 15px;margin-bottom:20px;
+    background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow-sm)}
+  .fld{display:flex;align-items:center;gap:8px}
+  .filters label{font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);font-weight:700}
+  .filters select,.filters input,.searchbar input{font:inherit;font-size:13px;color:var(--ink);
+    background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:8px 11px;transition:.15s}
+  .filters select:focus,.filters input:focus,.searchbar input:focus{border-color:var(--accent);background:var(--card)}
+  .filters input[type=search]{min-width:190px}
+  .seg{display:inline-flex;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:3px}
+  .seg button{appearance:none;cursor:pointer;font:inherit;font-size:12px;font-weight:600;color:var(--ink-2);
+    background:transparent;border:0;border-radius:6px;padding:6px 12px;transition:.15s}
+  .seg button:hover{color:var(--ink)}
+  .seg button.on{background:var(--card);color:var(--ink);box-shadow:var(--shadow-sm)}
+  .spacer{flex:1 1 auto}
+
+  .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:20px}
+  .kpi{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px 17px;
+    box-shadow:var(--shadow-sm);transition:.18s;position:relative;overflow:hidden}
+  .kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent);opacity:0;transition:.18s}
+  .kpi:hover{box-shadow:var(--shadow);transform:translateY(-2px)}
+  .kpi:hover::before{opacity:.65}
+  .kpi .k-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:700}
+  .kpi .k-val{font-size:27px;font-weight:750;margin-top:7px;letter-spacing:-.6px;line-height:1}
+  .kpi .k-sub{font-size:12px;color:var(--ink-2);margin-top:6px}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow-sm)}
+  .card h2{font-size:13px;margin:0 0 16px;font-weight:700;letter-spacing:.2px;display:flex;align-items:baseline;gap:8px}
+  .card h2 .hint{font-weight:500;color:var(--muted);font-size:12px}
+
+  .bars{display:flex;flex-direction:column;gap:11px}
+  .bar-row{display:grid;grid-template-columns:120px 1fr 64px;align-items:center;gap:12px}
+  .bar-row .nm{font-size:13px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
+  .bar-track{background:var(--surface-2);border-radius:6px;height:18px;overflow:hidden;box-shadow:inset 0 0 0 1px var(--border)}
+  .bar-fill{height:100%;background:var(--series-1);border-radius:6px;min-width:4px;
+    transition:width .55s cubic-bezier(.2,.7,.2,1)}
+  .bar-row .vv{font-size:13px;text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+
+  .trend{width:100%;height:190px;display:block}
+  .trend .grid-line{stroke:var(--grid);stroke-width:1}
+  .trend .axis-line{stroke:var(--axis);stroke-width:1}
+  .trend .area{fill:var(--series-1);opacity:.13}
+  .trend .line{fill:none;stroke:var(--series-1);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round}
+  .trend .dot{fill:var(--series-1)}
+  .trend text{fill:var(--muted);font-size:11px}
+
+  .tablecard{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px;
+    box-shadow:var(--shadow-sm);overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+  th,td{padding:10px 12px;text-align:right;white-space:nowrap}
+  th:first-child,td:first-child{text-align:left}
+  thead th{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px;
+    cursor:pointer;user-select:none;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--card)}
+  thead th:hover{color:var(--ink)}
+  thead th.sorted{color:var(--accent)}
+  thead th .arw{color:var(--accent);font-size:10px}
+  tbody td{border-bottom:1px solid var(--grid);font-size:13px}
+  tbody tr{transition:.12s}
+  tbody tr:hover{background:var(--accent-soft)}
+  tbody tr:last-child td{border-bottom:0}
+  tbody td:first-child{font-weight:600}
+  .rank{color:var(--muted);width:22px;display:inline-block;text-align:right;margin-right:10px}
+  .pos{color:var(--good)} .neg{color:var(--bad)}
+  .empty{padding:44px;text-align:center;color:var(--muted);font-size:14px}
+  .members{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}
+  .mem{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 11px;
+    background:var(--surface-2);border:1px solid var(--border);border-radius:9px;transition:.12s}
+  .mem:hover{border-color:var(--accent)}
+  .mem .mn{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mem .mr{font-size:11px;color:var(--muted);white-space:nowrap}
+  .mem.me{border-color:var(--accent);background:var(--accent-soft)}
+  .phead{margin-bottom:18px;font-size:14px;color:var(--ink-2)}
+  .phead b{font-size:20px;color:var(--ink);letter-spacing:-.3px}
+  .pcard{display:flex;align-items:center;gap:16px;background:var(--card);border:1px solid var(--border);
+    border-radius:var(--radius);padding:18px 20px;margin-bottom:18px;box-shadow:var(--shadow);border-left:4px solid var(--accent)}
+  .pav{width:52px;height:52px;border-radius:50%;flex:0 0 auto;display:grid;place-items:center;
+    background:linear-gradient(145deg,var(--accent-2),var(--accent));color:#231a06;font-weight:800;font-size:17px;
+    box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}
+  .pci{min-width:0}
+  .pci h2{font-size:20px;margin:0 0 3px;letter-spacing:-.3px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .pmeta{font-size:13px;color:var(--muted)}
+  .pmeta b{font-weight:700}
+  .role-badge{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--accent);
+    background:var(--accent-soft);border:1px solid var(--accent);border-radius:999px;padding:3px 10px}
+  /* ---- Line-ups ---- */
+  .lu-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+  .lu-title{font-size:18px;margin:0;letter-spacing:-.3px}
+  .lu-sub{font-size:12.5px;color:var(--muted);margin-top:3px}
+  .lu-new{font-weight:700;background:var(--accent-soft);border-color:var(--accent);color:var(--ink)}
+  .lu-card{margin-bottom:14px}
+  .lu-card-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+  .lu-card-h h3{font-size:16px;margin:0;display:flex;align-items:baseline;gap:8px}
+  .lu-actions{display:flex;gap:8px}
+  .lu-del:hover{border-color:var(--bad);color:var(--bad)}
+  .lu-notes{font-size:13px;color:var(--ink-2);margin-bottom:10px;padding:9px 12px;background:var(--surface-2);border-radius:8px}
+  .lu-by{font-size:11.5px;color:var(--muted);margin-top:10px}
+  .lu-editor{margin-bottom:16px;border-top:3px solid var(--accent)}
+  .lu-form{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+  .lu-lab{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--muted);font-weight:600}
+  .lu-lab input{font:inherit;font-size:13px;color:var(--ink);background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:9px 11px}
+  .lu-lab input:focus{border-color:var(--accent);background:var(--card)}
+  .lu-slots{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+  .lu-slot{display:grid;grid-template-columns:26px 1.2fr 1fr 1fr 36px;gap:8px;align-items:center}
+  .lu-idx{color:var(--muted);font-weight:700;text-align:center;font-variant-numeric:tabular-nums}
+  .lu-slot select,.lu-slot input{font:inherit;font-size:13px;color:var(--ink);background:var(--surface-2);
+    border:1px solid var(--border);border-radius:8px;padding:8px 10px;min-width:0}
+  .lu-slot select:focus,.lu-slot input:focus{border-color:var(--accent);background:var(--card)}
+  .lu-rm:hover{border-color:var(--bad);color:var(--bad)}
+  .lu-form-actions{display:flex;gap:10px;justify-content:flex-end}
+  .lu-save{font-weight:700;background:var(--accent-soft);border-color:var(--accent);color:var(--ink)}
+  @media(max-width:640px){
+    .lu-form{grid-template-columns:1fr}
+    .lu-slot{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+    .lu-slot select,.lu-slot .lu-tank,.lu-slot .lu-pos{flex:1 1 100%}
+    .lu-slot .lu-rm{margin-left:auto}
+  }
+  .mini{width:100%;border-collapse:collapse}
+  .mini th{font-size:11px;color:var(--muted);text-align:right;padding:6px 8px;font-weight:700;text-transform:uppercase;letter-spacing:.3px}
+  .mini th:first-child{text-align:left}
+  .mini td{padding:8px;text-align:right;border-top:1px solid var(--grid);font-size:13px;font-variant-numeric:tabular-nums}
+  .mini td:first-child{text-align:left;font-weight:600}
+  .plan ul{margin:0;padding-left:20px}
+  .plan li{margin:9px 0;font-size:14px;line-height:1.6}
+  .tagpos{color:var(--good);font-weight:700} .tagneg{color:var(--bad);font-weight:700}
+  #pKpis{grid-template-columns:repeat(auto-fit,minmax(158px,1fr))}
+  .plan{border-top:3px solid var(--accent)}
+  .sec-h{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:700;
+    margin:28px 2px 15px;display:flex;align-items:center;gap:12px}
+  .sec-h::after{content:"";flex:1;height:1px;background:var(--border)}
+  .sec-desc{font-size:13px;color:var(--ink-2);margin:-6px 2px 15px;line-height:1.55;max-width:860px}
+  .sec-desc b{color:var(--ink)} .sec-desc a{color:var(--series-1)}
+  .rat-grouplabel{font-size:12.5px;font-weight:700;color:var(--ink);margin:16px 2px 9px}
+  .rat .rmean{font-size:11px;color:var(--muted);margin-top:6px;line-height:1.35}
+  .clan-hero{display:flex;gap:18px;align-items:center;flex-wrap:wrap;
+    background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:22px;margin-bottom:14px;
+    box-shadow:var(--shadow);position:relative;overflow:hidden}
+  .clan-hero::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--clan-color,var(--accent))}
+  .clan-hero .em{width:60px;height:60px;border-radius:14px;flex:0 0 auto;
+    background:var(--clan-color,var(--accent));display:grid;place-items:center;
+    color:#fff;font-weight:800;font-size:19px;text-shadow:0 1px 3px rgba(0,0,0,.45);box-shadow:var(--shadow-sm)}
+  .clan-hero .em-img{background:var(--surface-2);object-fit:contain;padding:6px}
+  .res-em{width:30px;height:30px;border-radius:7px;object-fit:contain;background:var(--surface-2);flex:0 0 auto}
+  .res-em-ph{display:grid;place-items:center;font-size:11px;font-weight:700;color:var(--muted)}
+  .clan-hero .ci{flex:1 1 260px;min-width:0}
+  .clan-hero h2{font-size:22px;margin:0 0 3px;letter-spacing:-.4px}
+  .clan-hero .motto{font-style:italic;color:var(--ink-2);margin:0 0 10px;font-size:14px}
+  .clan-hero .meta{display:flex;gap:18px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
+  .clan-hero .meta b{color:var(--ink);font-weight:650}
+  .clan-desc{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;margin-bottom:14px;
+    font-size:14px;line-height:1.6;white-space:pre-line;color:var(--ink-2);box-shadow:var(--shadow-sm)}
+  .clan-desc b{color:var(--ink);font-weight:650}
+  .rat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:12px;margin-bottom:6px}
+  .rat{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 15px;box-shadow:var(--shadow-sm);transition:.18s}
+  .rat:hover{box-shadow:var(--shadow);transform:translateY(-2px)}
+  .rat .rl{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-weight:700}
+  .rat .rv{font-size:24px;font-weight:750;margin-top:6px;letter-spacing:-.5px;line-height:1}
+  .rat .rr{font-size:12px;color:var(--ink-2);margin-top:6px;display:flex;gap:6px;align-items:center}
+  .rat .up{color:var(--good);font-weight:700} .rat .down{color:var(--bad);font-weight:700}
+  .searchbar{display:flex;gap:10px;margin-bottom:6px}
+  .searchbar input{flex:1}
+  .searchbar .btn{background:var(--accent-soft);border-color:var(--accent);color:var(--ink)}
+  .res-row{display:flex;align-items:center;gap:14px;padding:12px 10px;border-top:1px solid var(--grid);cursor:pointer;transition:.12s;border-radius:8px}
+  .res-row:hover{background:var(--accent-soft)}
+  .res-row .rt{font-weight:750;min-width:76px;color:var(--accent)}
+  .res-row .rn{color:var(--ink);font-size:14px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
+  .res-row .rm{color:var(--muted);font-size:12px}
+  .banner{display:flex;align-items:center;gap:10px;padding:12px 16px;margin-bottom:18px;
+    border-radius:12px;background:var(--accent-soft);border:1px solid var(--accent);font-size:13px;color:var(--ink)}
+  footer{margin-top:32px;padding-top:20px;border-top:1px solid var(--border);color:var(--muted);font-size:12px;text-align:center}
+  /* ---- Chargement (skeleton) ---- */
+  .skel{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;position:relative}
+  .skel::after{content:"";position:absolute;inset:0;
+    background:linear-gradient(90deg,transparent,var(--surface-2),transparent);transform:translateX(-100%);animation:sh 1.3s infinite}
+  @keyframes sh{100%{transform:translateX(100%)}}
+  .skel-hero{height:98px;margin-bottom:16px}
+  .skel-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:14px;margin-bottom:20px}
+  .skel-card{height:92px}
+  .skel-wide{height:300px}
+  @media(max-width:900px){
+    .kpis{grid-template-columns:repeat(2,1fr)}
+    .grid2{grid-template-columns:1fr}
+    .appbar-inner{flex-wrap:wrap;gap:10px}
+    .tabs{order:3;width:100%;justify-content:center}
+  }
+  @media(max-width:560px){
+    .kpis{grid-template-columns:1fr 1fr}
+    .who{display:none}
+    .wrap{padding:16px 14px 60px}
+    .clan-hero h2{font-size:19px}
+  }
+
+  /* --- Onglet Batailles (confrontations) --- */
+  .bl-sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:6px 0 16px}
+  .bl-sc{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px}
+  .bl-sc .l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;font-weight:700}
+  .bl-sc .v{font-size:23px;font-weight:800;margin-top:4px;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+  .bl-sc .u{font-size:13px;color:var(--muted);font-weight:400}
+  .bl-list{display:flex;flex-direction:column;gap:10px}
+  .bl-row{position:relative;background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow-sm);overflow:hidden;transition:transform .15s,box-shadow .15s,border-color .15s}
+  .bl-row:hover{transform:translateY(-1px);box-shadow:var(--shadow);border-color:var(--axis)}
+  .bl-head{position:relative;display:flex;align-items:center;gap:18px;cursor:pointer;min-height:92px;padding:12px 18px;isolation:isolate}
+  /* image de la carte = FOND de la ligne, fondue vers la carte */
+  .bl-bg{position:absolute;inset:0;z-index:-1;overflow:hidden}
+  .bl-bg img{position:absolute;left:0;top:0;width:52%;height:100%;object-fit:cover}
+  .bl-bg .sh{position:absolute;inset:0;background:linear-gradient(90deg,rgba(14,13,10,.38) 0%,rgba(14,13,10,.72) 22%,var(--card) 50%)}
+  /* liseré résultat (gauche) */
+  .bl-row::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;z-index:2}
+  .bl-win::before{background:var(--good)} .bl-loss::before{background:var(--bad)} .bl-draw::before{background:var(--muted)}
+  /* zone 1 : identité carte (posée sur l'image) */
+  .bl-mapinfo{width:148px;flex:0 0 148px;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.8)}
+  .bl-mapinfo .nm{font-size:15px;font-weight:800;letter-spacing:-.2px;line-height:1.15}
+  .bl-mapinfo .md{font-size:10.5px;font-weight:600;opacity:.85;text-transform:uppercase;letter-spacing:.6px;margin-top:3px}
+  /* zone 2 : la confrontation, groupe compact centré */
+  .bl-match{flex:1;display:flex;align-items:center;justify-content:center;gap:20px;min-width:0}
+  .bl-team{display:flex;align-items:center;gap:11px;width:158px;min-width:0}
+  .bl-team.left{justify-content:flex-end;text-align:right}
+  .bl-team.right{justify-content:flex-start}
+  .bl-emblem{width:46px;height:46px;border-radius:10px;object-fit:cover;background:var(--surface-2);flex:0 0 auto}
+  .bl-emblem.bl-em-ph{display:grid;place-items:center;font-size:12px;font-weight:700;color:var(--ink-2);border:1px solid var(--border)}
+  .bl-emblem.ours{box-shadow:0 0 0 2px var(--accent)}
+  .bl-team .tag{font-size:15px;font-weight:800;letter-spacing:-.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bl-team.left .tag{color:var(--accent)}
+  .bl-scorebox{text-align:center;flex:0 0 auto;min-width:86px}
+  .bl-scorebox .sc{font-size:27px;font-weight:800;letter-spacing:2px;line-height:1;font-variant-numeric:tabular-nums}
+  .bl-scorebox .rz{display:inline-block;font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;margin-top:5px;padding:2px 8px;border-radius:20px;color:var(--muted);background:var(--surface-2)}
+  .bl-win .sc .a{color:var(--good)} .bl-loss .sc .a{color:var(--bad)}
+  .bl-win .rz{color:var(--good);background:rgba(46,194,110,.13)}
+  .bl-loss .rz{color:var(--bad);background:rgba(236,106,106,.12)}
+  .bl-sep{color:var(--muted);font-weight:400}
+  /* zone 3 : SR + meta */
+  .bl-right{display:flex;align-items:center;gap:16px;flex:0 0 auto}
+  .bl-sr{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:7px 14px;border-radius:10px;border:1.5px solid;min-width:66px;background:var(--surface-1)}
+  .bl-sr .lbl{font-size:9px;font-weight:800;letter-spacing:.9px;opacity:.85}
+  .bl-sr .val{font-size:17px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+  .bl-metar{text-align:right;font-size:11px;color:var(--muted);line-height:1.6;min-width:96px}
+  .bl-metar .mvp{color:var(--accent);font-weight:700}
+  .bl-chev{color:var(--muted);flex:0 0 auto;transition:transform .15s;font-size:13px}
+  .bl-row.open .bl-chev{transform:rotate(180deg)}
+  /* détail */
+  .bl-detail{display:none;border-top:1px solid var(--border);background:var(--surface-1);padding:8px 16px 14px;overflow-x:auto}
+  .bl-row.open .bl-detail{display:block}
+  .bl-tl{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:700;margin:12px 0 5px}
+  .bl-tl:first-child{margin-top:2px} .bl-tl.ours{color:var(--accent)} .bl-tl.foe{color:var(--bad)}
+  .bl-em{width:34px;height:34px;border-radius:8px;object-fit:cover;background:var(--surface-2);flex:0 0 auto}
+  .bl-em-ph{display:grid;place-items:center;font-size:10px;font-weight:700;color:var(--ink-2)}
+  .bl-tl .bl-em{width:20px;height:20px;border-radius:5px}
+  .bl-tbl{width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap}
+  .bl-tbl th{font-weight:500;color:var(--muted);font-size:10px;text-align:right;padding:3px 9px}
+  .bl-tbl th:first-child,.bl-tbl th:nth-child(2){text-align:left}
+  .bl-tbl td{padding:4px 9px;text-align:right} .bl-tbl td.c,.bl-tbl th.c{text-align:center}
+  .bl-tbl td:first-child,.bl-tbl td:nth-child(2){text-align:left}
+  .bl-tbl tbody tr{border-top:1px solid var(--border)}
+  .bl-tbl tr.me{background:var(--accent-soft)} .bl-tbl tr.me td:nth-child(2){color:var(--accent);font-weight:600}
+  .bl-dead{color:var(--bad)} .bl-alive{color:var(--good)}
+  .ce-badge{font-weight:700;letter-spacing:-.2px}
+  /* lecteur de replay */
+  .bl-replay{margin-top:14px;border-top:1px solid var(--border);padding-top:12px}
+  .rp-launch{appearance:none;cursor:pointer;display:inline-flex;align-items:center;gap:8px;background:var(--surface-2);border:1px solid var(--border);border-radius:9px;padding:9px 15px;color:var(--ink);font-size:13px;font-weight:700}
+  .rp-launch:hover{border-color:var(--accent);color:var(--accent)}
+  .rp-launch .rp-tri{color:var(--accent);font-size:11px}
+  .rp-launch .rp-demo{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);border:1px solid var(--border);border-radius:20px;padding:1px 7px}
+  .rp-wrap{max-width:420px;margin:2px auto 0}
+  .rp-stage{position:relative;width:100%;aspect-ratio:1/1;border-radius:10px;overflow:hidden;border:1px solid var(--border);background:#0c0c0b}
+  .rp-stage img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .rp-stage canvas{position:absolute;inset:0;width:100%;height:100%}
+  .rp-ctrl{display:flex;align-items:center;gap:11px;margin-top:9px}
+  .rp-play{appearance:none;cursor:pointer;width:34px;height:34px;flex:0 0 auto;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);color:var(--ink);font-size:12px;display:grid;place-items:center}
+  .rp-play:hover{border-color:var(--accent);color:var(--accent)}
+  .rp-scrub{flex:1;accent-color:var(--accent)}
+  .rp-time{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;min-width:88px;text-align:right}
+  .rp-legend{display:flex;gap:15px;justify-content:center;flex-wrap:wrap;font-size:11px;color:var(--ink-2);margin-top:9px}
+  .rp-legend i{font-style:normal;font-size:12px}
+  .rp-note{text-align:center;font-size:11px;color:var(--muted);margin-top:5px}
+  /* Logo de chargement anime */
+  .cp-load{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:50px 0}
+  .cp-load-mark{position:relative;width:104px;height:104px}
+  .cp-emb{position:absolute;inset:15px;animation:cpPulse 1.7s ease-in-out infinite;transform-origin:center}
+  .cp-spin{position:absolute;inset:0;width:104px;height:104px;animation:cpSpin 1s linear infinite;transform-origin:center}
+  .cp-spin circle{fill:none;stroke:var(--accent);stroke-width:6;stroke-linecap:round;stroke-dasharray:58 250}
+  @keyframes cpSpin{to{transform:rotate(360deg)}}
+  @keyframes cpPulse{0%,100%{opacity:.7;transform:scale(.92)}50%{opacity:1;transform:scale(1)}}
+  .cp-load-txt{font-size:13px;color:var(--muted);letter-spacing:.6px}
+  @media(prefers-reduced-motion:reduce){.cp-emb,.cp-spin{animation:none}}
+  /* Ma progression : bloc SR + objectifs */
+  .sr-hero{display:flex;gap:22px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
+  .sr-main{display:flex;align-items:center;gap:16px;flex:0 0 auto}
+  .sr-big{font-size:46px;font-weight:800;line-height:1;letter-spacing:-1px;font-variant-numeric:tabular-nums}
+  .sr-name{font-size:15px;font-weight:700}
+  .sr-trend{font-size:12px;margin-top:6px;font-weight:600}
+  .sr-streak{font-size:12px;margin-top:3px;color:var(--ink-2)}
+  .sr-break{flex:1;min-width:250px;display:flex;flex-direction:column;gap:6px}
+  .srb{display:flex;align-items:center;gap:10px;font-size:12px}
+  .srb-l{width:72px;flex:0 0 auto;color:var(--ink-2)}
+  .srb-track{flex:1;height:8px;border-radius:5px;background:var(--surface-2);position:relative;overflow:hidden}
+  .srb-track::before{content:"";position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--axis)}
+  .srb-fill{position:absolute;left:0;top:0;bottom:0;border-radius:5px}
+  .srb-fill.up{background:var(--good)} .srb-fill.down{background:var(--accent)}
+  .srb-v{width:44px;text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+  .plan-goals{margin-top:12px;border-top:1px solid var(--border);padding-top:10px}
+  .plan-goals .pg-h{font-weight:700;font-size:13px;margin-bottom:4px}
+  /* ================= Dashboard "Mon clan" — salle de commandement ================= */
+  .dashx{
+    --plane:#0a0f16;--surface-1:#111b26;--surface-2:#16222f;--card:#111b26;
+    --ink:#eaf1f8;--ink-2:#9aa7b6;--muted:#6b7889;
+    --border:rgba(255,255,255,.08);--accent:#e5b95c;--accent-2:#f4d78c;--accent-soft:rgba(229,185,92,.12);
+    --good:#4cc077;--bad:#e8626b;
+    --panel:#111b26;--panel-2:#0e1620;--raised:#17232f;--line:rgba(255,255,255,.08);
+    --gold:#e5b95c;--gold-2:#f4d78c;--gold-soft:rgba(229,185,92,.12);--gold-line:rgba(229,185,92,.34);
+    --teal:#4bb6c6;--steel:#7f8ea0;--fx:"Bahnschrift","DIN Condensed","Segoe UI Semibold",system-ui,sans-serif;
+  }
+  #viewClan{color:var(--ink)}
+  @keyframes dashIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+  .dash-anim{animation:dashIn .55s cubic-bezier(.2,.75,.25,1) both;animation-delay:calc(var(--di,0)*70ms)}
+  @keyframes starPulse{0%,100%{transform:scale(1) rotate(0)}50%{transform:scale(1.28) rotate(13deg)}}
+  @keyframes opGlow{50%{box-shadow:0 0 26px -2px rgba(229,185,92,.28)}}
+  /* Hero */
+  .hero2{position:relative;overflow:hidden;display:flex;align-items:center;gap:22px;margin-bottom:14px;
+    padding:22px 26px;border-radius:16px;border:1px solid var(--gold-line);color:#eaf1f8;
+    background:linear-gradient(103deg,#16273a 0%,#0d1622 52%,#0b1119 100%)}
+  .hero2::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.5;background-size:cover;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='760' height='280'%3E%3Cg fill='none' stroke='%23e5b95c' stroke-opacity='0.10' stroke-width='1.3'%3E%3Cpath d='M0 40 Q190 6 380 60 T760 40'/%3E%3Cpath d='M0 96 Q190 60 380 116 T760 96'/%3E%3Cpath d='M0 152 Q190 116 380 172 T760 152'/%3E%3Cpath d='M0 208 Q190 172 380 228 T760 208'/%3E%3Cpath d='M0 264 Q190 228 380 284 T760 264'/%3E%3C/g%3E%3C/svg%3E")}
+  .hero2::after{content:"";position:absolute;left:-40px;top:-60px;width:300px;height:300px;border-radius:50%;pointer-events:none;
+    background:radial-gradient(circle,rgba(229,185,92,.16),transparent 62%)}
+  .h2-em{position:relative;z-index:1;width:104px;height:104px;flex:0 0 auto;object-fit:contain;
+    border-radius:16px;background:#0b1119;border:1px solid var(--gold-line);padding:10px;box-shadow:0 10px 30px -10px rgba(0,0,0,.7)}
+  .h2-em-ph{display:grid;place-items:center;font-weight:800;font-size:20px;color:var(--gold)}
+  .h2-ci{position:relative;z-index:1;flex:1;min-width:0}
+  .h2-tag{font-family:var(--fx);font-size:32px;font-weight:700;letter-spacing:1.5px;color:#fff;line-height:1}
+  .h2-name{font-family:var(--fx);font-size:18px;letter-spacing:2px;text-transform:uppercase;color:var(--gold-2);margin-left:11px}
+  .h2-motto{margin-top:7px;font-style:italic;color:#b9c6d4;font-size:13.5px}
+  .h2-meta{display:flex;gap:20px;flex-wrap:wrap;margin-top:13px;font-size:12.5px;color:var(--ink-2);align-items:center}
+  .h2-meta b{color:#e8eef5;font-weight:600}
+  .h2-langs{display:inline-flex;align-items:center;gap:3px}
+  .h2-flag{font-size:15px}
+  .h2-nolang{color:#69727f;font-style:italic}
+  .h2-edit{appearance:none;border:1px solid var(--gold-line);background:transparent;color:var(--gold);border-radius:6px;
+    width:22px;height:22px;line-height:1;cursor:pointer;font-size:11px;margin-left:5px;padding:0;transition:.15s}
+  .h2-edit:hover{background:var(--gold-soft);transform:scale(1.1)}
+  .h2-op{position:relative;z-index:1;flex:0 0 auto;width:300px;max-width:44%;text-align:left;border:1px solid var(--gold-line);
+    border-radius:13px;padding:15px 17px;background:linear-gradient(180deg,rgba(229,185,92,.10),rgba(229,185,92,.02));animation:opGlow 3s ease-in-out infinite}
+  .h2-star{position:absolute;top:-13px;right:-9px;font-size:24px;color:var(--gold-2);text-shadow:0 0 9px rgba(244,215,140,.8);animation:starPulse 2s ease-in-out infinite}
+  .h2-op-l{font-size:10.5px;text-transform:uppercase;letter-spacing:1.1px;color:var(--gold);font-weight:700}
+  .h2-op-in{background:var(--gold-soft);color:var(--gold-2);border-radius:12px;padding:1px 8px;font-size:10px;margin-left:5px;letter-spacing:0;text-transform:none}
+  .h2-op-t{font-family:var(--fx);font-size:18px;letter-spacing:.5px;color:var(--gold-2);margin:7px 0 3px}
+  .h2-op-d{font-size:12px;color:#b9c0cc}
+  .h2-op-edit{position:absolute;bottom:9px;right:9px}
+  .h2-op-add{cursor:pointer;font:inherit;font-size:13px;font-weight:700;color:var(--gold);background:transparent;border-style:dashed;animation:none;transition:.15s}
+  .h2-op-add:hover{background:var(--gold-soft)}
+  .h2-editor{margin:0 0 14px;background:var(--card);border:1px solid var(--accent);border-radius:12px;padding:14px 16px;animation:dashIn .25s ease both}
+  .h2-editor b{font-size:13px}
+  .he-hint{font-size:11px;color:var(--muted);margin-left:8px}
+  .he-row{display:flex;gap:8px;flex-wrap:wrap;margin:11px 0}
+  .he-row select,.he-row input{font:inherit;font-size:13px;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--panel-2);color:var(--ink)}
+  .he-row input[type=text]{flex:1;min-width:180px}
+  .he-act{display:flex;gap:8px;justify-content:flex-end}
+  /* Barre de période sous le hero */
+  #dashSub .filters{margin-top:0;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:11px 16px}
+  /* Cartes-stats */
+  .dash-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin-bottom:14px}
+  .dk{position:relative;overflow:hidden;border:1px solid var(--gold-line);border-radius:13px;padding:14px 16px;
+    background:linear-gradient(180deg,rgba(229,185,92,.05),rgba(255,255,255,.006));transition:.18s}
+  .dk:hover{transform:translateY(-4px);border-color:var(--gold);box-shadow:0 14px 30px -16px rgba(229,185,92,.5)}
+  .dk-top{display:flex;align-items:center;gap:9px;margin-bottom:9px}
+  .dk-ic{width:30px;height:30px;border-radius:8px;background:var(--gold-soft);border:1px solid var(--gold-line);display:grid;place-items:center;color:var(--gold);flex:0 0 auto}
+  .dk-ic svg{width:16px;height:16px}
+  .dk-l{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--ink-2)}
+  .dk-v{font-family:var(--fx);font-size:29px;letter-spacing:.5px;color:#fff;line-height:1;font-variant-numeric:tabular-nums}
+  .dk.gold{background:linear-gradient(165deg,rgba(229,185,92,.16),rgba(229,185,92,.03))}
+  .dk.gold .dk-v{color:var(--gold-2)}
+  .dk-s{font-size:11px;color:var(--muted);margin-top:4px}
+  .dk-t{display:inline-flex;align-items:center;gap:2px;font-weight:700;font-size:10.5px;padding:1px 7px;border-radius:20px;margin-left:5px}
+  .dk-t.up{color:var(--good);background:rgba(76,192,119,.14)}
+  .dk-t.down{color:var(--bad);background:rgba(232,98,107,.14)}
+  .dk-t.eq{color:var(--muted)}
+  /* Évolution + à la une + description */
+  .dash-mid{margin-bottom:14px}
+  #viewClan .card{background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--line)}
+  .sp-star{color:var(--gold-2);text-shadow:0 0 7px rgba(232,183,58,.65);display:inline-block;animation:starPulse 2.2s ease-in-out infinite}
+  .sp-row{display:flex;align-items:center;gap:13px;padding:12px 0;border-top:1px solid var(--line)}
+  .sp-row:first-of-type{border-top:0}
+  .sp-ic{width:42px;height:42px;flex:0 0 auto;display:grid;place-items:center;font-size:20px;background:var(--raised);border:1px solid var(--line);border-radius:11px}
+  .sp-tx{flex:1;min-width:0}
+  .sp-l{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--ink-2)}
+  .sp-v{font-size:15px;font-weight:600;margin-top:2px}
+  .sp-side{font-size:11.5px;color:var(--muted);flex:0 0 auto;text-align:right}
+  .dash-desc{margin-bottom:16px}
+  .dash-desc .dd-t{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--ink-2);margin-bottom:6px}
+  @media (max-width:820px){.hero2{flex-wrap:wrap}.h2-op{width:100%;max-width:none}}
+  @media (prefers-reduced-motion:reduce){.dash-anim,.h2-op,.h2-star,.sp-star,.h2-editor{animation:none}}
+
+  /* Loadouts — cartes premium */
+  .lo-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px}
+  .lo-card2{position:relative;background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:var(--shadow-sm);animation:loIn .45s cubic-bezier(.2,.7,.2,1) both;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
+  .lo-card2:hover{transform:translateY(-3px);box-shadow:var(--shadow);border-color:var(--cls)}
+  .lo-card2::after{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--cls)}
+  .lo-card2-h{position:relative;display:flex;align-items:flex-start;gap:14px;padding:15px 16px 12px;overflow:hidden}
+  .lo-card2-h::before{content:"";position:absolute;inset:0;background:linear-gradient(100deg,var(--cls),transparent 62%);opacity:.11;pointer-events:none}
+  .lo-t-ic{width:122px;flex:0 0 auto;z-index:1}
+  .lo-t-ic img{width:122px;height:auto;object-fit:contain;filter:drop-shadow(0 2px 5px rgba(0,0,0,.45))}
+  .lo-t-info{flex:1;min-width:0;z-index:1}
+  .lo-t-name{font-size:18px;font-weight:800;letter-spacing:-.4px;line-height:1.05}
+  .lo-t-meta{display:flex;align-items:center;gap:7px;margin-top:6px}
+  .lo-cls{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--cls)}
+  .lo-tier{font-size:10px;font-weight:800;background:var(--cls);color:#141310;border-radius:5px;padding:1px 6px;line-height:1.5}
+  .lo-pills{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
+  .lo-pill{font-size:11px;font-weight:600;background:var(--surface-2);border:1px solid var(--border);border-radius:20px;padding:3px 10px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+  .lo-cardact{display:flex;gap:6px;flex:0 0 auto;z-index:2}
+  .lo-mini{width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);color:var(--ink-2);cursor:pointer;display:grid;place-items:center;font-size:13px;transition:.15s}
+  .lo-mini:hover{border-color:var(--cls);color:var(--cls);transform:translateY(-1px)}
+  .lo-minidel:hover{border-color:var(--bad);color:var(--bad)}
+  .lo-sec2{display:flex;align-items:flex-start;gap:12px;padding:10px 16px;border-top:1px solid var(--border)}
+  .lo-sec2-l{width:100px;flex:0 0 auto;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);padding-top:12px}
+  .lo-dtiles{display:flex;gap:9px;flex-wrap:wrap;flex:1;min-width:0}
+  .lo-dtile{display:flex;flex-direction:column;align-items:center;gap:3px;width:54px}
+  .lo-dtile-ic{width:46px;height:46px;border-radius:11px;background:var(--surface-2);border:1px solid var(--border);display:grid;place-items:center;transition:transform .16s ease,border-color .16s ease}
+  .lo-dtile-ic img{max-width:38px;max-height:30px;object-fit:contain}
+  .lo-dtile:hover .lo-dtile-ic{transform:scale(1.14) translateY(-2px);border-color:var(--cls)}
+  .lo-dtile span{font-size:9px;color:var(--ink-2);text-align:center;line-height:1.05;max-width:54px;overflow:hidden;max-height:22px}
+  .lo-dtiles.sk .lo-dtile{width:40px} .lo-dtiles.sk .lo-dtile-ic{width:38px;height:38px;border-radius:9px}
+  .lo-none{color:var(--muted);font-size:13px;padding-top:12px}
+  .lo-note2{margin:8px 16px 0;padding:10px 12px;background:var(--surface-1);border-radius:9px;font-size:13px;color:var(--ink-2);border-left:3px solid var(--cls);line-height:1.5}
+  .lo-by2{padding:9px 16px 14px;font-size:11px;color:var(--muted)}
+  .lo-empty{text-align:center;padding:56px 20px;color:var(--muted)}
+  .lo-empty-ic{font-size:40px;opacity:.5;margin-bottom:8px}
+  .lo-empty-t{font-size:16px;font-weight:700;color:var(--ink)}
+  .lo-empty-s{font-size:13px;margin-top:6px;max-width:420px;margin-left:auto;margin-right:auto}
+  @keyframes loIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+  .lo-ed{display:flex;flex-direction:column;gap:16px}
+  .lo-sec-h{font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px}
+  .lo-tilerow{display:flex;gap:10px;flex-wrap:wrap}
+  .lo-tile{position:relative;width:104px;height:78px;border-radius:10px;border:1px solid var(--border);background:var(--surface-2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:5px;cursor:pointer}
+  .lo-tile img{max-width:64px;max-height:40px;object-fit:contain}
+  .lo-tile span{font-size:10px;line-height:1.1;text-align:center;color:var(--ink);max-width:94px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .lo-tile.empty{border-style:dashed;color:var(--muted);font-size:20px;font-weight:400}
+  .lo-tile.empty small{font-size:10px;font-weight:600}
+  .lo-tile.filled{cursor:default;animation:loPop .22s ease}
+  .lo-tile:hover{border-color:var(--accent);transform:translateY(-2px)}
+  .lo-tile{transition:transform .15s ease,border-color .15s ease}
+  @keyframes loPop{from{transform:scale(.86)}to{transform:scale(1)}}
+  .lo-chartile{width:154px} .lo-chartile img{max-width:132px;max-height:46px}
+  .lo-x{position:absolute;top:-7px;right:-7px;width:20px;height:20px;border-radius:50%;border:1px solid var(--border);background:var(--card);color:var(--ink-2);font-size:11px;cursor:pointer;display:grid;place-items:center;padding:0}
+  .lo-x:hover{border-color:var(--accent);color:var(--accent)}
+  .lu-lab textarea{width:100%}
+  .lo-picker{margin-top:8px;animation:loIn .25s ease both}
+  .lo-picker-box{border:1px solid var(--accent);border-radius:12px;background:var(--surface-1);padding:12px}
+  .lo-picker-h{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+  .lo-picker-h b{flex:0 0 auto;font-size:13px}
+  .lo-search{flex:1;min-width:140px}
+  .lo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;max-height:340px;overflow-y:auto}
+  .lo-popt{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;border:1px solid var(--border);border-radius:9px;background:var(--card);cursor:pointer;font-size:10px;transition:transform .12s ease,border-color .12s ease,background .12s ease}
+  .lo-popt img{max-width:54px;max-height:36px;object-fit:contain}
+  .lo-popt span{color:var(--ink);text-align:center;line-height:1.1;max-height:24px;overflow:hidden}
+  .lo-popt:hover{border-color:var(--accent);background:var(--accent-soft);transform:translateY(-2px) scale(1.03)}
+  @media(max-width:840px){ .bl-metar{display:none} }
+  @media(max-width:720px){
+    .bl-head{gap:10px;padding:10px 12px;min-height:78px}
+    .bl-mapinfo{width:96px;flex-basis:96px} .bl-mapinfo .nm{font-size:13px}
+    .bl-bg img{width:70%} .bl-bg .sh{background:linear-gradient(90deg,rgba(14,13,10,.45) 0%,rgba(14,13,10,.8) 20%,var(--card) 62%)}
+    .bl-match{gap:10px} .bl-team{width:auto} .bl-team .tag{display:none}
+    .bl-emblem{width:38px;height:38px}
+    .bl-scorebox{min-width:70px} .bl-scorebox .sc{font-size:22px}
+    .bl-sr{padding:5px 9px;min-width:52px} .bl-sr .val{font-size:14px}
+  }
+</style>
+</head>
+<body>
+
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="i-gauge" viewBox="0 0 24 24"><path d="M12 13l4-4"/><path d="M4 18a8 8 0 1 1 16 0"/></symbol>
+  <symbol id="i-sword" viewBox="0 0 24 24"><path d="M14.5 3.5L21 3l-.5 6.5L9 21l-3-3L14.5 3.5z"/><path d="M6 15l3 3"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V10M9 20V4M14 20v-7M19 20V8"/></symbol>
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/></symbol>
+  <symbol id="i-tools" viewBox="0 0 24 24"><path d="M14 6a3 3 0 1 0-2 5l-6 6 2 2 6-6a3 3 0 0 0 2-5"/></symbol>
+  <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M8 4h8v4a4 4 0 0 1-8 0V4z"/><path d="M8 6H5v2a3 3 0 0 0 3 3M16 6h3v2a3 3 0 0 1-3 3M10 15h4M9 20h6M12 15v5"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3-3"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 5-3.5 8-7 9-3.5-1-7-4-7-9V6l7-3z"/></symbol>
+  <symbol id="i-flag" viewBox="0 0 24 24"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></symbol>
+  <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-trophy2" viewBox="0 0 24 24"><path d="M8 4h8v4a4 4 0 0 1-8 0V4z"/><path d="M10 15h4M9 20h6M12 15v5"/></symbol>
+  <symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 3L5 13h6l-1 8 8-10h-6l1-8z"/></symbol>
+</svg>
+
+<!-- ======================= PAGE D'ACCUEIL PUBLIQUE ======================= -->
+<div id="landing" class="hidden">
+  <header class="lp-nav">
+    <div class="lp-brand">
+      <span class="logo-sm"><svg class="cp-mark" viewBox="0 0 240 240" aria-label="Clan Plus"><circle cx="120" cy="120" r="100" fill="none" stroke="#d8b566" stroke-width="7"/><circle cx="120" cy="120" r="88" fill="none" stroke="#d8b566" stroke-width="2.5" opacity=".5"/><rect x="81" y="8" width="18" height="18" fill="#d8b566"/><rect x="111" y="4" width="18" height="18" fill="#d8b566"/><rect x="141" y="8" width="18" height="18" fill="#d8b566"/><circle cx="20" cy="120" r="4.5" fill="#d8b566"/><circle cx="220" cy="120" r="4.5" fill="#d8b566"/><path d="M161,155 A54,54 0 1 1 161,85" fill="none" stroke="#d8b566" stroke-width="20" stroke-linecap="round"/><g class="cp-plus"><rect x="112" y="94" width="16" height="52" rx="5" fill="#d8b566"/><rect x="94" y="112" width="52" height="16" rx="5" fill="#d8b566"/></g></svg></span>
+      <span>Clan Plus</span>
+    </div>
+    <nav class="lp-nav-r">
+      <a class="lp-nav-link" href="#lp-feats">Fonctions</a>
+      <a class="lp-nav-link" href="#lp-install">Installation</a>
+      <button class="lp-btn lp-btn-ghost lp-btn-sm" id="lpLoginTop">Se connecter</button>
+    </nav>
+  </header>
+
+  <section class="lp-hero">
+    <div class="lp-hero-glow"></div>
+    <div class="lp-logo-xl"><svg class="cp-mark" viewBox="0 0 240 240" aria-label="Clan Plus"><circle cx="120" cy="120" r="100" fill="none" stroke="#d8b566" stroke-width="7"/><circle cx="120" cy="120" r="88" fill="none" stroke="#d8b566" stroke-width="2.5" opacity=".5"/><rect x="81" y="8" width="18" height="18" fill="#d8b566"/><rect x="111" y="4" width="18" height="18" fill="#d8b566"/><rect x="141" y="8" width="18" height="18" fill="#d8b566"/><circle cx="20" cy="120" r="4.5" fill="#d8b566"/><circle cx="220" cy="120" r="4.5" fill="#d8b566"/><path d="M161,155 A54,54 0 1 1 161,85" fill="none" stroke="#d8b566" stroke-width="20" stroke-linecap="round"/><g class="cp-plus"><rect x="112" y="94" width="16" height="52" rx="5" fill="#d8b566"/><rect x="94" y="112" width="52" height="16" rx="5" fill="#d8b566"/></g></svg></div>
+    <h1 class="lp-title">Clan Plus</h1>
+    <p class="lp-tag">Le compagnon de ton clan sur <b>World of Tanks</b>. Le mod enregistre tes batailles de <b>Bastion</b> et le site en tire des statistiques, un indicateur de jeu d'équipe et un plan de progression — pour tout le clan.</p>
+    <div class="lp-cta">
+      <a class="lp-btn lp-btn-primary" id="lpDownload" href="download/clanplus_1.0.24.wotmod" download>⬇ Télécharger le mod</a>
+      <button class="lp-btn lp-btn-ghost" id="lpLogin">Accéder à mon clan →</button>
+    </div>
+    <div class="lp-hero-note">Version 1.0.24 · World of Tanks EU 2.3.0.1 · Gratuit · Sans publicité</div>
+  </section>
+
+  <section class="lp-feats" id="lp-feats">
+    <h2 class="lp-h2">Ce que Clan Plus t'apporte</h2>
+    <div class="lp-grid">
+      <div class="lp-feat"><div class="lp-feat-ic">🏰</div><h3>Stats Bastion</h3><p>Les performances de ton clan en mode Bastion, bataille après bataille, réunies au même endroit.</p></div>
+      <div class="lp-feat"><div class="lp-feat-ic">⚔️</div><h3>Batailles détaillées</h3><p>Revis chaque affrontement façon carte de match e-sport : équipes, logos, cartes et résultats.</p></div>
+      <div class="lp-feat"><div class="lp-feat-ic">🎯</div><h3>Indicateur SR</h3><p>Le « Synergy Rating », un score inspiré du WN8 mais pensé pour mesurer l'efficacité du jeu d'équipe.</p></div>
+      <div class="lp-feat"><div class="lp-feat-ic">📈</div><h3>Ma progression</h3><p>Ton évolution, tes points forts et faibles, et un plan de progression personnalisé.</p></div>
+      <div class="lp-feat"><div class="lp-feat-ic">🛠️</div><h3>Loadouts clan</h3><p>Les équipements, consommables et compétences recommandés par l'état-major, char par char.</p></div>
+      <div class="lp-feat"><div class="lp-feat-ic">🎬</div><h3>Relecteur animé</h3><p>Rejoue tes batailles sur une mini-carte animée, à la manière du jeu.</p></div>
+    </div>
+  </section>
+
+  <section class="lp-install" id="lp-install">
+    <h2 class="lp-h2">Installer en 4 étapes</h2>
+    <div class="lp-steps">
+      <div class="lp-step"><span class="lp-step-n">1</span><div><h4>Télécharge le mod</h4><p>Récupère le fichier <code>clanplus_1.0.24.wotmod</code> avec le bouton ci-dessus.</p></div></div>
+      <div class="lp-step"><span class="lp-step-n">2</span><div><h4>Installe-le</h4><p>Place le fichier dans <code>World_of_Tanks_EU/mods/2.3.0.1/</code>, ou installe-le via le modpack d'Aslain.</p></div></div>
+      <div class="lp-step"><span class="lp-step-n">3</span><div><h4>Joue au Bastion</h4><p>Lance le jeu et joue tes batailles de clan : elles sont enregistrées et envoyées automatiquement.</p></div></div>
+      <div class="lp-step"><span class="lp-step-n">4</span><div><h4>Connecte-toi ici</h4><p>Reviens sur le site et connecte-toi avec ton compte World of Tanks pour voir les stats de ton clan.</p></div></div>
+    </div>
+    <div class="lp-install-cta">
+      <a class="lp-btn lp-btn-primary" href="download/clanplus_1.0.24.wotmod" download>⬇ Télécharger le mod</a>
+      <button class="lp-btn lp-btn-ghost" id="lpLogin2">Se connecter</button>
+    </div>
+  </section>
+
+  <footer class="lp-foot">
+    <div class="lp-foot-in">
+      <div class="lp-foot-brand">
+        <span class="logo-sm"><svg class="cp-mark" viewBox="0 0 240 240" aria-label="Clan Plus"><circle cx="120" cy="120" r="100" fill="none" stroke="#d8b566" stroke-width="7"/><path d="M161,155 A54,54 0 1 1 161,85" fill="none" stroke="#d8b566" stroke-width="20" stroke-linecap="round"/><g class="cp-plus"><rect x="112" y="94" width="16" height="52" rx="5" fill="#d8b566"/><rect x="94" y="112" width="52" height="16" rx="5" fill="#d8b566"/></g></svg></span>
+        <span>Clan Plus</span>
+      </div>
+      <nav class="lp-foot-links">
+        <a href="#" data-legal="legal">Mentions légales</a>
+        <a href="#" data-legal="privacy">Confidentialité</a>
+        <a href="#" data-legal="cookies">Cookies</a>
+      </nav>
+    </div>
+    <p class="lp-disclaimer">World of Tanks et Wargaming sont des marques de Wargaming. Clan Plus est un projet communautaire indépendant, gratuit et non affilié à Wargaming.</p>
+  </footer>
+</div>
+
+<!-- ======================= MODALE LÉGALE ======================= -->
+<div id="legalModal" class="lp-modal hidden">
+  <div class="lp-modal-box">
+    <button class="lp-modal-x" id="legalClose" aria-label="Fermer">✕</button>
+    <div id="legalBody"></div>
+  </div>
+</div>
+
+<!-- ======================= BANDEAU COOKIES ======================= -->
+<div id="cookieBar" class="cookiebar hidden">
+  <span>Ce site n'utilise que des cookies techniques strictement nécessaires (connexion, thème). Aucun traceur publicitaire. <a href="#" data-legal="cookies">En savoir plus</a></span>
+  <button class="lp-btn lp-btn-primary lp-btn-sm" id="cookieOk">J'ai compris</button>
+</div>
+
+<!-- ======================= ÉCRAN DE CONNEXION ======================= -->
+<div class="wrap login" id="loginScreen">
+  <div class="login-card">
+    <div class="logo"><svg class="cp-mark" viewBox="0 0 240 240" aria-label="Clan Plus"><circle cx="120" cy="120" r="100" fill="none" stroke="#d8b566" stroke-width="7"/><circle cx="120" cy="120" r="88" fill="none" stroke="#d8b566" stroke-width="2.5" opacity=".5"/><rect x="81" y="8" width="18" height="18" fill="#d8b566"/><rect x="111" y="4" width="18" height="18" fill="#d8b566"/><rect x="141" y="8" width="18" height="18" fill="#d8b566"/><circle cx="20" cy="120" r="4.5" fill="#d8b566"/><circle cx="220" cy="120" r="4.5" fill="#d8b566"/><path d="M161,155 A54,54 0 1 1 161,85" fill="none" stroke="#d8b566" stroke-width="20" stroke-linecap="round"/><g class="cp-plus"><rect x="112" y="94" width="16" height="52" rx="5" fill="#d8b566"/><rect x="94" y="112" width="52" height="16" rx="5" fill="#d8b566"/></g></svg></div>
+    <h1>Clan Plus</h1>
+    <p>Statistiques Bastion de ton clan. Connecte-toi avec ton compte World of Tanks pour accéder aux données de ton clan.</p>
+    <button class="wg-btn" id="wgLogin">▶ Se connecter avec World of Tanks</button>
+    <div class="login-note">Connexion sécurisée via le site officiel Wargaming. Nous ne voyons jamais ton mot de passe.</div>
+    <div class="login-err hidden" id="loginErr"></div>
+    <a href="#" class="login-back" id="loginBack">← Retour à l'accueil</a>
+  </div>
+</div>
+
+<!-- ======================= APPLICATION ======================= -->
+<div class="hidden" id="app">
+  <div class="shell">
+    <aside class="sidebar dashx" id="sidebar">
+      <div class="side-head">
+        <div class="logo-sm"><svg class="cp-mark" viewBox="0 0 240 240" aria-label="Clan Plus"><circle cx="120" cy="120" r="100" fill="none" stroke="#e5b95c" stroke-width="7"/><circle cx="120" cy="120" r="88" fill="none" stroke="#e5b95c" stroke-width="2.5" opacity=".5"/><rect x="81" y="8" width="18" height="18" fill="#e5b95c"/><rect x="111" y="4" width="18" height="18" fill="#e5b95c"/><rect x="141" y="8" width="18" height="18" fill="#e5b95c"/><circle cx="20" cy="120" r="4.5" fill="#e5b95c"/><circle cx="220" cy="120" r="4.5" fill="#e5b95c"/><path d="M161,155 A54,54 0 1 1 161,85" fill="none" stroke="#e5b95c" stroke-width="20" stroke-linecap="round"/><g class="cp-plus"><rect x="112" y="94" width="16" height="52" rx="5" fill="#e5b95c"/><rect x="94" y="112" width="52" height="16" rx="5" fill="#e5b95c"/></g></svg></div>
+        <span class="side-brand">Clan Plus</span>
+      </div>
+      <nav class="side-nav" id="nav">
+        <button class="tab side-item on" data-v="clan"><span class="si-ic"><svg class="ic"><use href="#i-gauge"/></svg></span><span class="si-lbl">Vue clan</span></button>
+        <button class="tab side-item" data-v="battles"><span class="si-ic"><svg class="ic"><use href="#i-sword"/></svg></span><span class="si-lbl">Batailles</span></button>
+        <button class="tab side-item" data-v="player"><span class="si-ic"><svg class="ic"><use href="#i-chart"/></svg></span><span class="si-lbl">Ma progression</span></button>
+        <button class="tab side-item" data-v="lineups"><span class="si-ic"><svg class="ic"><use href="#i-grid"/></svg></span><span class="si-lbl">Line-ups</span></button>
+        <button class="tab side-item" data-v="loadouts"><span class="si-ic"><svg class="ic"><use href="#i-tools"/></svg></span><span class="si-lbl">Loadouts</span></button>
+        <button class="tab side-item" data-v="ranking"><span class="si-ic"><svg class="ic"><use href="#i-trophy"/></svg></span><span class="si-lbl">Classements</span></button>
+        <button class="tab side-item" data-v="search"><span class="si-ic"><svg class="ic"><use href="#i-search"/></svg></span><span class="si-lbl">Chercher un clan</span></button>
+      </nav>
+      <div class="side-user">
+        <div class="su-who" id="who"></div>
+        <button class="su-logout" id="logoutBtn"><svg class="ic"><use href="#i-logout"/></svg><span class="su-lbl">Déconnexion</span></button>
+      </div>
+      <button class="side-toggle" id="sideToggle" title="Replier / déplier le menu">‹</button>
+    </aside>
+    <div class="main">
+      <header class="topbar">
+        <div class="tb-clan">
+          <div class="tb-title" id="clanTitle">Clan Plus</div>
+          <div class="tb-sub" id="clanSub">Statistiques Bastion</div>
+        </div>
+        <div class="tb-right">
+          <button class="icon-btn" id="themeBtn" title="Thème clair / sombre">◑</button>
+        </div>
+      </header>
+      <div class="wrap">
+  <div class="banner hidden" id="banner"></div>
+
+  <div class="filters" id="subbar">
+    <span class="fld"><label>Mode</label><select id="modeSel"></select></span>
+    <span class="fld"><label>Période</label>
+      <span class="seg" id="periodSeg">
+        <button data-d="0" class="on">Tout</button>
+        <button data-d="7">7 j</button>
+        <button data-d="30">30 j</button>
+        <button data-d="90">90 j</button>
+      </span>
+    </span>
+    <span class="spacer"></span>
+    <span id="playerPick" class="hidden fld"><label>Joueur</label><select id="playerSel"></select></span>
+    <input type="search" id="search" placeholder="Rechercher un joueur…">
+  </div>
+
+  <div id="loading" class="hidden">
+    <div class="cp-load" style="padding:110px 0">
+      <div class="cp-load-mark">
+        <svg viewBox="0 0 120 120" class="cp-spin" aria-hidden="true"><circle cx="60" cy="60" r="54"/></svg>
+        <svg viewBox="0 0 240 240" class="cp-emb" aria-hidden="true">
+          <circle cx="120" cy="120" r="100" fill="none" stroke="#d8b566" stroke-width="7"/>
+          <circle cx="120" cy="120" r="88" fill="none" stroke="#d8b566" stroke-width="2.5" opacity=".5"/>
+          <rect x="81" y="8" width="18" height="18" fill="#d8b566"/><rect x="111" y="4" width="18" height="18" fill="#d8b566"/><rect x="141" y="8" width="18" height="18" fill="#d8b566"/>
+          <path d="M161,155 A54,54 0 1 1 161,85" fill="none" stroke="#d8b566" stroke-width="20" stroke-linecap="round"/>
+          <rect x="112" y="94" width="16" height="52" rx="5" fill="#d8b566"/><rect x="94" y="112" width="52" height="16" rx="5" fill="#d8b566"/>
+        </svg>
+      </div>
+      <div class="cp-load-txt">Chargement de tes statistiques…</div>
+    </div>
+  </div>
+
+  <div id="viewClan" class="dashx">
+  <div id="dashHero"></div>
+  <div id="dashSub"></div>
+  <section class="dash-kpis" id="dashKpis"></section>
+  <div class="grid2 dash-mid">
+    <div class="card dash-anim" style="--di:5"><h2>Évolution — % de victoires <span class="hint">par jour</span></h2>
+      <svg class="trend" id="dashEvo" preserveAspectRatio="none"></svg></div>
+    <div class="card dash-anim" id="dashSpot" style="--di:6"></div>
+  </div>
+  <div id="dashDesc"></div>
+  <div id="clanInfo"></div>
+  <div class="sec-h">Détail par joueur</div>
+  <p class="sec-desc"><b>Uniquement les parties Bastion</b> jouées par les membres <b>ayant installé le mod Clan Plus</b> — vos vraies parties, enregistrées automatiquement (à distinguer des chiffres officiels ci-dessus).</p>
+
+  <div class="grid2">
+    <div class="card"><h2>Dégâts moyens par joueur <span class="hint">top 10</span></h2>
+      <div class="bars" id="barsDmg"></div></div>
+    <div class="card"><h2>Frags moyens par joueur <span class="hint">top 10</span></h2>
+      <div class="bars" id="barsKills"></div></div>
+  </div>
+
+  <div class="tablecard">
+    <h2 style="font-size:14px;margin:0 0 6px;font-weight:600">Classement des joueurs</h2>
+    <p class="sec-desc" style="margin:0 0 14px">Le <b>SR — Synergy Rating</b> reprend la mécanique du <b>WNX/WN8</b> (valeurs attendues → ratios → paliers) mais orientée <b>jeu d'équipe</b> : calculé <b>pour chaque bataille</b>, le score global est la <b>moyenne des batailles</b>. La référence est <b>globale</b> : la moyenne de <b>tous les joueurs enregistrés</b> (ton clan + tous les adversaires rencontrés). <b>≈ 1500 = niveau global moyen</b> ; au-dessus, le clan/joueur est meilleur que la moyenne. Clique une colonne pour trier.</p>
+    <table id="tbl"><thead><tr id="thead"></tr></thead><tbody id="tbody"></tbody></table>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h2>Membres du clan <span class="hint" id="memCount"></span></h2>
+    <div id="members" class="members"></div>
+  </div>
+  </div><!-- /viewClan -->
+
+  <div id="viewBattles" class="hidden">
+    <div class="sec-h">Nos confrontations Bastion</div>
+    <p class="sec-desc">Chaque <b>bataille de clan</b> enregistrée par le mod, présentée comme une <b>confrontation</b> : notre clan contre le clan adverse. Clique sur une ligne pour dérouler le <b>détail des deux équipes</b>.</p>
+    <div class="bl-sum" id="blSummary"></div>
+    <div class="bl-list" id="blList"></div>
+  </div>
+
+  <div id="viewPlayer" class="hidden">
+    <p class="sec-desc" style="margin-top:2px">Le <b>bilan personnel</b> d'un joueur en Bastion, calculé sur les batailles enregistrées par le mod. Change de joueur avec le menu <b>« Joueur »</b> en haut à droite.</p>
+    <div id="pHead"></div>
+    <div id="pSR"></div>
+    <section class="kpis" id="pKpis"></section>
+    <div class="grid2">
+      <div class="card"><h2>Par classe de char <span class="hint">dégâts moy · % vict.</span></h2><div id="pByClass"></div></div>
+      <div class="card"><h2>Top chars joués <span class="hint">les plus joués</span></h2><div id="pByTank"></div></div>
+    </div>
+    <div class="grid2">
+      <div class="card"><h2>Par tier <span class="hint">dégâts moy · % vict.</span></h2><div id="pByTier"></div></div>
+      <div class="card"><h2>Par carte <span class="hint">dégâts moy · % vict.</span></h2><div id="pByMap"></div></div>
+    </div>
+    <div class="grid2">
+      <div class="card"><h2>Clans adverses <span class="hint">🔴 dangereux · 🟢 facile</span></h2><div id="pEnemies"></div></div>
+      <div class="card"><h2>Détails de combat <span class="hint">tes moyennes</span></h2><div id="pHidden"></div></div>
+    </div>
+    <div class="card" style="margin-bottom:16px">
+      <h2>Toi vs le clan <span class="hint">moyenne · meilleur membre</span></h2><div id="pCompare"></div>
+    </div>
+    <div class="card" style="margin-bottom:16px">
+      <h2>Évolution — dégâts par bataille</h2>
+      <svg class="trend" id="pTrend" preserveAspectRatio="none"></svg>
+    </div>
+    <div class="card plan"><h2>🎯 Plan de progression</h2><div id="pPlan"></div></div>
+  </div>
+
+  <div id="viewLineups" class="hidden">
+    <div class="lu-head">
+      <div>
+        <h2 class="lu-title">Line-ups du clan</h2>
+        <div class="lu-sub" id="luRole"></div>
+      </div>
+      <button class="btn lu-new hidden" id="luNewBtn">＋ Nouveau line-up</button>
+    </div>
+    <p class="sec-desc" style="margin-top:-8px">Un <b>line-up</b>, c'est une <b>composition d'équipe préparée à l'avance</b> : qui joue, sur quel char, à quel poste. Pratique pour s'organiser avant une manœuvre Bastion.</p>
+    <div id="luEditor" class="hidden"></div>
+    <div id="luList"></div>
+  </div>
+
+  <div id="viewLoadouts" class="hidden">
+    <div class="lu-head">
+      <div>
+        <h2 class="lu-title">Loadouts du clan</h2>
+        <div class="lu-sub" id="loRole"></div>
+      </div>
+      <button class="btn lu-new hidden" id="loNewBtn">＋ Ajouter un loadout</button>
+    </div>
+    <p class="sec-desc" style="margin-top:-8px">Les <b>réglages recommandés par le clan</b> pour chaque char tier 10 : <b>équipements</b>, <b>consommables</b> et <b>notes</b>. Créés par les <b>officiers de combat et +</b>. (Les modifications de terrain arrivent en phase 3.)</p>
+    <div id="loEditor" class="hidden"></div>
+    <div id="loList"></div>
+  </div>
+
+  <div id="viewRanking" class="hidden">
+    <div class="sec-h">Classement des clans</div>
+    <p class="sec-desc">Le classement de <b>tous les clans EU</b> selon la mesure choisie. ⚠️ Wargaming ne fournit <b>pas la nationalité</b> des clans : le classement est donc <b>mondial (serveur EU)</b>, filtrable par <b>mesure</b> et par <b>tier</b>.</p>
+    <div class="filters">
+      <span class="fld"><label>Classer par</label><select id="rkMetric"></select></span>
+      <span class="spacer"></span>
+      <span id="rkMine" class="rk-mine"></span>
+    </div>
+    <div class="tablecard"><div id="rkList"></div></div>
+  </div>
+
+  <div id="viewSearch" class="hidden">
+    <div class="card" style="margin-bottom:14px">
+      <h2>Rechercher un clan</h2>
+      <p class="sec-desc" style="margin:-6px 0 12px">Cherche <b>n'importe quel clan</b> (tape son tag ou son nom) pour voir ses <b>infos publiques</b> et ses <b>cotes officielles</b>, comme pour ton propre clan.</p>
+      <div class="searchbar">
+        <input type="search" id="clanQuery" placeholder="Tag ou nom du clan (ex : FAME, RELIC…)">
+        <button class="btn" id="clanSearchBtn">Rechercher</button>
+      </div>
+      <div id="clanResults"></div>
+    </div>
+    <div id="searchedClan"></div>
+  </div>
+
+  <footer>Clan Plus • connexion Wargaming • données post-combat &nbsp;·&nbsp; <span id="footCount"></span></footer>
+  </div><!-- /.wrap -->
+  </div><!-- /.main -->
+  </div><!-- /.shell -->
+</div>
+
+<script>
+"use strict";
+
+/* ============================================================
+   CONFIG  (valeurs publiques)
+   ============================================================ */
+const SUPABASE_URL = "https://hlvqofgtwkkmbjmstmuc.supabase.co";
+const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhsdnFvZmd0d2trbWJqbXN0bXVjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM5MzA5MDksImV4cCI6MjA5OTUwNjkwOX0.-zetkqR2LMffbCDfrDe4bz4MJVngUzbcxGdbazdWqEI";
+const WG_APP_ID = "afd929f43761db6b5061b70d44b9f9b7";
+const WG_API = "https://api.worldoftanks.eu";
+const FN = SUPABASE_URL + "/functions/v1/";
+const LS_SESSION = "cp_session";
+
+function fnCall(name, body){
+  return fetch(FN+name, {
+    method:"POST",
+    headers:{ "content-type":"application/json", "apikey":SUPABASE_ANON, "Authorization":"Bearer "+SUPABASE_ANON },
+    body: JSON.stringify(body),
+  }).then(async r=>{ const j=await r.json().catch(()=>({error:"réponse invalide"})); return {ok:r.ok, status:r.status, j}; });
+}
+function redirectUri(){ return location.origin + location.pathname; }
+function wgLoginUrl(){
+  return WG_API + "/wot/auth/login/?application_id=" + WG_APP_ID +
+         "&redirect_uri=" + encodeURIComponent(redirectUri()) + "&display=page";
+}
+
+/* ============================================================
+   ÉTAT
+   ============================================================ */
+let RAW = [];   // lignes joueur enrichies (avec ts/mode/result de la bataille)
+let MEMBERS = [];   // roster du clan (importé de l'API Wargaming)
+let ME_ID = null;   // account_id du joueur connecté
+const state = { mode:"", days:0, search:"", sortKey:"ce", sortDir:-1 };
+// clés normalisées (minuscules, espaces/tirets -> underscore) : gère "Private" comme "private"
+const normRole = r => String(r||"").toLowerCase().replace(/[\s-]+/g,"_");
+const ROLE_ORDER = {commander:0,deputy_commander:1,executive_officer:1,combat_officer:2,personnel_officer:2,
+  recruitment_officer:2,intelligence_officer:2,quartermaster:2,junior_officer:3,private:4,recruit:5,reservist:6};
+const ROLE_FR = {commander:"Commandant",deputy_commander:"Commandant adjoint",executive_officer:"Officier exécutif",
+  combat_officer:"Officier de combat",personnel_officer:"Officier du personnel",recruitment_officer:"Recruteur",
+  intelligence_officer:"Officier renseignement",quartermaster:"Intendant",junior_officer:"Officier subalterne",
+  private:"Soldat",recruit:"Recrue",reservist:"Réserviste"};
+
+/* ============================================================
+   FLUX DE CONNEXION
+   ============================================================ */
+async function boot(){
+  const savedTheme = localStorage.getItem("clanplus_theme")
+    || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark":"light");
+  document.documentElement.setAttribute("data-theme", savedTheme);
+  if(localStorage.getItem("cp_sidebar")==="1") document.getElementById("sidebar").classList.add("collapsed");
+
+  // 1) Retour de Wargaming ? (l'URL contient status=ok&access_token=…)
+  const p = new URLSearchParams(location.search);
+  if(p.get("status")==="ok" && p.get("access_token")){
+    showLoginBusy("Connexion en cours…");
+    const res = await fnCall("wg-login", {
+      access_token: p.get("access_token"),
+      account_id: p.get("account_id"),
+      nickname: p.get("nickname"),
+    });
+    // nettoie l'URL (retire les paramètres WG)
+    history.replaceState({}, "", redirectUri());
+    if(res.ok && res.j.session){
+      localStorage.setItem(LS_SESSION, res.j.session);
+      await openApp();
+    }else{
+      const msg = res.j.error==="no_clan"
+        ? "Ton compte n'appartient à aucun clan World of Tanks. Rejoins un clan en jeu, puis reconnecte-toi."
+        : (res.j.error==="invalid_token" ? "Session Wargaming expirée, réessaie." : ("Erreur : "+(res.j.error||res.status)));
+      showLoginError(msg);
+    }
+    return;
+  }
+  if(p.get("status")==="error"){ showLoginError("Connexion Wargaming annulée."); return; }
+
+  // 2) Session déjà présente ?
+  if(localStorage.getItem(LS_SESSION)){ await openApp(); return; }
+
+  // 3) Sinon, page d'accueil publique
+  wireLanding();
+  showLanding();
+}
+
+async function openApp(){
+  // Révèle l'app avec le skeleton de chargement pendant la requête.
+  document.getElementById("loginScreen").classList.add("hidden");
+  document.getElementById("app").classList.remove("hidden");
+  document.getElementById("loading").classList.remove("hidden");
+  document.getElementById("subbar").classList.add("hidden");
+  ["viewClan","viewBattles","viewPlayer","viewLineups","viewLoadouts","viewRanking","viewSearch"].forEach(id=>document.getElementById(id).classList.add("hidden"));
+
+  const res = await fnCall("clan-data", { session: localStorage.getItem(LS_SESSION) });
+  document.getElementById("loading").classList.add("hidden");
+  if(!res.ok){
+    if(res.status===401){ localStorage.removeItem(LS_SESSION); showLogin(); return; }
+    showLoginError("Erreur de chargement : "+(res.j.error||res.status)); return;
+  }
+  buildRaw(res.j);
+  MEMBERS = res.j.members || [];
+  ME_ID = res.j.me ? res.j.me.account_id : null;
+  CLANINFO = res.j.clanInfo || null;
+  CLANRATINGS = res.j.clanRatings || null;
+  // en-tête
+  const clan = res.j.clan||{};
+  document.getElementById("clanTitle").textContent = clan.tag ? ("["+clan.tag+"] "+(clan.name||"")) : "Ton clan";
+  document.getElementById("clanSub").textContent = "Statistiques Bastion";
+  document.getElementById("who").innerHTML = "Connecté&nbsp;<b>"+esc(res.j.me?.nickname||"")+"</b>";
+  document.getElementById("subbar").classList.remove("hidden");
+  document.getElementById("viewClan").classList.remove("hidden");
+  placeSubbar("clan");
+  loadClanProfile();   // nationalité + prochaine opération (non bloquant)
+  wireUI();
+  rebuildFilters();
+  render();
+  renderMembers();
+  renderClanInfo();
+  populatePlayerSel();
+}
+
+let CLANINFO=null, CLANRATINGS=null;
+function fmtDesc(s){
+  let t=esc(String(s||""));
+  // liens au format WoT :  "libellé":url  ->  lien cliquable propre
+  t=t.replace(/&quot;([^&]+?)&quot;\s*:\s*(https?:\/\/[^\s]+)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');
+  t=t.replace(/\*(.+?)\*/g,"<b>$1</b>");   // *gras*
+  return t;
+}
+function ratCard(label,obj,meaning,isPct){
+  if(!obj || obj.value==null) return "";
+  const val = isPct ? (fmt(obj.value,2)+" %") : fmt(obj.value);
+  let rank="";
+  if(obj.rank!=null){
+    let d="";
+    if(obj.rank_delta){ const up=obj.rank_delta>0;
+      d=`<span class="${up?"up":"down"}" title="évolution du classement">${up?"▲":"▼"}${Math.abs(obj.rank_delta)}</span>`; }
+    rank=`<div class="rr">Rang ${fmt(obj.rank)} ${d}</div>`;
+  }
+  return `<div class="rat"><div class="rl">${esc(label)}</div><div class="rv">${val}</div>${rank}${meaning?`<div class="rmean">${esc(meaning)}</div>`:""}</div>`;
+}
+function renderClanInfo(){
+  renderDashHero();
+  const de=document.getElementById("dashDesc");
+  de.innerHTML=(CLANINFO&&CLANINFO.description)
+    ? `<div class="clan-desc dash-desc dash-anim" style="--di:7"><div class="dd-t">📜 Description du clan</div>${fmtDesc(CLANINFO.description)}</div>` : "";
+  const el=document.getElementById("clanInfo");
+  if(!CLANRATINGS){ el.innerHTML=""; return; }
+  el.innerHTML=clanBlockHTML(null, CLANRATINGS);
+}
+function clanBlockHTML(info, rt){
+  let h="";
+  if(rt){
+    h+=`<div class="sec-h">Le niveau officiel du clan</div>
+      <p class="sec-desc">Ces chiffres viennent <b>directement de Wargaming</b> et situent le clan <b>parmi tous les clans</b>.
+      Le « <b>Rang</b> » est la position au classement (<b>rang 1 = le meilleur</b>) ;
+      <span class="tagpos">▲</span> = le clan monte, <span class="tagneg">▼</span> = il descend.</p>`;
+    h+=`<div class="rat-grouplabel">🛡️ En Bastion / Forteresse <span class="hint" style="font-weight:400">(l'Elo global et le classement sont déjà en haut)</span></div><div class="rat-grid">`;
+    h+=ratCard("Bastion tier 10", rt.fb_elo_rating_10, "parties en tier 10");
+    h+=ratCard("Bastion tier 8", rt.fb_elo_rating_8, "parties en tier 8");
+    h+=ratCard("Bastion tier 6", rt.fb_elo_rating_6, "parties en tier 6");
+    h+=ratCard("Score Forteresse", rt.rating_fort, "activité de la forteresse");
+    h+=`</div>`;
+    h+=`<div class="rat-grouplabel">🌍 En Clan Wars (carte globale)</div><div class="rat-grid">`;
+    h+=ratCard("Niveau Carte Globale", rt.gm_elo_rating, "force en campagne mondiale");
+    h+=`</div>`;
+    h+=`<div class="rat-grouplabel">📊 Général</div><div class="rat-grid">`;
+    h+=ratCard("Efficacité", rt.efficiency, "efficacité globale du clan");
+    h+=ratCard("% de victoires moyen", rt.wins_ratio_avg, "moyenne de tous les joueurs", true);
+    h+=ratCard("Niveau moyen des joueurs", rt.global_rating_avg, "indice de perf. global (type WN8)");
+    h+=`</div>`;
+  }
+  return h;
+}
+
+/* ============================================================
+   DASHBOARD "MON CLAN" — hero, profil éditable (nationalité +
+   prochaine opération), KPIs animés, évolution, à la une.
+   ============================================================ */
+let CLANPROFILE=null, CPROF_CANEDIT=false;
+const REDUCE_MOTION=matchMedia("(prefers-reduced-motion:reduce)").matches;
+const LANGS=[["fr","🇫🇷","France"],["be","🇧🇪","Belgique"],["ch","🇨🇭","Suisse"],["ca","🇨🇦","Canada"],
+  ["lu","🇱🇺","Luxembourg"],["de","🇩🇪","Allemagne"],["gb","🇬🇧","Royaume-Uni"],["es","🇪🇸","Espagne"],
+  ["it","🇮🇹","Italie"],["pt","🇵🇹","Portugal"],["nl","🇳🇱","Pays-Bas"],["pl","🇵🇱","Pologne"],
+  ["cz","🇨🇿","Tchéquie"],["sk","🇸🇰","Slovaquie"],["hu","🇭🇺","Hongrie"],["ro","🇷🇴","Roumanie"],
+  ["gr","🇬🇷","Grèce"],["se","🇸🇪","Suède"],["no","🇳🇴","Norvège"],["fi","🇫🇮","Finlande"],
+  ["dk","🇩🇰","Danemark"],["ua","🇺🇦","Ukraine"],["tr","🇹🇷","Turquie"],["ma","🇲🇦","Maroc"],
+  ["dz","🇩🇿","Algérie"],["tn","🇹🇳","Tunisie"]];
+const langOf=c=>LANGS.find(l=>l[0]===c);
+
+async function loadClanProfile(){
+  try{
+    const r=await fnCall("clan-profile",{session:localStorage.getItem(LS_SESSION),action:"get"});
+    if(r.ok){ CLANPROFILE=r.j.profile||null; CPROF_CANEDIT=!!r.j.canEdit; renderDashHero(); }
+  }catch(e){}
+}
+
+function renderDashHero(){
+  const el=document.getElementById("dashHero");
+  const info=CLANINFO;
+  if(!info){ el.innerHTML=""; return; }
+  const created=info.created_at? new Date(info.created_at*1000).toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit",year:"numeric"}):"?";
+  const emb=(info.emblems&&(info.emblems.x64&&(info.emblems.x64.wot||info.emblems.x64.portal)||info.emblems.x32&&info.emblems.x32.portal))||"";
+  const emHtml=emb?`<img class="h2-em" src="${esc(emb)}" alt="${esc(info.tag||'')}">`:`<div class="h2-em h2-em-ph">${esc(info.tag||"")}</div>`;
+  const langs=((CLANPROFILE&&CLANPROFILE.langs)||[]).map(langOf).filter(Boolean);
+  const flags=langs.length? langs.map(l=>`<span class="h2-flag" title="${esc(l[2])}">${l[1]}</span>`).join("") : `<span class="h2-nolang">non précisée</span>`;
+  const editN=CPROF_CANEDIT?`<button class="h2-edit" id="langEdit" title="Modifier la nationalité">✎</button>`:"";
+  const now=Date.now()/1000;
+  const hasOp=CLANPROFILE&&CLANPROFILE.op_title&&CLANPROFILE.op_ts&&CLANPROFILE.op_ts>now;
+  let opHtml="";
+  if(hasOp){
+    const d=new Date(CLANPROFILE.op_ts*1000);
+    const dstr=capFirst(d.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"}))+" à "+d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
+    const dh=CLANPROFILE.op_ts-now, days=Math.floor(dh/86400);
+    const inTxt=days>0?("dans "+days+" j"):(dh>3600?("dans "+Math.floor(dh/3600)+" h"):"bientôt !");
+    opHtml=`<div class="h2-op">
+      <span class="h2-star">★</span>
+      <div class="h2-op-l">Prochaine opération <span class="h2-op-in">${inTxt}</span></div>
+      <div class="h2-op-t">${esc(CLANPROFILE.op_title)}</div>
+      <div class="h2-op-d">📅 ${esc(dstr)}</div>
+      ${CPROF_CANEDIT?'<button class="h2-edit h2-op-edit" id="opEdit" title="Modifier l\'opération">✎</button>':""}
+    </div>`;
+  }else if(CPROF_CANEDIT){
+    opHtml=`<button class="h2-op h2-op-add" id="opAdd">＋ Programmer une opération</button>`;
+  }
+  el.innerHTML=`<div class="hero2 dash-anim" style="--di:0">
+    ${emHtml}
+    <div class="h2-ci">
+      <div><span class="h2-tag">[${esc(info.tag||"")}]</span>${info.name?`<span class="h2-name">${esc(info.name)}</span>`:""}</div>
+      ${info.motto?`<div class="h2-motto">« ${esc(info.motto)} »</div>`:""}
+      <div class="h2-meta">
+        <span>👥 <b>${fmt(info.members_count||0)}</b> membres</span>
+        <span>📅 Créé le <b>${created}</b></span>
+        <span class="h2-langs">🌐 ${flags} ${editN}</span>
+      </div>
+    </div>
+    ${opHtml}
+  </div>
+  <div id="heroEditor" class="hidden"></div>`;
+  const le=document.getElementById("langEdit"); if(le) le.onclick=openLangEditor;
+  const oe=document.getElementById("opEdit")||document.getElementById("opAdd"); if(oe) oe.onclick=openOpEditor;
+}
+
+/* --- éditeurs du hero (staff uniquement, vérifié aussi côté serveur) --- */
+function heroEd(html){ const e=document.getElementById("heroEditor"); e.innerHTML=`<div class="h2-editor">${html}</div>`; e.classList.remove("hidden"); }
+function closeHeroEd(){ const e=document.getElementById("heroEditor"); if(e){ e.classList.add("hidden"); e.innerHTML=""; } }
+function langSel(i,cur){
+  const opts=['<option value="">— aucune —</option>'].concat(LANGS.map(l=>`<option value="${l[0]}" ${cur===l[0]?"selected":""}>${l[1]} ${l[2]}</option>`)).join("");
+  return `<select id="lsel${i}">${opts}</select>`;
+}
+function openLangEditor(){
+  const cur=(CLANPROFILE&&CLANPROFILE.langs)||[];
+  heroEd(`<b>🌐 Nationalité du clan</b><span class="he-hint">jusqu'à 3 langues, avec drapeau</span>
+    <div class="he-row">${langSel(0,cur[0])}${langSel(1,cur[1])}${langSel(2,cur[2])}</div>
+    <div class="he-act"><button class="btn" id="heCancel">Annuler</button><button class="btn primary" id="heSave">Enregistrer</button></div>`);
+  document.getElementById("heCancel").onclick=closeHeroEd;
+  document.getElementById("heSave").onclick=()=>{
+    const langs=[...new Set([0,1,2].map(i=>document.getElementById("lsel"+i).value).filter(Boolean))];
+    saveClanProfile({langs});
+  };
+}
+function openOpEditor(){
+  const p=CLANPROFILE||{};
+  let dval="";
+  if(p.op_ts){ const d=new Date(p.op_ts*1000);
+    dval=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")
+      +"T"+String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0"); }
+  heroEd(`<b>★ Prochaine opération</b><span class="he-hint">affichée dans le bandeau pour tout le clan</span>
+    <div class="he-row"><input type="text" id="opTitle" placeholder="Ex : Offensive sur la vallée" maxlength="80" value="${esc(p.op_title||"")}">
+    <input type="datetime-local" id="opWhen" value="${dval}"></div>
+    <div class="he-act"><button class="btn" id="heCancel">Annuler</button>${p.op_title?'<button class="btn" id="heClear">Retirer</button>':""}<button class="btn primary" id="heSave">Enregistrer</button></div>`);
+  document.getElementById("heCancel").onclick=closeHeroEd;
+  const cl=document.getElementById("heClear"); if(cl) cl.onclick=()=>saveClanProfile({op_title:null,op_ts:null});
+  document.getElementById("heSave").onclick=()=>{
+    const t=document.getElementById("opTitle").value.trim();
+    const w=document.getElementById("opWhen").value;
+    if(!t||!w){ alert("Il faut un titre et une date."); return; }
+    saveClanProfile({op_title:t,op_ts:Math.floor(new Date(w).getTime()/1000)});
+  };
+}
+async function saveClanProfile(patch){
+  const p=CLANPROFILE||{};
+  const body={session:localStorage.getItem(LS_SESSION),action:"save",
+    langs:("langs" in patch)?patch.langs:(p.langs||[]),
+    op_title:("op_title" in patch)?patch.op_title:(p.op_title||null),
+    op_ts:("op_ts" in patch)?patch.op_ts:(p.op_ts||null)};
+  const r=await fnCall("clan-profile",body);
+  if(!r.ok){ alert("Erreur d'enregistrement : "+(r.j.error||r.status)); return; }
+  CLANPROFILE=Object.assign({},CLANPROFILE||{},{langs:body.langs,op_title:body.op_title,op_ts:body.op_ts});
+  renderDashHero();
+}
+
+/* --- KPIs animés + tendances (période courante vs période précédente) --- */
+function dashFilterRows(days,shift){
+  const now=Date.now()/1000;
+  return RAW.filter(r=>{
+    if(!r.isMember) return false;
+    if(state.mode && r.mode!==state.mode) return false;
+    if(days){ const age=now-(r.ts||0);
+      if(shift){ if(age<=days*86400 || age>2*days*86400) return false; }
+      else if(age>days*86400) return false; }
+    return true;
+  });
+}
+function dashStats(rows){
+  const bres={}; rows.forEach(r=>{ if(!(r.battleId in bres)) bres[r.battleId]=r.result; });
+  let wins=0,tot=0; Object.values(bres).forEach(res=>{ if(res===1)wins++; if(res!==-1&&res!=null)tot++; });
+  const sr=rows.length? rows.reduce((s,r)=>s+ceForRow(r,CE_REF),0)/rows.length : 0;
+  const dmg=rows.length? rows.reduce((s,r)=>s+(r.dmg||0),0)/rows.length : 0;
+  return {battles:Object.keys(bres).length, wins, tot, winrate:tot?wins/tot:0, sr:Math.round(sr), dmg:Math.round(dmg)};
+}
+function trendTag(cur,prev,pctMode){
+  const d=cur-prev;
+  if(Math.abs(d)<(pctMode?0.005:1)) return `<span class="dk-t eq">→ stable</span>`;
+  const up=d>0, txt=pctMode?(Math.abs(d*100).toFixed(0)+" pts"):fmt(Math.abs(Math.round(d)));
+  return `<span class="dk-t ${up?"up":"down"}">${up?"▲":"▼"} ${txt}</span>`;
+}
+function animateNum(el,target,f){
+  if(REDUCE_MOTION||!target){ el.textContent=f(target); return; }
+  const t0=performance.now(), dur=800;
+  let done=false;
+  const step=t=>{ if(done) return;
+    const p=Math.min(1,(t-t0)/dur), e=1-Math.pow(1-p,3);
+    el.textContent=f(target*e);
+    if(p<1) requestAnimationFrame(step); else { done=true; el.textContent=f(target); } };
+  requestAnimationFrame(step);
+  // filet de sécurité : si les frames sont gelées (onglet en fond), on force la valeur finale
+  setTimeout(()=>{ if(!done){ done=true; el.textContent=f(target); } }, dur+150);
+}
+function renderDashKpis(){
+  const el=document.getElementById("dashKpis"); if(!el) return;
+  const cur=dashStats(dashFilterRows(state.days,0));
+  const prev=state.days? dashStats(dashFilterRows(state.days,1)) : null;
+  const rt=CLANRATINGS||{};
+  const elo=rt.fb_elo_rating&&rt.fb_elo_rating.value;
+  const rank=rt.fb_elo_rating&&rt.fb_elo_rating.rank;
+  const rkD=(rt.fb_elo_rating&&rt.fb_elo_rating.rank_delta)||0;
+  const tiles=[
+    {ic:"i-shield",l:"SR moyen du clan",v:cur.sr,f:v=>fmt(Math.round(v)),sub:"réf. globale ≈ 1500",t:(prev&&prev.tot)?trendTag(cur.sr,prev.sr):"",cls:"gold"},
+    {ic:"i-flag",l:"Victoires",v:cur.winrate*100,f:v=>v.toFixed(0)+" %",sub:cur.wins+" V · "+(cur.tot-cur.wins)+" D",t:(prev&&prev.tot)?trendTag(cur.winrate,prev.winrate,true):""},
+    {ic:"i-sword",l:"Batailles",v:cur.battles,f:v=>fmt(Math.round(v)),sub:state.days?("sur "+state.days+" jours"):"enregistrées",t:(prev&&prev.tot)?trendTag(cur.battles,prev.battles):""},
+    {ic:"i-bolt",l:"Dégâts moyens",v:cur.dmg,f:v=>fmt(Math.round(v)),sub:"par joueur / partie",t:(prev&&prev.tot)?trendTag(cur.dmg,prev.dmg):""},
+    {ic:"i-target",l:"Elo Bastion",v:elo||0,f:v=>elo?fmt(Math.round(v)):"—",sub:"officiel Wargaming",t:""},
+    {ic:"i-trophy2",l:"Classement",v:rank||0,f:v=>rank?("#"+fmt(Math.round(v))):"—",sub:"parmi tous les clans",
+      t:rkD?`<span class="dk-t ${rkD>0?"up":"down"}">${rkD>0?"▲":"▼"} ${Math.abs(rkD)} place${Math.abs(rkD)>1?"s":""}</span>`:""},
+  ];
+  el.innerHTML=tiles.map((k,i)=>`<div class="dk dash-anim ${k.cls||""}" style="--di:${i+1}">
+    <div class="dk-top"><span class="dk-ic"><svg class="ic"><use href="#${k.ic}"/></svg></span><span class="dk-l">${k.l}</span></div>
+    <div class="dk-v">${k.f(0)}</div>
+    <div class="dk-s">${k.sub} ${k.t||""}</div></div>`).join("");
+  el.querySelectorAll(".dk-v").forEach((n,i)=>animateNum(n,tiles[i].v,tiles[i].f));
+}
+
+/* --- courbe d'évolution : % de victoires par jour, tracé animé --- */
+function renderDashEvo(){
+  const svg=document.getElementById("dashEvo"); if(!svg) return;
+  const rows=dashFilterRows(state.days,0);
+  const per={};
+  rows.forEach(r=>{ if(!r.ts) return; const d=new Date(r.ts*1000);
+    const k=d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate();
+    per[k]=per[k]||{}; if(!(r.battleId in per[k])) per[k][r.battleId]=r.result; });
+  const days=Object.keys(per).map(k=>{ let w=0,t=0;
+      Object.values(per[k]).forEach(res=>{ if(res===1)w++; if(res!=null&&res!==-1)t++; });
+      return {k, t:new Date(k).getTime(), wr:t?w/t:null, n:Object.keys(per[k]).length}; })
+    .filter(d=>d.wr!=null).sort((a,b)=>a.t-b.t);
+  const W=svg.clientWidth||520, H=190, padL=38, padR=12, padT=14, padB=26;
+  if(days.length<2){ svg.innerHTML=`<text x="${W/2}" y="${H/2}" text-anchor="middle">Pas encore assez de jours pour une courbe</text>`; return; }
+  const x=i=>padL+i/(days.length-1)*(W-padL-padR), y=v=>padT+(1-v)*(H-padT-padB);
+  let g="";
+  [0,.25,.5,.75,1].forEach(v=>{ const yy=y(v);
+    g+=`<line class="grid-line" x1="${padL}" y1="${yy}" x2="${W-padR}" y2="${yy}"/><text x="${padL-6}" y="${yy+3}" text-anchor="end">${Math.round(v*100)}</text>`; });
+  let path="", area="M"+padL+","+(H-padB);
+  days.forEach((d,i)=>{ const px=x(i),py=y(d.wr); path+=(i?"L":"M")+px+","+py+" "; area+="L"+px+","+py+" "; });
+  area+="L"+x(days.length-1)+","+(H-padB)+" Z";
+  g+=`<path class="area" d="${area}"/><path class="line" id="evoLine" d="${path}"/>`;
+  days.forEach((d,i)=>{ g+=`<circle class="dot" cx="${x(i)}" cy="${y(d.wr)}" r="3"><title>${d.k} : ${Math.round(d.wr*100)} % (${d.n} bataille${d.n>1?"s":""})</title></circle>`; });
+  [0,Math.floor((days.length-1)/2),days.length-1].forEach(i=>{
+    g+=`<text x="${x(i)}" y="${H-8}" text-anchor="middle">${new Date(days[i].t).toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit"})}</text>`; });
+  g+=`<line class="axis-line" x1="${padL}" y1="${H-padB}" x2="${W-padR}" y2="${H-padB}"/>`;
+  svg.innerHTML=g;
+  const line=svg.querySelector("#evoLine");
+  if(line && !REDUCE_MOTION){ try{
+    const len=line.getTotalLength();
+    line.style.strokeDasharray=len; line.style.strokeDashoffset=len;
+    line.getBoundingClientRect();
+    line.style.transition="stroke-dashoffset 1.1s ease .15s"; line.style.strokeDashoffset="0";
+  }catch(e){} }
+}
+
+/* --- "À la une" ⭐ : MVP semaine, dernière bataille, série en cours --- */
+function renderDashSpot(){
+  const el=document.getElementById("dashSpot"); if(!el) return;
+  const now=Date.now()/1000;
+  const week=RAW.filter(r=>r.isMember&&r.ts&&(now-r.ts)<=7*86400);
+  const per={};
+  week.forEach(r=>{ const p=per[r.accId]=per[r.accId]||{name:r.name,n:0,s:0}; p.n++; p.s+=ceForRow(r,CE_REF); });
+  const mvp=Object.values(per).filter(p=>p.n>=2)
+    .map(p=>({name:p.name,ce:Math.round(p.s/p.n),n:p.n})).sort((a,b)=>b.ce-a.ce)[0];
+  const bat={};
+  RAW.forEach(r=>{ if(!r.isMember||!r.ts) return;
+    const b=bat[r.battleId]=bat[r.battleId]||{id:r.battleId,ts:0,result:r.result,map:r.mapName};
+    if(r.ts>b.ts) b.ts=r.ts; });
+  const list=Object.values(bat).sort((a,b)=>b.ts-a.ts);
+  const last=list[0];
+  let streak=0, kind=null;
+  for(const b of list){ if(b.result==null||b.result===-1) continue; const w=b.result===1;
+    if(kind===null){ kind=w; streak=1; } else if(w===kind) streak++; else break; }
+  const row=(ic,l,v,s)=>`<div class="sp-row"><span class="sp-ic">${ic}</span><div class="sp-tx"><div class="sp-l">${l}</div><div class="sp-v">${v}</div></div>${s?`<span class="sp-side">${s}</span>`:""}</div>`;
+  let h=`<h2><span class="sp-star">★</span> À la une</h2>`;
+  h+=mvp? row("👑","MVP de la semaine",esc(shortName(mvp.name))+" "+ceBadge(mvp.ce),mvp.n+" bat.")
+        : row("👑","MVP de la semaine","— <span class='hint'>pas assez de batailles cette semaine</span>");
+  if(last){
+    const foeTag=(typeof BATTLE_ENEMY!=="undefined"&&BATTLE_ENEMY[last.id])||"?";
+    const d=new Date(last.ts*1000).toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit"});
+    const res=last.result===1?'<b class="pos">Victoire</b>':(last.result===0?'<b class="neg">Défaite</b>':"Égalité");
+    h+=row("⚔️","Dernière bataille",res+" vs ["+esc(foeTag)+"]",esc(cleanMap(last.map||""))+" · "+d);
+  } else h+=row("⚔️","Dernière bataille","—");
+  h+=(kind!==null&&streak>0)? row(kind?"🔥":"🧊","Série en cours",streak+" "+(kind?"victoire":"défaite")+(streak>1?"s":"")+" d'affilée")
+                            : row("🔥","Série en cours","—");
+  el.innerHTML=h;
+}
+function renderDashboard(){ renderDashKpis(); renderDashEvo(); renderDashSpot(); }
+
+let SELP=null;   // account_id du joueur sélectionné dans "Ma progression"
+function populatePlayerSel(){
+  const seen={}; RAW.forEach(r=>{ if(r.isMember && r.accId!=null && !seen[r.accId]) seen[r.accId]=r.name; });
+  const ids=Object.keys(seen).map(Number).sort((a,b)=>String(seen[a]).localeCompare(String(seen[b])));
+  SELP = (ME_ID!=null && seen[ME_ID]) ? Number(ME_ID) : (ids.length?ids[0]:null);
+  const sel=document.getElementById("playerSel");
+  sel.innerHTML=ids.map(id=>`<option value="${id}" ${id===SELP?"selected":""}>${esc(seen[id])}</option>`).join("");
+}
+/* La barre de filtres vit SOUS le hero sur la vue clan, en haut ailleurs. */
+function placeSubbar(v){
+  const sb=document.getElementById("subbar");
+  if(v==="clan") document.getElementById("dashSub").appendChild(sb);
+  else document.getElementById("loading").before(sb);
+}
+function switchView(v){
+  document.querySelectorAll("#nav .tab").forEach(t=>t.classList.toggle("on",t.dataset.v===v));
+  document.getElementById("viewClan").classList.toggle("hidden", v!=="clan");
+  document.getElementById("viewBattles").classList.toggle("hidden", v!=="battles");
+  document.getElementById("viewPlayer").classList.toggle("hidden", v!=="player");
+  document.getElementById("viewLineups").classList.toggle("hidden", v!=="lineups");
+  document.getElementById("viewLoadouts").classList.toggle("hidden", v!=="loadouts");
+  document.getElementById("viewRanking").classList.toggle("hidden", v!=="ranking");
+  document.getElementById("viewSearch").classList.toggle("hidden", v!=="search");
+  document.getElementById("playerPick").classList.toggle("hidden", v!=="player");
+  document.getElementById("subbar").classList.toggle("hidden", v!=="clan"&&v!=="player"&&v!=="battles");
+  document.getElementById("search").style.visibility = (v==="clan") ? "visible" : "hidden";
+  placeSubbar(v);
+  if(v==="battles") renderBattles();
+  if(v==="player") renderPlayerView();
+  if(v==="lineups") loadLineups();
+  if(v==="loadouts") loadLoadouts();
+  if(v==="ranking") loadRanking();
+}
+
+/* ============================================================
+   VUE BATAILLES  (confrontations façon "affiche de match")
+   ============================================================ */
+function ourEmblemUrl(){
+  const e = CLANINFO && CLANINFO.emblems;
+  return (e && ((e.x64&&(e.x64.wot||e.x64.portal)) || (e.x32&&e.x32.portal))) || "";
+}
+function emblemHTML(tag, url, cls){
+  if(url) return `<img class="bl-em ${cls}" src="${esc(url)}" alt="${esc(tag||'')}" loading="lazy">`;
+  const ini = String(tag||"?").replace(/[^A-Za-z0-9]/g,"").slice(0,4) || "?";
+  return `<span class="bl-em bl-em-ph ${cls}">${esc(ini)}</span>`;
+}
+// Emblèmes adverses : résolus par tag via clan-lookup, mis en cache (localStorage).
+let EMBLEM_CACHE=(()=>{ try{ return JSON.parse(localStorage.getItem("cp_emblems")||"{}"); }catch(e){ return {}; } })();
+function emblemFoeHTML(tag, sizeClass){
+  sizeClass=sizeClass||"bl-em";
+  const url=EMBLEM_CACHE[tag];
+  if(url) return `<img class="${sizeClass} foe" src="${esc(url)}" alt="${esc(tag||'')}">`;
+  const ini=String(tag||"?").replace(/[^A-Za-z0-9]/g,"").slice(0,4)||"?";
+  return `<span class="${sizeClass} bl-em-ph foe" data-foe-tag="${esc(tag||'')}">${esc(ini)}</span>`;
+}
+function emblemOursHTML(sizeClass){
+  sizeClass=sizeClass||"bl-em";
+  const url=ourEmblemUrl();
+  if(url) return `<img class="${sizeClass} ours" src="${esc(url)}" alt="${esc(CLANTAG||'')}">`;
+  const ini=String(CLANTAG||"?").replace(/[^A-Za-z0-9]/g,"").slice(0,4)||"?";
+  return `<span class="${sizeClass} bl-em-ph ours">${esc(ini)}</span>`;
+}
+async function resolveEnemyEmblems(list){
+  const tags=[...new Set(list.map(g=>g.enemyTag).filter(t=>t&&t!=="?"))].filter(t=>!(t in EMBLEM_CACHE));
+  for(const tag of tags){
+    let url="";
+    try{
+      const r=await fnCall("clan-lookup",{session:localStorage.getItem(LS_SESSION),query:tag});
+      if(r.ok && Array.isArray(r.j.results)){
+        const m=r.j.results.find(c=>String(c.tag||"").toUpperCase()===tag.toUpperCase())||r.j.results[0];
+        if(m&&m.emblems) url=(m.emblems.x64&&(m.emblems.x64.wot||m.emblems.x64.portal))||(m.emblems.x32&&m.emblems.x32.portal)||"";
+      }
+    }catch(e){}
+    EMBLEM_CACHE[tag]=url;   // on cache même vide, pour ne pas re-demander
+    try{ localStorage.setItem("cp_emblems",JSON.stringify(EMBLEM_CACHE)); }catch(e){}
+    if(url) document.querySelectorAll("[data-foe-tag]").forEach(el=>{
+      if(el.getAttribute("data-foe-tag")===tag){
+        const img=document.createElement("img");
+        img.className=el.className.replace("bl-em-ph","").replace(/\s+/g," ").trim();   // garde la taille
+        img.src=url; img.alt=tag;
+        el.replaceWith(img);
+      }
+    });
+  }
+}
+const MODE_FR={SORTIE_2:"Bastion",SORTIE:"Bastion",FORT_BATTLE_2:"Bastion",FORT_BATTLE:"Bastion",EPIC_BATTLE:"Assaut"};
+function modeFR(m){ return MODE_FR[m] || (m?capFirst(String(m).toLowerCase().replace(/_/g," ")):"Bastion"); }
+function cleanMap(s){
+  s=String(s||"").replace(/^\d+[_\-\s]*/,"").replace(/[_\-]+/g," ").trim();
+  return s?s.replace(/\b\w/g,c=>c.toUpperCase()):"Carte ?";
+}
+function mapKey(name){ return String(name||"").toLowerCase().replace(/[^a-z]/g,""); }
+function mapBgHTML(name){
+  const k=mapKey(name);
+  const img=k?`<img src="maps/${k}.jpg" alt="" onerror="this.style.display='none'">`:"";
+  return `<div class="bl-bg">${img}<div class="sh"></div></div>`;
+}
+function mapInfoHTML(name,mode){
+  return `<div class="bl-mapinfo"><div class="nm">${esc(cleanMap(name))}</div><div class="md">${esc(modeFR(mode))}</div></div>`;
+}
+function srPill(v){ const t=ceTier(v);
+  return `<div class="bl-sr" style="border-color:${t.c};color:${t.c}" title="Synergy Rating — ${esc(t.l)}"><span class="lbl">SR</span><span class="val">${fmt(v)}</span></div>`; }
+function agoFR(ts){
+  if(!ts) return "";
+  const s=Math.max(1,Math.floor(Date.now()/1000-ts));
+  if(s<3600) return "il y a "+Math.floor(s/60)+" min";
+  if(s<86400){ const h=Math.floor(s/3600); return "il y a "+h+" h"; }
+  const j=Math.floor(s/86400); return "il y a "+j+" j";
+}
+function durFR(s){ s=Math.round(s||0); return Math.floor(s/60)+":"+String(s%60).padStart(2,"0"); }
+function shortName(n){ n=String(n||""); return n.length>14?n.slice(0,13)+"…":n; }
+function capFirst(s){ s=String(s||""); return s?s.charAt(0).toUpperCase()+s.slice(1):s; }
+
+function groupBattles(){
+  const now=Date.now()/1000;
+  const map={};
+  RAW.forEach(r=>{
+    if(state.mode && r.mode!==state.mode) return;
+    if(state.days && r.ts && (now-r.ts)>state.days*86400) return;
+    let g=map[r.battleId];
+    if(!g){ g=map[r.battleId]={id:r.battleId, ts:r.ts||0, mode:r.mode, result:r.result, mapName:r.mapName, rows:[]}; }
+    g.rows.push(r);
+  });
+  const tagU=CLANTAG.toUpperCase();
+  const mine=r=>r.isMember || (r.clan && r.clan.toUpperCase()===tagU);
+  const list=Object.values(map).map(g=>{
+    // notre équipe = celle qui compte le PLUS de joueurs du clan (robuste aux équipes mixtes)
+    const teams=[...new Set(g.rows.map(r=>r.team))];
+    let ourTeam=teams[0], bestN=-1;
+    teams.forEach(t=>{ const n=g.rows.filter(r=>r.team===t && mine(r)).length; if(n>bestN){ bestN=n; ourTeam=t; } });
+    g.our = g.rows.filter(r=>r.team===ourTeam);
+    g.foe = g.rows.filter(r=>r.team!==ourTeam);
+    if(!g.our.length){ g.our=g.rows; g.foe=[]; }         // sécurité
+    g.ourScore = g.foe.filter(r=>!r.surv).length;         // ennemis détruits
+    g.foeScore = g.our.filter(r=>!r.surv).length;         // alliés détruits
+    g.enemyTag = BATTLE_ENEMY[g.id] || (g.foe[0]&&g.foe[0].clan) || "?";
+    // MVP = notre meilleur MEMBRE (repli : meilleur de notre équipe)
+    let mvp=null; g.our.forEach(r=>{ if(mine(r) && (!mvp||r.dmg>mvp.dmg)) mvp=r; });
+    if(!mvp) g.our.forEach(r=>{ if(!mvp||r.dmg>mvp.dmg) mvp=r; });
+    g.mvp=mvp;
+    // CÉ de la bataille = moyenne des CÉ des membres présents
+    const mem=g.our.filter(mine);
+    g.ce = mem.length ? Math.round(mem.reduce((s,r)=>s+ceForRow(r,CE_REF),0)/mem.length) : null;
+    g.win = g.result===1; g.draw = g.result===-1;
+    g.dur = g.rows.reduce((mx,r)=>Math.max(mx,r.life||0),0);
+    return g;
+  });
+  list.sort((a,b)=>b.ts-a.ts);
+  return list;
+}
+function blTeam(rows, ours, tag, url){
+  const sorted=rows.slice().sort((a,b)=>b.dmg-a.dmg);
+  const em = ours ? emblemHTML(tag,url,'ours') : emblemFoeHTML(tag);
+  const head=`<div class="bl-tl ${ours?'ours':'foe'}">${em} ${ours?'Notre équipe':'Adversaire'} — [${esc(tag)}]</div>`;
+  const ceH = ours?`<th class="c">SR</th>`:``;
+  const body=sorted.map(r=>{
+    let ceCell="";
+    if(ours) ceCell = r.isMember ? `<td class="c">${ceBadge(Math.round(ceForRow(r,CE_REF)))}</td>` : `<td class="c" style="color:var(--muted)">—</td>`;
+    return `<tr class="${r.isMember?'me':''}">
+      <td>${esc(r.tank||'?')}</td><td>${esc(shortName(r.name))}</td>
+      <td>${fmt(r.dmg)}</td><td>${r.kills}</td><td>${fmt(r.assist)}</td><td>${fmt(r.block)}</td>
+      <td class="c">${r.surv?'<span class="bl-alive" title="survivant">●</span>':'<span class="bl-dead" title="détruit">✖</span>'}</td>${ceCell}</tr>`;
+  }).join("");
+  return head+`<table class="bl-tbl"><thead><tr><th>Char</th><th>Joueur</th><th>Dég.</th><th>Frags</th><th>Assist</th><th>Bloc.</th><th class="c">Survie</th>${ceH}</tr></thead><tbody>${body}</tbody></table>`;
+}
+function blRowHTML(g){
+  const cls=g.win?"bl-win":(g.draw?"bl-draw":"bl-loss");
+  const rz=g.win?"Victoire":(g.draw?"Match nul":"Défaite");
+  const mvp=g.mvp?`<div>MVP <span class="mvp">${esc(shortName(g.mvp.name))}</span></div>`:"";
+  const sr=g.ce!=null?srPill(g.ce):"";
+  return `<div class="bl-row ${cls}">
+    <div class="bl-head" onclick="this.parentNode.classList.toggle('open')">
+      ${mapBgHTML(g.mapName)}
+      ${mapInfoHTML(g.mapName,g.mode)}
+      <div class="bl-match">
+        <div class="bl-team left"><span class="tag">[${esc(CLANTAG)}]</span>${emblemOursHTML('bl-emblem')}</div>
+        <div class="bl-scorebox"><div class="sc"><span class="a">${g.ourScore}</span><span class="bl-sep">:</span><span>${g.foeScore}</span></div><div class="rz">${rz}</div></div>
+        <div class="bl-team right">${emblemFoeHTML(g.enemyTag,'bl-emblem')}<span class="tag">[${esc(g.enemyTag)}]</span></div>
+      </div>
+      <div class="bl-right">
+        ${sr}
+        <div class="bl-metar"><div>${agoFR(g.ts)} · ${durFR(g.dur)}</div>${mvp}</div>
+        <span class="bl-chev">▾</span>
+      </div>
+    </div>
+    <div class="bl-detail">${blTeam(g.our,true,CLANTAG,ourEmblemUrl())}${blTeam(g.foe,false,g.enemyTag,'')}
+      <div class="bl-replay">
+        <button class="rp-launch" type="button" onclick="event.stopPropagation();startReplay('${g.id}',this)"><span class="rp-tri">▶</span> Lancer le replay</button>
+        <div class="rp-host"></div>
+      </div>
+    </div>
+  </div>`;
+}
+function blSummaryHTML(list){
+  const n=list.length, wins=list.filter(g=>g.win).length;
+  let dmgSum=0,dmgN=0,survSum=0,srSum=0,srN=0;
+  list.forEach(g=>{ g.our.forEach(r=>{dmgSum+=r.dmg;dmgN++;}); survSum+=g.our.filter(r=>r.surv).length;
+    if(g.ce!=null){srSum+=g.ce;srN++;} });
+  const wr=n?Math.round(wins/n*100):0, dmgAvg=dmgN?Math.round(dmgSum/dmgN):0, survAvg=n?survSum/n:0;
+  const srAvg=srN?Math.round(srSum/srN):null, srCol=srAvg!=null?ceTier(srAvg).c:"var(--ink)";
+  return `<div class="bl-sc"><div class="l">Batailles</div><div class="v">${n}</div></div>
+    <div class="bl-sc"><div class="l">Victoires</div><div class="v" style="color:${wr>=50?'var(--good)':'var(--bad)'}">${wr}%</div></div>
+    <div class="bl-sc"><div class="l">SR moyen du clan</div><div class="v" style="color:${srCol}">${srAvg!=null?fmt(srAvg):"—"}</div></div>
+    <div class="bl-sc"><div class="l">Dégâts moy./joueur</div><div class="v">${fmt(dmgAvg)}</div></div>
+    <div class="bl-sc"><div class="l">Alliés survivants moy.</div><div class="v">${survAvg.toFixed(1)}<span class="u">/7</span></div></div>`;
+}
+function renderBattles(){
+  const list=groupBattles();
+  const sum=document.getElementById("blSummary"), wrap=document.getElementById("blList");
+  if(!list.length){ sum.innerHTML=""; wrap.innerHTML='<div class="empty">Aucune bataille sur cette période.</div>'; return; }
+  BL_BY_ID={}; list.forEach(g=>{ BL_BY_ID[g.id]=g; });
+  sum.innerHTML=blSummaryHTML(list);
+  wrap.innerHTML=list.map(blRowHTML).join("");
+  resolveEnemyEmblems(list);   // récupère les logos adverses en arrière-plan
+}
+
+/* ============================================================
+   LECTEUR DE REPLAY (phase 3) — mini-carte animée + curseur.
+   Données attendues : { bounds:{minX,minZ,maxX,maxZ}, duration,
+   vehicles:[{id, ally, member, name, tank, deathT, track:[[t,x,z],…]}] }
+   Pour l'instant alimenté par mockReplay() (positions simulées) en attendant
+   que le mod envoie les vraies positions (phase 2).
+   ============================================================ */
+let BL_BY_ID={};
+function convertReplay(raw){
+  const b=raw.bounds||[-500,-500,500,500], my=raw.myTeam;
+  const vehicles=(raw.vehicles||[]).map(v=>({
+    ally: v.team===my,
+    member: !!(v.acc && MEMBERSET.has(Number(v.acc))),
+    name: v.name||"", tank:"",
+    deathT: (v.death!=null? v.death : null),
+    track: v.track||[],
+  }));
+  const bases=(raw.bases||[]).map(bs=>({ team:(bs[0]===my?"ally":"enemy"), x:bs[1], z:bs[2], r:70 }));
+  return { bounds:{minX:b[0],minZ:b[1],maxX:b[2],maxZ:b[3]}, duration:raw.duration||0,
+           bases, vehicles, shots: raw.shots||[] };
+}
+async function startReplay(id, btn){
+  const g=BL_BY_ID[id]; if(!g) return;
+  const host=btn.parentNode.querySelector(".rp-host");
+  const tri=btn.querySelector(".rp-tri"); if(tri) tri.textContent="…"; btn.disabled=true;
+  let rep=null, demo=false;
+  try{
+    const r=await fnCall("replay",{session:localStorage.getItem(LS_SESSION), battle_id:g.id});
+    if(r.ok && r.j && r.j.replay && (r.j.replay.vehicles||[]).length) rep=convertReplay(r.j.replay);
+  }catch(e){}
+  if(!rep){ rep=mockReplay(g); demo=true; }
+  btn.style.display="none";
+  renderReplay(host, rep, mapKey(g.mapName), demo);
+}
+function mockReplay(g){
+  const B={minX:-500,minZ:-500,maxX:500,maxZ:500};
+  const dur=Math.max(150, Math.min(600, g.dur||300));
+  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+  function track(spawn, deathT){
+    const pts=[];
+    const tx=clamp(spawn.x+(Math.random()*500-250), B.minX+40, B.maxX-40);
+    const tz=clamp(spawn.z*0.15+(Math.random()*260-130), B.minZ+40, B.maxZ-40);
+    const N=Math.ceil(dur/4);
+    for(let i=0;i<=N;i++){ const t=i*4; if(deathT!=null && t>deathT+4) break;
+      const f=Math.min(1,t/(dur*0.65));
+      const x=clamp(spawn.x+(tx-spawn.x)*f+(Math.random()*44-22), B.minX, B.maxX);
+      const z=clamp(spawn.z+(tz-spawn.z)*f+(Math.random()*44-22), B.minZ, B.maxZ);
+      pts.push([t, Math.round(x), Math.round(z)]);
+    }
+    return pts;
+  }
+  const veh=[];
+  const side=(rows, ally)=>rows.forEach((r,i)=>{
+    const n=rows.length||1, spread=(i-(n-1)/2)*130;
+    const spawn=ally?{x:spread,z:-430}:{x:spread,z:430};
+    const deathT=r.surv?null:(r.life>0?Math.min(r.life,dur):Math.round(50+Math.random()*(dur-80)));
+    veh.push({id:(ally?"a":"e")+i, ally, member:!!r.isMember, name:r.name, tank:r.tank, deathT, track:track(spawn,deathT)});
+  });
+  side(g.our,true); side(g.foe,false);
+  // bases de capture (une par équipe)
+  const bases=[{team:"ally",x:0,z:-430,r:70},{team:"enemy",x:0,z:430,r:70}];
+  // événements de tir simulés : proche d'un char vivant, à un instant donné
+  const sampleTrack=(tr,tt)=>{ let lo=tr[0]; for(const p of tr){ if(p[0]<=tt) lo=p; else break; } return lo; };
+  const shots=[];
+  for(let i=0;i<45;i++){
+    const tt=Math.round(10+Math.random()*(dur-20));
+    const v=veh[Math.floor(Math.random()*veh.length)];
+    if(v.deathT!=null && tt>v.deathT) continue;
+    const p=sampleTrack(v.track,tt);
+    shots.push({t:tt, x:p[1]+Math.round(Math.random()*50-25), z:p[2]+Math.round(Math.random()*50-25)});
+  }
+  return {bounds:B, duration:dur, bases, vehicles:veh, shots};
+}
+function renderReplay(host, rep, mkey, demo){
+  const B=rep.bounds, W=420, spanX=(B.maxX-B.minX)||1, spanZ=(B.maxZ-B.minZ)||1;
+  const wx=x=>(x-B.minX)/spanX*W, wy=z=>(B.maxZ-z)/spanZ*W;
+  host.innerHTML=`<div class="rp-wrap">
+    <div class="rp-stage"><img src="maps/top/${mkey}.jpg" alt="" onerror="this.style.opacity='.12'"><canvas width="${W}" height="${W}"></canvas></div>
+    <div class="rp-ctrl"><button class="rp-play" type="button" aria-label="Lecture/pause">❚❚</button>
+      <input class="rp-scrub" type="range" min="0" max="${rep.duration}" step="1" value="0">
+      <span class="rp-time">0:00 / ${durFR(rep.duration)}</span></div>
+    <div class="rp-legend"><span><i style="color:#2ec26e">●</i> Nous</span><span><i style="color:#ec6a6a">●</i> Adversaire</span><span><i style="color:#d8b566">◎</i> Membre</span><span><i style="color:#ecd190">✦</i> Tir</span><span><i style="color:var(--muted)">◯</i> Base</span><span>✕ détruit</span></div>
+    <div class="rp-note">${demo ? "Démo — positions simulées (le mod enverra bientôt les vraies)." : "Replay réel — positions enregistrées par le mod."}</div></div>`;
+  const cv=host.querySelector("canvas"), ctx=cv.getContext("2d");
+  const scrub=host.querySelector(".rp-scrub"), playBtn=host.querySelector(".rp-play"), timeEl=host.querySelector(".rp-time");
+  let t=0, playing=true, last=performance.now();
+  const fmtT=s=>{ s=Math.floor(s); return Math.floor(s/60)+":"+String(s%60).padStart(2,"0"); };
+  function posAt(v){
+    const tr=v.track; if(!tr.length) return null;
+    if(v.deathT!=null && t>=v.deathT){ const p=tr[tr.length-1]; return {x:p[1],z:p[2],dead:true}; }
+    let lo=tr[0];
+    for(let i=0;i<tr.length;i++){ if(tr[i][0]<=t) lo=tr[i];
+      else { const hi=tr[i], f=(t-lo[0])/((hi[0]-lo[0])||1); return {x:lo[1]+(hi[1]-lo[1])*f, z:lo[2]+(hi[2]-lo[2])*f, dead:false}; } }
+    return {x:lo[1], z:lo[2], dead:false};
+  }
+  const wr=d=>d/spanX*W;   // rayon monde -> pixels
+  function draw(){
+    ctx.clearRect(0,0,W,W);
+    // bases de capture (sous les points)
+    (rep.bases||[]).forEach(b=>{
+      const px=wx(b.x), py=wy(b.z), pr=Math.max(8,wr(b.r||70)), col=b.team==="ally"?"#2ec26e":"#ec6a6a";
+      ctx.beginPath(); ctx.arc(px,py,pr,0,7); ctx.globalAlpha=.12; ctx.fillStyle=col; ctx.fill();
+      ctx.globalAlpha=.8; ctx.strokeStyle=col; ctx.lineWidth=2; ctx.setLineDash([5,4]); ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha=1;
+    });
+    // tirs : flash qui s'estompe ~1,2 s après l'instant du tir
+    (rep.shots||[]).forEach(s=>{ const age=t-s.t;
+      if(age>=0 && age<1.2){ const px=wx(s.x), py=wy(s.z), k=age/1.2;
+        ctx.beginPath(); ctx.arc(px,py,3+k*10,0,7); ctx.strokeStyle="#ecd190"; ctx.globalAlpha=(1-k)*.9; ctx.lineWidth=2; ctx.stroke();
+        ctx.beginPath(); ctx.arc(px,py,2,0,7); ctx.fillStyle="#ffe9a8"; ctx.globalAlpha=1-k; ctx.fill(); ctx.globalAlpha=1; }
+    });
+    rep.vehicles.forEach(v=>{
+      const p=posAt(v); if(!p) return;
+      const px=wx(p.x), py=wy(p.z), col=v.ally?"#2ec26e":"#ec6a6a";
+      if(p.dead){ ctx.globalAlpha=.55; ctx.strokeStyle=col; ctx.lineWidth=2;
+        ctx.beginPath(); ctx.moveTo(px-4,py-4); ctx.lineTo(px+4,py+4); ctx.moveTo(px+4,py-4); ctx.lineTo(px-4,py+4); ctx.stroke(); ctx.globalAlpha=1; return; }
+      ctx.beginPath(); ctx.arc(px,py,5,0,7); ctx.fillStyle=col; ctx.fill();
+      ctx.lineWidth=1.5; ctx.strokeStyle="rgba(0,0,0,.5)"; ctx.stroke();
+      if(v.member){ ctx.beginPath(); ctx.arc(px,py,8,0,7); ctx.strokeStyle="#d8b566"; ctx.lineWidth=2; ctx.stroke(); }
+    });
+  }
+  function frame(now){
+    if(!document.body.contains(cv)) return;
+    const dt=(now-last)/1000; last=now;
+    if(playing){ t+=dt; if(t>=rep.duration){ t=rep.duration; playing=false; playBtn.textContent="▶"; } scrub.value=t; }
+    timeEl.textContent=fmtT(t)+" / "+durFR(rep.duration);
+    draw(); requestAnimationFrame(frame);
+  }
+  playBtn.onclick=()=>{ if(t>=rep.duration) t=0; playing=!playing; playBtn.textContent=playing?"❚❚":"▶"; last=performance.now(); draw(); };
+  scrub.oninput=()=>{ t=+scrub.value; playing=false; playBtn.textContent="▶"; timeEl.textContent=fmtT(t)+" / "+durFR(rep.duration); draw(); };
+  timeEl.textContent="0:00 / "+durFR(rep.duration); draw();   // dessin initial (indépendant de l'animation)
+  requestAnimationFrame(frame);
+}
+
+async function searchClans(){
+  const query=document.getElementById("clanQuery").value.trim();
+  const res=document.getElementById("clanResults");
+  document.getElementById("searchedClan").innerHTML="";
+  if(query.length<2){ res.innerHTML='<div class="empty">Tape au moins 2 caractères.</div>'; return; }
+  res.innerHTML=cpLoader('Recherche…');
+  const r=await fnCall("clan-lookup",{session:localStorage.getItem(LS_SESSION),query});
+  if(!r.ok){ res.innerHTML='<div class="empty">Erreur : '+esc(r.j.error||String(r.status))+'</div>'; return; }
+  const list=r.j.results||[];
+  if(!list.length){ res.innerHTML='<div class="empty">Aucun clan trouvé.</div>'; return; }
+  res.innerHTML=list.map(c=>{
+    const em=(c.emblems&&c.emblems.x32&&c.emblems.x32.portal)||"";
+    const emHtml=em?`<img class="res-em" src="${esc(em)}" alt="" loading="lazy">`:`<span class="res-em res-em-ph">${esc((c.tag||"?").slice(0,2))}</span>`;
+    return `<div class="res-row" data-id="${c.clan_id}">${emHtml}
+    <span class="rt">[${esc(c.tag||"")}]</span><span class="rn">${esc(c.name||"")}</span>
+    <span class="rm">${fmt(c.members_count||0)} membres</span></div>`;}).join("");
+  res.querySelectorAll(".res-row").forEach(row=>row.onclick=()=>openSearchedClan(Number(row.dataset.id)));
+}
+async function openSearchedClan(clanId){
+  const sc=document.getElementById("searchedClan");
+  sc.innerHTML='<div class="card">'+cpLoader()+'</div>';
+  const r=await fnCall("clan-lookup",{session:localStorage.getItem(LS_SESSION),clan_id:clanId});
+  if(!r.ok || (!r.j.info && !r.j.ratings)){ sc.innerHTML='<div class="card"><div class="empty">Impossible de charger ce clan.</div></div>'; return; }
+  let h=clanBlockHTML(r.j.info, r.j.ratings);
+  const members=r.j.members||[];
+  if(members.length){
+    const sorted=members.slice().sort((a,b)=>{
+      const ra=ROLE_ORDER[normRole(a.role_i18n)]!=null?ROLE_ORDER[normRole(a.role_i18n)]:9;
+      const rb=ROLE_ORDER[normRole(b.role_i18n)]!=null?ROLE_ORDER[normRole(b.role_i18n)]:9;
+      if(ra!==rb) return ra-rb; return String(a.account_name||"").localeCompare(String(b.account_name||""));
+    });
+    h+=`<div class="card" style="margin-top:14px"><h2>Membres <span class="hint">(${members.length})</span></h2><div class="members">`+
+      sorted.map(m=>`<div class="mem"><span class="mn">${esc(m.account_name||"?")}</span><span class="mr">${esc(ROLE_FR[normRole(m.role_i18n)]||m.role_i18n||"")}</span></div>`).join("")+
+      `</div></div>`;
+  }
+  sc.innerHTML=h;
+}
+
+function renderMembers(){
+  const el=document.getElementById("members");
+  const list=(MEMBERS||[]).slice().sort((a,b)=>{
+    const ra=ROLE_ORDER[normRole(a.wg_role)]!=null?ROLE_ORDER[normRole(a.wg_role)]:9;
+    const rb=ROLE_ORDER[normRole(b.wg_role)]!=null?ROLE_ORDER[normRole(b.wg_role)]:9;
+    if(ra!==rb) return ra-rb;
+    return String(a.nickname||"").localeCompare(String(b.nickname||""));
+  });
+  document.getElementById("memCount").textContent=list.length?("("+list.length+")"):"";
+  if(!list.length){ el.innerHTML='<div class="empty">Roster pas encore importé — il se remplit à la connexion d\'un membre.</div>'; return; }
+  el.innerHTML=list.map(m=>{
+    const role=ROLE_FR[normRole(m.wg_role)]||m.wg_role||"";
+    const me=(ME_ID!=null && Number(m.account_id)===Number(ME_ID))?" me":"";
+    return `<div class="mem${me}"><span class="mn">${esc(m.nickname||"?")}</span><span class="mr">${esc(role)}</span></div>`;
+  }).join("");
+}
+
+let VEHMAP={}, MEMBERSET=new Set(), CLANTAG="", BATTLE_ENEMY={};
+function buildRaw(data){
+  CLANTAG = (data.clan && data.clan.tag) ? String(data.clan.tag) : "";
+  VEHMAP = {}; (data.vehicles||[]).forEach(v=>{ VEHMAP[Number(v.tank_id)]=v; });
+  MEMBERSET = new Set((data.members||[]).map(m=>Number(m.account_id)));
+  const bmap = {};
+  (data.battles||[]).forEach(b=>{
+    bmap[b.battle_id] = { ts: b.ts?Math.floor(new Date(b.ts).getTime()/1000):0, mode:b.mode||"",
+      result: b.result, mapName: b.map_name || ("Carte "+(b.map_id||"?")) };
+  });
+  RAW = (data.players||[]).map(pl=>{
+    const b = bmap[pl.battle_id] || {ts:0,mode:"",result:null,mapName:""};
+    const vm = VEHMAP[Number(pl.veh)] || null;
+    return {
+      battleId: String(pl.battle_id), ts:b.ts, mode:b.mode, result: b.result, mapName:b.mapName,
+      accId: pl.account_id!=null?Number(pl.account_id):null,
+      name: pl.name||"?", clan: pl.player_clan||"", team: pl.team,
+      veh:Number(pl.veh)||0, cls: vm?vm.cls:"", tank: vm?vm.name:"",
+      dmg:+pl.dmg||0, block:+pl.block||0, assist:+pl.assist||0, spot:+pl.spot||0,
+      kills:+pl.kills||0, surv: pl.surv===true||pl.surv==="true", xp:+pl.xp||0,
+      life:+pl.life||0, shots:+pl.shots||0, hits:+pl.hits||0, pierce:+pl.pierce||0,
+      dmgr:+pl.dmgr||0, cap:+pl.cap||0, decap:+pl.decap||0,
+      aradio:+pl.a_radio||0, atrack:+pl.a_track||0, astun:+pl.a_stun||0,
+      pot:+pl.pot_recv||0, hitsr:+pl.hits_recv||0, piercer:+pl.pierce_recv||0, bounce:+pl.bounce||0,
+      maxhp:+pl.max_hp||0, hpleft:+pl.hp_left||0, dist:+pl.dist||0, sniper:+pl.dmg_sniper||0, dmginvis:+pl.dmg_invis||0,
+      isMember: pl.account_id!=null && MEMBERSET.has(Number(pl.account_id)),
+    };
+  });
+  // référence GLOBALE de la Cote d'Équipe : tous les joueurs enregistrés (nous + tous les adversaires)
+  CE_REF=teamGlobalRef(RAW);
+  // clan adverse par bataille : le tag (hors le nôtre) le plus fréquent
+  BATTLE_ENEMY={}; const cnt={};
+  RAW.forEach(r=>{
+    if(r.clan && r.clan.toUpperCase()!==CLANTAG.toUpperCase()){
+      (cnt[r.battleId]=cnt[r.battleId]||{}); cnt[r.battleId][r.clan]=(cnt[r.battleId][r.clan]||0)+1;
+    }
+  });
+  Object.keys(cnt).forEach(bid=>{ let best="",bn=0;
+    for(const t in cnt[bid]){ if(cnt[bid][t]>bn){bn=cnt[bid][t];best=t;} } BATTLE_ENEMY[bid]=best; });
+  // bannière si vide
+  const b = document.getElementById("banner");
+  if(!RAW.length){ b.classList.remove("hidden");
+    b.textContent = "Aucune bataille pour l'instant. Dès que toi ou un membre jouez une bataille Bastion avec le mod, elle apparaîtra ici."; }
+  else b.classList.add("hidden");
+}
+
+/* ============================================================
+   ÉCRANS DE CONNEXION (helpers)
+   ============================================================ */
+function showLogin(){
+  document.getElementById("landing").classList.add("hidden");
+  document.getElementById("app").classList.add("hidden");
+  document.getElementById("loginScreen").classList.remove("hidden");
+  const btn=document.getElementById("wgLogin");
+  btn.disabled=false; btn.textContent="▶ Se connecter avec World of Tanks";
+  btn.onclick=()=>{ location.href = wgLoginUrl(); };
+  const back=document.getElementById("loginBack");
+  if(back) back.onclick=(e)=>{ e.preventDefault(); showLanding(); };
+}
+function showLoginBusy(txt){
+  document.getElementById("landing").classList.add("hidden");
+  document.getElementById("app").classList.add("hidden");
+  document.getElementById("loginScreen").classList.remove("hidden");
+  const btn=document.getElementById("wgLogin"); btn.disabled=true; btn.textContent=txt;
+  document.getElementById("loginErr").classList.add("hidden");
+}
+function showLoginError(msg){
+  showLogin();
+  const e=document.getElementById("loginErr"); e.textContent=msg; e.classList.remove("hidden");
+}
+
+/* ============================================================
+   PAGE D'ACCUEIL PUBLIQUE + PAGES LÉGALES
+   ============================================================ */
+function showLanding(){
+  document.getElementById("app").classList.add("hidden");
+  document.getElementById("loginScreen").classList.add("hidden");
+  document.getElementById("landing").classList.remove("hidden");
+  window.scrollTo(0,0);
+  if(localStorage.getItem("cp_cookie_ok")!=="1")
+    document.getElementById("cookieBar").classList.remove("hidden");
+}
+let _landingWired=false;
+function wireLanding(){
+  if(_landingWired) return; _landingWired=true;
+  ["lpLogin","lpLogin2","lpLoginTop"].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.onclick=()=>showLogin();
+  });
+  // liens légaux (accueil, footer, bandeau cookies)
+  document.querySelectorAll("[data-legal]").forEach(a=>{
+    a.addEventListener("click",e=>{ e.preventDefault(); openLegal(a.getAttribute("data-legal")); });
+  });
+  // bandeau cookies
+  const ok=document.getElementById("cookieOk");
+  if(ok) ok.onclick=()=>{ localStorage.setItem("cp_cookie_ok","1"); document.getElementById("cookieBar").classList.add("hidden"); };
+  // modale : fermeture
+  const mod=document.getElementById("legalModal"), x=document.getElementById("legalClose");
+  if(x) x.onclick=()=>mod.classList.add("hidden");
+  if(mod) mod.addEventListener("click",e=>{ if(e.target===mod) mod.classList.add("hidden"); });
+  document.addEventListener("keydown",e=>{ if(e.key==="Escape") mod.classList.add("hidden"); });
+}
+const LEGAL_UPD="Dernière mise à jour : juillet 2026";
+const LEGAL={
+  legal:`<div class="lp-legal"><h2>Mentions légales</h2><p class="lp-legal-upd">${LEGAL_UPD}</p>
+    <h3>Éditeur du site</h3><p>Clan&nbsp;Plus est un projet communautaire indépendant, à but non lucratif, créé et maintenu par le clan <b>[ATFR]</b> sur World of Tanks.<br>Contact : pour toute demande, adresse-toi à un responsable du clan [ATFR] en jeu.</p>
+    <h3>Hébergement</h3><p>Le site est hébergé par <b>Netlify, Inc.</b> (2325 3rd Street, San Francisco, CA 94107, États-Unis — <a href="https://www.netlify.com" target="_blank" rel="noopener">netlify.com</a>).<br>Les données applicatives (comptes, statistiques) sont hébergées par <b>Supabase</b> sur des serveurs situés dans l'Union européenne — <b>Stockholm, Suède</b> (<a href="https://supabase.com" target="_blank" rel="noopener">supabase.com</a>).</p>
+    <h3>Propriété intellectuelle</h3><p><i>World of Tanks</i>, <i>Wargaming</i> et les éléments graphiques associés sont la propriété de Wargaming. Clan&nbsp;Plus n'est <b>pas affilié à, ni approuvé par Wargaming</b>. Le mod et le site sont fournis gratuitement, sans garantie, à usage communautaire.</p></div>`,
+  privacy:`<div class="lp-legal"><h2>Politique de confidentialité</h2><p class="lp-legal-upd">${LEGAL_UPD}</p>
+    <p>Cette page explique quelles données Clan&nbsp;Plus traite et pourquoi. Nous appliquons le principe de minimisation : nous ne collectons que le strict nécessaire au fonctionnement du service.</p>
+    <h3>Responsable du traitement</h3><p>Le responsable est l'éditeur du site (voir Mentions légales). Pour toute demande, adresse-toi à un responsable du clan [ATFR].</p>
+    <h3>Données collectées</h3><ul>
+      <li><b>À la connexion</b> (via le service officiel Wargaming / OpenID) : ton identifiant de compte, ton pseudo et ton appartenance à un clan. <b>Nous ne voyons jamais ton mot de passe.</b></li>
+      <li><b>Via le mod</b> (que tu installes volontairement) : les statistiques de tes batailles de Bastion — dégâts, assistance, repérage, blocage, survie, char joué, carte, résultat, et positions pour le relecteur.</li>
+    </ul>
+    <h3>Finalités</h3><p>Ces données servent uniquement à afficher les statistiques de ton clan, à calculer les indicateurs (dont le SR) et à proposer un suivi de progression. <b>Aucune publicité, aucune revente de données.</b></p>
+    <h3>Destinataires &amp; hébergement</h3><p>Les statistiques de clan sont visibles par les membres de ton clan. Aucune donnée n'est transmise à des tiers publicitaires. Prestataires techniques : Wargaming (authentification), Supabase (base de données, hébergée dans l'Union européenne — Stockholm, Suède), Netlify (hébergement du site).</p>
+    <h3>Conservation</h3><p>Tes données sont conservées tant que tu utilises le service. Tu peux demander leur suppression à tout moment.</p>
+    <h3>Tes droits (RGPD)</h3><p>Tu disposes d'un droit d'accès, de rectification, d'effacement et d'opposition. Pour les exercer, adresse-toi à un responsable du clan [ATFR]. Tu peux aussi te déconnecter et cesser d'utiliser le mod à tout moment.</p>
+    <h3>Cookies et stockage local</h3><p>Voir la page <a href="#" data-legal="cookies">Cookies</a> : le site n'utilise que du stockage technique essentiel, sans traceur.</p></div>`,
+  cookies:`<div class="lp-legal"><h2>Cookies &amp; stockage local</h2><p class="lp-legal-upd">${LEGAL_UPD}</p>
+    <p>Clan&nbsp;Plus <b>n'utilise aucun cookie publicitaire ni traceur</b>. Le site enregistre uniquement quelques informations techniques dans le stockage local de ton navigateur (<code>localStorage</code>), strictement nécessaires à son fonctionnement :</p>
+    <ul>
+      <li><code>cp_session</code> — te garder connecté à ta session.</li>
+      <li><code>clanplus_theme</code> — mémoriser le thème clair ou sombre.</li>
+      <li><code>cp_sidebar</code> — mémoriser si le menu est replié.</li>
+      <li><code>cp_cookie_ok</code> — mémoriser que tu as vu le bandeau d'information.</li>
+    </ul>
+    <p>Ces éléments étant strictement nécessaires, ils ne requièrent pas de consentement préalable selon la réglementation (RGPD / directive ePrivacy). Tu peux les effacer à tout moment en vidant les données du site dans ton navigateur.</p></div>`
+};
+function openLegal(kind){
+  const box=document.getElementById("legalBody");
+  box.innerHTML=LEGAL[kind]||LEGAL.legal;
+  // les liens data-legal à l'intérieur de la modale doivent aussi fonctionner
+  box.querySelectorAll("[data-legal]").forEach(a=>a.addEventListener("click",e=>{ e.preventDefault(); openLegal(a.getAttribute("data-legal")); }));
+  document.getElementById("legalModal").classList.remove("hidden");
+}
+
+/* ============================================================
+   FILTRES + AGRÉGATION + RENDU
+   ============================================================ */
+function applyFilters(){
+  const now=Date.now()/1000;
+  return RAW.filter(r=>{
+    if(state.mode && r.mode!==state.mode) return false;
+    if(state.days && r.ts && (now-r.ts)>state.days*86400) return false;
+    if(state.search && r.name.toLowerCase().indexOf(state.search.toLowerCase())<0) return false;
+    return true;
+  });
+}
+/* ============================================================
+   COTE D'ÉQUIPE (CÉ) — structure WN8/WNX adaptée au jeu d'équipe.
+   Valeurs "attendues" = moyennes du clan. Calcul PAR BATAILLE ;
+   le score global d'un joueur = MOYENNE de ses CÉ par bataille.
+   ============================================================ */
+let CE_REF=null;                                   // référence GLOBALE (calculée une fois dans buildRaw)
+const CE_W={imp:300,frag:100,spot:150,tank:200,win:450,surv:300};   // poids (somme=1500 = niveau global moyen)
+// Référence "globale" : moyenne de TOUS les joueurs enregistrés (notre clan + tous les adversaires
+// rencontrés). 1500 = ce niveau global ; le clan peut être au-dessus ou en dessous.
+// (winrate fixé à 0,5 = vérité globale ; défauts tier 10 tant qu'on a peu de données.)
+function teamGlobalRef(rows){
+  let n=0,imp=0,frag=0,spot=0,tank=0,surv=0;
+  for(const r of rows){ n++; imp+=r.dmg+r.assist; frag+=r.kills; spot+=r.spot; tank+=r.block; surv+=(r.surv?1:0); }
+  if(n<20) return {imp:2600,frag:1,spot:1,tank:900,win:0.5,surv:0.4};
+  return {imp:(imp/n)||2600,frag:(frag/n)||1,spot:(spot/n)||1,tank:(tank/n)||900,win:0.5,surv:(surv/n)||0.4};
+}
+function ceForRow(r,C){
+  C=C||CE_REF; if(!C) return 1500;
+  const rel=(v,c)=>c>0?v/c:1;                       // ratio vs attendu
+  const step=(x,f)=>Math.max(0,(x-f)/(1-f));        // palier WN8 (retire le plancher, renormalise)
+  const rImp =step(rel(r.dmg+r.assist,C.imp),0.22); // "impact" = dégâts + assistés (colonne vertébrale)
+  const rFrag=Math.max(0,Math.min(rImp+0.2,step(rel(r.kills,C.frag),0.12)));
+  const rSpot=Math.max(0,Math.min(rImp+0.1,step(rel(r.spot,C.spot),0.38)));
+  const rTank=Math.max(0,Math.min(rImp+0.1,step(rel(r.block,C.tank),0.10)));
+  const rWin =step(rel(r.result===1?1:0,C.win),0.71);
+  const rSurv=step(rel(r.surv?1:0,C.surv),0.30);
+  return CE_W.imp*rImp + CE_W.frag*rImp*rFrag + CE_W.spot*rImp*rSpot + CE_W.tank*rImp*rTank
+       + CE_W.win*Math.min(1.8,rWin) + CE_W.surv*Math.min(1.8,rSurv);
+}
+function aggregate(rows){
+  const m={};
+  for(const r of rows){
+    let a=m[r.name];
+    if(!a){ a=m[r.name]={name:r.name,battles:new Set(),wins:new Set(),dmg:0,kills:0,assist:0,spot:0,xp:0,surv:0,block:0,dmgr:0,obj:0,ce:0,n:0}; }
+    a.battles.add(r.battleId); if(r.result===1) a.wins.add(r.battleId);
+    a.dmg+=r.dmg;a.kills+=r.kills;a.assist+=r.assist;a.spot+=r.spot;a.xp+=r.xp;a.surv+=(r.surv?1:0);
+    a.block+=r.block;a.dmgr+=r.dmgr;a.obj+=(r.cap||0)+(r.decap||0);a.ce+=ceForRow(r,CE_REF);a.n++;
+  }
+  return Object.values(m).map(a=>({
+    name:a.name,battles:a.battles.size,
+    winrate:a.battles.size?a.wins.size/a.battles.size:0,
+    dmg:a.n?a.dmg/a.n:0,kills:a.n?a.kills/a.n:0,assist:a.n?a.assist/a.n:0,
+    spot:a.n?a.spot/a.n:0,survrate:a.n?a.surv/a.n:0,xp:a.n?a.xp/a.n:0,
+    block:a.n?a.block/a.n:0,dmgr:a.n?a.dmgr/a.n:0,obj:a.n?a.obj/a.n:0,
+    ce:a.n?Math.round(a.ce/a.n):0,                   // GLOBAL = moyenne des CÉ par bataille
+  }));
+}
+function ceTier(v){
+  if(v>=2500) return {c:"#a970ff",l:"Pilier d'équipe"};
+  if(v>=2000) return {c:"var(--good)",l:"Très bon coéquipier"};
+  if(v>=1650) return {c:"#4f97ee",l:"Bon coéquipier"};
+  if(v>=1350) return {c:"var(--ink-2)",l:"Dans la moyenne du clan"};
+  if(v>=1000) return {c:"var(--accent)",l:"En retrait"};
+  return {c:"var(--bad)",l:"À renforcer"};
+}
+function ceBadge(v){ const t=ceTier(v); return `<span class="ce-badge" style="color:${t.c}" title="${esc(t.l)}">${fmt(v)}</span>`; }
+function fmt(n,d=0){ return (n||0).toLocaleString("fr-FR",{maximumFractionDigits:d,minimumFractionDigits:d}); }
+function pct(x){ return Math.round((x||0)*100)+"%"; }
+function esc(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+const CP_EMBLEM='<circle cx="120" cy="120" r="100" fill="none" stroke="#d8b566" stroke-width="7"/><circle cx="120" cy="120" r="88" fill="none" stroke="#d8b566" stroke-width="2.5" opacity=".5"/><rect x="81" y="8" width="18" height="18" fill="#d8b566"/><rect x="111" y="4" width="18" height="18" fill="#d8b566"/><rect x="141" y="8" width="18" height="18" fill="#d8b566"/><path d="M161,155 A54,54 0 1 1 161,85" fill="none" stroke="#d8b566" stroke-width="20" stroke-linecap="round"/><rect x="112" y="94" width="16" height="52" rx="5" fill="#d8b566"/><rect x="94" y="112" width="52" height="16" rx="5" fill="#d8b566"/>';
+function cpLoader(txt){
+  return '<div class="cp-load"><div class="cp-load-mark">'
+    +'<svg viewBox="0 0 120 120" class="cp-spin" aria-hidden="true"><circle cx="60" cy="60" r="54"/></svg>'
+    +'<svg viewBox="0 0 240 240" class="cp-emb" aria-hidden="true">'+CP_EMBLEM+'</svg>'
+    +'</div><div class="cp-load-txt">'+esc(txt||"Chargement…")+'</div></div>';
+}
+
+function render(){
+  const all=applyFilters();
+  const rows=all.filter(r=>r.isMember);   // vue clan = uniquement les membres du clan
+  const agg=aggregate(rows);
+  const battleIds=new Set(rows.map(r=>r.battleId));
+  renderDashboard();
+  renderBars("barsDmg",agg.slice().sort((a,b)=>b.dmg-a.dmg).slice(0,10),"dmg",v=>fmt(v));
+  renderBars("barsKills",agg.slice().sort((a,b)=>b.kills-a.kills).slice(0,10),"kills",v=>fmt(v,2));
+  renderTable(agg);
+  const fc=document.getElementById("footCount"); if(fc) fc.textContent=rows.length+" lignes · "+battleIds.size+" batailles";
+}
+function renderBars(id,list,key,f){
+  const el=document.getElementById(id);
+  if(!list.length){ el.innerHTML='<div class="empty">Aucune donnée</div>'; return; }
+  const max=Math.max(...list.map(x=>x[key]))||1;
+  el.innerHTML=list.map(x=>{ const w=Math.max(3,x[key]/max*100);
+    return `<div class="bar-row" title="${esc(x.name)} — ${f(x[key])}"><div class="nm">${esc(x.name)}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${w}%"></div></div>
+      <div class="vv">${f(x[key])}</div></div>`; }).join("");
+}
+function renderTrend(rows){
+  const svg=document.getElementById("trend");
+  const W=svg.clientWidth||900,H=190,padL=34,padR=12,padT=14,padB=26;
+  const perDay={};
+  rows.forEach(r=>{ if(!r.ts)return; const d=new Date(r.ts*1000);
+    const key=d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate();
+    (perDay[key]=perDay[key]||new Set()).add(r.battleId); });
+  let days=Object.keys(perDay).map(k=>({k,t:new Date(k).getTime(),n:perDay[k].size})).sort((a,b)=>a.t-b.t);
+  if(days.length<2){ svg.innerHTML=`<text x="${W/2}" y="${H/2}" text-anchor="middle">Pas assez de jours pour une tendance</text>`; return; }
+  const maxN=Math.max(...days.map(d=>d.n));
+  const x=i=>padL+i/(days.length-1)*(W-padL-padR), y=v=>padT+(1-v/maxN)*(H-padT-padB);
+  let g="";
+  for(let i=0;i<=maxN;i++){ const yy=y(i);
+    g+=`<line class="grid-line" x1="${padL}" y1="${yy}" x2="${W-padR}" y2="${yy}"/>`;
+    g+=`<text x="${padL-6}" y="${yy+3}" text-anchor="end">${i}</text>`; }
+  let path="",area="M"+padL+","+(H-padB);
+  days.forEach((d,i)=>{ const px=x(i),py=y(d.n); path+=(i?"L":"M")+px+","+py+" "; area+="L"+px+","+py+" "; });
+  area+="L"+x(days.length-1)+","+(H-padB)+" Z";
+  g+=`<path class="area" d="${area}"/><path class="line" d="${path}"/>`;
+  days.forEach((d,i)=>{ g+=`<circle class="dot" cx="${x(i)}" cy="${y(d.n)}" r="3"><title>${d.k} : ${d.n}</title></circle>`; });
+  [0,Math.floor((days.length-1)/2),days.length-1].forEach(i=>{
+    const lab=new Date(days[i].t).toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit"});
+    g+=`<text x="${x(i)}" y="${H-8}" text-anchor="middle">${lab}</text>`; });
+  g+=`<line class="axis-line" x1="${padL}" y1="${H-padB}" x2="${W-padR}" y2="${H-padB}"/>`;
+  svg.innerHTML=g;
+}
+const COLS=[
+  {k:"name",t:"Joueur",f:v=>esc(v)},
+  {k:"ce",t:"SR",f:v=>ceBadge(v)},
+  {k:"battles",t:"Batailles",f:v=>fmt(v)},
+  {k:"winrate",t:"% Vict.",f:v=>pct(v),cls:v=>v>=0.5?"pos":"neg"},
+  {k:"dmg",t:"Dég. moy",f:v=>fmt(v)},
+  {k:"kills",t:"Frags",f:v=>fmt(v,2)},
+  {k:"assist",t:"Assist",f:v=>fmt(v)},
+  {k:"spot",t:"Repérage",f:v=>fmt(v,1)},
+  {k:"survrate",t:"% Survie",f:v=>pct(v)},
+  {k:"xp",t:"XP moy",f:v=>fmt(v)},
+];
+function renderTable(agg){
+  const thead=document.getElementById("thead");
+  thead.innerHTML=COLS.map(c=>{ const on=c.k===state.sortKey; const arw=on?(state.sortDir<0?" ▼":" ▲"):"";
+    return `<th data-k="${c.k}" class="${on?'sorted':''}">${c.t}<span class="arw">${arw}</span></th>`; }).join("");
+  thead.querySelectorAll("th").forEach(th=>th.onclick=()=>{
+    const k=th.dataset.k;
+    if(state.sortKey===k) state.sortDir*=-1; else { state.sortKey=k; state.sortDir=(k==="name")?1:-1; }
+    render();
+  });
+  const sorted=agg.slice().sort((a,b)=>{ let va=a[state.sortKey],vb=b[state.sortKey];
+    if(typeof va==="string") return state.sortDir*va.localeCompare(vb); return state.sortDir*(va-vb); });
+  const tb=document.getElementById("tbody");
+  if(!sorted.length){ tb.innerHTML=`<tr><td colspan="${COLS.length}" class="empty">Aucun joueur</td></tr>`; return; }
+  tb.innerHTML=sorted.map((row,i)=>"<tr>"+COLS.map((c,ci)=>{ const v=row[c.k]; const cls=c.cls?c.cls(v):"";
+    const rank=(ci===0)?`<span class="rank">${i+1}</span>`:""; return `<td class="${cls}">${rank}${c.f(v)}</td>`; }).join("")+"</tr>").join("");
+}
+
+/* ============================================================
+   UI
+   ============================================================ */
+function rebuildFilters(){
+  const mm=new Set(); RAW.forEach(r=>{ if(r.mode) mm.add(r.mode); });
+  document.getElementById("modeSel").innerHTML=`<option value="">Tous</option>`+[...mm].sort().map(m=>`<option>${esc(m)}</option>`).join("");
+}
+function playerActive(){ return !document.getElementById("viewPlayer").classList.contains("hidden"); }
+function battlesActive(){ return !document.getElementById("viewBattles").classList.contains("hidden"); }
+function rerender(){ render(); if(playerActive()) renderPlayerView(); if(battlesActive()) renderBattles(); }
+function wireUI(){
+  document.getElementById("modeSel").onchange=e=>{state.mode=e.target.value;rerender();};
+  document.getElementById("search").oninput=e=>{state.search=e.target.value;render();};
+  document.getElementById("periodSeg").querySelectorAll("button").forEach(b=>b.onclick=()=>{
+    document.getElementById("periodSeg").querySelectorAll("button").forEach(x=>x.classList.remove("on"));
+    b.classList.add("on"); state.days=parseInt(b.dataset.d,10); rerender();
+  });
+  document.querySelectorAll("#nav .tab").forEach(t=>t.onclick=()=>switchView(t.dataset.v));
+  document.getElementById("playerSel").onchange=e=>{ SELP=Number(e.target.value); renderPlayerView(); };
+  document.getElementById("clanSearchBtn").onclick=searchClans;
+  document.getElementById("clanQuery").addEventListener("keydown",e=>{ if(e.key==="Enter") searchClans(); });
+  document.getElementById("luNewBtn").onclick=()=>openLineupEditor(null);
+  document.getElementById("loNewBtn").onclick=()=>openLoadoutEditor(null);
+  document.getElementById("sideToggle").onclick=toggleSidebar;
+  const rkSel=document.getElementById("rkMetric");
+  rkSel.innerHTML=RK_METRICS.map(([k,l])=>`<option value="${k}">${esc(l)}</option>`).join("");
+  rkSel.onchange=loadRanking;
+  document.getElementById("themeBtn").onclick=()=>{
+    const cur=document.documentElement.getAttribute("data-theme");
+    const next=cur==="dark"?"light":"dark";
+    document.documentElement.setAttribute("data-theme",next);
+    localStorage.setItem("clanplus_theme",next); rerender();
+  };
+  document.getElementById("logoutBtn").onclick=()=>{ localStorage.removeItem(LS_SESSION); location.href=redirectUri(); };
+  window.addEventListener("resize",()=>{ if(document.getElementById("app").classList.contains("hidden"))return;
+    if(playerActive()) renderPlayerView(); else renderTrend(applyFilters().filter(r=>r.isMember)); });
+}
+
+/* ============================================================
+   VUE "MA PROGRESSION" (analyse individuelle)
+   ============================================================ */
+function fmtTime(sec){ sec=Math.round(sec||0); const m=Math.floor(sec/60),s=sec%60; return m+":"+(s<10?"0":"")+s; }
+function prettyMap(s){ s=String(s||""); if(!s) return "?";
+  s=s.replace(/^\d+_/,"").replace(/_/g," ");
+  return s.replace(/\b\w/g,c=>c.toUpperCase()); }
+function clsFR(c){ return ({heavyTank:"Lourd",mediumTank:"Moyen",lightTank:"Léger","AT-SPG":"Chasseur (TD)",SPG:"Artillerie"})[c]||c||"—"; }
+function pfilter(){ const now=Date.now()/1000;
+  return r=>(!state.mode||r.mode===state.mode)&&(!(state.days)|| !r.ts || (now-r.ts)<=state.days*86400); }
+function battlesWinrate(rows){ const seen={}; let w=0,t=0;
+  rows.forEach(r=>{ if(!(r.battleId in seen)){ seen[r.battleId]=1; if(r.result===1)w++; if(r.result!==-1&&r.result!=null)t++; } });
+  return {w,t,wr:t?w/t:0,battles:Object.keys(seen).length}; }
+function avgOf(rows,k){ return rows.length?rows.reduce((s,r)=>s+r[k],0)/rows.length:0; }
+
+function playerCE(rows){ return rows.length? Math.round(rows.reduce((s,r)=>s+ceForRow(r,CE_REF),0)/rows.length) : 0; }
+function pStreak(rows){
+  const b={}; rows.forEach(r=>{ if(!(r.battleId in b)) b[r.battleId]={ts:r.ts,res:r.result}; });
+  const arr=Object.values(b).sort((a,c)=>c.ts-a.ts);
+  if(!arr.length) return null;
+  const res=arr[0].res; let n=0; for(const x of arr){ if(x.res===res) n++; else break; }
+  return {res,n};
+}
+function pSRTrend(rows){
+  const s=rows.slice().filter(r=>r.ts).sort((a,c)=>a.ts-c.ts);
+  if(s.length<6) return null;
+  const h=Math.floor(s.length/2), ce=rs=>rs.reduce((x,r)=>x+ceForRow(r,CE_REF),0)/rs.length;
+  const older=Math.round(ce(s.slice(0,h))), recent=Math.round(ce(s.slice(h)));
+  return {older,recent,delta:recent-older};
+}
+function renderPlayerView(){
+  const f=pfilter();
+  const my=RAW.filter(r=>r.accId===SELP && f(r));
+  const clanRows=RAW.filter(r=>r.isMember && f(r));
+  const sel=document.getElementById("playerSel");
+  const name=(my[0]&&my[0].name)||(sel.selectedOptions[0]?sel.selectedOptions[0].textContent:"—");
+  const bw=battlesWinrate(my);
+  const meMember=(MEMBERS||[]).find(m=>Number(m.account_id)===Number(SELP));
+  const role=meMember?(ROLE_FR[normRole(meMember.wg_role)]||meMember.wg_role||""):"";
+  const initials=(name||"?").replace(/[_\-]/g," ").trim().slice(0,2).toUpperCase();
+  document.getElementById("pHead").innerHTML=`
+    <div class="pcard">
+      <div class="pav">${esc(initials)}</div>
+      <div class="pci">
+        <h2>${esc(name)}${role?` <span class="role-badge">${esc(role)}</span>`:""}</h2>
+        <div class="pmeta">${bw.battles} batailles Bastion analysées · <b class="${bw.wr>=0.5?"tagpos":"tagneg"}">${pct(bw.wr)}</b> de victoire</div>
+      </div>
+    </div>`;
+
+  if(!my.length){
+    document.getElementById("pKpis").innerHTML='<div class="empty" style="grid-column:1/-1">Aucune bataille pour ce joueur sur la période.</div>';
+    ["pSR","pByClass","pByTank","pByTier","pByMap","pCompare","pEnemies","pHidden","pPlan"].forEach(id=>document.getElementById(id).innerHTML="");
+    document.getElementById("pTrend").innerHTML=""; return;
+  }
+  const shots=my.reduce((s,r)=>s+r.shots,0),hits=my.reduce((s,r)=>s+r.hits,0);
+  const prec=shots?hits/shots:0;
+  const survrate=my.reduce((s,r)=>s+(r.surv?1:0),0)/my.length;
+  const kpis=[
+    {label:"Batailles",val:fmt(bw.battles)},
+    {label:"Taux de victoire",val:pct(bw.wr),sub:bw.w+" V / "+(bw.t-bw.w)+" D"},
+    {label:"Dégâts moyens",val:fmt(avgOf(my,"dmg"))},
+    {label:"Frags moyens",val:fmt(avgOf(my,"kills"),2)},
+    {label:"Survie",val:pct(survrate),sub:"temps moy "+fmtTime(avgOf(my,"life"))},
+    {label:"Précision",val:pct(prec),sub:"encaissé "+fmt(avgOf(my,"dmgr"))+"/bat."},
+  ];
+  document.getElementById("pKpis").innerHTML=kpis.map(k=>
+    `<div class="kpi"><div class="k-label">${k.label}</div><div class="k-val">${k.val}</div><div class="k-sub">${k.sub||""}</div></div>`).join("");
+
+  // --- SR (Synergy Rating) : score + decomposition + tendance + serie ---
+  const av=k=>avgOf(my,k);
+  const myCE=playerCE(my), tier=ceTier(myCE);
+  const comp=[["Victoire",bw.wr,CE_REF.win],["Survie",survrate,CE_REF.surv],
+    ["Impact",av("dmg")+av("assist"),CE_REF.imp],["Blindage",av("block"),CE_REF.tank],
+    ["Repérage",av("spot"),CE_REF.spot],["Frags",av("kills"),CE_REF.frag]];
+  const bars=comp.map(([lab,v,ref])=>{ const r=ref>0?v/ref:1, pv=Math.round(r*100), pos=r>=1;
+    const w=Math.max(4,Math.min(100,r*50));
+    return `<div class="srb"><span class="srb-l">${lab}</span><span class="srb-track"><span class="srb-fill ${pos?'up':'down'}" style="width:${w}%"></span></span><span class="srb-v ${pos?'tagpos':'tagneg'}">${pv}%</span></div>`; }).join("");
+  const tr=pSRTrend(my); let trendHtml="";
+  if(tr){ const up=tr.delta>0, flat=Math.abs(tr.delta)<40;
+    trendHtml=`<div class="sr-trend ${flat?'':(up?'tagpos':'tagneg')}">${flat?'➡️ stable':(up?'📈 en progression':'📉 en baisse')} <b>${tr.delta>0?'+':''}${tr.delta}</b> <span class="hint">(${tr.older} → ${tr.recent})</span></div>`; }
+  const stk=pStreak(my); let stkHtml="";
+  if(stk){ const w=stk.res===1, d=stk.res===-1, lbl=w?('victoire'+(stk.n>1?'s':'')):(d?('nul'+(stk.n>1?'s':'')):('défaite'+(stk.n>1?'s':'')));
+    stkHtml=`<div class="sr-streak">Série en cours : <b class="${w?'tagpos':(d?'':'tagneg')}">${stk.n} ${lbl}</b></div>`; }
+  document.getElementById("pSR").innerHTML=`<div class="card sr-hero">
+    <div class="sr-main"><div class="sr-big" style="color:${tier.c}">${fmt(myCE)}</div>
+      <div class="sr-lab"><div class="sr-name" style="color:${tier.c}">${esc(tier.l)}</div>
+      <div class="hint">SR — Synergy Rating · niveau global ≈ 1500</div>${trendHtml}${stkHtml}</div></div>
+    <div class="sr-break">${bars}</div></div>`;
+
+  // --- details de combat (collecte complete) ---
+  const perfo=hits?my.reduce((s,r)=>s+r.pierce,0)/hits:0;
+  const totLife=my.reduce((s,r)=>s+r.life,0);
+  const dmgMin=totLife?my.reduce((s,r)=>s+r.dmg,0)/(totLife/60):0;
+  const rec=my.reduce((m,r)=>Math.max(m,r.dmg),0);
+  const enc=av("dmgr"), ratio=enc?av("dmg")/enc:0, capdef=av("cap")+av("decap");
+  let hid=`<table class="mini"><tbody>
+    <tr><td>Blindage encaissé (tanking)</td><td>${fmt(av("block"))}</td></tr>
+    <tr><td>Dégâts assistés</td><td>${fmt(av("assist"))}</td></tr>
+    <tr><td>Dégâts encaissés</td><td>${fmt(enc)}</td></tr>
+    <tr><td>Ratio infligé / encaissé</td><td class="${ratio>=1?'tagpos':'tagneg'}">${fmt(ratio,2)}</td></tr>
+    <tr><td>Précision / perforation</td><td>${pct(prec)} / ${pct(perfo)}</td></tr>
+    <tr><td>Dégâts / minute de vie</td><td>${fmt(dmgMin)}</td></tr>
+    <tr><td>Capture + défense</td><td>${fmt(capdef,1)}</td></tr>
+    <tr><td>Record de dégâts</td><td>${fmt(rec)}</td></tr>`;
+  if(av("maxhp")>0){
+    const rend=av("maxhp")?av("dmg")/av("maxhp"):0, pvRest=av("maxhp")?av("hpleft")/av("maxhp"):0;
+    const bRate=av("hitsr")?av("bounce")/av("hitsr"):0;
+    hid+=`
+    <tr><td>Rendement (dégâts ÷ PV du char)</td><td class="tagpos">${fmt(rend,2)}×</td></tr>
+    <tr><td>PV restants moyens</td><td>${pct(pvRest)}</td></tr>
+    <tr><td>Assist — repérage / chenilles / stun</td><td>${fmt(av("aradio"))} / ${fmt(av("atrack"))} / ${fmt(av("astun"))}</td></tr>
+    <tr><td>Dégâts potentiels reçus</td><td>${fmt(av("pot"))}</td></tr>
+    <tr><td>Coups reçus / perforés / rebonds</td><td>${fmt(av("hitsr"),1)} / ${fmt(av("piercer"),1)} / ${fmt(av("bounce"),1)}</td></tr>
+    <tr><td>Taux de rebond encaissé</td><td>${pct(bRate)}</td></tr>
+    <tr><td>Dégâts subis d'ennemis non repérés</td><td>${fmt(av("dmginvis"))}</td></tr>
+    <tr><td>Dégâts à distance (sniper)</td><td>${fmt(av("sniper"))}</td></tr>
+    <tr><td>Distance parcourue</td><td>${fmt(av("dist")/1000,2)} km</td></tr>`;
+  } else {
+    hid+=`<tr><td colspan="2" class="hint" style="padding-top:8px">Rendement, assist détaillé, PV, portée, distance… arrivent dès tes prochaines batailles Bastion avec le mod à jour.</td></tr>`;
+  }
+  hid+="</tbody></table>";
+  document.getElementById("pHidden").innerHTML=hid;
+
+  // --- par classe ---
+  const byClass=groupRows(my,r=>r.cls);
+  renderMiniPerf("pByClass",byClass,clsFR,"Classe");
+  // --- par char ---
+  const byTank=groupRows(my,r=>r.tank).slice(0,8);
+  renderMiniPerf("pByTank",byTank,x=>x,"Char");
+  // --- par carte ---
+  const byMap=groupRows(my,r=>r.mapName);
+  renderMiniPerf("pByMap",byMap,prettyMap,"Carte");
+  // --- par tier ---
+  const byTier=groupRows(my,r=>{ const vm=VEHMAP[r.veh]; return (vm&&vm.tier)?("Tier "+vm.tier):""; })
+    .sort((a,c)=>(parseInt(String(c.key).replace(/\D/g,""))||0)-(parseInt(String(a.key).replace(/\D/g,""))||0));
+  renderMiniPerf("pByTier",byTier,x=>x,"Tier");
+
+  // --- comparaison : toi vs moyenne clan vs MEILLEUR membre ---
+  const clanAgg=aggregate(clanRows);
+  const bestOf=k=>clanAgg.length?Math.max(...clanAgg.map(a=>a[k]||0)):0;
+  const clS=clanRows.length?clanRows.reduce((s,r)=>s+(r.surv?1:0),0)/clanRows.length:0;
+  const clanCE=clanAgg.length?Math.round(clanAgg.reduce((s,a)=>s+a.ce,0)/clanAgg.length):0;
+  let cmp=`<table class="mini"><thead><tr><th>Métrique</th><th>Toi</th><th>Moy. clan</th><th>Meilleur</th><th>vs moy.</th></tr></thead><tbody>`;
+  const cRow=(lab,me,cl,best,d,isPct)=>{ const g=v=>isPct?pct(v):fmt(v,d);
+    const diff=cl?((me-cl)/cl*100):0, c=diff>=0?"tagpos":"tagneg";
+    cmp+=`<tr><td>${lab}</td><td><b>${g(me)}</b></td><td>${g(cl)}</td><td>${g(best)}</td><td class="${c}">${diff>=0?"+":""}${Math.round(diff)}%</td></tr>`; };
+  cRow("SR",myCE,clanCE,bestOf("ce"),0,false);
+  cRow("Dégâts",av("dmg"),avgOf(clanRows,"dmg"),bestOf("dmg"),0,false);
+  cRow("Frags",av("kills"),avgOf(clanRows,"kills"),bestOf("kills"),2,false);
+  cRow("Assist",av("assist"),avgOf(clanRows,"assist"),bestOf("assist"),0,false);
+  cRow("Blindage",av("block"),avgOf(clanRows,"block"),bestOf("block"),0,false);
+  cRow("Repérage",av("spot"),avgOf(clanRows,"spot"),bestOf("spot"),1,false);
+  cRow("Survie",survrate,clS,bestOf("survrate"),0,true);
+  cmp+="</tbody></table>";
+  document.getElementById("pCompare").innerHTML=cmp;
+
+  // --- clans adverses ---
+  const enemy={}; const seenB={};
+  my.forEach(r=>{ if(r.battleId in seenB)return; seenB[r.battleId]=1;
+    const tag=BATTLE_ENEMY[r.battleId]||"?"; (enemy[tag]=enemy[tag]||{w:0,t:0,n:0});
+    enemy[tag].n++; if(r.result===1)enemy[tag].w++; if(r.result!==-1&&r.result!=null)enemy[tag].t++; });
+  const elist=Object.keys(enemy).map(t=>({tag:t,n:enemy[t].n,wr:enemy[t].t?enemy[t].w/enemy[t].t:0}))
+    .sort((a,b)=>a.wr-b.wr);
+  if(!elist.length){ document.getElementById("pEnemies").innerHTML='<div class="empty">Aucun adversaire identifié</div>'; }
+  else{ let e=`<table class="mini"><thead><tr><th>Clan adverse</th><th>Batailles</th><th>% Vict.</th></tr></thead><tbody>`;
+    elist.forEach(x=>{ const ic=x.wr<0.4?"🔴":(x.wr>0.6?"🟢":"⚪"); const cl=x.wr<0.4?"tagneg":(x.wr>0.6?"tagpos":"");
+      e+=`<tr><td>${ic} ${esc(x.tag)}</td><td>${x.n}</td><td class="${cl}">${pct(x.wr)}</td></tr>`; });
+    e+="</tbody></table>"; document.getElementById("pEnemies").innerHTML=e; }
+
+  // --- évolution : dégâts par bataille ---
+  renderPTrend(my);
+  // --- plan de progression ---
+  renderPlan(name,my,byClass,byMap,elist,prec,survrate,av("dmg"),avgOf(clanRows,"dmg"),
+    {myCE,clanCE,bestCE:bestOf("ce"),bestDmg:bestOf("dmg"),myDmg:av("dmg")});
+}
+
+function groupRows(rows,keyFn){
+  const m={};
+  rows.forEach(r=>{ const k=keyFn(r); if(k==null||k==="")return; (m[k]=m[k]||[]).push(r); });
+  return Object.keys(m).map(k=>{ const rs=m[k]; const bw=battlesWinrate(rs);
+    return {key:k, n:bw.battles, dmg:avgOf(rs,"dmg"), wr:bw.wr, kills:avgOf(rs,"kills")}; })
+    .sort((a,b)=>b.dmg-a.dmg);
+}
+function renderMiniPerf(id,list,labelFn,head){
+  const el=document.getElementById(id);
+  if(!list.length){ el.innerHTML='<div class="empty">Pas encore de données</div>'; return; }
+  let h=`<table class="mini"><thead><tr><th>${head}</th><th>Bat.</th><th>Dég. moy</th><th>% Vict.</th></tr></thead><tbody>`;
+  list.forEach(x=>{ h+=`<tr><td>${esc(labelFn(x.key))}</td><td>${x.n}</td><td>${fmt(x.dmg)}</td><td>${pct(x.wr)}</td></tr>`; });
+  h+="</tbody></table>"; el.innerHTML=h;
+}
+function renderPTrend(my){
+  const svg=document.getElementById("pTrend");
+  const W=svg.clientWidth||900,H=190,padL=42,padR=12,padT=14,padB=26;
+  const pts=my.slice().filter(r=>r.ts).sort((a,b)=>a.ts-b.ts).map(r=>({t:r.ts,v:r.dmg}));
+  if(pts.length<2){ svg.innerHTML=`<text x="${W/2}" y="${H/2}" text-anchor="middle" fill="var(--muted)">Pas assez de batailles pour une courbe</text>`; return; }
+  const maxV=Math.max(...pts.map(p=>p.v))||1;
+  const x=i=>padL+i/(pts.length-1)*(W-padL-padR), y=v=>padT+(1-v/maxV)*(H-padT-padB);
+  let g="";
+  for(let i=0;i<=4;i++){ const vv=maxV*i/4, yy=y(vv);
+    g+=`<line class="grid-line" x1="${padL}" y1="${yy}" x2="${W-padR}" y2="${yy}"/>`;
+    g+=`<text x="${padL-6}" y="${yy+3}" text-anchor="end" fill="var(--muted)" font-size="11">${fmt(vv)}</text>`; }
+  let path="",area="M"+padL+","+(H-padB);
+  pts.forEach((p,i)=>{ const px=x(i),py=y(p.v); path+=(i?"L":"M")+px+","+py+" "; area+="L"+px+","+py+" "; });
+  area+="L"+x(pts.length-1)+","+(H-padB)+" Z";
+  g+=`<path class="area" d="${area}"/><path class="line" d="${path}"/>`;
+  pts.forEach((p,i)=>{ g+=`<circle class="dot" cx="${x(i)}" cy="${y(p.v)}" r="3"><title>${fmt(p.v)} dégâts</title></circle>`; });
+  g+=`<line class="axis-line" x1="${padL}" y1="${H-padB}" x2="${W-padR}" y2="${H-padB}"/>`;
+  svg.innerHTML=g;
+}
+function renderPlan(name,my,byClass,byMap,elist,prec,survrate,myDmg,clanDmg,obj){
+  const b=[];
+  const first=name.split(" ")[0];
+  if(byClass.length){ const best=byClass[0];
+    b.push(`Ton point fort : la classe <b>${clsFR(best.key)}</b> (${fmt(best.dmg)} dégâts moyens, ${pct(best.wr)} de victoire). Privilégie ce rôle en Bastion.`);
+    if(byClass.length>1){ const worst=byClass[byClass.length-1];
+      if(worst.dmg < best.dmg*0.7) b.push(`À travailler : en <b>${clsFR(worst.key)}</b>, tes dégâts tombent à ${fmt(worst.dmg)}. Entraîne-toi ou évite ce rôle en compétition.`); } }
+  if(byMap.length){ const bm=byMap.slice().sort((a,b)=>b.wr-a.wr);
+    b.push(`Carte la plus rentable : <b>${prettyMap(bm[0].key)}</b> (${pct(bm[0].wr)} de victoire). Carte la plus difficile : <b>${prettyMap(bm[bm.length-1].key)}</b> (${pct(bm[bm.length-1].wr)}).`); }
+  if(elist.length){ const dang=elist[0], easy=elist[elist.length-1];
+    if(dang.wr<0.5) b.push(`Adversaire redouté : <b>${esc(dang.tag)}</b> (seulement ${pct(dang.wr)} de victoire). Prépare une stratégie spécifique contre eux.`);
+    if(easy.wr>0.5 && easy.tag!==dang.tag) b.push(`Tu domines <b>${esc(easy.tag)}</b> (${pct(easy.wr)} de victoire).`); }
+  if(survrate<0.5) b.push(`Tu survis à ${pct(survrate)} des batailles — tu prends beaucoup de dégâts. Joue plus couvert pour rester en vie et prolonger ton impact.`);
+  else b.push(`Bonne longévité (${pct(survrate)} de survie) : tu restes en vie et utile longtemps.`);
+  if(prec<0.6) b.push(`Précision de tir à ${pct(prec)} : vise mieux (points faibles, tirs à l'arrêt) pour convertir plus d'obus en dégâts.`);
+  if(myDmg && clanDmg){ const d=Math.round((myDmg-clanDmg)/clanDmg*100);
+    b.push(d>=0 ? `Globalement tu es <span class="tagpos">${d}% au-dessus</span> de la moyenne du clan en dégâts. 💪`
+                : `Tu es <span class="tagneg">${Math.abs(d)}% sous</span> la moyenne du clan en dégâts — de la marge de progression.`); }
+  // objectifs chiffres (viser le meilleur du clan / le palier SR suivant)
+  const goals=[];
+  if(obj){
+    if(obj.bestDmg && obj.myDmg && obj.bestDmg>obj.myDmg*1.03)
+      goals.push(`Dégâts : passer de <b>${fmt(obj.myDmg)}</b> à <b>${fmt(obj.bestDmg)}</b> (niveau du meilleur du clan, +${fmt(obj.bestDmg-obj.myDmg)}).`);
+    const paliers=[1000,1350,1650,2000,2500];
+    const next=paliers.find(p=>p>obj.myCE);
+    if(next) goals.push(`SR : encore <b>+${fmt(next-obj.myCE)}</b> pour atteindre <b>${fmt(next)}</b> et passer au palier supérieur.`);
+    if(obj.bestCE && obj.bestCE>obj.myCE)
+      goals.push(`Le meilleur coéquipier est à <b>${fmt(obj.bestCE)}</b> de SR — ton objectif à terme.`);
+  }
+  const goalsHtml = goals.length ? `<div class="plan-goals"><div class="pg-h">🎯 Objectifs chiffrés</div><ul>${goals.map(g=>`<li>${g}</li>`).join("")}</ul></div>` : "";
+  document.getElementById("pPlan").innerHTML="<ul>"+b.map(x=>`<li>${x}</li>`).join("")+"</ul>"+goalsHtml;
+}
+
+/* ============================================================
+   LINE-UPS (compos de manoeuvre) — création réservée aux officiers+
+   ============================================================ */
+let LINEUPS=[], LU_CANEDIT=false, LU_EDITING=null;
+async function loadLineups(){
+  const list=document.getElementById("luList");
+  list.innerHTML='<div class="card">'+cpLoader()+'</div>';
+  const r=await fnCall("lineups",{session:localStorage.getItem(LS_SESSION),action:"list"});
+  if(!r.ok){ list.innerHTML='<div class="card"><div class="empty">Erreur : '+esc(r.j.error||String(r.status))+'</div></div>'; return; }
+  LINEUPS=r.j.lineups||[]; LU_CANEDIT=!!r.j.canEdit;
+  document.getElementById("luNewBtn").classList.toggle("hidden",!LU_CANEDIT);
+  document.getElementById("luRole").textContent = LU_CANEDIT
+    ? "Tu peux créer et modifier les line-ups du clan."
+    : "Consultation seule — la création est réservée aux officiers de combat et plus.";
+  renderLineups();
+}
+function renderLineups(){
+  const el=document.getElementById("luList");
+  if(!LINEUPS.length){ el.innerHTML='<div class="card"><div class="empty">Aucun line-up pour l\'instant.'+(LU_CANEDIT?' Clique « Nouveau line-up » pour en créer un.':'')+'</div></div>'; return; }
+  el.innerHTML=LINEUPS.map(lu=>{
+    const slots=Array.isArray(lu.slots)?lu.slots:[];
+    const rows=slots.map((s,i)=>`<tr><td>${i+1}</td><td>${esc(s.name||"?")}</td><td>${esc(s.tank||"—")}</td><td>${esc(s.position||"—")}</td></tr>`).join("");
+    const btns=LU_CANEDIT?`<div class="lu-actions">
+      <button class="btn" data-edit="${lu.id}">Modifier</button>
+      <button class="btn lu-del" data-del="${lu.id}">Supprimer</button></div>`:"";
+    return `<div class="card lu-card">
+      <div class="lu-card-h"><h3>${esc(lu.name||"Line-up")} <span class="hint">${slots.length} postes</span></h3>${btns}</div>
+      ${lu.notes?`<div class="lu-notes">${esc(lu.notes)}</div>`:""}
+      <table class="mini lu-mini"><thead><tr><th>#</th><th>Joueur</th><th>Char</th><th>Poste</th></tr></thead>
+        <tbody>${rows||'<tr><td colspan="4" class="empty">Compo vide</td></tr>'}</tbody></table>
+      <div class="lu-by">Créé par ${esc(lu.created_by_name||"?")}</div>
+    </div>`;
+  }).join("");
+  el.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>openLineupEditor(LINEUPS.find(x=>String(x.id)===b.dataset.edit)));
+  el.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>deleteLineup(b.dataset.del));
+}
+function openLineupEditor(lu){
+  LU_EDITING = lu ? JSON.parse(JSON.stringify(lu)) : {name:"",notes:"",slots:[]};
+  if(!Array.isArray(LU_EDITING.slots)) LU_EDITING.slots=[];
+  const ed=document.getElementById("luEditor"); ed.classList.remove("hidden");
+  const tankOpts=[...new Set(Object.values(VEHMAP).map(v=>v.name).filter(Boolean))].sort()
+    .map(n=>`<option value="${esc(n)}">`).join("");
+  window.__memberOpts=`<option value="">—</option>`+(MEMBERS||[]).slice().sort((a,b)=>String(a.nickname).localeCompare(b.nickname))
+    .map(m=>`<option value="${m.account_id}">${esc(m.nickname)}</option>`).join("");
+  ed.innerHTML=`<div class="card lu-editor">
+    <div class="lu-card-h"><h3>${lu?"Modifier le line-up":"Nouveau line-up"}</h3>
+      <button class="btn" id="luCancel">Annuler</button></div>
+    <div class="lu-form">
+      <label class="lu-lab">Nom<input id="luName" type="text" maxlength="80" value="${esc(LU_EDITING.name||"")}" placeholder="Ex : Bastion T10 — Défense"></label>
+      <label class="lu-lab">Notes (facultatif)<input id="luNotes" type="text" maxlength="500" value="${esc(LU_EDITING.notes||"")}" placeholder="Consignes générales…"></label>
+    </div>
+    <datalist id="luTanks">${tankOpts}</datalist>
+    <div class="lu-slots" id="luSlots"></div>
+    <div class="lu-form-actions">
+      <button class="btn" id="luAddSlot">＋ Ajouter un poste</button>
+      <button class="btn lu-save" id="luSave">Enregistrer</button>
+    </div></div>`;
+  renderSlots();
+  document.getElementById("luCancel").onclick=()=>{ed.classList.add("hidden");ed.innerHTML="";};
+  document.getElementById("luAddSlot").onclick=()=>{LU_EDITING.slots.push({account_id:"",name:"",tank:"",position:""});renderSlots();};
+  document.getElementById("luSave").onclick=saveLineup;
+  ed.scrollIntoView({behavior:"smooth",block:"start"});
+}
+function renderSlots(){
+  const box=document.getElementById("luSlots");
+  if(!LU_EDITING.slots.length){ box.innerHTML='<div class="empty" style="padding:16px">Aucun poste. Clique « Ajouter un poste ».</div>'; return; }
+  box.innerHTML=LU_EDITING.slots.map((s,i)=>`<div class="lu-slot" data-i="${i}">
+    <span class="lu-idx">${i+1}</span>
+    <select class="lu-player">${window.__memberOpts}</select>
+    <input class="lu-tank" list="luTanks" placeholder="Char" value="${esc(s.tank||"")}">
+    <input class="lu-pos" placeholder="Poste (ex : Pointe)" value="${esc(s.position||"")}">
+    <button class="icon-btn lu-rm" title="Retirer">✕</button></div>`).join("");
+  box.querySelectorAll(".lu-slot").forEach(row=>{
+    const i=+row.dataset.i;
+    if(LU_EDITING.slots[i].account_id) row.querySelector(".lu-player").value=LU_EDITING.slots[i].account_id;
+    row.querySelector(".lu-rm").onclick=()=>{LU_EDITING.slots.splice(i,1);renderSlots();};
+  });
+}
+function collectSlots(){
+  const out=[];
+  document.querySelectorAll("#luSlots .lu-slot").forEach(row=>{
+    const sel=row.querySelector(".lu-player"); const aid=sel.value;
+    out.push({account_id:aid?Number(aid):null, name:aid&&sel.selectedOptions[0]?sel.selectedOptions[0].textContent:"",
+      tank:row.querySelector(".lu-tank").value.trim(), position:row.querySelector(".lu-pos").value.trim()});
+  });
+  return out;
+}
+async function saveLineup(){
+  const payload={ id:LU_EDITING.id||null, name:document.getElementById("luName").value.trim()||"Line-up",
+    notes:document.getElementById("luNotes").value.trim(), slots:collectSlots() };
+  const btn=document.getElementById("luSave"); btn.disabled=true; btn.textContent="…";
+  const r=await fnCall("lineups",{session:localStorage.getItem(LS_SESSION),action:"save",lineup:payload});
+  if(!r.ok){ btn.disabled=false; btn.textContent="Enregistrer"; alert("Erreur : "+(r.j.error||r.status)); return; }
+  document.getElementById("luEditor").classList.add("hidden"); document.getElementById("luEditor").innerHTML="";
+  loadLineups();
+}
+async function deleteLineup(id){
+  if(!confirm("Supprimer ce line-up ?")) return;
+  const r=await fnCall("lineups",{session:localStorage.getItem(LS_SESSION),action:"delete",id:Number(id)});
+  if(!r.ok){ alert("Erreur : "+(r.j.error||r.status)); return; }
+  loadLineups();
+}
+
+/* ============================================================
+   LOADOUTS (equipements/consommables recommandes par char) — officiers+
+   ============================================================ */
+let LOADOUTS=[], LO_CANEDIT=false, LO_REF=null, LO_EDITING=null;
+function loMaps(){
+  const t={},e={},c={},s={};
+  if(LO_REF){ (LO_REF.tanks||[]).forEach(x=>t[x.tank_id]=x); (LO_REF.equipment||[]).forEach(x=>e[x.id]=x); (LO_REF.consumables||[]).forEach(x=>c[x.id]=x); (LO_REF.skills||[]).forEach(x=>s[x.id]=x); }
+  return {t,e,c,s};
+}
+async function loadLoadouts(){
+  const list=document.getElementById("loList");
+  list.innerHTML='<div class="card">'+cpLoader()+'</div>';
+  // 1) Les loadouts (rapide, base) — c'est ce qui remplit l'onglet.
+  try{
+    const r=await fnCall("loadouts",{session:localStorage.getItem(LS_SESSION),action:"list"});
+    if(!r.ok){ list.innerHTML='<div class="card"><div class="empty">Erreur loadouts : '+esc((r.j&&r.j.error)||String(r.status))+' — la fonction « loadouts » est-elle déployée ?</div></div>'; return; }
+    LOADOUTS=r.j.loadouts||[]; LO_CANEDIT=!!r.j.canEdit;
+    document.getElementById("loNewBtn").classList.toggle("hidden",!LO_CANEDIT);
+    document.getElementById("loRole").textContent = LO_CANEDIT
+      ? "Tu peux créer et modifier les loadouts du clan."
+      : "Consultation seule — réservé aux officiers de combat et plus.";
+    renderLoadouts();
+  }catch(e){
+    list.innerHTML='<div class="card"><div class="empty">Impossible de joindre la fonction « loadouts » ('+esc(String(e))+'). Vérifie son déploiement.</div></div>';
+    return;
+  }
+  // 2) La référence (chars/équipements/conso : icônes+stats+éditeur) — best-effort, en arrière-plan.
+  if(!LO_REF || !(LO_REF.tanks||[]).length){
+    try{
+      const rf=await fnCall("reference",{session:localStorage.getItem(LS_SESSION)});
+      if(rf.ok && rf.j && rf.j.tanks){ LO_REF=rf.j; renderLoadouts(); }
+      else document.getElementById("loRole").textContent+=" (⚠️ données chars/équipements indisponibles — fonction « reference » à déployer)";
+    }catch(e){ /* on garde l'affichage sans icônes */ }
+  }
+}
+function loIcons(arr){ return arr.length ? arr.map(x=>`<img class="lo-ico" src="${esc(x.image||"")}" title="${esc(x.name||"")}" alt="${esc(x.name||"")}" onerror="this.style.display='none'">`).join("") : '<span class="hint">—</span>'; }
+const CLS_COLOR={heavyTank:"#e0894a",mediumTank:"#46c85a",lightTank:"#4f97ee","AT-SPG":"#a970ff",SPG:"#ec6a6a"};
+const CLS_FR={heavyTank:"Lourd",mediumTank:"Moyen",lightTank:"Léger","AT-SPG":"Chasseur",SPG:"Artillerie"};
+function renderLoadouts(){
+  const el=document.getElementById("loList"), M=loMaps();
+  if(!LOADOUTS.length){
+    el.innerHTML=`<div class="lo-empty"><div class="lo-empty-ic">🛠️</div><div class="lo-empty-t">Aucun loadout pour l'instant</div>`
+      +(LO_CANEDIT?`<div class="lo-empty-s">Clique « Ajouter un loadout » pour créer le premier réglage recommandé du clan.</div>`:`<div class="lo-empty-s">Les officiers de combat n'ont pas encore renseigné de réglages.</div>`)+`</div>`;
+    return;
+  }
+  const dtiles=(arr,cap)=>arr.length?arr.map(x=>`<div class="lo-dtile" title="${esc(x.name||"")}"><div class="lo-dtile-ic"><img src="${esc(x.image||x.icon||"")}" onerror="this.style.display='none'" loading="lazy"></div>${cap?`<span>${esc(x.name||"")}</span>`:""}</div>`).join(""):'<span class="lo-none">—</span>';
+  el.innerHTML='<div class="lo-cards">'+LOADOUTS.map((lo,idx)=>{
+    const t=M.t[lo.tank_id]||{name:lo.tank_name||("Char "+lo.tank_id),icon:"",type:""};
+    const col=CLS_COLOR[t.type]||"var(--accent)";
+    const eq=(lo.equipment||[]).map(id=>M.e[id]).filter(Boolean);
+    const co=(lo.consumables||[]).map(id=>M.c[id]).filter(Boolean);
+    const sk=(lo.skills||[]).map(id=>M.s[id]).filter(Boolean);
+    const pills=[];
+    if(t.hp)pills.push(`<span class="lo-pill">${fmt(t.hp)} PV</span>`);
+    if(t.view_range)pills.push(`<span class="lo-pill">${t.view_range} m</span>`);
+    if(t.speed)pills.push(`<span class="lo-pill">${t.speed} km/h</span>`);
+    const btns=LO_CANEDIT?`<div class="lo-cardact"><button class="lo-mini" data-edit="${lo.tank_id}" title="Modifier">✎</button><button class="lo-mini lo-minidel" data-del="${lo.tank_id}" title="Supprimer">✕</button></div>`:"";
+    return `<div class="lo-card2" style="--cls:${col};animation-delay:${Math.min(idx,12)*55}ms">
+      <div class="lo-card2-h">
+        ${t.icon?`<div class="lo-t-ic"><img src="${esc(t.icon)}" onerror="this.style.display='none'"></div>`:""}
+        <div class="lo-t-info"><div class="lo-t-name">${esc(t.name)}</div>
+          <div class="lo-t-meta"><span class="lo-cls">${esc(CLS_FR[t.type]||"")}</span><span class="lo-tier">X</span></div>
+          <div class="lo-pills">${pills.join("")}</div>
+        </div>${btns}</div>
+      <div class="lo-sec2"><div class="lo-sec2-l">Équipements</div><div class="lo-dtiles">${dtiles(eq,true)}</div></div>
+      <div class="lo-sec2"><div class="lo-sec2-l">Consommables</div><div class="lo-dtiles">${dtiles(co,true)}</div></div>
+      <div class="lo-sec2"><div class="lo-sec2-l">Compétences</div><div class="lo-dtiles sk">${dtiles(sk,false)}</div></div>
+      ${lo.notes?`<div class="lo-note2">${esc(lo.notes)}</div>`:""}
+      <div class="lo-by2">Recommandé par ${esc(lo.created_by_name||"?")}</div>
+    </div>`;
+  }).join("")+'</div>';
+  el.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>openLoadoutEditor(LOADOUTS.find(x=>String(x.tank_id)===b.dataset.edit)));
+  el.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>deleteLoadout(b.dataset.del));
+}
+let LO_NEW=false;
+async function openLoadoutEditor(lo){
+  // charge la reference a la demande si elle n'est pas (encore) prete
+  if(!LO_REF || !(LO_REF.tanks||[]).length){
+    const btn=document.getElementById("loNewBtn"); const old=btn?btn.textContent:"";
+    if(btn){ btn.disabled=true; btn.textContent="Chargement des chars…"; }
+    try{
+      const rf=await fnCall("reference",{session:localStorage.getItem(LS_SESSION)});
+      if(rf.ok && rf.j && (rf.j.tanks||[]).length) LO_REF=rf.j;
+    }catch(e){}
+    if(btn){ btn.disabled=false; btn.textContent=old; }
+    if(!LO_REF || !(LO_REF.tanks||[]).length){
+      alert("Impossible de charger la liste des chars/équipements (fonction « reference »). Réessaie dans quelques secondes.");
+      return;
+    }
+  }
+  LO_NEW=!lo;
+  const eqp=(lo&&lo.equipment)||[], cop=(lo&&lo.consumables)||[], skp=(lo&&lo.skills)||[];
+  LO_EDITING={ tank_id:(lo&&lo.tank_id)||0,
+    equipment:[Number(eqp[0])||0,Number(eqp[1])||0,Number(eqp[2])||0],
+    consumables:[Number(cop[0])||0,Number(cop[1])||0,Number(cop[2])||0],
+    skills:(skp||[]).map(String), notes:(lo&&lo.notes)||"" };
+  const ed=document.getElementById("loEditor"); ed.classList.remove("hidden");
+  ed.innerHTML=`<div class="card lu-editor">
+    <div class="lu-card-h"><h3>${LO_NEW?"Nouveau loadout":"Modifier le loadout"}</h3><button class="btn" id="loCancel">Annuler</button></div>
+    <div class="lo-ed" id="loBody"></div>
+    <div class="lu-form-actions"><button class="btn lu-save" id="loSave">Enregistrer</button></div>
+    <div id="loPicker" class="lo-picker hidden"></div></div>`;
+  renderLoEditBody();
+  document.getElementById("loCancel").onclick=()=>{ed.classList.add("hidden");ed.innerHTML="";};
+  document.getElementById("loSave").onclick=saveLoadout;
+  ed.scrollIntoView({behavior:"smooth",block:"start"});
+}
+function loSyncNotes(){ const n=document.getElementById("loNotes"); if(n) LO_EDITING.notes=n.value; }
+function renderLoEditBody(){
+  const M=loMaps(), E=LO_EDITING, t=E.tank_id?M.t[E.tank_id]:null;
+  const filled=(item,cat,slot)=>`<div class="lo-tile filled" title="${esc(item.name||"")}"><img src="${esc(item.image||item.icon||"")}" onerror="this.style.display='none'"><span>${esc(item.name||"")}</span><button class="lo-x" onclick="loClear('${cat}',${slot})" title="Retirer">✕</button></div>`;
+  const empty=(cat,slot,lbl)=>`<button class="lo-tile empty" onclick="openLoPicker('${cat}',${slot})">＋<small>${esc(lbl||"")}</small></button>`;
+  const charHTML = t
+    ? `<div class="lo-tile filled lo-chartile"><img src="${esc(t.icon||"")}" onerror="this.style.display='none'"><span>${esc(t.name)}</span>${LO_NEW?`<button class="lo-x" onclick="openLoPicker('char',-1)" title="Changer">✎</button>`:""}</div>`
+    : `<button class="lo-tile empty lo-chartile" onclick="openLoPicker('char',-1)">＋<small>Choisir un char</small></button>`;
+  const eqHTML=[0,1,2].map(i=> (E.equipment[i]&&M.e[E.equipment[i]]) ? filled(M.e[E.equipment[i]],'eq',i) : empty('eq',i,'Équip. '+(i+1))).join("");
+  const coHTML=[0,1,2].map(i=> (E.consumables[i]&&M.c[E.consumables[i]]) ? filled(M.c[E.consumables[i]],'co',i) : empty('co',i,'Conso. '+(i+1))).join("");
+  const skHTML=(E.skills||[]).map(id=>{ const s=M.s[id]; return s?`<div class="lo-tile filled" title="${esc(s.name)}"><img src="${esc(s.image||"")}" onerror="this.style.display='none'"><span>${esc(s.name)}</span><button class="lo-x" onclick="loSkillToggle('${esc(id)}')">✕</button></div>`:""; }).join("")+empty('sk',-1,'Ajouter');
+  document.getElementById("loBody").innerHTML=
+    `<div class="lo-sec"><div class="lo-sec-h">Char</div><div class="lo-tilerow">${charHTML}</div></div>`
+   +`<div class="lo-sec"><div class="lo-sec-h">Équipements (3)</div><div class="lo-tilerow">${eqHTML}</div></div>`
+   +`<div class="lo-sec"><div class="lo-sec-h">Consommables</div><div class="lo-tilerow">${coHTML}</div></div>`
+   +`<div class="lo-sec"><div class="lo-sec-h">Compétences d'équipage</div><div class="lo-tilerow">${skHTML}</div></div>`
+   +`<label class="lu-lab">Notes<textarea id="loNotes" maxlength="600" rows="3" placeholder="Pourquoi ces choix, quand l'utiliser…">${esc(E.notes||"")}</textarea></label>`;
+}
+function openLoPicker(cat,slot){
+  const src = cat==='char'?(LO_REF.tanks||[]):cat==='eq'?(LO_REF.equipment||[]):cat==='co'?(LO_REF.consumables||[]):(LO_REF.skills||[]);
+  const iconKey = cat==='char'?'icon':'image', idKey = cat==='char'?'tank_id':'id';
+  const title = cat==='char'?'Choisir un char':cat==='eq'?'Choisir un équipement':cat==='co'?'Choisir un consommable':'Choisir une compétence (multi)';
+  const grid = src.map(x=>`<button class="lo-popt" type="button" data-id="${esc(String(x[idKey]))}"><img src="${esc(x[iconKey]||"")}" onerror="this.style.display='none'"><span>${esc(x.name)}</span></button>`).join("");
+  const ov=document.getElementById("loPicker"); ov.className="lo-picker";
+  ov.innerHTML=`<div class="lo-picker-box"><div class="lo-picker-h"><b>${title}</b><input class="lo-search" placeholder="Rechercher…"><button class="btn lo-picker-close" type="button">Fermer</button></div><div class="lo-grid">${grid}</div></div>`;
+  const s=ov.querySelector(".lo-search");
+  s.oninput=()=>{ const q=s.value.toLowerCase(); ov.querySelectorAll(".lo-popt").forEach(b=>{ b.style.display=b.textContent.toLowerCase().indexOf(q)>=0?"":"none"; }); };
+  ov.querySelector(".lo-picker-close").onclick=loClosePicker;
+  ov.querySelectorAll(".lo-popt").forEach(b=>b.onclick=()=>loAssign(cat,slot,b.dataset.id));
+  ov.scrollIntoView({behavior:"smooth",block:"nearest"}); s.focus();
+}
+function loClosePicker(){ const ov=document.getElementById("loPicker"); if(ov){ ov.className="lo-picker hidden"; ov.innerHTML=""; } }
+function loAssign(cat,slot,id){
+  loSyncNotes();
+  if(cat==='char') LO_EDITING.tank_id=Number(id);
+  else if(cat==='eq') LO_EDITING.equipment[slot]=Number(id);
+  else if(cat==='co') LO_EDITING.consumables[slot]=Number(id);
+  else if(cat==='sk'){ if(LO_EDITING.skills.indexOf(id)<0) LO_EDITING.skills.push(id); }
+  if(cat!=='sk') loClosePicker();
+  renderLoEditBody();
+}
+function loClear(cat,slot){ loSyncNotes(); if(cat==='eq')LO_EDITING.equipment[slot]=0; else if(cat==='co')LO_EDITING.consumables[slot]=0; renderLoEditBody(); }
+function loSkillToggle(id){ loSyncNotes(); const i=LO_EDITING.skills.indexOf(id); if(i>=0)LO_EDITING.skills.splice(i,1); renderLoEditBody(); }
+async function saveLoadout(){
+  loSyncNotes();
+  const E=LO_EDITING;
+  if(!E.tank_id){ alert("Choisis un char."); return; }
+  const t=loMaps().t[E.tank_id]||{};
+  const payload={ tank_id:Number(E.tank_id), tank_name:t.name||"",
+    equipment:E.equipment.filter(Boolean), consumables:E.consumables.filter(Boolean),
+    skills:E.skills, notes:(E.notes||"").trim(), fieldmods:{} };
+  const btn=document.getElementById("loSave"); btn.disabled=true; btn.textContent="…";
+  const r=await fnCall("loadouts",{session:localStorage.getItem(LS_SESSION),action:"save",loadout:payload});
+  if(!r.ok){ btn.disabled=false; btn.textContent="Enregistrer"; alert("Erreur : "+(r.j.error||r.status)); return; }
+  document.getElementById("loEditor").classList.add("hidden"); document.getElementById("loEditor").innerHTML="";
+  loadLoadouts();
+}
+async function deleteLoadout(tid){
+  if(!confirm("Supprimer ce loadout ?")) return;
+  const r=await fnCall("loadouts",{session:localStorage.getItem(LS_SESSION),action:"delete",tank_id:Number(tid)});
+  if(!r.ok){ alert("Erreur : "+(r.j.error||r.status)); return; }
+  loadLoadouts();
+}
+
+/* ============================================================
+   MENU LATÉRAL
+   ============================================================ */
+function toggleSidebar(){
+  const sb=document.getElementById("sidebar");
+  const c=!sb.classList.contains("collapsed");
+  sb.classList.toggle("collapsed",c);
+  localStorage.setItem("cp_sidebar", c?"1":"0");
+  if(playerActive()) renderPlayerView();
+}
+
+/* ============================================================
+   CLASSEMENTS DES CLANS (mondial EU, par mesure)
+   ============================================================ */
+const RK_METRICS=[
+  ["fort_elo_rating","Niveau Bastion (global)"],
+  ["fort_elo_rating_10","Bastion — tier 10"],
+  ["fort_elo_rating_8","Bastion — tier 8"],
+  ["fort_elo_rating_6","Bastion — tier 6"],
+  ["gm_elo_rating","Carte Globale (Clan Wars)"],
+  ["efficiency","Efficacité"],
+  ["wins_ratio_avg","% de victoires"],
+  ["global_rating_avg","Niveau moyen des joueurs"],
+];
+let RK_METRIC="fort_elo_rating";
+const RK_MINE_FIELD={fort_elo_rating:"fb_elo_rating",fort_elo_rating_10:"fb_elo_rating_10",
+  fort_elo_rating_8:"fb_elo_rating_8",fort_elo_rating_6:"fb_elo_rating_6",gm_elo_rating:"gm_elo_rating",
+  efficiency:"efficiency",wins_ratio_avg:"wins_ratio_avg",global_rating_avg:"global_rating_avg"};
+function rkFmt(metric,v){ return metric==="wins_ratio_avg" ? fmt(v,2)+" %" : fmt(v); }
+async function loadRanking(){
+  RK_METRIC=document.getElementById("rkMetric").value||RK_METRIC;
+  const list=document.getElementById("rkList");
+  list.innerHTML=cpLoader('Chargement du classement…');
+  // situe NOTRE clan (données déjà en mémoire)
+  const mf=RK_MINE_FIELD[RK_METRIC], mineObj=(CLANRATINGS&&mf)?CLANRATINGS[mf]:null;
+  document.getElementById("rkMine").innerHTML = (mineObj&&mineObj.rank!=null)
+    ? `Ton clan <b>[${esc(CLANTAG)}]</b> : <b>rang ${fmt(mineObj.rank)}</b> · ${rkFmt(RK_METRIC,mineObj.value)}` : "";
+  const r=await fnCall("clan-ranking",{session:localStorage.getItem(LS_SESSION),metric:RK_METRIC});
+  if(!r.ok){ list.innerHTML='<div class="empty">Erreur : '+esc(r.j.error||String(r.status))+'</div>'; return; }
+  renderRanking(r.j.clans||[]);
+}
+function renderRanking(clans){
+  const el=document.getElementById("rkList");
+  if(!clans.length){ el.innerHTML='<div class="empty">Aucun clan à afficher.</div>'; return; }
+  let h=`<table class="rk-table"><thead><tr><th class="rk-num">Rang</th><th>Clan</th><th>Nom</th><th class="rk-num">Valeur</th><th class="rk-num">Évol.</th></tr></thead><tbody>`;
+  clans.forEach(c=>{
+    const me=(CLANTAG&&String(c.tag||"").toUpperCase()===CLANTAG.toUpperCase())?"rk-me":"";
+    let d="—";
+    if(c.rank_delta){ const up=c.rank_delta>0; d=`<span class="${up?'pos':'neg'}">${up?'▲':'▼'}${Math.abs(c.rank_delta)}</span>`; }
+    h+=`<tr class="${me}"><td class="rk-num">${fmt(c.rank)}</td><td><b>[${esc(c.tag||"")}]</b></td><td>${esc(c.name||"")}</td><td class="rk-num">${rkFmt(RK_METRIC,c.value)}</td><td class="rk-num">${d}</td></tr>`;
+  });
+  h+="</tbody></table>";
+  el.innerHTML=h;
+}
+
+boot();
+</script>
+</body>
+</html>
