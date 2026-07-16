@@ -916,8 +916,15 @@
   @media (prefers-reduced-motion:reduce){.dash-anim,.h2-star{animation:none}}
 
   /* Loadouts — cartes premium */
-  .lo-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;max-width:1080px}
+  .lo-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;max-width:1080px;align-items:start}
   @media(max-width:860px){ .lo-cards{grid-template-columns:1fr} }
+  /* En-tête des sections Loadouts/Line-up (bouton d'action à droite) — règles de base */
+  .lu-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+  .lu-head>.btn{margin-left:auto}
+  .lu-title{font-size:18px;margin:0;letter-spacing:-.3px}
+  .lu-sub{font-size:12.5px;color:var(--muted);margin-top:3px}
+  .lu-new{font-weight:700;background:var(--gold-soft);border:1px solid var(--gold-line);color:var(--gold-2)}
+  .lu-new:hover{border-color:var(--gold);background:rgba(229,185,92,.18)}
   .lo-card2{position:relative;background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:var(--shadow-sm);animation:loIn .45s cubic-bezier(.2,.7,.2,1) both;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
   .lo-card2:hover{transform:translateY(-3px);box-shadow:var(--shadow);border-color:var(--cls)}
   .lo-card2::after{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--cls)}
@@ -967,8 +974,8 @@
   .tl-name{flex:1;min-width:180px;font:inherit;font-size:16px;font-weight:800;color:#ecebe8;background:#17181b;border:1px solid #2b2d31;border-radius:9px;padding:9px 12px}
   .tl-view-name{font-size:17px;font-weight:800;color:var(--gold)}
   .tl-ed-act{display:flex;gap:8px;flex-wrap:wrap}
-  .tl-rows{display:flex;flex-direction:column;gap:3px;padding:12px;background:#0c0d0f}
-  .tl-row{display:flex;align-items:stretch;gap:0;background:#0b0c0e;border:1px solid #202226;border-radius:0;min-height:66px}
+  .tl-rows{display:flex;flex-direction:column;gap:8px;padding:14px;background:#0c0d0f}
+  .tl-row{display:flex;align-items:stretch;gap:0;background:#0b0c0e;border:1px solid #202226;border-radius:12px;overflow:hidden;min-height:70px}
   .tl-row-lbl{position:relative;flex:0 0 92px;width:92px;display:flex;align-items:center;justify-content:center;padding:6px}
   .tl-lbl-in{width:100%;text-align:center;font:inherit;font-size:15px;font-weight:800;color:#17130b;background:transparent;border:0;outline:none}
   .tl-lbl-in::placeholder{color:rgba(0,0,0,.4)}
@@ -980,7 +987,7 @@
   .tl-rowdel:hover{background:#c9484a}
   .tl-drop{flex:1;min-width:0;display:flex;flex-wrap:wrap;gap:4px;align-content:flex-start;padding:6px;background:#141518;transition:background .12s}
   .tl-drop.over{background:rgba(229,185,92,.16);outline:2px dashed rgba(229,185,92,.5);outline-offset:-3px}
-  .tl-tank{width:62px;height:40px;flex:0 0 auto;cursor:grab;border-radius:5px;background:#1e1f22;border:1px solid #2b2d31;display:grid;place-items:center;transition:transform .1s,border-color .1s}
+  .tl-tank{width:62px;height:40px;flex:0 0 auto;cursor:grab;border-radius:9px;background:#1e1f22;border:1px solid #2b2d31;display:grid;place-items:center;transition:transform .1s,border-color .1s}
   .tl-tank img{max-width:58px;max-height:36px;object-fit:contain;pointer-events:none}
   .tl-tank:hover{border-color:var(--gold);transform:scale(1.05)}
   .tl-tank.dragging{opacity:.35}
@@ -991,8 +998,13 @@
   .tl-flt{display:flex;gap:8px;flex-wrap:wrap;padding:6px 16px 10px}
   .tl-flt select,.tl-flt .lo-search{font:inherit;font-size:12.5px;padding:8px 11px;border-radius:8px;border:1px solid #2b2d31;background:#17181b;color:#ecebe8}
   .tl-flt .lo-search{flex:1;min-width:150px}
-  .tl-pool{display:flex;flex-wrap:wrap;gap:5px;align-content:flex-start;padding:10px 16px 16px;min-height:70px;max-height:44vh;overflow-y:auto;background:#0d0e10;border-top:1px solid #202226;transition:background .12s}
+  .tl-pool{display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start;padding:10px 16px 16px;min-height:70px;max-height:44vh;overflow-y:auto;background:#0d0e10;border-top:1px solid #202226;transition:background .12s}
   .tl-pool.over{background:rgba(229,185,92,.1)}
+  .tl-editor{border-radius:14px}
+  .tl-ed-act .btn{background:#1e1f22;border:1px solid #2b2d31;color:#ecebe8;border-radius:9px;padding:9px 15px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:.15s}
+  .tl-ed-act .btn:hover{border-color:var(--gold-line);color:#fff}
+  .tl-ed-act .tl-save{background:var(--gold-soft);border-color:var(--gold-line);color:var(--gold-2);font-weight:800}
+  .tl-ed-act .tl-save:hover{background:rgba(229,185,92,.2);border-color:var(--gold);color:var(--gold-2)}
   .lo-pills{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
   .lo-pill{font-size:11px;font-weight:600;background:var(--surface-2);border:1px solid var(--border);border-radius:20px;padding:3px 10px;color:var(--ink-2);font-variant-numeric:tabular-nums}
   .lo-cardact{display:flex;gap:6px;flex:0 0 auto;z-index:2}
@@ -4272,7 +4284,7 @@ function renderTierEditor(){
   const natOpts='<option value="">Toutes nations</option>'+nats.map(n=>`<option value="${n}"${TL_TNAT===n?' selected':''}>${LO_NATION_FR[n]||n}</option>`).join("");
   const clsOpts='<option value="">Toutes classes</option>'+LO_CLS_OPT.filter(c=>src.some(x=>x.type===c[0])).map(c=>`<option value="${c[0]}"${TL_TCLS===c[0]?' selected':''}>${c[1]}</option>`).join("");
   ed.innerHTML=`<div class="card tl-editor dashx">
-    <div class="tl-ed-h"><input class="tl-name" value="${esc(TL_EDIT.name)}" maxlength="80" placeholder="Nom de la tier list"><div class="tl-ed-act"><button class="btn" id="tlAddRow">＋ Ligne</button><button class="btn" id="tlCancel">Annuler</button><button class="btn2 wz-save" id="tlSave">✓ Enregistrer</button></div></div>
+    <div class="tl-ed-h"><input class="tl-name" value="${esc(TL_EDIT.name)}" maxlength="80" placeholder="Nom de la tier list"><div class="tl-ed-act"><button class="btn" id="tlAddRow">＋ Ligne</button><button class="btn" id="tlCancel">Annuler</button><button class="btn tl-save" id="tlSave">✓ Enregistrer</button></div></div>
     <div class="tl-rows" id="tlRows">${rowsHtml}</div>
     <div class="tl-pool-h">Chars à classer <span class="hint">glisse-les dans les lignes ↑ (ou reglisse-les ici)</span></div>
     <div class="tl-flt"><select class="lo-fclass" id="tlFCls">${clsOpts}</select><select class="lo-fnation" id="tlFNat">${natOpts}</select><input class="lo-search" id="tlQ" placeholder="Rechercher un char…" value="${esc(TL_TQ)}"></div>
