@@ -374,8 +374,8 @@
   #viewLineups .lu-att-head{position:sticky;top:0;z-index:3;min-height:47px;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.45px;background:var(--panel)}
   #viewLineups .lu-att-head span{text-align:center}
   #viewLineups .lu-att-head .lu-player-h,#viewLineups .lu-att-head .lu-pos-h{text-align:left}
-  #viewLineups .lu-day-head{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;line-height:1;font-family:var(--fx);font-size:11px;font-weight:750;color:var(--ink-2)}
-  #viewLineups .lu-day-count{min-width:23px;height:19px;padding:0 5px;border:1px solid var(--gold-line);border-radius:10px;background:var(--gold-soft);color:var(--gold-2);font-family:var(--fx);font-size:11px;font-weight:850;line-height:1;text-align:center;display:grid;place-items:center}
+  #viewLineups .lu-day-head{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;line-height:1;font-family:var(--fx);font-size:12.5px;font-weight:750;color:var(--ink-2)}
+  #viewLineups .lu-day-count{min-width:26px;height:21px;padding:0 6px;border:1px solid var(--gold-line);border-radius:10px;background:var(--gold-soft);color:var(--gold-2);font-family:var(--fx);font-size:12.5px;font-weight:850;line-height:1;text-align:center;display:grid;place-items:center}
   #viewLineups button.lu-day-count{appearance:none;cursor:pointer;transition:.15s}
   #viewLineups button.lu-day-count:hover,#viewLineups button.lu-day-count.on{border-color:var(--gold);background:var(--gold);color:#17130b;transform:scale(1.08)}
   #viewLineups .lu-idx{font-size:10.5px;color:var(--gold);text-align:center}
@@ -425,9 +425,9 @@
   #viewLineups .lu-inline-inner{min-height:0;overflow:hidden}
   #viewLineups .lu-inline-host .lu-preview{margin:12px 0 0;border-color:var(--gold-line);background:linear-gradient(180deg,#121416,#0d0e10)}
   #viewLineups .lu-card-top{display:grid;grid-template-columns:minmax(180px,1.2fr) minmax(150px,.8fr) auto;gap:12px;align-items:center}
-  #viewLineups .lu-card-name{font:700 13px var(--fx);color:var(--ink);letter-spacing:.25px}
-  #viewLineups .lu-card-week{display:inline-flex;align-items:center;margin-top:5px;padding:4px 8px;border:1px solid var(--gold-line);border-radius:7px;background:var(--gold-soft);font:700 11px var(--fx);color:var(--gold-2);letter-spacing:.15px}
-  #viewLineups .lu-card-meta{font-size:10.5px;color:var(--muted);margin-top:3px}
+  #viewLineups .lu-card-name{font:700 15px var(--fx);color:var(--ink);letter-spacing:.25px}
+  #viewLineups .lu-card-week{display:inline-flex;align-items:center;margin-top:5px;padding:4px 9px;border:1px solid var(--gold-line);border-radius:7px;background:var(--gold-soft);font:700 12.5px var(--fx);color:var(--gold-2);letter-spacing:.15px}
+  #viewLineups .lu-card-meta{font-size:12px;color:var(--muted);margin-top:4px}
   #viewLineups .lu-card-map{font-size:11px;color:var(--ink-2)}
   #viewLineups .lu-card-pres{display:flex;align-items:center;gap:4px}
   #viewLineups .lu-card-pres span{width:18px;height:15px;border:1px solid var(--line);border-radius:3px;display:grid;place-items:center;font-size:8px;color:var(--muted);background:#0d0e10}
@@ -438,19 +438,26 @@
   #viewLineups .lu-preview{margin-bottom:14px;padding:15px;border:1px solid var(--gold-line);border-top:2px solid var(--gold);border-radius:12px;background:linear-gradient(180deg,var(--panel),var(--panel-2))}
   #viewLineups .lu-preview-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
   #viewLineups .lu-preview-kicker{font:700 10px var(--fx);letter-spacing:.7px;text-transform:uppercase;color:var(--gold)}
-  #viewLineups .lu-preview-name{font:700 17px var(--fx);letter-spacing:.3px;color:var(--ink);margin-top:2px}
+  #viewLineups .lu-preview-name{font:700 19px var(--fx);letter-spacing:.3px;color:var(--ink);margin-top:2px}
   #viewLineups .lu-preview-meta{display:flex;gap:12px;flex-wrap:wrap;margin-top:5px;font-size:10.5px;color:var(--ink-2)}
-  #viewLineups .lu-preview-notes{margin:0 0 12px;padding:9px 11px;border-left:2px solid var(--gold-line);border-radius:0 7px 7px 0;background:#111214;color:var(--ink-2);font-size:11px}
+  #viewLineups .lu-preview-notes{margin:0 0 12px;padding:10px 12px;border-left:2px solid var(--gold-line);border-radius:0 7px 7px 0;background:#111214;color:var(--ink-2);font-size:12.5px}
   #viewLineups .lu-preview-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:8px;background:#0d0e10}
-  #viewLineups .lu-preview-row{display:grid;grid-template-columns:minmax(170px,1.35fr) minmax(110px,.75fr) repeat(7,50px);align-items:center;min-width:750px;min-height:31px;border-top:1px solid var(--line);padding:0 8px}
+  #viewLineups .lu-preview-row{display:grid;grid-template-columns:minmax(180px,1.35fr) minmax(120px,.75fr) repeat(7,54px);align-items:center;min-width:800px;min-height:42px;border-top:1px solid var(--line);padding:0 10px}
   #viewLineups .lu-preview-row:first-child{border-top:0}
-  #viewLineups .lu-preview-row.head{min-height:45px;background:#111214;color:var(--muted);font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.35px}
+  #viewLineups .lu-preview-row.head{min-height:48px;background:#111214;color:var(--muted);font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.35px}
   #viewLineups .lu-preview-row.head .lu-day-head{gap:4px;padding:5px 0}
-  #viewLineups .lu-preview-player{font-size:11px;font-weight:650;color:var(--ink)}
-  #viewLineups .lu-preview-role{font-size:10.5px;color:var(--ink-2)}
-  #viewLineups .lu-preview-day{width:14px;height:14px;margin:auto;border:1px solid #4b5058;border-radius:3px;display:grid;place-items:center;color:transparent;font-size:9px;background:#0b0c0e}
+  #viewLineups .lu-preview-row.is-mine{background:rgba(229,185,92,.08);box-shadow:inset 3px 0 0 var(--gold)}
+  #viewLineups .lu-preview-player{font-size:13.5px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:6px}
+  #viewLineups .lu-me-tag{font-style:normal;font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:#17130b;background:var(--gold);border-radius:5px;padding:2px 6px}
+  #viewLineups .lu-preview-role{font-size:12px;color:var(--ink-2)}
+  #viewLineups .lu-preview-day{width:22px;height:22px;margin:auto;border:1px solid #4b5058;border-radius:5px;display:grid;place-items:center;color:transparent;font-size:13px;font-weight:800;background:#0b0c0e}
   #viewLineups .lu-preview-day.on{border-color:var(--gold);background:var(--gold-soft);color:var(--gold-2)}
-  #viewLineups .lu-preview-foot{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:9px;font-size:10px;color:var(--muted)}
+  #viewLineups button.lu-preview-day.editable{cursor:pointer;width:26px;height:26px;border-width:1.5px;transition:transform .12s ease,border-color .12s ease,background .12s ease}
+  #viewLineups button.lu-preview-day.editable:hover{border-color:var(--gold);transform:scale(1.12)}
+  #viewLineups button.lu-preview-day.editable.on{background:var(--gold);color:#17130b;border-color:var(--gold)}
+  #viewLineups .lu-preview-foot{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:11px;font-size:12px;color:var(--muted)}
+  #viewLineups .lu-preview-foot b{color:var(--gold-2)}
+  #viewLineups .lu-mine-hint{font-size:10.5px;font-weight:700;color:var(--gold);white-space:nowrap}
   #viewLineups .lu-self-editor{margin-top:12px;padding:13px;border:1px solid var(--gold-line);border-radius:10px;background:linear-gradient(180deg,#121416,#0d0e10)}
   #viewLineups .lu-self-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:11px}
   #viewLineups .lu-self-title{font:700 14px var(--fx);color:var(--ink)}
@@ -1514,6 +1521,14 @@ const state = { mode:"", days:0, search:"", sortKey:"ce", sortDir:-1 };
 const normRole = r => String(r||"").toLowerCase().replace(/[\s-]+/g,"_");
 const ROLE_ORDER = {commander:0,deputy_commander:1,executive_officer:1,combat_officer:2,personnel_officer:2,
   recruitment_officer:2,intelligence_officer:2,quartermaster:2,junior_officer:3,private:4,recruit:5,reservist:6};
+// Droits d'édition CÔTÉ CLIENT : basés sur le VRAI grade WG du joueur, sauf en mode DEV
+// (qui débloque tout comme un commandant). Le backend garde ADMIN_IDS pour que les
+// enregistrements en DEV passent. -> vue normale = ton grade réel ; vue dev = commandant.
+function meIsManager(){
+  if(DEV) return true;
+  const m=(MEMBERS||[]).find(x=>Number(x.account_id)===Number(ME_ID));
+  return !!m && (ROLE_ORDER[normRole(m.wg_role)] ?? 9) <= 2;
+}
 const ROLE_FR = {commander:"Commandant",deputy_commander:"Commandant adjoint",executive_officer:"Officier exécutif",
   combat_officer:"Officier de combat",personnel_officer:"Officier du personnel",recruitment_officer:"Recruteur",
   intelligence_officer:"Officier renseignement",quartermaster:"Intendant",junior_officer:"Officier subalterne",
@@ -1681,7 +1696,7 @@ const langOf=c=>LANGS.find(l=>l[0]===c);
 async function loadClanProfile(){
   try{
     const r=await fnCall("clan-profile",{session:localStorage.getItem(LS_SESSION),action:"get"});
-    if(r.ok){ CLANPROFILE=r.j.profile||null; CPROF_CANEDIT=!!r.j.canEdit; }
+    if(r.ok){ CLANPROFILE=r.j.profile||null; CPROF_CANEDIT=meIsManager(); }
   }catch(e){}
   if(DEV) CPROF_CANEDIT=true;
   renderDashHero();
@@ -1703,7 +1718,7 @@ function switchClanSub(sub){
 async function loadClanEvents(){
   try{
     const r=await fnCall("clan-events",{session:localStorage.getItem(LS_SESSION),action:"list"});
-    if(r.ok){ CLAN_EVENTS=r.j.events||[]; CAL_CANEDIT=!!r.j.canEdit; }
+    if(r.ok){ CLAN_EVENTS=r.j.events||[]; CAL_CANEDIT=meIsManager(); }
     else { CAL_LOAD_ERR=(r.j&&r.j.error)||String(r.status); }
   }catch(e){ CAL_LOAD_ERR="réseau"; }
   if(DEV) CAL_CANEDIT=true;
@@ -3215,7 +3230,7 @@ function luCurrentUserCanManage(){
   return !!(DEV || (me&&LU_MANAGER_ROLES.has(normRole(me.wg_role))));
 }
 function luCanEditOwnAvailability(lu){
-  if(LU_CANEDIT||ME_ID==null) return false;
+  if(ME_ID==null) return false;   // tout membre présent dans la line-up peut cocher SA propre ligne (officier inclus)
   return luCleanSlots(lu).some(s=>Number(s.account_id)===Number(ME_ID));
 }
 function luDateISO(d){
@@ -3320,8 +3335,8 @@ function renderLineups(){
     const meta=luMeta(lu),slots=luCleanSlots(lu),counts=LU_DAYS.map((_,i)=>slots.filter(s=>s.availability[i]).length);
     const total=counts.reduce((a,b)=>a+b,0),dots=counts.map((n,i)=>`<span class="${n?'on':''}" title="${LU_DAY_NAMES[i]} : ${n}">${LU_DAYS[i][0]}${n||''}</span>`).join("");
     const viewing=String(lu.id)===String(LU_VIEWING_ID),attending=String(lu.id)===String(LU_ATTENDING_ID);
-    const selfBtn=luCanEditOwnAvailability(lu)?`<button class="btn" data-attend="${lu.id}">Mes disponibilités</button>`:"";
-    const btns=`<div class="lu-card-actions"><span class="lu-card-openhint">${attending?'● Mes disponibilités':viewing?'● Aperçu ouvert':'Aperçu ›'}</span>${selfBtn}${LU_CANEDIT?`<button class="btn" data-edit="${lu.id}">Modifier</button><button class="btn lu-del" data-del="${lu.id}">Supprimer</button>`:""}</div>`;
+    const mineHint=luCanEditOwnAvailability(lu)?'<span class="lu-mine-hint">Coche tes dispos ›</span>':"";
+    const btns=`<div class="lu-card-actions"><span class="lu-card-openhint">${viewing?'● Ouvert':'Aperçu ›'}</span>${mineHint}${LU_CANEDIT?`<button class="btn" data-edit="${lu.id}">Modifier</button><button class="btn lu-del" data-del="${lu.id}">Supprimer</button>`:""}</div>`;
     return `<article class="lu-card ${viewing?'is-viewing':''}" data-view="${lu.id}" tabindex="0" ${viewing?'aria-current="true"':''} aria-label="Voir l’aperçu de ${esc(lu.name||"la line-up")}"><div class="lu-card-top">
       <div><div class="lu-card-name">${esc(lu.name||LU_FORMAT_LABELS[meta.format]||"Line-up")}</div><div class="lu-card-week">${esc(luWeekLabel(meta.week_start))}</div>
         <div class="lu-card-meta">${slots.length} joueur${slots.length>1?'s':''} · ${total} présence${total>1?'s':''}</div></div>
@@ -3334,7 +3349,6 @@ function renderLineups(){
   });
   el.querySelectorAll("[data-edit]").forEach(b=>b.onclick=e=>{e.stopPropagation();openLineupEditor(LINEUPS.find(x=>String(x.id)===b.dataset.edit));});
   el.querySelectorAll("[data-del]").forEach(b=>b.onclick=e=>{e.stopPropagation();deleteLineup(b.dataset.del);});
-  el.querySelectorAll("[data-attend]").forEach(b=>b.onclick=e=>{e.stopPropagation();openMyAvailability(LINEUPS.find(x=>String(x.id)===b.dataset.attend));});
 }
 function openLineupPreview(lu){
   if(!lu) return;
@@ -3343,15 +3357,46 @@ function openLineupPreview(lu){
   renderLineups();
   const meta=luMeta(lu),slots=luCleanSlots(lu),counts=LU_DAYS.map((_,i)=>slots.filter(s=>s.availability[i]).length);
   const total=counts.reduce((a,b)=>a+b,0);
-  const rows=slots.map(s=>`<div class="lu-preview-row"><span class="lu-preview-player">${esc(s.name||"Joueur")}</span><span class="lu-preview-role">${esc(luRoleLabel(s.position))}</span>${s.availability.map(v=>`<span class="lu-preview-day ${v?'on':''}" aria-label="${v?'Présent':'Absent'}">${v?'✓':''}</span>`).join("")}</div>`).join("");
+  const canMine=luCanEditOwnAvailability(lu);
+  const rows=slots.map(s=>{
+    const mine=ME_ID!=null && Number(s.account_id)===Number(ME_ID);
+    const days=s.availability.map((v,i)=> (mine&&canMine)
+      ? `<button type="button" class="lu-preview-day editable ${v?'on':''}" data-mine-day="${i}" title="${LU_DAY_NAMES[i]} — clique pour changer">${v?'✓':''}</button>`
+      : `<span class="lu-preview-day ${v?'on':''}" aria-label="${v?'Présent':'Absent'}">${v?'✓':''}</span>`).join("");
+    return `<div class="lu-preview-row${mine?' is-mine':''}"><span class="lu-preview-player">${esc(s.name||"Joueur")}${mine?' <em class="lu-me-tag">toi</em>':''}</span><span class="lu-preview-role">${esc(luRoleLabel(s.position))}</span>${days}</div>`;
+  }).join("");
   const head=`<div class="lu-preview-row head"><span>Joueur</span><span>Rôle</span>${LU_DAYS.map((d,i)=>`<span class="lu-day-head">${d}<b class="lu-day-count" title="${counts[i]} présent${counts[i]>1?'s':''}">${counts[i]}</b></span>`).join("")}</div>`;
   const host=document.querySelector("#luList .lu-card.is-viewing .lu-inline-host"),inner=host&&host.querySelector(".lu-inline-inner");
   if(!host||!inner) return;
-  inner.innerHTML=`<section class="lu-preview" aria-label="Aperçu de la line-up"><div class="lu-preview-head"><div><div class="lu-preview-kicker">Aperçu de la line-up</div><div class="lu-preview-name">${esc(lu.name||LU_FORMAT_LABELS[meta.format]||"Line-up")}</div><div class="lu-preview-meta"><span>${esc(LU_FORMAT_LABELS[meta.format]||meta.format)}</span><span>${esc(luWeekLabel(meta.week_start))}</span></div></div><button class="btn" id="luPreviewClose">Fermer</button></div>${lu.notes?`<div class="lu-preview-notes">${esc(lu.notes)}</div>`:""}<div class="lu-preview-scroll">${head}${rows||'<div class="lu-empty" style="border:0;min-height:68px"><div><b>Aucun joueur</b>Cette line-up ne contient pas encore de membre.</div></div>'}</div><div class="lu-preview-foot"><span>${slots.length} joueur${slots.length>1?'s':''} · ${total} disponibilité${total>1?'s':''}</span><span>Lecture seule — utilise « Modifier » pour changer la line-up.</span></div></section>`;
+  const foot=canMine?'Coche directement <b>tes jours</b> ci-dessus : c’est enregistré automatiquement.':'Lecture seule — utilise « Modifier » pour changer la line-up.';
+  inner.innerHTML=`<section class="lu-preview" aria-label="Aperçu de la line-up"><div class="lu-preview-head"><div><div class="lu-preview-kicker">Aperçu de la line-up</div><div class="lu-preview-name">${esc(lu.name||LU_FORMAT_LABELS[meta.format]||"Line-up")}</div><div class="lu-preview-meta"><span>${esc(LU_FORMAT_LABELS[meta.format]||meta.format)}</span><span>${esc(luWeekLabel(meta.week_start))}</span></div></div><button class="btn" id="luPreviewClose">Fermer</button></div>${lu.notes?`<div class="lu-preview-notes">${esc(lu.notes)}</div>`:""}<div class="lu-preview-scroll">${head}${rows||'<div class="lu-empty" style="border:0;min-height:68px"><div><b>Aucun joueur</b>Cette line-up ne contient pas encore de membre.</div></div>'}</div><div class="lu-preview-foot"><span>${slots.length} joueur${slots.length>1?'s':''} · ${total} disponibilité${total>1?'s':''}</span><span>${foot}</span></div></section>`;
   host.onclick=e=>e.stopPropagation(); host.onkeydown=e=>e.stopPropagation();
+  inner.querySelectorAll("[data-mine-day]").forEach(b=> b.onclick=e=>{ e.stopPropagation(); toggleMyDay(lu,+b.dataset.mineDay,b); });
   host.querySelector("#luPreviewClose").onclick=e=>{e.stopPropagation();closeLineupPreview();};
   requestAnimationFrame(()=>host.classList.add("open"));
   host.closest(".lu-card").scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+// Coche un jour de MA ligne directement dans l'aperçu et enregistre aussitôt (action attendance).
+async function toggleMyDay(lu, day, btn){
+  if(ME_ID==null) return;
+  const slot=(lu.slots||[]).find(s=>Number(s.account_id)===Number(ME_ID));
+  const cur=luAvailability(slot||{}), next=cur.slice(); next[day]=!next[day];
+  btn.classList.toggle('on',next[day]); btn.textContent=next[day]?'✓':'';   // maj visuelle immédiate
+  if(slot) slot.availability=next;
+  luRefreshPreviewCounts(lu);
+  if(LU_PREVIEW){ showLuNotice("✓ Disponibilité enregistrée (maquette).","good"); return; }
+  const r=await fnCall("lineups",{session:localStorage.getItem(LS_SESSION),action:"attendance",id:Number(lu.id),availability:next});
+  if(!r.ok){   // échec -> on annule la coche
+    btn.classList.toggle('on',cur[day]); btn.textContent=cur[day]?'✓':''; if(slot) slot.availability=cur; luRefreshPreviewCounts(lu);
+    showLuNotice("Impossible d'enregistrer : "+((r.j&&r.j.error)||r.status),"bad"); return;
+  }
+  showLuNotice("✓ Ta disponibilité est enregistrée.","good");
+}
+function luRefreshPreviewCounts(lu){
+  const slots=luCleanSlots(lu),counts=LU_DAYS.map((_,i)=>slots.filter(s=>s.availability[i]).length);
+  document.querySelectorAll("#luList .lu-card.is-viewing .lu-day-count").forEach((el,i)=>{ if(i<counts.length){ el.textContent=counts[i]; el.title=counts[i]+" présent"+(counts[i]>1?'s':''); } });
+  const total=counts.reduce((a,b)=>a+b,0), foot=document.querySelector("#luList .lu-card.is-viewing .lu-preview-foot span");
+  if(foot) foot.textContent=`${slots.length} joueur${slots.length>1?'s':''} · ${total} disponibilité${total>1?'s':''}`;
 }
 function openMyAvailability(lu){
   if(!lu||!luCanEditOwnAvailability(lu)){
@@ -3610,7 +3655,7 @@ async function loadLoadouts(){
   try{
     const r=await fnCall("loadouts",{session:localStorage.getItem(LS_SESSION),action:"list"});
     if(!r.ok){ list.innerHTML='<div class="card"><div class="empty">Erreur loadouts : '+esc((r.j&&r.j.error)||String(r.status))+' — la fonction « loadouts » est-elle déployée ?</div></div>'; return; }
-    LOADOUTS=r.j.loadouts||[]; LO_CANEDIT=!!r.j.canEdit || DEV;
+    LOADOUTS=r.j.loadouts||[]; LO_CANEDIT=meIsManager();
     document.getElementById("loNewBtn").classList.toggle("hidden",!LO_CANEDIT);
     document.getElementById("loRole").textContent = LO_CANEDIT
       ? "Tu peux créer et modifier les loadouts du clan."
