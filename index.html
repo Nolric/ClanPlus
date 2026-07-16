@@ -953,7 +953,39 @@
   .wz-gremove{margin-top:14px;width:100%;padding:9px;border-radius:9px;border:1px solid var(--wz-bd);background:none;color:var(--wz-mut);font:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:.15s}
   .wz-gremove:hover{border-color:#c9484a;color:#e46b6d}
   .wz-chip[style*="--gcol"] img{border-color:var(--gcol);box-shadow:0 0 0 1px var(--gcol)}
-  @media(max-width:820px){ .wz-body{grid-template-columns:1fr} .wz-side{position:static} .wz-line{width:18px} }
+  /* 2e configuration (barre config A/B) */
+  .wz-cfg{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+  .wz-cfg-l{font-size:12px;font-weight:700;color:var(--wz-mut)}
+  .wz-cfgb{width:34px;height:30px;border-radius:8px;border:1px solid var(--wz-bd);background:var(--wz-pan);color:var(--wz-ink);font:inherit;font-size:13px;font-weight:800;cursor:pointer}
+  .wz-cfgb.cur{background:var(--wz-gold);color:#141310;border-color:var(--wz-gold)}
+  .wz-cfg-off{margin-left:4px;background:none;border:1px solid var(--wz-bd);color:var(--wz-mut);border-radius:8px;padding:6px 10px;font:inherit;font-size:11px;font-weight:600;cursor:pointer}
+  .wz-cfg-off:hover{border-color:#c9484a;color:#e46b6d}
+  .wz-cfg-add{margin-bottom:12px;width:100%;padding:11px;border-radius:10px;border:1px dashed var(--wz-bdg);background:rgba(229,185,92,.06);color:var(--wz-gold);font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;transition:.15s}
+  .wz-cfg-add:hover{background:rgba(229,185,92,.12)}
+  /* étape 5 : arbre de modifications de terrain par niveau */
+  .fm-tree{display:flex;flex-direction:column;gap:8px;max-height:56vh;overflow-y:auto;padding-right:4px}
+  .fm-lvl{display:flex;align-items:stretch;gap:10px}
+  .fm-lvl-n{flex:0 0 26px;width:26px;height:26px;border-radius:50%;background:var(--wz-rai);border:1px solid var(--wz-bd);color:var(--wz-mut);display:grid;place-items:center;font-size:12px;font-weight:800;margin-top:6px}
+  .fm-lvl-b{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+  .fm-base{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--wz-mut);padding:6px 10px;background:var(--wz-pan);border:1px solid var(--wz-bd);border-radius:8px}
+  .fm-b-tag{font-size:8.5px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:#141310;background:var(--wz-mut);border-radius:4px;padding:1px 5px}
+  .fm-pair{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .fm-opt{position:relative;display:flex;align-items:center;gap:8px;padding:9px 11px;border:1.5px solid var(--wz-bd);border-radius:9px;background:var(--wz-pan);color:var(--wz-ink);cursor:pointer;font:inherit;text-align:left;transition:.15s}
+  .fm-opt img{width:38px;height:38px;object-fit:contain;flex:0 0 38px}
+  .fm-opt.noimg img{display:none}
+  .fm-opt-s{flex:1;min-width:0;font-size:11px;line-height:1.25;color:var(--wz-ink)}
+  .fm-opt:hover{border-color:var(--wz-bdg);transform:translateY(-1px)}
+  .fm-opt.on{border-color:var(--wz-gold);background:rgba(229,185,92,.12);box-shadow:0 0 0 1px var(--wz-gold) inset}
+  .fm-fcard{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;border:1.5px solid var(--wz-bdg);border-radius:11px;background:rgba(229,185,92,.05);color:var(--wz-ink);cursor:pointer;font:inherit;transition:.15s}
+  .fm-fcard img{width:46px;height:34px;object-fit:contain;flex:0 0 46px}
+  .fm-fc-t{flex:1;font-size:13.5px;font-weight:800}
+  .fm-fcard:hover{background:rgba(229,185,92,.1)}
+  .fm-fcard.on{border-color:var(--wz-good);background:rgba(76,192,119,.12)}
+  .fm-chk{flex:0 0 auto;width:22px;height:22px;border-radius:50%;border:1px solid var(--wz-bd);display:grid;place-items:center;font-size:13px;font-weight:800;color:var(--wz-mut)}
+  .fm-fcard.on .fm-chk,.fm-opt.on .fm-chk{background:var(--wz-good);color:#0b0c0c;border-color:var(--wz-good)}
+  .wz-fmsum{display:flex;gap:5px;flex-wrap:wrap}
+  .wz-fmtag{font-size:10px;font-weight:700;color:var(--wz-gold);background:rgba(229,185,92,.12);border:1px solid var(--wz-bd);border-radius:6px;padding:2px 7px}
+  @media(max-width:820px){ .wz-body{grid-template-columns:1fr} .wz-side{position:static} .wz-line{width:18px} .fm-pair{grid-template-columns:1fr} }
 
   @media(max-width:840px){ .bl-metar{display:none} }
   @media(max-width:720px){
@@ -3207,7 +3239,9 @@ function renderLoadouts(){
   el.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>openLoadoutEditor(LOADOUTS.find(x=>String(x.tank_id)===b.dataset.edit)));
   el.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>deleteLoadout(b.dataset.del));
 }
-const WIZ_STEPS=[["Char","i-grid"],["Équipements","i-tools"],["Consommables","i-heart"],["Équipage","i-users"]];
+const WIZ_STEPS=[["Char","i-grid"],["Équipements","i-tools"],["Consommables","i-heart"],["Équipage","i-users"],["Améliorations","i-bolt"]];
+let LO_FM=null;   // donnees des modifications de terrain (web/fieldmods.json)
+function fmNorm(f){ f=(f&&typeof f==='object')?f:{}; return { cons2:!!f.cons2, equip2:!!f.equip2, roleSlot:!!f.roleSlot, pairs:(f.pairs&&typeof f.pairs==='object')?f.pairs:{} }; }
 async function openLoadoutEditor(lo){
   // charge la reference a la demande si elle n'est pas (encore) prete
   if(!LO_REF || !(LO_REF.tanks||[]).length){
@@ -3223,6 +3257,7 @@ async function openLoadoutEditor(lo){
       return;
     }
   }
+  if(!LO_FM){ try{ const r=await fetch('fieldmods.json',{cache:'no-cache'}); if(r.ok) LO_FM=await r.json(); }catch(e){} }
   LO_NEW=!lo;
   const eqp=(lo&&lo.equipment)||[], cop=(lo&&lo.consumables)||[], skp=(lo&&lo.skills);
   const skills={commander:[],gunner:[],driver:[],radioman:[],loader:[]};
@@ -3233,6 +3268,9 @@ async function openLoadoutEditor(lo){
   LO_WIZ={ step:1, tank_id:(lo&&lo.tank_id)||0,
     equipment:(eqp||[]).map(Number).filter(Boolean),
     consumables:(cop||[]).map(Number).filter(Boolean),
+    equipment2:(((lo&&lo.fieldmods&&lo.fieldmods.equipment2))||[]).map(Number).filter(Boolean),
+    consumables2:(((lo&&lo.fieldmods&&lo.fieldmods.consumables2))||[]).map(Number).filter(Boolean),
+    fm:fmNorm(lo&&lo.fieldmods), eqCfg:'a', coCfg:'a',
     skills, notes:(lo&&lo.notes)||"", role:'commander',
     tq:"", tcls:"", tnat:"", eq:"", cq:"", sq:"" };
   const ed=document.getElementById("loEditor"); ed.classList.remove("hidden");
@@ -3244,10 +3282,10 @@ function renderWizard(){
   const steps=WIZ_STEPS.map((s,i)=>{ const n=i+1, done=n<W.step, cur=n===W.step, clk=(n===1||W.tank_id);
     return `<button type="button" class="wz-step${cur?' cur':''}${done?' done':''}${clk?'':' lock'}" data-step="${n}">
       <span class="wz-num">${done?'✓':n}</span><span class="wz-lbl">${s[0]}</span></button>`
-    +(n<4?'<span class="wz-line'+(done?' on':'')+'"></span>':''); }).join("");
-  const main = W.step===1?wizStep1() : W.step===2?wizStepEquip() : W.step===3?wizStepItems('co') : wizStep4();
+    +(n<5?'<span class="wz-line'+(done?' on':'')+'"></span>':''); }).join("");
+  const main = W.step===1?wizStep1() : W.step===2?wizStepEquip() : W.step===3?wizStepItems('co') : W.step===4?wizStep4() : wizStep5();
   const prev = W.step>1 ? `<button class="wz-btn" id="wizPrev">← Précédent</button>` : `<span></span>`;
-  const next = W.step<4
+  const next = W.step<5
     ? `<button class="wz-btn wz-go" id="wizNext">Continuer →</button>`
     : `<button class="wz-btn wz-save" id="wizSave">✓ Enregistrer le loadout</button>`;
   ed.innerHTML=`<div class="card lo-wiz dashx">
@@ -3263,12 +3301,13 @@ function wizWire(){
   document.getElementById("wizCancel").onclick=()=>{ ed.classList.add("hidden"); ed.innerHTML=""; LO_WIZ=null; };
   ed.querySelectorAll(".wz-step:not(.lock)").forEach(s=> s.onclick=()=>{ const n=Number(s.dataset.step); if(n===1||W.tank_id){ W.step=n; renderWizard(); } });
   const prev=document.getElementById("wizPrev"); if(prev) prev.onclick=()=>{ W.step=Math.max(1,W.step-1); renderWizard(); };
-  const next=document.getElementById("wizNext"); if(next) next.onclick=()=>{ if(W.step===1&&!W.tank_id){ alert("Choisis d’abord un char."); return; } W.step=Math.min(4,W.step+1); renderWizard(); };
+  const next=document.getElementById("wizNext"); if(next) next.onclick=()=>{ if(W.step===1&&!W.tank_id){ alert("Choisis d’abord un char."); return; } W.step=Math.min(5,W.step+1); renderWizard(); };
   const save=document.getElementById("wizSave"); if(save) save.onclick=saveLoadout;
   if(W.step===1) wizWire1();
   else if(W.step===2) wizWireEquip();
   else if(W.step===3) wizWireItems('co');
   else if(W.step===4) wizWire4();
+  else if(W.step===5) wizWire5();
 }
 const LO_CLS_OPT=[["heavyTank","Lourds"],["mediumTank","Moyens"],["lightTank","Légers"],["AT-SPG","Chasseurs"],["SPG","Artillerie"]];
 const LO_NATION_FR={ussr:"URSS",germany:"Allemagne",usa:"USA",france:"France",uk:"Royaume-Uni",china:"Chine",japan:"Japon",czech:"Tchéquie",sweden:"Suède",poland:"Pologne",italy:"Italie"};
@@ -3307,13 +3346,15 @@ function wizStepItems(cat){
   const W=LO_WIZ, isEq=cat==='eq', M=loMaps(), tnat=(M.t[W.tank_id]||{}).nation||'';
   // consommables : on n'affiche la ration "nourriture" que pour la nation du char.
   const src=isEq?(LO_REF.equipment||[]):((LO_REF.consumables||[]).filter(x=>!x.nation||x.nation===tnat));
-  const sel=isEq?W.equipment:W.consumables, qv=isEq?(W.eq||''):(W.cq||'');
+  const sel=isEq?W.equipment:wizCoSel(), qv=isEq?(W.eq||''):(W.cq||'');
   const grid=src.map(x=>{ const id=Number(x.id), on=sel.indexOf(id)>=0;
     return `<button type="button" class="lo-item${on?' sel':''}" data-id="${id}" data-name="${esc(String(x.name).toLowerCase())}">
       <img src="${esc(x.image||'')}" onerror="this.style.display='none'" loading="lazy">
       <span>${esc(x.name)}</span><i class="lo-check">✓</i></button>`; }).join("");
   const title=isEq?'Équipements':'Consommables';
-  return `<div class="wz-hdr"><h3>${title}</h3><p>Choisis jusqu’à 3 ${isEq?'équipements':'consommables'} recommandés. <b class="wz-cnt" id="wizCnt">${sel.length} / 3</b></p></div>
+  const cfgNote=(!isEq && W.fm.cons2)?` — <b>Config ${W.coCfg==='a'?'A':'B'}</b>`:'';
+  return `<div class="wz-hdr"><h3>${title}${cfgNote}</h3><p>Choisis jusqu’à 3 ${isEq?'équipements':'consommables'} recommandés. <b class="wz-cnt" id="wizCnt">${sel.length} / 3</b></p></div>
+    ${isEq?'':wizCfgBar('co')}
     <div class="wz-flt"><input class="lo-search" id="wizIQ" placeholder="Rechercher…" value="${esc(qv)}"></div>
     <div class="lo-grid wz-grid wz-igrid">${grid}</div>`;
 }
@@ -3323,9 +3364,10 @@ function wizWireItems(cat){
     ed.querySelectorAll(".lo-item").forEach(b=>{ b.style.display=(!v||b.dataset.name.indexOf(v)>=0)?'':'none'; }); };
   iq.oninput=apply; apply();
   ed.querySelectorAll(".lo-item").forEach(b=> b.onclick=()=>wizToggleItem(cat,Number(b.dataset.id),b));
+  if(cat==='co') wizWireCfg('co');
 }
 function wizToggleItem(cat,id,btn){
-  const W=LO_WIZ, sel=cat==='eq'?W.equipment:W.consumables, i=sel.indexOf(id);
+  const W=LO_WIZ, sel=cat==='eq'?W.equipment:wizCoSel(), i=sel.indexOf(id);
   if(i>=0) sel.splice(i,1);
   else { if(sel.length>=3){ wizFlashCnt(); return; } sel.push(id); }
   btn.classList.toggle('sel', sel.indexOf(id)>=0);
@@ -3333,19 +3375,38 @@ function wizToggleItem(cat,id,btn){
   wizRefreshSide();
 }
 function wizFlashCnt(){ const c=document.getElementById("wizCnt"); if(!c) return; c.classList.add("over"); setTimeout(()=>c.classList.remove("over"),500); }
+// 2e configuration (modif. de terrain) : accès à la config active + activation/désactivation.
+function wizEqSel(){ const W=LO_WIZ; return (W.fm.equip2 && W.eqCfg==='b') ? W.equipment2 : W.equipment; }
+function wizCoSel(){ const W=LO_WIZ; return (W.fm.cons2 && W.coCfg==='b') ? W.consumables2 : W.consumables; }
+function wizSetEquip2(on){ const W=LO_WIZ; W.fm.equip2=on; if(on) W.fm.cons2=true; else W.eqCfg='a'; renderWizard(); }   // 2e équip (niv.3) requiert 2e conso (niv.1)
+function wizSetCons2(on){ const W=LO_WIZ; W.fm.cons2=on; if(!on){ W.fm.equip2=false; W.coCfg='a'; W.eqCfg='a'; } renderWizard(); }
+function wizCfgBar(kind){ const W=LO_WIZ, on=kind==='eq'?W.fm.equip2:W.fm.cons2, cfg=kind==='eq'?W.eqCfg:W.coCfg, what=kind==='eq'?'équipement':'consommables';
+  if(!on) return `<button class="wz-cfg-add" id="wizCfgAdd">＋ Activer une 2ᵉ configuration de ${what} (modif. de terrain)</button>`;
+  return `<div class="wz-cfg"><span class="wz-cfg-l">Configuration&nbsp;:</span>
+    <button class="wz-cfgb${cfg==='a'?' cur':''}" data-cfg="a">A</button>
+    <button class="wz-cfgb${cfg==='b'?' cur':''}" data-cfg="b">B</button>
+    <button class="wz-cfg-off" id="wizCfgOff">Retirer la 2ᵉ config</button></div>`;
+}
+function wizWireCfg(kind){ const ed=document.getElementById("loEditor"), W=LO_WIZ;
+  const add=document.getElementById("wizCfgAdd"); if(add) add.onclick=()=> kind==='eq'?wizSetEquip2(true):wizSetCons2(true);
+  const off=document.getElementById("wizCfgOff"); if(off) off.onclick=()=> kind==='eq'?wizSetEquip2(false):wizSetCons2(false);
+  ed.querySelectorAll(".wz-cfgb").forEach(b=> b.onclick=()=>{ if(kind==='eq')W.eqCfg=b.dataset.cfg; else W.coCfg=b.dataset.cfg; renderWizard(); });
+}
 
 /* ---- Étape 2 : équipements par FAMILLE (clic -> choix du grade Standard/Bounty/Amélioré) ---- */
 function wizStepEquip(){
-  const W=LO_WIZ, fams=(LO_REF.equipment||[]), idx=loEqFam();
+  const W=LO_WIZ, fams=(LO_REF.equipment||[]), idx=loEqFam(), sel=wizEqSel();
   const grid=fams.map(f=>{
-    const selId=W.equipment.find(id=>idx.idFam[id]===f.key);
+    const selId=sel.find(id=>idx.idFam[id]===f.key);
     const g=selId?idx.idGr[selId]:null, col=g?EQ_GRADE_META[g][1]:'';
     const dots=(f.grades||[]).map(gr=>`<i class="lo-gdot${g===gr.grade?' on':''}" style="--d:${EQ_GRADE_META[gr.grade][1]}"></i>`).join("");
     return `<button type="button" class="lo-item lo-eqfam${selId?' sel':''}" data-key="${esc(f.key)}" data-name="${esc(String(f.name).toLowerCase())}"${selId?` style="--gcol:${col}"`:''}>
       <img src="${esc(f.icon||'')}" onerror="this.style.display='none'" loading="lazy">
       <span>${esc(f.name)}</span><div class="lo-gdots">${dots}</div><i class="lo-check">✓</i></button>`;
   }).join("");
-  return `<div class="wz-hdr"><h3>Équipements</h3><p>Choisis jusqu’à 3 équipements. Clique un équipement pour choisir son grade : <b style="color:#8b9099">Standard</b> · <b style="color:#e668b3">Bounty</b> · <b style="color:#a874ff">Amélioré</b>. <b class="wz-cnt" id="wizCnt">${W.equipment.length} / 3</b></p></div>
+  const cfgNote = W.fm.equip2?` — <b>Config ${W.eqCfg==='a'?'A':'B'}</b>`:'';
+  return `<div class="wz-hdr"><h3>Équipements${cfgNote}</h3><p>Choisis jusqu’à 3 équipements. Clique un équipement pour choisir son grade : <b style="color:#8b9099">Standard</b> · <b style="color:#e668b3">Bounty</b> · <b style="color:#a874ff">Amélioré</b>. <b class="wz-cnt" id="wizCnt">${sel.length} / 3</b></p></div>
+    ${wizCfgBar('eq')}
     <div class="wz-flt"><input class="lo-search" id="wizIQ" placeholder="Rechercher un équipement…" value="${esc(W.eq||'')}"></div>
     <div class="lo-grid wz-grid wz-igrid">${grid}</div>
     <div class="wz-gpick hidden" id="wizGpick"></div>`;
@@ -3355,10 +3416,11 @@ function wizWireEquip(){
   const apply=()=>{ W.eq=iq.value; const v=iq.value.toLowerCase(); ed.querySelectorAll(".lo-eqfam").forEach(b=>{ b.style.display=(!v||b.dataset.name.indexOf(v)>=0)?'':'none'; }); };
   iq.oninput=apply; apply();
   ed.querySelectorAll(".lo-eqfam").forEach(b=> b.onclick=()=>wizOpenGrade(b.dataset.key));
+  wizWireCfg('eq');
 }
 function wizOpenGrade(key){
   const W=LO_WIZ, idx=loEqFam(), f=idx.fam[key]; if(!f) return;
-  const selId=W.equipment.find(id=>idx.idFam[id]===key);
+  const selId=wizEqSel().find(id=>idx.idFam[id]===key);
   const cards=(f.grades||[]).map(g=>{ const meta=EQ_GRADE_META[g.grade], on=selId===g.id;
     return `<button type="button" class="lo-gcard grade-${g.grade}${on?' on':''}" data-id="${g.id}" style="--gcol:${meta[1]}">
       <div class="lo-gcard-ic"><img src="${esc(g.image||'')}" onerror="this.style.display='none'"></div>
@@ -3376,12 +3438,13 @@ function wizOpenGrade(key){
 }
 function wizCloseGrade(){ const b=document.getElementById("wizGpick"); if(b){ b.className="wz-gpick hidden"; b.innerHTML=""; } }
 function wizPickGrade(key,id){
-  const W=LO_WIZ, idx=loEqFam(), had=W.equipment.some(x=>idx.idFam[x]===key);
-  W.equipment=W.equipment.filter(x=>idx.idFam[x]!==key);
+  const W=LO_WIZ, idx=loEqFam(), arr=wizEqSel(), had=arr.some(x=>idx.idFam[x]===key);
+  const out=arr.filter(x=>idx.idFam[x]!==key);
   if(id!==null){
-    if(W.equipment.length>=3 && !had){ wizCloseGrade(); wizFlashCnt(); renderWizard(); return; }
-    W.equipment.push(id);
+    if(out.length>=3 && !had){ wizCloseGrade(); wizFlashCnt(); return; }
+    out.push(id);
   }
+  if(W.fm.equip2 && W.eqCfg==='b') W.equipment2=out; else W.equipment=out;
   wizCloseGrade(); renderWizard();
 }
 
@@ -3425,6 +3488,59 @@ function wizToggleSkill(id,btn){
   wizRefreshSide();
 }
 
+/* ---- Étape 5 : modifications de terrain (améliorations) ---- */
+const FM_FEAT={
+  shells_consumables_switch:{fr:"2ᵉ emplacement de consommables",flag:"cons2",img:"shellsConsumablesSwitch"},
+  opt_dev_boosters_switch:{fr:"2ᵉ emplacement d’équipement",flag:"equip2",img:"optDevBoostersSwitch"}
+  // roleSlot volontairement retiré : pas d'"équipement bonus" (précision du clan).
+};
+const FM_STAT_FR={Strength:"PV",EnginePower:"moteur",AllGroundRotationSpeed:"rotation",CircularVisionRadius:"vue",
+  ChassisStrength:"PV chenilles",GunShotDispersionChassisMovement:"disp. en mvt",GunShotDispersionChassisRotation:"disp. rotation",
+  GunShotDispersionAfterShot:"disp. après tir",GunShotDispersionGunDamaged:"disp. canon endommagé",TurretRotationSpeed:"rotation tourelle",
+  ForwardMaxSpeed:"vitesse av.",FireStartingChance:"risque incendie",AmmoBayStrength:"PV soutes",Camouflage:"camouflage",
+  ReloadTime:"rechargement",AimingTime:"visée",DamageReduction:"réduction dégâts"};
+function fmTankTree(){ if(!LO_FM||!LO_FM.tankTree) return null; const k=LO_FM.tankTree[String(LO_WIZ.tank_id)]; return k?LO_FM.trees[k]:null; }
+function fmFmt(s){ const nm=FM_STAT_FR[s.name]||s.name; if(s.op==='mul'){ const pct=Math.round((s.val-1)*1000)/10; return (pct>=0?'+':'')+pct+'% '+nm; } return (s.val>=0?'+':'')+s.val+' '+nm; }
+function fmModStats(m){ if(!m) return ''; return (m.stats||[]).filter(s=>s.name).map(fmFmt).join(' · '); }
+function wizStep5(){
+  const W=LO_WIZ, tree=fmTankTree(), t=loMaps().t[W.tank_id]||{};
+  if(!LO_FM||!tree) return `<div class="wz-hdr"><h3>Modifications de terrain</h3><p class="wz-mut">Aucune donnée d’amélioration pour ce char (fichier fieldmods.json manquant ou char non répertorié).</p></div>
+    <label class="wz-notes">Notes (optionnel)<textarea id="wizNotes" maxlength="600" rows="2">${esc(W.notes||'')}</textarea></label>`;
+  const byLvl={}; tree.forEach(n=>{ if(n.kind==='feature'&&n.ref==='roleSlot') return; (byLvl[n.lvl]=byLvl[n.lvl]||[]).push(n); });
+  const rows=Object.keys(byLvl).map(Number).sort((a,b)=>a-b).map(lvl=>{
+    const nodes=byLvl[lvl]; if(!nodes.length) return ''; const feat=nodes.find(n=>n.kind==='feature');
+    if(feat){ const meta=FM_FEAT[feat.ref], on=!!W.fm[meta.flag];
+      return `<div class="fm-lvl"><div class="fm-lvl-n">${lvl}</div><div class="fm-lvl-b">
+        <button type="button" class="fm-fcard${on?' on':''}" data-feat="${feat.ref}">
+          <img src="fieldmods/${meta.img}.png" onerror="this.style.display='none'">
+          <div class="fm-fc-t">${meta.fr}</div><i class="fm-chk">${on?'✓':'+'}</i></button></div></div>`;
+    }
+    const base=nodes.find(n=>n.kind==='mod'), pair=nodes.find(n=>n.kind==='pair');
+    let inner='';
+    if(base){ const st=fmModStats(LO_FM.mods[base.ref]); inner+=`<div class="fm-base"><span class="fm-b-tag">auto</span>${st||'amélioration de base'}</div>`; }
+    if(pair){ const p=LO_FM.pairs[pair.ref], cur=W.fm.pairs[pair.ref];
+      inner+=`<div class="fm-pair">`+['a','b'].map(side=>{ const m=LO_FM.mods[p[side]], on=cur===side;
+        return `<button type="button" class="fm-opt${on?' on':''}" data-pair="${esc(pair.ref)}" data-side="${side}">
+          ${m&&m.img?`<img src="fieldmods/${esc(m.img)}.png" onerror="this.parentNode.classList.add('noimg')">`:''}
+          <span class="fm-opt-s">${fmModStats(m)||'—'}</span><i class="fm-chk">${on?'✓':''}</i></button>`; }).join('')+`</div>`;
+    }
+    return `<div class="fm-lvl"><div class="fm-lvl-n">${lvl}</div><div class="fm-lvl-b">${inner}</div></div>`;
+  }).join("");
+  return `<div class="wz-hdr"><h3>Modifications de terrain</h3><p>Améliorations recommandées pour le <b>${esc(t.name||'')}</b>. Certains niveaux débloquent une 2ᵉ configuration (liée aux étapes Équipements/Consommables).</p></div>
+    <div class="fm-tree">${rows}</div>
+    <label class="wz-notes">Notes (optionnel)<textarea id="wizNotes" maxlength="600" rows="2" placeholder="Pourquoi ces choix, quand l’utiliser…">${esc(W.notes||'')}</textarea></label>`;
+}
+function wizWire5(){
+  const ed=document.getElementById("loEditor"), W=LO_WIZ;
+  ed.querySelectorAll(".fm-fcard").forEach(b=> b.onclick=()=>{ const meta=FM_FEAT[b.dataset.feat], cur=!!W.fm[meta.flag];
+    if(meta.flag==='equip2') wizSetEquip2(!cur);
+    else if(meta.flag==='cons2') wizSetCons2(!cur);
+    else { W.fm.roleSlot=!cur; renderWizard(); } });
+  ed.querySelectorAll(".fm-opt").forEach(b=> b.onclick=()=>{ const pk=b.dataset.pair, side=b.dataset.side;
+    W.fm.pairs[pk]=(W.fm.pairs[pk]===side)?null:side; renderWizard(); });
+  const nt=document.getElementById("wizNotes"); if(nt) nt.oninput=()=>{ W.notes=nt.value; };
+}
+
 /* ---- Panneau résumé (droite, persistant) ---- */
 function wizSide(){ return `<aside class="wz-side" id="wizSide">${wizSideInner()}</aside>`; }
 function wizSideInner(){
@@ -3440,7 +3556,11 @@ function wizSideInner(){
     <div class="wz-tk">${t?`<img src="${esc(t.icon||'')}" onerror="this.style.display='none'"><div class="wz-tk-n">${esc(t.name)}</div><div class="wz-tk-m">${esc(CLS_FR[t.type]||'')} · Tier X</div>`:'<div class="wz-mut">Aucun char sélectionné</div>'}</div>
     <div class="wz-sblk"><div class="wz-sblk-h">Équipements</div><div class="wz-chips">${eqRow}</div></div>
     <div class="wz-sblk"><div class="wz-sblk-h">Consommables</div><div class="wz-chips">${coRow}</div></div>
-    <div class="wz-sblk"><div class="wz-sblk-h">Compétences</div>${skRows}</div>`;
+    <div class="wz-sblk"><div class="wz-sblk-h">Compétences</div>${skRows}</div>
+    <div class="wz-sblk"><div class="wz-sblk-h">Améliorations</div><div class="wz-fmsum">${
+      [W.fm.equip2?'2ᵉ empl. équip.':null, W.fm.cons2?'2ᵉ empl. conso.':null,
+       Object.values(W.fm.pairs||{}).filter(Boolean).length?Object.values(W.fm.pairs).filter(Boolean).length+' modif.':null
+      ].filter(Boolean).map(x=>`<span class="wz-fmtag">${x}</span>`).join('')||'<span class="wz-mut">—</span>'}</div></div>`;
 }
 function wizRefreshSide(){ const s=document.getElementById("wizSide"); if(s) s.innerHTML=wizSideInner(); }
 
@@ -3451,7 +3571,9 @@ async function saveLoadout(){
   const payload={ tank_id:Number(W.tank_id), tank_name:t.name||"",
     equipment:W.equipment.filter(Boolean), consumables:W.consumables.filter(Boolean),
     skills:{ commander:W.skills.commander, gunner:W.skills.gunner, driver:W.skills.driver, radioman:W.skills.radioman, loader:W.skills.loader },
-    notes:(W.notes||"").trim(), fieldmods:{} };
+    notes:(W.notes||"").trim(),
+    fieldmods:{ cons2:!!W.fm.cons2, equip2:!!W.fm.equip2, roleSlot:!!W.fm.roleSlot, pairs:W.fm.pairs||{},
+      equipment2:W.fm.equip2?W.equipment2.filter(Boolean):[], consumables2:W.fm.cons2?W.consumables2.filter(Boolean):[] } };
   const btn=document.getElementById("wizSave"); if(btn){ btn.disabled=true; btn.textContent="Enregistrement…"; }
   const r=await fnCall("loadouts",{session:localStorage.getItem(LS_SESSION),action:"save",loadout:payload});
   if(!r.ok){ if(btn){ btn.disabled=false; btn.textContent="✓ Enregistrer le loadout"; } alert("Erreur : "+(r.j.error||r.status)); return; }
