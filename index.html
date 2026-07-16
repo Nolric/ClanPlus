@@ -1005,6 +1005,51 @@
   .tl-ed-act .btn:hover{border-color:var(--gold-line);color:#fff}
   .tl-ed-act .tl-save{background:var(--gold-soft);border-color:var(--gold-line);color:var(--gold-2);font-weight:800}
   .tl-ed-act .tl-save:hover{background:rgba(229,185,92,.2);border-color:var(--gold);color:var(--gold-2)}
+  /* Stratégie — éditeur de minimap */
+  #viewStrats .lu-title{font-size:18px}
+  .st-shell{background:#101113;border:1px solid #2b2d31;border-radius:14px;padding:0;overflow:hidden;margin-bottom:16px}
+  .st-top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid #2b2d31;flex-wrap:wrap}
+  .st-top>b{font-size:16px;color:#ecebe8}
+  .st-top-act{display:flex;gap:8px;flex-wrap:wrap}
+  .st-top .btn,.st-top-act .btn{background:#1e1f22;border:1px solid #2b2d31;color:#ecebe8;border-radius:9px;padding:9px 14px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:.15s}
+  .st-top .btn:hover,.st-top-act .btn:hover{border-color:var(--gold-line);color:#fff}
+  .st-top-act .tl-save{background:var(--gold-soft);border-color:var(--gold-line);color:var(--gold-2);font-weight:800}
+  .st-top-act .tl-save:hover{background:rgba(229,185,92,.2)}
+  .st-view-map{font-weight:400;color:#8b9099;font-size:13px}
+  /* map picker */
+  .st-mapgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:10px;padding:16px;max-height:60vh;overflow-y:auto}
+  .st-mapopt{background:#17181b;border:1px solid #2b2d31;border-radius:10px;padding:6px;cursor:pointer;color:#ecebe8;transition:.15s;display:flex;flex-direction:column;gap:5px;align-items:center}
+  .st-mapopt img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:7px}
+  .st-mapopt span{font-size:11px;font-weight:600;text-align:center;line-height:1.15}
+  .st-mapopt:hover{border-color:var(--gold);transform:translateY(-2px)}
+  /* toolbar */
+  .st-toolbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:10px 16px;background:#0c0d0f;border-bottom:1px solid #202226}
+  .st-tools{display:flex;gap:5px;flex-wrap:wrap}
+  .st-tool{display:inline-flex;align-items:center;gap:6px;background:#1e1f22;border:1px solid #2b2d31;color:#c9ccd1;border-radius:9px;padding:7px 11px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;transition:.15s}
+  .st-tool-ic{font-size:14px;line-height:1}
+  .st-tool:hover{border-color:var(--gold-line);color:#fff}
+  .st-tool.on{background:var(--gold-soft);border-color:var(--gold);color:var(--gold-2)}
+  .st-colors{display:flex;gap:5px;flex-wrap:wrap;padding-left:6px;border-left:1px solid #24262a;margin-left:2px}
+  .st-color{width:24px;height:24px;border-radius:50%;border:2px solid #2b2d31;cursor:pointer;padding:0;transition:.12s}
+  .st-color:hover{transform:scale(1.12)}
+  .st-color.on{border-color:#fff;box-shadow:0 0 0 2px var(--gold)}
+  .st-tb-act{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap}
+  .st-mini2{background:#1e1f22;border:1px solid #2b2d31;color:#c9ccd1;border-radius:8px;padding:7px 11px;font:inherit;font-size:12px;font-weight:600;cursor:pointer}
+  .st-mini2:hover{border-color:#c9484a;color:#e46b6d}
+  /* stage */
+  .st-stage-wrap{padding:14px;background:#0c0d0f;display:flex;justify-content:center}
+  .st-svg{width:100%;max-width:660px;aspect-ratio:1;border-radius:10px;background:#000;border:1px solid #2b2d31;touch-action:none;cursor:crosshair;display:block}
+  .st-svg image{border-radius:10px}
+  .st-svg .st-el{cursor:inherit}
+  .st-svg .st-sel{filter:drop-shadow(0 0 4px #fff) drop-shadow(0 0 2px #fff)}
+  .st-marker{cursor:inherit}
+  .st-svg-view{cursor:default}
+  .st-hint{padding:9px 16px 14px;font-size:12px;color:#8b9099}
+  .st-hint b{color:var(--gold-2)}
+  /* strategy cards */
+  .st-card-map{position:relative;aspect-ratio:16/7;overflow:hidden;background:#000}
+  .st-card-map img{width:100%;height:100%;object-fit:cover}
+  .st-card-mapn{position:absolute;left:8px;bottom:6px;font-size:11px;font-weight:700;color:#fff;text-shadow:0 1px 3px #000;background:rgba(0,0,0,.4);padding:2px 7px;border-radius:6px}
   .lo-pills{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
   .lo-pill{font-size:11px;font-weight:600;background:var(--surface-2);border:1px solid var(--border);border-radius:20px;padding:3px 10px;color:var(--ink-2);font-variant-numeric:tabular-nums}
   .lo-cardact{display:flex;gap:6px;flex:0 0 auto;z-index:2}
@@ -1364,6 +1409,7 @@
         <button class="tab side-item" data-v="player"><span class="si-ic"><svg class="ic"><use href="#i-chart"/></svg></span><span class="si-lbl">Ma progression</span></button>
         <button class="tab side-item" data-v="lineups"><span class="si-ic"><svg class="ic"><use href="#i-grid"/></svg></span><span class="si-lbl">Line-ups</span></button>
         <button class="tab side-item" data-v="loadouts"><span class="si-ic"><svg class="ic"><use href="#i-tools"/></svg></span><span class="si-lbl">Loadouts</span></button>
+        <button class="tab side-item" data-v="strats"><span class="si-ic"><svg class="ic"><use href="#i-target"/></svg></span><span class="si-lbl">Stratégie</span></button>
         <button class="tab side-item" data-v="ranking"><span class="si-ic"><svg class="ic"><use href="#i-trophy"/></svg></span><span class="si-lbl">Classements</span></button>
         <button class="tab side-item" data-v="search"><span class="si-ic"><svg class="ic"><use href="#i-search"/></svg></span><span class="si-lbl">Chercher un clan</span></button>
       </nav>
@@ -1539,6 +1585,19 @@
     </div>
   </div>
 
+  <div id="viewStrats" class="hidden dashx">
+    <div class="lu-head">
+      <div>
+        <h2 class="lu-title">Stratégie</h2>
+        <div class="lu-sub" id="stRole"></div>
+      </div>
+      <button class="btn lu-new hidden" id="stNewBtn">＋ Nouvelle stratégie</button>
+    </div>
+    <p class="sec-desc" style="margin-top:2px">Prépare tes <b>stratégies sur minimap</b> (façon StratSketch) : flèches, tracés, jetons et texte. Tout le clan peut les consulter.</p>
+    <div id="stEditor" class="hidden"></div>
+    <div id="stList"></div>
+  </div>
+
   <div id="viewRanking" class="hidden">
     <div class="sec-h">Classement des clans</div>
     <p class="sec-desc">Le classement de <b>tous les clans EU</b> selon la mesure choisie. ⚠️ Wargaming ne fournit <b>pas la nationalité</b> des clans : le classement est donc <b>mondial (serveur EU)</b>, filtrable par <b>mesure</b> et par <b>tier</b>.</p>
@@ -1675,7 +1734,7 @@ async function openApp(){
   document.getElementById("app").classList.remove("hidden");
   document.getElementById("loading").classList.remove("hidden");
   document.getElementById("subbar").classList.add("hidden");
-  ["viewClan","viewBattles","viewPlayer","viewLineups","viewLoadouts","viewRanking","viewSearch"].forEach(id=>document.getElementById(id).classList.add("hidden"));
+  ["viewClan","viewBattles","viewPlayer","viewLineups","viewLoadouts","viewStrats","viewRanking","viewSearch"].forEach(id=>document.getElementById(id).classList.add("hidden"));
 
   const res = await fnCall("clan-data", { session: localStorage.getItem(LS_SESSION) });
   document.getElementById("loading").classList.add("hidden");
@@ -2296,6 +2355,7 @@ function switchView(v){
   document.getElementById("viewPlayer").classList.toggle("hidden", v!=="player");
   document.getElementById("viewLineups").classList.toggle("hidden", v!=="lineups");
   document.getElementById("viewLoadouts").classList.toggle("hidden", v!=="loadouts");
+  document.getElementById("viewStrats").classList.toggle("hidden", v!=="strats");
   document.getElementById("viewRanking").classList.toggle("hidden", v!=="ranking");
   document.getElementById("viewSearch").classList.toggle("hidden", v!=="search");
   document.getElementById("playerPick").classList.toggle("hidden", v!=="player");
@@ -2306,6 +2366,7 @@ function switchView(v){
   if(v==="player") renderPlayerView();
   if(v==="lineups") loadLineups();
   if(v==="loadouts") loadLoadouts();
+  if(v==="strats") loadStrats();
   if(v==="ranking") loadRanking();
 }
 
@@ -3067,6 +3128,7 @@ function wireUI(){
   document.getElementById("luNewBtn").onclick=()=>openLineupEditor(null);
   document.getElementById("loNewBtn").onclick=()=>openLoadoutEditor(null);
   document.getElementById("tlNewBtn").onclick=()=>openTierlistEditor(null);
+  document.getElementById("stNewBtn").onclick=()=>openStratEditor(null);
   document.querySelectorAll(".lo-subtab").forEach(b=>b.onclick=()=>switchLoSub(b.dataset.losub));
   document.getElementById("sideToggle").onclick=toggleSidebar;
   const rkSel=document.getElementById("rkMetric");
@@ -4343,6 +4405,170 @@ function openTierlistView(tl){
   ed.innerHTML=`<div class="card tl-editor dashx"><div class="tl-ed-h"><b class="tl-view-name">${esc(tl.name||"Tier list")}</b><div class="tl-ed-act">${TL_CANEDIT?`<button class="btn" id="tlEditThis">✎ Modifier</button>`:""}<button class="btn" id="tlCloseView">Fermer</button></div></div><div class="tl-rows">${rowsHtml}</div><div class="tl-card-by">Par ${esc(tl.created_by_name||"?")}</div></div>`;
   document.getElementById("tlCloseView").onclick=()=>{ ed.classList.add("hidden"); ed.innerHTML=""; };
   const eb=document.getElementById("tlEditThis"); if(eb) eb.onclick=()=>openTierlistEditor(tl);
+  ed.scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+/* ============================================================
+   STRATÉGIE — éditeur de minimap (style StratSketch)
+   ============================================================ */
+let STRATS=[], STRAT_CANEDIT=false, STRAT_LOADED=false;
+let ST_EDIT=null;   // {id,name,map,els:[]}
+let ST_TOOL='arrow', ST_COLOR='#e5544b', ST_SEL=null, ST_DRAW=null, ST_MOVE=null;
+const ST_MAPS=[
+  ["himmelsdorf","Himmelsdorf"],["ensk","Ensk"],["lakeville","Lakeville"],["redshire","Redshire"],
+  ["prohorovka","Prokhorovka"],["murovanka","Murovanka"],["malinovka","Malinovka"],["ruinberg","Ruinberg"],
+  ["siegfriedline","Ligne Siegfried"],["steppes","Steppes"],["tundra","Toundra"],["cliff","Falaise"],
+  ["fjord","Fjords"],["fishingbay","Baie du pêcheur"],["erlenberg","Erlenberg"],["elhallouf","El Halluf"],
+  ["karelia","Carélie"],["mannerheimline","Ligne Mannerheim"],["westfeld","Westfield"],["airfield","Aérodrome"],
+  ["monastery","Abbaye"],["desert","Rivière de sable"],["hills","Live Oaks"],["caucasus","Caucase"],
+  ["czech","Pilsen"],["poland","Studzianki"],["germany","Ruhrland"],["munchen","Munich"],
+  ["japort","Baie de la nacre"],["northamerica","Highway"],["asiagreatwall","Frontière de l’empire"],["sweden","Kleinberg"]
+];
+const ST_MAPNAME=Object.fromEntries(ST_MAPS.map(m=>[m[0],m[1]]));
+const ST_COLORS=["#e5544b","#e5c84b","#5bb0e5","#8fd14f","#ffffff","#e59a4b","#c264ff","#141414"];
+const ST_TOOLS=[["select","Déplacer","✋"],["arrow","Flèche","➤"],["line","Trait","／"],["pen","Crayon","✎"],["marker","Jeton","◉"],["text","Texte","T"],["erase","Gomme","⌫"]];
+function stTextOn(hex){ hex=String(hex||"").replace("#",""); if(hex.length===3) hex=hex.split("").map(c=>c+c).join(""); const r=parseInt(hex.slice(0,2),16)||0,g=parseInt(hex.slice(2,4),16)||0,b=parseInt(hex.slice(4,6),16)||0; return (0.299*r+0.587*g+0.114*b)>150?"#141414":"#fff"; }
+async function loadStrats(){
+  STRAT_LOADED=true;
+  const list=document.getElementById("stList"); list.innerHTML='<div class="card">'+cpLoader()+'</div>';
+  try{
+    const r=await fnCall("strategies",{session:localStorage.getItem(LS_SESSION),action:"list"});
+    if(!r.ok){ list.innerHTML='<div class="card"><div class="empty">Erreur stratégies : '+esc((r.j&&r.j.error)||String(r.status))+' — la fonction « strategies » est-elle déployée ?</div></div>'; return; }
+    STRATS=r.j.strategies||[]; STRAT_CANEDIT=meIsManager();
+    document.getElementById("stNewBtn").classList.toggle("hidden",!STRAT_CANEDIT);
+    document.getElementById("stRole").textContent = STRAT_CANEDIT ? "Ton grade te permet de créer et modifier les stratégies." : "Consultation : tu peux ouvrir et lire les stratégies du clan.";
+    renderStrats();
+  }catch(e){ list.innerHTML='<div class="card"><div class="empty">Impossible de joindre « strategies » ('+esc(String(e))+').</div></div>'; }
+}
+function renderStrats(){
+  const el=document.getElementById("stList");
+  if(!STRATS.length){ el.innerHTML=`<div class="lo-empty"><div class="lo-empty-ic">🗺️</div><div class="lo-empty-t">Aucune stratégie</div><div class="lo-empty-s">${STRAT_CANEDIT?'Clique « Nouvelle stratégie » pour en dessiner une.':'Les officiers n’ont pas encore préparé de stratégie.'}</div></div>`; return; }
+  el.innerHTML='<div class="tl-cards">'+STRATS.map(s=>{
+    const btns=STRAT_CANEDIT?`<div class="tl-cardact"><button class="lo-mini" data-stedit="${s.id}" title="Modifier">✎</button><button class="lo-mini lo-minidel" data-stdel="${s.id}" title="Supprimer">✕</button></div>`:"";
+    return `<div class="tl-card st-card" data-stopen="${s.id}"><div class="st-card-map"><img src="maps/top/${esc(s.map||'')}.jpg" onerror="this.style.opacity='.12'"><span class="st-card-mapn">${esc(ST_MAPNAME[s.map]||prettyMap(s.map))}</span></div><div class="tl-card-h"><b>${esc(s.name||"Stratégie")}</b>${btns}</div><div class="tl-card-by">${(s.elements||[]).length} éléments · par ${esc(s.created_by_name||"?")}</div></div>`;
+  }).join("")+'</div>';
+  el.querySelectorAll("[data-stopen]").forEach(c=>c.onclick=e=>{ if(e.target.closest("[data-stedit],[data-stdel]"))return; openStratView(STRATS.find(x=>String(x.id)===c.dataset.stopen)); });
+  el.querySelectorAll("[data-stedit]").forEach(b=>b.onclick=e=>{e.stopPropagation();openStratEditor(STRATS.find(x=>String(x.id)===b.dataset.stedit));});
+  el.querySelectorAll("[data-stdel]").forEach(b=>b.onclick=e=>{e.stopPropagation();deleteStrat(b.dataset.stdel);});
+}
+function openStratEditor(s){
+  if(!STRAT_CANEDIT){ alert("Réservé aux officiers de combat et plus."); return; }
+  ST_EDIT={ id:(s&&s.id)||null, name:(s&&s.name)||"Nouvelle stratégie", map:(s&&s.map)||"", els:(s&&Array.isArray(s.elements))?JSON.parse(JSON.stringify(s.elements)):[] };
+  ST_SEL=null;
+  if(!ST_EDIT.map) renderMapPicker(); else renderStratEditor();
+  document.getElementById("stEditor").scrollIntoView({behavior:"smooth",block:"start"});
+}
+function renderMapPicker(){
+  const ed=document.getElementById("stEditor"); ed.classList.remove("hidden");
+  ed.innerHTML=`<div class="card st-shell dashx"><div class="st-top"><b>Choisis une carte</b><button class="btn" id="stPickCancel">Annuler</button></div>
+    <div class="st-mapgrid">${ST_MAPS.map(m=>`<button type="button" class="st-mapopt" data-map="${m[0]}"><img src="maps/top/${m[0]}.jpg" onerror="this.style.opacity='.12'"><span>${esc(m[1])}</span></button>`).join("")}</div></div>`;
+  document.getElementById("stPickCancel").onclick=()=>{ ed.classList.add("hidden"); ed.innerHTML=""; ST_EDIT=null; };
+  ed.querySelectorAll(".st-mapopt").forEach(b=>b.onclick=()=>{ ST_EDIT.map=b.dataset.map; renderStratEditor(); });
+}
+function renderStratEditor(){
+  const ed=document.getElementById("stEditor"); ed.classList.remove("hidden");
+  const tools=ST_TOOLS.map(t=>`<button type="button" class="st-tool${ST_TOOL===t[0]?' on':''}" data-tool="${t[0]}" title="${t[1]}"><span class="st-tool-ic">${t[2]}</span><span class="st-tool-l">${t[1]}</span></button>`).join("");
+  const colors=ST_COLORS.map(c=>`<button type="button" class="st-color${ST_COLOR===c?' on':''}" data-color="${c}" style="background:${c}"></button>`).join("");
+  ed.innerHTML=`<div class="card st-shell dashx">
+    <div class="st-top"><input class="tl-name" id="stName" value="${esc(ST_EDIT.name)}" maxlength="80" placeholder="Nom de la stratégie">
+      <div class="st-top-act"><button class="btn" id="stChangeMap">🗺️ Carte</button><button class="btn" id="stCancel">Annuler</button><button class="btn tl-save" id="stSave">✓ Enregistrer</button></div></div>
+    <div class="st-toolbar"><div class="st-tools">${tools}</div><div class="st-colors">${colors}</div><div class="st-tb-act"><button class="btn st-mini2" id="stDelSel" title="Supprimer l'élément sélectionné">Suppr. élément</button><button class="btn st-mini2" id="stClear" title="Tout effacer">Vider</button></div></div>
+    <div class="st-stage-wrap"><svg class="st-svg" id="stSvg" viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg">
+      <defs><marker id="st-ah" markerWidth="4.5" markerHeight="4.5" refX="3" refY="2.25" orient="auto"><path d="M0,0 L4.5,2.25 L0,4.5 z" fill="context-stroke"/></marker></defs>
+      <image href="maps/top/${esc(ST_EDIT.map)}.jpg" x="0" y="0" width="1000" height="1000" preserveAspectRatio="none"/>
+      <g id="stEls"></g></svg></div>
+    <div class="st-hint">Outil <b id="stToolName">${esc((ST_TOOLS.find(t=>t[0]===ST_TOOL)||[])[1]||'')}</b> — dessine sur la carte. Jeton/Texte : clique. Sélection : glisse pour déplacer, « Suppr. élément » pour retirer.</div></div>`;
+  stRedraw();
+  stWireEditor();
+}
+function stTranslate(el,dx,dy){
+  const c=JSON.parse(JSON.stringify(el));
+  if(c.type==='arrow'||c.type==='line'){ c.x1+=dx;c.y1+=dy;c.x2+=dx;c.y2+=dy; }
+  else if(c.type==='pen'){ c.pts=c.pts.map(p=>[p[0]+dx,p[1]+dy]); }
+  else { c.x+=dx; c.y+=dy; }
+  return c;
+}
+function stElSvg(el,i){
+  const sel=ST_SEL===i?' st-sel':'';
+  if(el.type==='arrow'||el.type==='line'){ const m=el.type==='arrow'?' marker-end="url(#st-ah)"':'';
+    return `<line class="st-el${sel}" data-eid="${i}" x1="${el.x1}" y1="${el.y1}" x2="${el.x2}" y2="${el.y2}" stroke="${esc(el.color)}" stroke-width="7" stroke-linecap="round"${m}/>`; }
+  if(el.type==='pen'){ return `<polyline class="st-el${sel}" data-eid="${i}" points="${el.pts.map(p=>p.map(n=>Math.round(n)).join(',')).join(' ')}" fill="none" stroke="${esc(el.color)}" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>`; }
+  if(el.type==='marker'){ return `<g class="st-el st-marker${sel}" data-eid="${i}"><circle cx="${el.x}" cy="${el.y}" r="24" fill="${esc(el.color)}" stroke="#0009" stroke-width="3"/><text x="${el.x}" y="${el.y+9}" font-size="26" font-weight="800" text-anchor="middle" fill="${stTextOn(el.color)}" style="pointer-events:none">${esc(el.label||'')}</text></g>`; }
+  if(el.type==='text'){ return `<text class="st-el${sel}" data-eid="${i}" x="${el.x}" y="${el.y}" font-size="34" font-weight="800" fill="${esc(el.color)}" stroke="#000" stroke-width="1" paint-order="stroke">${esc(el.text||'')}</text>`; }
+  return '';
+}
+function stDrawPreview(){
+  const d=ST_DRAW; if(!d) return '';
+  if(d.type==='arrow'||d.type==='line'){ const m=d.type==='arrow'?' marker-end="url(#st-ah)"':'';
+    return `<line x1="${d.x1}" y1="${d.y1}" x2="${d.x2}" y2="${d.y2}" stroke="${esc(d.color)}" stroke-width="7" stroke-linecap="round" opacity=".8"${m}/>`; }
+  if(d.type==='pen'){ return `<polyline points="${d.pts.map(p=>p.map(n=>Math.round(n)).join(',')).join(' ')}" fill="none" stroke="${esc(d.color)}" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" opacity=".85"/>`; }
+  return '';
+}
+function stRedraw(){ const g=document.getElementById("stEls"); if(g) g.innerHTML=ST_EDIT.els.map((e,i)=>stElSvg(e,i)).join("")+stDrawPreview(); }
+function stPt(e,svg){ const r=svg.getBoundingClientRect(); return [Math.max(0,Math.min(1000,(e.clientX-r.left)/r.width*1000)),Math.max(0,Math.min(1000,(e.clientY-r.top)/r.height*1000))]; }
+function stNextMarkerLabel(){ let n=0; ST_EDIT.els.forEach(e=>{ if(e.type==='marker'){ const v=parseInt(e.label,10); if(!isNaN(v)&&v>n) n=v; } }); return String(n+1); }
+function stWireEditor(){
+  const ed=document.getElementById("stEditor"), svg=document.getElementById("stSvg");
+  ed.querySelector("#stName").oninput=e=>ST_EDIT.name=e.target.value;
+  ed.querySelector("#stChangeMap").onclick=()=>renderMapPicker();
+  ed.querySelector("#stCancel").onclick=()=>{ ed.classList.add("hidden"); ed.innerHTML=""; ST_EDIT=null; };
+  ed.querySelector("#stSave").onclick=saveStrat;
+  ed.querySelector("#stClear").onclick=()=>{ if(!ST_EDIT.els.length) return; if(confirm("Effacer tous les éléments ?")){ ST_EDIT.els=[]; ST_SEL=null; stRedraw(); } };
+  ed.querySelector("#stDelSel").onclick=()=>{ if(ST_SEL!=null){ ST_EDIT.els.splice(ST_SEL,1); ST_SEL=null; stRedraw(); } };
+  ed.querySelectorAll(".st-tool").forEach(b=>b.onclick=()=>{ ST_TOOL=b.dataset.tool; ST_SEL=null; ed.querySelectorAll(".st-tool").forEach(x=>x.classList.toggle("on",x===b)); const tn=document.getElementById("stToolName"); if(tn)tn.textContent=(ST_TOOLS.find(t=>t[0]===ST_TOOL)||[])[1]||''; stRedraw(); });
+  ed.querySelectorAll(".st-color").forEach(b=>b.onclick=()=>{ ST_COLOR=b.dataset.color; ed.querySelectorAll(".st-color").forEach(x=>x.classList.toggle("on",x===b)); });
+  svg.onpointerdown=e=>{
+    e.preventDefault(); const p=stPt(e,svg); const hit=e.target.closest("[data-eid]"); const eid=hit?+hit.dataset.eid:null;
+    if(ST_TOOL==='erase'){ if(eid!=null){ ST_EDIT.els.splice(eid,1); ST_SEL=null; stRedraw(); } return; }
+    if(ST_TOOL==='select'){ if(eid!=null){ ST_SEL=eid; ST_MOVE={eid,ox:p[0],oy:p[1],orig:ST_EDIT.els[eid]}; svg.setPointerCapture(e.pointerId); } else { ST_SEL=null; } stRedraw(); return; }
+    if(ST_TOOL==='marker'){ ST_EDIT.els.push({type:'marker',color:ST_COLOR,x:Math.round(p[0]),y:Math.round(p[1]),label:stNextMarkerLabel()}); stRedraw(); return; }
+    if(ST_TOOL==='text'){ const t=prompt("Texte :"); if(t&&t.trim()){ ST_EDIT.els.push({type:'text',color:ST_COLOR,x:Math.round(p[0]),y:Math.round(p[1]),text:t.trim().slice(0,60)}); stRedraw(); } return; }
+    if(ST_TOOL==='pen'){ ST_DRAW={type:'pen',color:ST_COLOR,pts:[[p[0],p[1]]]}; svg.setPointerCapture(e.pointerId); return; }
+    ST_DRAW={type:ST_TOOL,color:ST_COLOR,x1:p[0],y1:p[1],x2:p[0],y2:p[1]}; svg.setPointerCapture(e.pointerId);
+  };
+  svg.onpointermove=e=>{
+    if(ST_MOVE){ const p=stPt(e,svg); ST_EDIT.els[ST_MOVE.eid]=stTranslate(ST_MOVE.orig,p[0]-ST_MOVE.ox,p[1]-ST_MOVE.oy); stRedraw(); return; }
+    if(!ST_DRAW) return; const p=stPt(e,svg);
+    if(ST_DRAW.type==='pen'){ ST_DRAW.pts.push([p[0],p[1]]); } else { ST_DRAW.x2=p[0]; ST_DRAW.y2=p[1]; }
+    stRedraw();
+  };
+  svg.onpointerup=e=>{
+    try{ svg.releasePointerCapture(e.pointerId); }catch(_){}
+    if(ST_MOVE){ ST_MOVE=null; return; }
+    if(!ST_DRAW){ return; }
+    const d=ST_DRAW; ST_DRAW=null;
+    if(d.type==='pen'){ if(d.pts.length>1) ST_EDIT.els.push(d); }
+    else { if(Math.hypot(d.x2-d.x1,d.y2-d.y1)>12) ST_EDIT.els.push(d); }
+    stRedraw();
+  };
+}
+async function saveStrat(){
+  if(!ST_EDIT.map){ alert("Choisis une carte."); return; }
+  const payload={ id:ST_EDIT.id||null, name:(ST_EDIT.name||"Stratégie").trim()||"Stratégie", map:ST_EDIT.map, elements:ST_EDIT.els };
+  const btn=document.getElementById("stSave"); if(btn){btn.disabled=true;btn.textContent="Enregistrement…";}
+  const r=await fnCall("strategies",{session:localStorage.getItem(LS_SESSION),action:"save",strategy:payload});
+  if(!r.ok){ if(btn){btn.disabled=false;btn.textContent="✓ Enregistrer";} alert("Erreur : "+(r.j.error||r.status)); return; }
+  const ed=document.getElementById("stEditor"); ed.classList.add("hidden"); ed.innerHTML=""; ST_EDIT=null;
+  loadStrats();
+}
+async function deleteStrat(id){
+  if(!confirm("Supprimer cette stratégie ?")) return;
+  const r=await fnCall("strategies",{session:localStorage.getItem(LS_SESSION),action:"delete",id:Number(id)});
+  if(!r.ok){ alert("Erreur : "+(r.j.error||r.status)); return; }
+  loadStrats();
+}
+function openStratView(s){
+  if(!s) return;
+  const ed=document.getElementById("stEditor"); ed.classList.remove("hidden");
+  const els=(s.elements||[]);
+  ed.innerHTML=`<div class="card st-shell dashx"><div class="st-top"><b class="tl-view-name">${esc(s.name||"Stratégie")} <span class="st-view-map">· ${esc(ST_MAPNAME[s.map]||prettyMap(s.map))}</span></b><div class="st-top-act">${STRAT_CANEDIT?`<button class="btn" id="stEditThis">✎ Modifier</button>`:""}<button class="btn" id="stCloseView">Fermer</button></div></div>
+    <div class="st-stage-wrap"><svg class="st-svg st-svg-view" viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg">
+      <defs><marker id="st-ah" markerWidth="4.5" markerHeight="4.5" refX="3" refY="2.25" orient="auto"><path d="M0,0 L4.5,2.25 L0,4.5 z" fill="context-stroke"/></marker></defs>
+      <image href="maps/top/${esc(s.map||'')}.jpg" x="0" y="0" width="1000" height="1000" preserveAspectRatio="none"/>
+      <g>${els.map((e,i)=>stElSvg(e,i)).join("")}</g></svg></div>
+    <div class="tl-card-by">Par ${esc(s.created_by_name||"?")}</div></div>`;
+  document.getElementById("stCloseView").onclick=()=>{ ed.classList.add("hidden"); ed.innerHTML=""; };
+  const eb=document.getElementById("stEditThis"); if(eb) eb.onclick=()=>openStratEditor(s);
   ed.scrollIntoView({behavior:"smooth",block:"start"});
 }
 
