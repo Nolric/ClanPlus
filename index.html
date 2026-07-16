@@ -1059,6 +1059,34 @@
   .st-count{margin-left:auto;display:flex;gap:7px;align-items:center}
   .st-cnt{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:800;color:#e9ecef;padding:4px 11px 4px 8px;border-radius:999px;background:#1a1b1e;border:1px solid #2b2d31}
   .st-cnt i{width:11px;height:11px;border-radius:50%;display:inline-block}
+  /* barre d'étapes (slideshow) */
+  .st-stepsbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 16px;background:#0c0d0f;border-bottom:1px solid #202226}
+  .st-steptabs{display:inline-flex;gap:5px;flex-wrap:wrap}
+  .st-steptab{width:30px;height:30px;background:#1a1b1e;border:1px solid #2b2d31;color:#c2c5cb;border-radius:8px;font:inherit;font-size:13px;font-weight:800;cursor:pointer}
+  .st-steptab.on{background:var(--gold-soft);border-color:var(--gold);color:var(--gold)}
+  .st-stepadd{width:30px;height:30px;background:#1a1b1e;border:1px dashed #3a3d42;color:#8fe07a;border-radius:8px;font-size:17px;font-weight:700;cursor:pointer;line-height:1}
+  .st-stepadd:hover{border-color:#5dbb46}
+  .st-steps-act{margin-left:auto;display:flex;gap:6px}
+  .st-present{background:var(--gold-soft);border:1px solid var(--gold);color:var(--gold);font-weight:700}
+  .st-present:hover{background:var(--gold);color:#12110d}
+  /* navigation d'étape en consultation */
+  .st-viewnav{display:flex;align-items:center;justify-content:center;gap:14px;padding:12px 16px 0}
+  .st-navbtn{width:42px;font-size:18px;font-weight:800;padding:6px 0}
+  .st-viewind{font-size:13px;font-weight:800;color:var(--gold);min-width:98px;text-align:center}
+  /* overlay présentation plein écran */
+  .st-present-ov{position:fixed;inset:0;z-index:9999;background:#08090b;display:flex;flex-direction:column;align-items:center;padding:14px;gap:12px}
+  .st-present-top{width:100%;max-width:1100px;display:flex;align-items:center;gap:12px;color:#ece6d6}
+  .st-present-top b{font-size:18px}
+  .st-present-map{color:#9a9280;font-size:14px}
+  .st-present-x{margin-left:auto;background:#1a1b1e;border:1px solid #2b2d31;color:#c2c5cb;width:38px;height:38px;border-radius:9px;font-size:16px;cursor:pointer}
+  .st-present-x:hover{border-color:#c9484a;color:#e46b6d}
+  .st-present-stage{flex:1;min-height:0;display:flex;justify-content:center;align-items:center;width:100%}
+  .st-present-stage svg{height:100%;max-height:100%;max-width:100%;aspect-ratio:1;border-radius:10px;background:#000;border:1px solid #2b2d31}
+  .st-present-nav{display:flex;align-items:center;gap:18px;padding-bottom:4px}
+  .st-pbtn{background:var(--gold-soft);border:1px solid var(--gold);color:var(--gold);border-radius:10px;padding:11px 20px;font:inherit;font-size:15px;font-weight:700;cursor:pointer}
+  .st-pbtn:hover:not(:disabled){background:var(--gold);color:#12110d}
+  .st-pbtn:disabled{opacity:.3;cursor:default}
+  .st-present-ind{font-size:15px;font-weight:800;color:#ece6d6;min-width:112px;text-align:center}
   /* stage */
   .st-stage-wrap{padding:14px;background:#0c0d0f;display:flex;justify-content:center}
   .st-svg{width:100%;max-width:660px;aspect-ratio:1;border-radius:10px;background:#000;border:1px solid #2b2d31;touch-action:none;cursor:crosshair;display:block}
@@ -4440,6 +4468,9 @@ let ST_TOOL='arrow', ST_COLOR='#e5544b', ST_SEL=null, ST_DRAW=null, ST_MOVE=null
 let ST_TANK={cls:'medium',color:'#5dbb46'};   // "pinceau" pion de char courant (classe + couleur choisie)
 const ST_TANK_COLORS=[["#5dbb46","Vert (alliés)"],["#e0483f","Rouge (ennemis)"],["#e5c84b","Jaune"],["#5bb0e5","Bleu"],["#c264ff","Violet"],["#ffffff","Blanc"]];
 let ST_UNDO=[], ST_REDO=[];          // historique annuler/refaire (snapshots JSON de ST_EDIT.els)
+let ST_STEP=0;                       // étape courante (slideshow) ; ST_EDIT.els = ST_EDIT.steps[ST_STEP].els
+// construit les étapes d'une stratégie (nouveau format .steps, sinon .elements sur 1 étape)
+function stStepsOf(s){ if(s&&Array.isArray(s.steps)&&s.steps.length) return s.steps.map(st=>({els:Array.isArray(st.els)?JSON.parse(JSON.stringify(st.els)):[]})); const e=(s&&Array.isArray(s.elements))?JSON.parse(JSON.stringify(s.elements)):[]; return [{els:e}]; }
 const ST_MAPS=[
   ["himmelsdorf","Himmelsdorf"],["ensk","Ensk"],["lakeville","Lakeville"],["redshire","Redshire"],
   ["prohorovka","Prokhorovka"],["murovanka","Murovanka"],["malinovka","Malinovka"],["ruinberg","Ruinberg"],
@@ -4494,7 +4525,8 @@ function renderStrats(){
   if(!STRATS.length){ el.innerHTML=`<div class="lo-empty"><div class="lo-empty-ic">🗺️</div><div class="lo-empty-t">Aucune stratégie</div><div class="lo-empty-s">${STRAT_CANEDIT?'Clique « Nouvelle stratégie » pour en dessiner une.':'Les officiers n’ont pas encore préparé de stratégie.'}</div></div>`; return; }
   el.innerHTML='<div class="tl-cards">'+STRATS.map(s=>{
     const btns=STRAT_CANEDIT?`<div class="tl-cardact"><button class="lo-mini" data-stedit="${s.id}" title="Modifier">✎</button><button class="lo-mini lo-minidel" data-stdel="${s.id}" title="Supprimer">✕</button></div>`:"";
-    return `<div class="tl-card st-card" data-stopen="${s.id}"><div class="st-card-map"><img src="maps/top/${esc(s.map||'')}.jpg" onerror="this.style.opacity='.12'"><span class="st-card-mapn">${esc(ST_MAPNAME[s.map]||prettyMap(s.map))}</span></div><div class="tl-card-h"><b>${esc(s.name||"Stratégie")}</b>${btns}</div><div class="tl-card-by">${(s.elements||[]).length} éléments · par ${esc(s.created_by_name||"?")}</div></div>`;
+    const nst=(s.steps&&s.steps.length)||1; const meta=nst>1?`${nst} étapes`:`${(s.elements||[]).length} éléments`;
+    return `<div class="tl-card st-card" data-stopen="${s.id}"><div class="st-card-map"><img src="maps/top/${esc(s.map||'')}.jpg" onerror="this.style.opacity='.12'"><span class="st-card-mapn">${esc(ST_MAPNAME[s.map]||prettyMap(s.map))}</span></div><div class="tl-card-h"><b>${esc(s.name||"Stratégie")}</b>${btns}</div><div class="tl-card-by">${meta} · par ${esc(s.created_by_name||"?")}</div></div>`;
   }).join("")+'</div>';
   el.querySelectorAll("[data-stopen]").forEach(c=>c.onclick=e=>{ if(e.target.closest("[data-stedit],[data-stdel]"))return; openStratView(STRATS.find(x=>String(x.id)===c.dataset.stopen)); });
   el.querySelectorAll("[data-stedit]").forEach(b=>b.onclick=e=>{e.stopPropagation();openStratEditor(STRATS.find(x=>String(x.id)===b.dataset.stedit));});
@@ -4502,7 +4534,8 @@ function renderStrats(){
 }
 function openStratEditor(s){
   if(!STRAT_CANEDIT){ alert("Réservé aux officiers de combat et plus."); return; }
-  ST_EDIT={ id:(s&&s.id)||null, name:(s&&s.name)||"Nouvelle stratégie", map:(s&&s.map)||"", mode:(s&&s.mode)||"ctf", els:(s&&Array.isArray(s.elements))?JSON.parse(JSON.stringify(s.elements)):[] };
+  ST_EDIT={ id:(s&&s.id)||null, name:(s&&s.name)||"Nouvelle stratégie", map:(s&&s.map)||"", mode:(s&&s.mode)||"ctf", steps:stStepsOf(s) };
+  ST_STEP=0; ST_EDIT.els=ST_EDIT.steps[0].els;
   ST_SEL=null; ST_UNDO=[]; ST_REDO=[];
   if(!ST_EDIT.map) renderMapPicker(); else renderStratEditor();
   document.getElementById("stEditor").scrollIntoView({behavior:"smooth",block:"start"});
@@ -4525,12 +4558,13 @@ function renderStratEditor(){
       <div class="st-top-act"><button class="btn" id="stChangeMap">🗺️ Carte</button><button class="btn" id="stCancel">Annuler</button><button class="btn tl-save" id="stSave">✓ Enregistrer</button></div></div>
     <div class="st-toolbar"><div class="st-tools">${tools}</div><div class="st-colors">${colors}</div>${modeSel}<div class="st-tb-act"><button class="btn st-mini2" id="stUndo" title="Annuler (Ctrl+Z)">↶</button><button class="btn st-mini2" id="stRedo" title="Refaire (Ctrl+Y)">↷</button><button class="btn st-mini2" id="stDup" title="Dupliquer l'élément sélectionné">⧉ Dupliquer</button><button class="btn st-mini2" id="stDelSel" title="Supprimer l'élément sélectionné">Suppr.</button><button class="btn st-mini2" id="stClear" title="Tout effacer">Vider</button></div></div>
     <div class="st-tankbar"><span class="st-tankbar-l">Chars</span><div class="st-classsel" style="--tc:${ST_TANK.color}">${ST_CLASSES.map(c=>`<button type="button" class="st-class${ST_TANK.cls===c[0]?' on':''}" data-cls="${c[0]}" title="Char ${c[1]}"><span class="ic" style="-webkit-mask:url(strat/class_${c[0]}.png) center/contain no-repeat;mask:url(strat/class_${c[0]}.png) center/contain no-repeat"></span><span class="lbl">${c[1]}</span></button>`).join("")}</div><div class="st-tank-cols">${ST_TANK_COLORS.map(c=>`<button type="button" class="st-tcol${ST_TANK.color===c[0]?' on':''}" data-tcol="${c[0]}" title="${esc(c[1])}" style="background:${c[0]}"></button>`).join("")}</div><div class="st-count" id="stCount"></div></div>
+    <div class="st-stepsbar"><span class="st-tankbar-l">Étapes</span><div class="st-steptabs" id="stStepTabs"></div><div class="st-steps-act"><button class="btn st-mini2" id="stStepDel" title="Supprimer l'étape courante">🗑 Étape</button><button class="btn st-present" id="stPresent" title="Dérouler la stratégie en plein écran">▶ Présenter</button></div></div>
     <div class="st-stage-wrap"><svg class="st-svg" id="stSvg" viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg">
       <defs><marker id="st-ah" markerWidth="4.5" markerHeight="4.5" refX="3" refY="2.25" orient="auto"><path d="M0,0 L4.5,2.25 L0,4.5 z" fill="context-stroke"/></marker></defs>
       <image href="maps/top/${esc(ST_EDIT.map)}.jpg" x="0" y="0" width="1000" height="1000" preserveAspectRatio="none"/>
       <g id="stBases" style="pointer-events:none">${stBasesSvg(ST_EDIT.map,ST_EDIT.mode)}</g>
       <g id="stEls"></g></svg></div>
-    <div class="st-hint">Outil <b id="stToolName">${esc((ST_TOOLS.find(t=>t[0]===ST_TOOL)||[])[1]||'')}</b> — <b>Chars</b> : choisis une couleur + une classe, puis clique sur la carte. <b>Double-clic</b> sur un char pour le nommer. Sélection : glisse pour déplacer. Ctrl+Z annuler.</div></div>`;
+    <div class="st-hint">Outil <b id="stToolName">${esc((ST_TOOLS.find(t=>t[0]===ST_TOOL)||[])[1]||'')}</b> — <b>Chars</b> : choisis une couleur + une classe, puis clique sur la carte. <b>Double-clic</b> sur un char pour le nommer. <b>Étapes</b> : « + » ajoute une phase (copie l'étape), puis déplace les pions. « ▶ Présenter » déroule le tout.</div></div>`;
   stRedraw();
   stWireEditor();
 }
@@ -4566,8 +4600,17 @@ function stPt(e,svg){ const r=svg.getBoundingClientRect(); return [Math.max(0,Ma
 function stNextMarkerLabel(){ let n=0; ST_EDIT.els.forEach(e=>{ if(e.type==='marker'){ const v=parseInt(e.label,10); if(!isNaN(v)&&v>n) n=v; } }); return String(n+1); }
 // -- historique annuler / refaire --
 function stSnapshot(){ if(!ST_EDIT) return; ST_UNDO.push(JSON.stringify(ST_EDIT.els)); if(ST_UNDO.length>80) ST_UNDO.shift(); ST_REDO.length=0; stUpdUndoBtns(); }
-function stUndo(){ if(!ST_UNDO.length) return; ST_REDO.push(JSON.stringify(ST_EDIT.els)); ST_EDIT.els=JSON.parse(ST_UNDO.pop()); ST_SEL=null; stRedraw(); stUpdCount(); stUpdUndoBtns(); }
-function stRedo(){ if(!ST_REDO.length) return; ST_UNDO.push(JSON.stringify(ST_EDIT.els)); ST_EDIT.els=JSON.parse(ST_REDO.pop()); ST_SEL=null; stRedraw(); stUpdCount(); stUpdUndoBtns(); }
+function stSetEls(a){ ST_EDIT.els=a; if(ST_EDIT.steps&&ST_EDIT.steps[ST_STEP]) ST_EDIT.steps[ST_STEP].els=a; }
+function stUndo(){ if(!ST_UNDO.length) return; ST_REDO.push(JSON.stringify(ST_EDIT.els)); stSetEls(JSON.parse(ST_UNDO.pop())); ST_SEL=null; stRedraw(); stUpdCount(); stUpdUndoBtns(); }
+function stRedo(){ if(!ST_REDO.length) return; ST_UNDO.push(JSON.stringify(ST_EDIT.els)); stSetEls(JSON.parse(ST_REDO.pop())); ST_SEL=null; stRedraw(); stUpdCount(); stUpdUndoBtns(); }
+// -- étapes (slideshow) --
+function renderStepTabs(){ const c=document.getElementById("stStepTabs"); if(!c||!ST_EDIT.steps) return;
+  c.innerHTML=ST_EDIT.steps.map((st,i)=>`<button type="button" class="st-steptab${i===ST_STEP?' on':''}" data-step="${i}" title="Étape ${i+1}">${i+1}</button>`).join("")+(ST_EDIT.steps.length<12?`<button type="button" class="st-stepadd" id="stStepAdd" title="Ajouter une étape (copie l'étape actuelle)">+</button>`:'');
+  c.querySelectorAll(".st-steptab").forEach(b=>b.onclick=()=>stGoStep(+b.dataset.step));
+  const add=c.querySelector("#stStepAdd"); if(add) add.onclick=stAddStep; }
+function stGoStep(i){ if(!ST_EDIT.steps||i<0||i>=ST_EDIT.steps.length||i===ST_STEP) return; ST_STEP=i; ST_EDIT.els=ST_EDIT.steps[i].els; ST_SEL=null; ST_UNDO=[]; ST_REDO=[]; renderStepTabs(); stRedraw(); stUpdCount(); stUpdUndoBtns(); }
+function stAddStep(){ if(ST_EDIT.steps.length>=12){ alert("Maximum 12 étapes."); return; } ST_EDIT.steps.splice(ST_STEP+1,0,{els:JSON.parse(JSON.stringify(ST_EDIT.els))}); ST_STEP++; ST_EDIT.els=ST_EDIT.steps[ST_STEP].els; ST_SEL=null; ST_UNDO=[]; ST_REDO=[]; renderStepTabs(); stRedraw(); stUpdCount(); stUpdUndoBtns(); }
+function stDelStep(){ if(ST_EDIT.steps.length<=1){ alert("Il faut au moins une étape."); return; } if(!confirm("Supprimer l'étape "+(ST_STEP+1)+" ?")) return; ST_EDIT.steps.splice(ST_STEP,1); if(ST_STEP>=ST_EDIT.steps.length) ST_STEP=ST_EDIT.steps.length-1; ST_EDIT.els=ST_EDIT.steps[ST_STEP].els; ST_SEL=null; ST_UNDO=[]; ST_REDO=[]; renderStepTabs(); stRedraw(); stUpdCount(); stUpdUndoBtns(); }
 function stUpdUndoBtns(){ const u=document.getElementById("stUndo"),r=document.getElementById("stRedo"); if(u)u.disabled=!ST_UNDO.length; if(r)r.disabled=!ST_REDO.length; }
 // -- compteur de chars par équipe --
 function stUpdCount(){ const el=document.getElementById("stCount"); if(!el||!ST_EDIT) return; const by={},order=[]; ST_EDIT.els.forEach(x=>{ if(x.type==='tank'){ const c=x.color||'#5dbb46'; if(by[c]===undefined){by[c]=0;order.push(c);} by[c]++; } }); el.innerHTML=order.map(c=>`<span class="st-cnt"><i style="background:${c}"></i>${by[c]}</span>`).join(''); }
@@ -4590,7 +4633,9 @@ function stWireEditor(){
   ed.querySelector("#stChangeMap").onclick=()=>renderMapPicker();
   ed.querySelector("#stCancel").onclick=()=>{ ed.classList.add("hidden"); ed.innerHTML=""; ST_EDIT=null; };
   ed.querySelector("#stSave").onclick=saveStrat;
-  ed.querySelector("#stClear").onclick=()=>{ if(!ST_EDIT.els.length) return; if(confirm("Effacer tous les éléments ?")){ stSnapshot(); ST_EDIT.els=[]; ST_SEL=null; stRedraw(); stUpdCount(); } };
+  ed.querySelector("#stClear").onclick=()=>{ if(!ST_EDIT.els.length) return; if(confirm("Effacer tous les éléments de cette étape ?")){ stSnapshot(); stSetEls([]); ST_SEL=null; stRedraw(); stUpdCount(); } };
+  ed.querySelector("#stStepDel").onclick=stDelStep;
+  ed.querySelector("#stPresent").onclick=()=>stPresent(ST_EDIT.steps,ST_EDIT.map,ST_EDIT.mode,ST_EDIT.name,ST_STEP);
   ed.querySelector("#stDelSel").onclick=()=>{ if(ST_SEL!=null){ stSnapshot(); ST_EDIT.els.splice(ST_SEL,1); ST_SEL=null; stRedraw(); stUpdCount(); } };
   ed.querySelector("#stDup").onclick=()=>{ if(ST_SEL!=null){ stSnapshot(); const c=stTranslate(ST_EDIT.els[ST_SEL],28,28); ST_EDIT.els.push(c); ST_SEL=ST_EDIT.els.length-1; stRedraw(); stUpdCount(); } };
   ed.querySelector("#stUndo").onclick=stUndo;
@@ -4627,15 +4672,16 @@ function stWireEditor(){
   };
   svg.ondblclick=e=>{ const hit=e.target.closest("[data-eid]"); if(hit) stRename(+hit.dataset.eid); };
   ed.querySelector(".st-svg").onkeydown=null;
-  if(!ed._stKeys){ ed._stKeys=true; document.addEventListener("keydown",e=>{ if(!ST_EDIT||document.getElementById("stEditor").classList.contains("hidden"))return; const t=e.target.tagName; if(t==='INPUT'||t==='TEXTAREA'||t==='SELECT')return;
+  if(!ed._stKeys){ ed._stKeys=true; document.addEventListener("keydown",e=>{ if(!ST_EDIT||document.getElementById("stEditor").classList.contains("hidden")||document.getElementById("stPresentOv"))return; const t=e.target.tagName; if(t==='INPUT'||t==='TEXTAREA'||t==='SELECT')return;
     if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){ e.preventDefault(); e.shiftKey?stRedo():stUndo(); }
     else if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='y'){ e.preventDefault(); stRedo(); }
     else if((e.key==='Delete'||e.key==='Backspace')&&ST_SEL!=null){ e.preventDefault(); stSnapshot(); ST_EDIT.els.splice(ST_SEL,1); ST_SEL=null; stRedraw(); stUpdCount(); } }); }
-  stTankSync(); stUpdCount(); stUpdUndoBtns();
+  stTankSync(); stUpdCount(); stUpdUndoBtns(); renderStepTabs();
 }
 async function saveStrat(){
   if(!ST_EDIT.map){ alert("Choisis une carte."); return; }
-  const payload={ id:ST_EDIT.id||null, name:(ST_EDIT.name||"Stratégie").trim()||"Stratégie", map:ST_EDIT.map, mode:ST_EDIT.mode||"ctf", elements:ST_EDIT.els };
+  const steps=ST_EDIT.steps.map(st=>({els:st.els}));
+  const payload={ id:ST_EDIT.id||null, name:(ST_EDIT.name||"Stratégie").trim()||"Stratégie", map:ST_EDIT.map, mode:ST_EDIT.mode||"ctf", steps, elements:steps[0].els };
   const btn=document.getElementById("stSave"); if(btn){btn.disabled=true;btn.textContent="Enregistrement…";}
   const r=await fnCall("strategies",{session:localStorage.getItem(LS_SESSION),action:"save",strategy:payload});
   if(!r.ok){ if(btn){btn.disabled=false;btn.textContent="✓ Enregistrer";} alert("Erreur : "+(r.j.error||r.status)); return; }
@@ -4651,17 +4697,46 @@ async function deleteStrat(id){
 function openStratView(s){
   if(!s) return;
   const ed=document.getElementById("stEditor"); ed.classList.remove("hidden");
-  const els=(s.elements||[]);
-  ed.innerHTML=`<div class="card st-shell dashx"><div class="st-top"><b class="tl-view-name">${esc(s.name||"Stratégie")} <span class="st-view-map">· ${esc(ST_MAPNAME[s.map]||prettyMap(s.map))}</span></b><div class="st-top-act">${STRAT_CANEDIT?`<button class="btn" id="stEditThis">✎ Modifier</button>`:""}<button class="btn" id="stCloseView">Fermer</button></div></div>
+  const steps=stStepsOf(s); let idx=0;
+  const nav=steps.length>1?`<div class="st-viewnav"><button class="btn st-navbtn" id="stvPrev">‹</button><span class="st-viewind" id="stvInd"></span><button class="btn st-navbtn" id="stvNext">›</button></div>`:'';
+  ed.innerHTML=`<div class="card st-shell dashx"><div class="st-top"><b class="tl-view-name">${esc(s.name||"Stratégie")} <span class="st-view-map">· ${esc(ST_MAPNAME[s.map]||prettyMap(s.map))}</span></b><div class="st-top-act"><button class="btn st-present" id="stvPresent" title="Plein écran">⛶ Présenter</button>${STRAT_CANEDIT?`<button class="btn" id="stEditThis">✎ Modifier</button>`:""}<button class="btn" id="stCloseView">Fermer</button></div></div>
+    ${nav}
     <div class="st-stage-wrap"><svg class="st-svg st-svg-view" viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg">
       <defs><marker id="st-ah" markerWidth="4.5" markerHeight="4.5" refX="3" refY="2.25" orient="auto"><path d="M0,0 L4.5,2.25 L0,4.5 z" fill="context-stroke"/></marker></defs>
       <image href="maps/top/${esc(s.map||'')}.jpg" x="0" y="0" width="1000" height="1000" preserveAspectRatio="none"/>
       <g style="pointer-events:none">${stBasesSvg(s.map,s.mode||'ctf')}</g>
-      <g>${els.map((e,i)=>stElSvg(e,i)).join("")}</g></svg></div>
+      <g id="stvEls"></g></svg></div>
     <div class="tl-card-by">Par ${esc(s.created_by_name||"?")}</div></div>`;
+  function draw(){ document.getElementById("stvEls").innerHTML=steps[idx].els.map((e,i)=>stElSvg(e,i)).join("");
+    const ind=document.getElementById("stvInd"); if(ind) ind.textContent=`Étape ${idx+1} / ${steps.length}`;
+    const p=document.getElementById("stvPrev"),n=document.getElementById("stvNext"); if(p)p.disabled=idx===0; if(n)n.disabled=idx===steps.length-1; }
+  const pv=document.getElementById("stvPrev"); if(pv) pv.onclick=()=>{ if(idx>0){idx--;draw();} };
+  const nx=document.getElementById("stvNext"); if(nx) nx.onclick=()=>{ if(idx<steps.length-1){idx++;draw();} };
+  document.getElementById("stvPresent").onclick=()=>stPresent(steps,s.map,s.mode,s.name,idx);
   document.getElementById("stCloseView").onclick=()=>{ ed.classList.add("hidden"); ed.innerHTML=""; };
   const eb=document.getElementById("stEditThis"); if(eb) eb.onclick=()=>openStratEditor(s);
-  ed.scrollIntoView({behavior:"smooth",block:"start"});
+  draw(); ed.scrollIntoView({behavior:"smooth",block:"start"});
+}
+// Mode présentation plein écran : déroule les étapes (‹ › clavier, Échap pour quitter)
+function stPresent(steps,map,mode,name,start){
+  if(!steps||!steps.length) return; let idx=Math.max(0,Math.min(steps.length-1,start||0));
+  const ov=document.createElement("div"); ov.className="st-present-ov"; ov.id="stPresentOv";
+  ov.innerHTML=`<div class="st-present-top"><b>${esc(name||"Stratégie")}</b><span class="st-present-map">${esc(ST_MAPNAME[map]||prettyMap(map))}</span><button class="st-present-x" id="stpX" title="Quitter (Échap)">✕</button></div>
+    <div class="st-present-stage"><svg viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg">
+      <defs><marker id="st-ah" markerWidth="4.5" markerHeight="4.5" refX="3" refY="2.25" orient="auto"><path d="M0,0 L4.5,2.25 L0,4.5 z" fill="context-stroke"/></marker></defs>
+      <image href="maps/top/${esc(map||'')}.jpg" x="0" y="0" width="1000" height="1000" preserveAspectRatio="none"/>
+      <g style="pointer-events:none">${stBasesSvg(map,mode||'ctf')}</g><g id="stpEls"></g></svg></div>
+    <div class="st-present-nav"><button class="st-pbtn" id="stpPrev">‹ Précédent</button><span class="st-present-ind" id="stpInd"></span><button class="st-pbtn" id="stpNext">Suivant ›</button></div>`;
+  document.body.appendChild(ov);
+  function draw(){ ov.querySelector("#stpEls").innerHTML=steps[idx].els.map((e,i)=>stElSvg(e,i)).join("");
+    ov.querySelector("#stpInd").textContent=`Étape ${idx+1} / ${steps.length}`;
+    ov.querySelector("#stpPrev").disabled=idx===0; ov.querySelector("#stpNext").disabled=idx===steps.length-1; }
+  function go(d){ idx=Math.max(0,Math.min(steps.length-1,idx+d)); draw(); }
+  function close(){ document.removeEventListener("keydown",key); if(document.fullscreenElement) document.exitFullscreen().catch(()=>{}); ov.remove(); }
+  function key(e){ if(e.key==="ArrowRight"||e.key===" "){ e.preventDefault(); go(1); } else if(e.key==="ArrowLeft"){ e.preventDefault(); go(-1); } else if(e.key==="Escape"){ close(); } }
+  ov.querySelector("#stpPrev").onclick=()=>go(-1); ov.querySelector("#stpNext").onclick=()=>go(1); ov.querySelector("#stpX").onclick=close;
+  document.addEventListener("keydown",key); draw();
+  if(ov.requestFullscreen) ov.requestFullscreen().catch(()=>{});
 }
 
 /* ============================================================
