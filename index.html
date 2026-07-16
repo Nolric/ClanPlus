@@ -769,7 +769,8 @@
   @media (prefers-reduced-motion:reduce){.dash-anim,.h2-star{animation:none}}
 
   /* Loadouts — cartes premium */
-  .lo-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px}
+  .lo-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;max-width:1080px}
+  @media(max-width:860px){ .lo-cards{grid-template-columns:1fr} }
   .lo-card2{position:relative;background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:var(--shadow-sm);animation:loIn .45s cubic-bezier(.2,.7,.2,1) both;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
   .lo-card2:hover{transform:translateY(-3px);box-shadow:var(--shadow);border-color:var(--cls)}
   .lo-card2::after{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--cls)}
@@ -785,6 +786,9 @@
   .lo-tier{font-size:10px;font-weight:800;background:var(--cls);color:#141310;border-radius:5px;padding:1px 6px;line-height:1.5}
   .lo-fmrow{align-items:center}
   .lo-fmbadge{font-size:10px;font-weight:700;color:var(--cls);background:color-mix(in srgb,var(--cls) 15%,transparent);border:1px solid var(--cls);border-radius:6px;padding:3px 8px;white-space:nowrap}
+  .lo-fmtile{width:auto;min-width:52px}
+  .lo-fmcap{display:flex;flex-direction:column;align-items:center;font-size:8.5px;color:var(--muted);line-height:1.3;text-align:center;margin-top:2px}
+  .lo-fmcap b{font-weight:800;color:var(--cls);font-size:9.5px}
   .lo-pills{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
   .lo-pill{font-size:11px;font-weight:600;background:var(--surface-2);border:1px solid var(--border);border-radius:20px;padding:3px 10px;color:var(--ink-2);font-variant-numeric:tabular-nums}
   .lo-cardact{display:flex;gap:6px;flex:0 0 auto;z-index:2}
@@ -3219,9 +3223,12 @@ const CLS_FR={heavyTank:"Lourd",mediumTank:"Moyen",lightTank:"Léger","AT-SPG":"
 const FMROLE_FR={break:"Percée",assault:"Assaut",support:"Soutien",universal:"Polyvalent",sniper:"Sniper",wheeled:"Roues",temperatureGun:"Soutien"};
 function fmRoleName(tank_id){ if(!LO_FM||!LO_FM.tankTree) return ""; const tk=LO_FM.tankTree[String(tank_id)]; if(!tk) return "";
   if(tk==="role_SPG") return "Artillerie"; return FMROLE_FR[tk.split('_').pop()]||""; }
-// Mods de terrain choisis (paires) d'un loadout, pour l'affichage sur la carte.
+// Mods de terrain choisis (paires) d'un loadout : mod + niveau + côté (gauche/droite).
 function fmCardMods(lo){ if(!LO_FM) return []; const p=(lo.fieldmods&&lo.fieldmods.pairs)||{}, out=[];
-  Object.keys(p).forEach(pk=>{ const side=p[pk]; if(side!=='a'&&side!=='b')return; const pr=LO_FM.pairs[pk]; if(!pr)return; const m=LO_FM.mods[pr[side]]; if(m) out.push(m); }); return out; }
+  const tree=(LO_FM.trees&&LO_FM.trees[LO_FM.tankTree&&LO_FM.tankTree[String(lo.tank_id)]])||[];
+  const lvlOf={}; tree.forEach(n=>{ if(n.kind==='pair') lvlOf[n.ref]=n.lvl; });
+  Object.keys(p).forEach(pk=>{ const side=p[pk]; if(side!=='a'&&side!=='b')return; const pr=LO_FM.pairs[pk]; if(!pr)return; const m=LO_FM.mods[pr[side]]; if(m) out.push({m, lvl:lvlOf[pk]||0, side}); });
+  out.sort((a,b)=>(a.lvl||0)-(b.lvl||0)); return out; }
 function renderLoadouts(){
   const el=document.getElementById("loList"), M=loMaps();
   if(!LOADOUTS.length){
@@ -3260,7 +3267,7 @@ function renderLoadouts(){
       <div class="lo-sec2"><div class="lo-sec2-l">Consommables${co2.length?' A':''}</div><div class="lo-dtiles">${dtiles(co,true)}</div></div>
       ${co2.length?`<div class="lo-sec2"><div class="lo-sec2-l">Conso. B</div><div class="lo-dtiles">${dtiles(co2,true)}</div></div>`:""}
       <div class="lo-sec2"><div class="lo-sec2-l">Compétences</div><div class="lo-dtiles sk">${dtiles(sk,false)}</div></div>
-      ${(fmTags.length||fmMods.length)?`<div class="lo-sec2"><div class="lo-sec2-l">Modif. terrain</div><div class="lo-dtiles lo-fmrow">${fmTags.map(x=>`<span class="lo-fmbadge">${x}</span>`).join("")}${fmMods.map(m=>`<div class="lo-dtile" title="${esc((m.stats||[]).map(s=>s.name).join(', '))}"><div class="lo-dtile-ic">${m.img?`<img src="fieldmods/${esc(m.img)}.png" onerror="this.style.display='none'">`:""}</div></div>`).join("")}</div></div>`:""}
+      ${(fmTags.length||fmMods.length)?`<div class="lo-sec2"><div class="lo-sec2-l">Modif. terrain</div><div class="lo-dtiles lo-fmrow">${fmTags.map(x=>`<span class="lo-fmbadge">${x}</span>`).join("")}${fmMods.map(x=>`<div class="lo-dtile lo-fmtile" title="Niveau ${x.lvl} · ${x.side==='a'?'Gauche':'Droite'} — ${esc((x.m.stats||[]).map(s=>s.name).join(', '))}"><div class="lo-dtile-ic">${x.m.img?`<img src="fieldmods/${esc(x.m.img)}.png" onerror="this.style.display='none'">`:""}</div><span class="lo-fmcap">Niv.${x.lvl}<b>${x.side==='a'?'Gauche':'Droite'}</b></span></div>`).join("")}</div></div>`:""}
       ${lo.notes?`<div class="lo-note2">${esc(lo.notes)}</div>`:""}
       <div class="lo-by2">Recommandé par ${esc(lo.created_by_name||"?")}</div>
     </div>`;
@@ -3308,6 +3315,7 @@ async function openLoadoutEditor(lo){
 }
 function renderWizard(){
   const W=LO_WIZ, ed=document.getElementById("loEditor");
+  const _ft=ed.querySelector('.fm-tree'); const savedScroll=_ft?_ft.scrollTop:0;   // conserve le défilement de l'arbre
   const steps=WIZ_STEPS.map((s,i)=>{ const n=i+1, done=n<W.step, cur=n===W.step, clk=(n===1||W.tank_id);
     return `<button type="button" class="wz-step${cur?' cur':''}${done?' done':''}${clk?'':' lock'}" data-step="${n}">
       <span class="wz-num">${done?'✓':n}</span><span class="wz-lbl">${s[0]}</span></button>`
@@ -3324,6 +3332,7 @@ function renderWizard(){
     <div class="wz-body"><div class="wz-main">${main}</div>${wizSide()}</div>
     <div class="wz-nav">${prev}${next}</div></div>`;
   wizWire();
+  const ft=ed.querySelector('.fm-tree'); if(ft && savedScroll) ft.scrollTop=savedScroll;
 }
 function wizWire(){
   const W=LO_WIZ, ed=document.getElementById("loEditor");
@@ -3576,7 +3585,9 @@ function wizWire5(){
     else if(meta.flag==='cons2') wizSetCons2(!cur);
     else { W.fm.roleSlot=!cur; renderWizard(); } });
   ed.querySelectorAll(".fm-opt").forEach(b=> b.onclick=()=>{ const pk=b.dataset.pair, side=b.dataset.side;
-    W.fm.pairs[pk]=(W.fm.pairs[pk]===side)?null:side; renderWizard(); });
+    const nv=(W.fm.pairs[pk]===side)?null:side; W.fm.pairs[pk]=nv;   // mise à jour sur place (pas de re-render -> pas de saut de défilement)
+    b.closest('.fm-pair').querySelectorAll('.fm-opt').forEach(o=>{ const on=(o.dataset.side===nv); o.classList.toggle('on',on); const c=o.querySelector('.fm-chk'); if(c) c.textContent=on?'✓':''; });
+    wizRefreshSide(); });
   const nt=document.getElementById("wizNotes"); if(nt) nt.oninput=()=>{ W.notes=nt.value; };
 }
 
