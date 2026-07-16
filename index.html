@@ -1040,6 +1040,25 @@
   .st-tb-act{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap}
   .st-mini2{background:#1e1f22;border:1px solid #2b2d31;color:#c9ccd1;border-radius:8px;padding:7px 11px;font:inherit;font-size:12px;font-weight:600;cursor:pointer}
   .st-mini2:hover{border-color:#c9484a;color:#e46b6d}
+  .st-mini2:disabled{opacity:.35;cursor:default}
+  .st-mini2:disabled:hover{border-color:#2b2d31;color:#c9ccd1}
+  /* palette de chars (pions) */
+  .st-tankbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 16px;background:#0e0f11;border-bottom:1px solid #202226}
+  .st-tankbar-l{font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--muted)}
+  .st-classsel{display:inline-flex;gap:6px;--tc:#5dbb46}
+  .st-class{display:inline-flex;flex-direction:column;align-items:center;gap:3px;width:56px;padding:7px 4px 5px;background:#1a1b1e;border:1px solid #2b2d31;border-radius:9px;cursor:pointer;transition:.1s}
+  .st-class .ic{width:30px;height:30px;background:var(--tc);-webkit-mask-size:contain;mask-size:contain}
+  .st-class .lbl{font-size:10px;font-weight:700;color:#aeb2b8;letter-spacing:.02em}
+  .st-class:hover{border-color:#3a3d42}
+  .st-class.on{border-color:var(--tc);background:#222428}
+  .st-class.on .lbl{color:#e9ecef}
+  .st-tank-cols{display:inline-flex;gap:6px;padding-left:12px;border-left:1px solid #24262a}
+  .st-tcol{width:26px;height:26px;border-radius:50%;border:2px solid #2b2d31;cursor:pointer;padding:0;transition:.1s}
+  .st-tcol:hover{transform:scale(1.12)}
+  .st-tcol.on{border-color:#fff;box-shadow:0 0 0 2px var(--gold)}
+  .st-count{margin-left:auto;display:flex;gap:7px;align-items:center}
+  .st-cnt{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:800;color:#e9ecef;padding:4px 11px 4px 8px;border-radius:999px;background:#1a1b1e;border:1px solid #2b2d31}
+  .st-cnt i{width:11px;height:11px;border-radius:50%;display:inline-block}
   /* stage */
   .st-stage-wrap{padding:14px;background:#0c0d0f;display:flex;justify-content:center}
   .st-svg{width:100%;max-width:660px;aspect-ratio:1;border-radius:10px;background:#000;border:1px solid #2b2d31;touch-action:none;cursor:crosshair;display:block}
@@ -4418,6 +4437,9 @@ function openTierlistView(tl){
 let STRATS=[], STRAT_CANEDIT=false, STRAT_LOADED=false;
 let ST_EDIT=null;   // {id,name,map,els:[]}
 let ST_TOOL='arrow', ST_COLOR='#e5544b', ST_SEL=null, ST_DRAW=null, ST_MOVE=null;
+let ST_TANK={cls:'medium',color:'#5dbb46'};   // "pinceau" pion de char courant (classe + couleur choisie)
+const ST_TANK_COLORS=[["#5dbb46","Vert (alliés)"],["#e0483f","Rouge (ennemis)"],["#e5c84b","Jaune"],["#5bb0e5","Bleu"],["#c264ff","Violet"],["#ffffff","Blanc"]];
+let ST_UNDO=[], ST_REDO=[];          // historique annuler/refaire (snapshots JSON de ST_EDIT.els)
 const ST_MAPS=[
   ["himmelsdorf","Himmelsdorf"],["ensk","Ensk"],["lakeville","Lakeville"],["redshire","Redshire"],
   ["prohorovka","Prokhorovka"],["murovanka","Murovanka"],["malinovka","Malinovka"],["ruinberg","Ruinberg"],
@@ -4430,7 +4452,8 @@ const ST_MAPS=[
 ];
 const ST_MAPNAME=Object.fromEntries(ST_MAPS.map(m=>[m[0],m[1]]));
 const ST_COLORS=["#e5544b","#e5c84b","#5bb0e5","#8fd14f","#ffffff","#e59a4b","#c264ff","#141414"];
-const ST_TOOLS=[["select","Déplacer","✋"],["arrow","Flèche","➤"],["line","Trait","／"],["pen","Crayon","✎"],["marker","Jeton","◉"],["text","Texte","T"],["erase","Gomme","⌫"]];
+const ST_TOOLS=[["select","Déplacer","✋"],["tank","Chars","▰"],["arrow","Flèche","➤"],["line","Trait","／"],["pen","Crayon","✎"],["marker","Jeton","◉"],["text","Texte","T"],["erase","Gomme","⌫"]];
+const ST_CLASSES=[["light","Léger"],["medium","Moyen"],["heavy","Lourd"],["td","TD"],["spg","Arto"]];   // classes = silhouettes officielles du jeu (web/strat/class_*.png)
 let ST_BASES=null;   // positions officielles des bases (web/maps_bases.json)
 const ST_MODE_FR={ctf:"Standard",domination:"Rencontre",assault:"Assaut",assault2:"Assaut",comp7:"7 vs 7",epic:"Ligne de front"};
 // convertit une position monde (x,z) en coords minimap 0-1000 selon la boundingBox
@@ -4480,7 +4503,7 @@ function renderStrats(){
 function openStratEditor(s){
   if(!STRAT_CANEDIT){ alert("Réservé aux officiers de combat et plus."); return; }
   ST_EDIT={ id:(s&&s.id)||null, name:(s&&s.name)||"Nouvelle stratégie", map:(s&&s.map)||"", mode:(s&&s.mode)||"ctf", els:(s&&Array.isArray(s.elements))?JSON.parse(JSON.stringify(s.elements)):[] };
-  ST_SEL=null;
+  ST_SEL=null; ST_UNDO=[]; ST_REDO=[];
   if(!ST_EDIT.map) renderMapPicker(); else renderStratEditor();
   document.getElementById("stEditor").scrollIntoView({behavior:"smooth",block:"start"});
 }
@@ -4500,13 +4523,14 @@ function renderStratEditor(){
   ed.innerHTML=`<div class="card st-shell dashx">
     <div class="st-top"><input class="tl-name" id="stName" value="${esc(ST_EDIT.name)}" maxlength="80" placeholder="Nom de la stratégie">
       <div class="st-top-act"><button class="btn" id="stChangeMap">🗺️ Carte</button><button class="btn" id="stCancel">Annuler</button><button class="btn tl-save" id="stSave">✓ Enregistrer</button></div></div>
-    <div class="st-toolbar"><div class="st-tools">${tools}</div><div class="st-colors">${colors}</div>${modeSel}<div class="st-tb-act"><button class="btn st-mini2" id="stDelSel" title="Supprimer l'élément sélectionné">Suppr. élément</button><button class="btn st-mini2" id="stClear" title="Tout effacer">Vider</button></div></div>
+    <div class="st-toolbar"><div class="st-tools">${tools}</div><div class="st-colors">${colors}</div>${modeSel}<div class="st-tb-act"><button class="btn st-mini2" id="stUndo" title="Annuler (Ctrl+Z)">↶</button><button class="btn st-mini2" id="stRedo" title="Refaire (Ctrl+Y)">↷</button><button class="btn st-mini2" id="stDup" title="Dupliquer l'élément sélectionné">⧉ Dupliquer</button><button class="btn st-mini2" id="stDelSel" title="Supprimer l'élément sélectionné">Suppr.</button><button class="btn st-mini2" id="stClear" title="Tout effacer">Vider</button></div></div>
+    <div class="st-tankbar"><span class="st-tankbar-l">Chars</span><div class="st-classsel" style="--tc:${ST_TANK.color}">${ST_CLASSES.map(c=>`<button type="button" class="st-class${ST_TANK.cls===c[0]?' on':''}" data-cls="${c[0]}" title="Char ${c[1]}"><span class="ic" style="-webkit-mask:url(strat/class_${c[0]}.png) center/contain no-repeat;mask:url(strat/class_${c[0]}.png) center/contain no-repeat"></span><span class="lbl">${c[1]}</span></button>`).join("")}</div><div class="st-tank-cols">${ST_TANK_COLORS.map(c=>`<button type="button" class="st-tcol${ST_TANK.color===c[0]?' on':''}" data-tcol="${c[0]}" title="${esc(c[1])}" style="background:${c[0]}"></button>`).join("")}</div><div class="st-count" id="stCount"></div></div>
     <div class="st-stage-wrap"><svg class="st-svg" id="stSvg" viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg">
       <defs><marker id="st-ah" markerWidth="4.5" markerHeight="4.5" refX="3" refY="2.25" orient="auto"><path d="M0,0 L4.5,2.25 L0,4.5 z" fill="context-stroke"/></marker></defs>
       <image href="maps/top/${esc(ST_EDIT.map)}.jpg" x="0" y="0" width="1000" height="1000" preserveAspectRatio="none"/>
       <g id="stBases" style="pointer-events:none">${stBasesSvg(ST_EDIT.map,ST_EDIT.mode)}</g>
       <g id="stEls"></g></svg></div>
-    <div class="st-hint">Outil <b id="stToolName">${esc((ST_TOOLS.find(t=>t[0]===ST_TOOL)||[])[1]||'')}</b> — dessine sur la carte. Jeton/Texte : clique. Sélection : glisse pour déplacer, « Suppr. élément » pour retirer.</div></div>`;
+    <div class="st-hint">Outil <b id="stToolName">${esc((ST_TOOLS.find(t=>t[0]===ST_TOOL)||[])[1]||'')}</b> — <b>Chars</b> : choisis une couleur + une classe, puis clique sur la carte. <b>Double-clic</b> sur un char pour le nommer. Sélection : glisse pour déplacer. Ctrl+Z annuler.</div></div>`;
   stRedraw();
   stWireEditor();
 }
@@ -4524,6 +4548,10 @@ function stElSvg(el,i){
   if(el.type==='pen'){ return `<polyline class="st-el${sel}" data-eid="${i}" points="${el.pts.map(p=>p.map(n=>Math.round(n)).join(',')).join(' ')}" fill="none" stroke="${esc(el.color)}" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>`; }
   if(el.type==='marker'){ return `<g class="st-el st-marker${sel}" data-eid="${i}"><circle cx="${el.x}" cy="${el.y}" r="24" fill="${esc(el.color)}" stroke="#0009" stroke-width="3"/><text x="${el.x}" y="${el.y+9}" font-size="26" font-weight="800" text-anchor="middle" fill="${stTextOn(el.color)}" style="pointer-events:none">${esc(el.label||'')}</text></g>`; }
   if(el.type==='text'){ return `<text class="st-el${sel}" data-eid="${i}" x="${el.x}" y="${el.y}" font-size="34" font-weight="800" fill="${esc(el.color)}" stroke="#000" stroke-width="1" paint-order="stroke">${esc(el.text||'')}</text>`; }
+  if(el.type==='tank'){ const col=el.color||'#5dbb46'; const s=66,h=s/2, cls=(ST_CLASSES.find(c=>c[0]===el.cls)?el.cls:'medium');
+    const nm=String(el.name||'').trim(); const nw=nm?Math.round(nm.length*8.6+16):0;
+    const label=nm?`<g style="pointer-events:none"><rect x="${el.x-nw/2}" y="${el.y+h-6}" width="${nw}" height="21" rx="6" fill="#0c0d0f" fill-opacity=".82"/><text x="${el.x}" y="${el.y+h+9}" font-size="15" font-weight="700" text-anchor="middle" fill="#fff">${esc(nm)}</text></g>`:'';
+    return `<g class="st-el st-tank${sel}" data-eid="${i}"><filter id="stk${i}" x="-45%" y="-45%" width="190%" height="190%"><feFlood flood-color="${esc(col)}" result="f"/><feComposite in="f" in2="SourceAlpha" operator="in" result="s"/><feDropShadow in="s" dx="0" dy="0" stdDeviation="3.4" flood-color="#000" flood-opacity=".92"/></filter><image href="strat/class_${cls}.png" x="${el.x-h}" y="${el.y-h}" width="${s}" height="${s}" filter="url(#stk${i})"/>${label}</g>`; }
   return '';
 }
 function stDrawPreview(){
@@ -4536,28 +4564,54 @@ function stDrawPreview(){
 function stRedraw(){ const g=document.getElementById("stEls"); if(g) g.innerHTML=ST_EDIT.els.map((e,i)=>stElSvg(e,i)).join("")+stDrawPreview(); }
 function stPt(e,svg){ const r=svg.getBoundingClientRect(); return [Math.max(0,Math.min(1000,(e.clientX-r.left)/r.width*1000)),Math.max(0,Math.min(1000,(e.clientY-r.top)/r.height*1000))]; }
 function stNextMarkerLabel(){ let n=0; ST_EDIT.els.forEach(e=>{ if(e.type==='marker'){ const v=parseInt(e.label,10); if(!isNaN(v)&&v>n) n=v; } }); return String(n+1); }
+// -- historique annuler / refaire --
+function stSnapshot(){ if(!ST_EDIT) return; ST_UNDO.push(JSON.stringify(ST_EDIT.els)); if(ST_UNDO.length>80) ST_UNDO.shift(); ST_REDO.length=0; stUpdUndoBtns(); }
+function stUndo(){ if(!ST_UNDO.length) return; ST_REDO.push(JSON.stringify(ST_EDIT.els)); ST_EDIT.els=JSON.parse(ST_UNDO.pop()); ST_SEL=null; stRedraw(); stUpdCount(); stUpdUndoBtns(); }
+function stRedo(){ if(!ST_REDO.length) return; ST_UNDO.push(JSON.stringify(ST_EDIT.els)); ST_EDIT.els=JSON.parse(ST_REDO.pop()); ST_SEL=null; stRedraw(); stUpdCount(); stUpdUndoBtns(); }
+function stUpdUndoBtns(){ const u=document.getElementById("stUndo"),r=document.getElementById("stRedo"); if(u)u.disabled=!ST_UNDO.length; if(r)r.disabled=!ST_REDO.length; }
+// -- compteur de chars par équipe --
+function stUpdCount(){ const el=document.getElementById("stCount"); if(!el||!ST_EDIT) return; const by={},order=[]; ST_EDIT.els.forEach(x=>{ if(x.type==='tank'){ const c=x.color||'#5dbb46'; if(by[c]===undefined){by[c]=0;order.push(c);} by[c]++; } }); el.innerHTML=order.map(c=>`<span class="st-cnt"><i style="background:${c}"></i>${by[c]}</span>`).join(''); }
+function stTankSync(){ const ed=document.getElementById("stEditor"); if(!ed) return;
+  const cs=ed.querySelector(".st-classsel"); if(cs) cs.style.setProperty('--tc',ST_TANK.color);
+  ed.querySelectorAll(".st-class").forEach(b=>b.classList.toggle("on",b.dataset.cls===ST_TANK.cls));
+  ed.querySelectorAll(".st-tcol").forEach(b=>b.classList.toggle("on",b.dataset.tcol===ST_TANK.color));
+}
+function stSetTool(t){ ST_TOOL=t; ST_SEL=null; const ed=document.getElementById("stEditor");
+  ed.querySelectorAll(".st-tool").forEach(x=>x.classList.toggle("on",x.dataset.tool===t));
+  const tn=document.getElementById("stToolName"); if(tn)tn.textContent=(ST_TOOLS.find(z=>z[0]===t)||[])[1]||''; stRedraw(); }
+function stRename(eid){ const el=ST_EDIT.els[eid]; if(!el) return;
+  if(el.type==='tank'){ const v=prompt("Nom du char (pseudo / véhicule) :", el.name||""); if(v!==null){ stSnapshot(); el.name=v.trim().slice(0,18); stRedraw(); } }
+  else if(el.type==='text'){ const v=prompt("Texte :", el.text||""); if(v!==null&&v.trim()){ stSnapshot(); el.text=v.trim().slice(0,60); stRedraw(); } }
+  else if(el.type==='marker'){ const v=prompt("Jeton :", el.label||""); if(v!==null){ stSnapshot(); el.label=v.trim().slice(0,4); stRedraw(); } }
+}
 function stWireEditor(){
   const ed=document.getElementById("stEditor"), svg=document.getElementById("stSvg");
   ed.querySelector("#stName").oninput=e=>ST_EDIT.name=e.target.value;
   ed.querySelector("#stChangeMap").onclick=()=>renderMapPicker();
   ed.querySelector("#stCancel").onclick=()=>{ ed.classList.add("hidden"); ed.innerHTML=""; ST_EDIT=null; };
   ed.querySelector("#stSave").onclick=saveStrat;
-  ed.querySelector("#stClear").onclick=()=>{ if(!ST_EDIT.els.length) return; if(confirm("Effacer tous les éléments ?")){ ST_EDIT.els=[]; ST_SEL=null; stRedraw(); } };
-  ed.querySelector("#stDelSel").onclick=()=>{ if(ST_SEL!=null){ ST_EDIT.els.splice(ST_SEL,1); ST_SEL=null; stRedraw(); } };
-  ed.querySelectorAll(".st-tool").forEach(b=>b.onclick=()=>{ ST_TOOL=b.dataset.tool; ST_SEL=null; ed.querySelectorAll(".st-tool").forEach(x=>x.classList.toggle("on",x===b)); const tn=document.getElementById("stToolName"); if(tn)tn.textContent=(ST_TOOLS.find(t=>t[0]===ST_TOOL)||[])[1]||''; stRedraw(); });
+  ed.querySelector("#stClear").onclick=()=>{ if(!ST_EDIT.els.length) return; if(confirm("Effacer tous les éléments ?")){ stSnapshot(); ST_EDIT.els=[]; ST_SEL=null; stRedraw(); stUpdCount(); } };
+  ed.querySelector("#stDelSel").onclick=()=>{ if(ST_SEL!=null){ stSnapshot(); ST_EDIT.els.splice(ST_SEL,1); ST_SEL=null; stRedraw(); stUpdCount(); } };
+  ed.querySelector("#stDup").onclick=()=>{ if(ST_SEL!=null){ stSnapshot(); const c=stTranslate(ST_EDIT.els[ST_SEL],28,28); ST_EDIT.els.push(c); ST_SEL=ST_EDIT.els.length-1; stRedraw(); stUpdCount(); } };
+  ed.querySelector("#stUndo").onclick=stUndo;
+  ed.querySelector("#stRedo").onclick=stRedo;
+  ed.querySelectorAll(".st-tool").forEach(b=>b.onclick=()=>stSetTool(b.dataset.tool));
   ed.querySelectorAll(".st-color").forEach(b=>b.onclick=()=>{ ST_COLOR=b.dataset.color; ed.querySelectorAll(".st-color").forEach(x=>x.classList.toggle("on",x===b)); });
+  ed.querySelectorAll(".st-tcol").forEach(b=>b.onclick=()=>{ ST_TANK.color=b.dataset.tcol; stSetTool('tank'); stTankSync(); });
+  ed.querySelectorAll(".st-class").forEach(b=>b.onclick=()=>{ ST_TANK.cls=b.dataset.cls; stSetTool('tank'); stTankSync(); });
   const msel=ed.querySelector("#stMode"); if(msel) msel.onchange=()=>{ ST_EDIT.mode=msel.value; const g=document.getElementById("stBases"); if(g) g.innerHTML=stBasesSvg(ST_EDIT.map,ST_EDIT.mode); };
   svg.onpointerdown=e=>{
     e.preventDefault(); const p=stPt(e,svg); const hit=e.target.closest("[data-eid]"); const eid=hit?+hit.dataset.eid:null;
-    if(ST_TOOL==='erase'){ if(eid!=null){ ST_EDIT.els.splice(eid,1); ST_SEL=null; stRedraw(); } return; }
-    if(ST_TOOL==='select'){ if(eid!=null){ ST_SEL=eid; ST_MOVE={eid,ox:p[0],oy:p[1],orig:ST_EDIT.els[eid]}; svg.setPointerCapture(e.pointerId); } else { ST_SEL=null; } stRedraw(); return; }
-    if(ST_TOOL==='marker'){ ST_EDIT.els.push({type:'marker',color:ST_COLOR,x:Math.round(p[0]),y:Math.round(p[1]),label:stNextMarkerLabel()}); stRedraw(); return; }
-    if(ST_TOOL==='text'){ const t=prompt("Texte :"); if(t&&t.trim()){ ST_EDIT.els.push({type:'text',color:ST_COLOR,x:Math.round(p[0]),y:Math.round(p[1]),text:t.trim().slice(0,60)}); stRedraw(); } return; }
+    if(ST_TOOL==='erase'){ if(eid!=null){ stSnapshot(); ST_EDIT.els.splice(eid,1); ST_SEL=null; stRedraw(); stUpdCount(); } return; }
+    if(ST_TOOL==='select'){ if(eid!=null){ ST_SEL=eid; ST_MOVE={eid,ox:p[0],oy:p[1],orig:ST_EDIT.els[eid],snapped:false}; svg.setPointerCapture(e.pointerId); } else { ST_SEL=null; } stRedraw(); return; }
+    if(ST_TOOL==='tank'){ stSnapshot(); ST_EDIT.els.push({type:'tank',cls:ST_TANK.cls,color:ST_TANK.color,x:Math.round(p[0]),y:Math.round(p[1]),name:''}); stRedraw(); stUpdCount(); return; }
+    if(ST_TOOL==='marker'){ stSnapshot(); ST_EDIT.els.push({type:'marker',color:ST_COLOR,x:Math.round(p[0]),y:Math.round(p[1]),label:stNextMarkerLabel()}); stRedraw(); return; }
+    if(ST_TOOL==='text'){ const t=prompt("Texte :"); if(t&&t.trim()){ stSnapshot(); ST_EDIT.els.push({type:'text',color:ST_COLOR,x:Math.round(p[0]),y:Math.round(p[1]),text:t.trim().slice(0,60)}); stRedraw(); } return; }
     if(ST_TOOL==='pen'){ ST_DRAW={type:'pen',color:ST_COLOR,pts:[[p[0],p[1]]]}; svg.setPointerCapture(e.pointerId); return; }
     ST_DRAW={type:ST_TOOL,color:ST_COLOR,x1:p[0],y1:p[1],x2:p[0],y2:p[1]}; svg.setPointerCapture(e.pointerId);
   };
   svg.onpointermove=e=>{
-    if(ST_MOVE){ const p=stPt(e,svg); ST_EDIT.els[ST_MOVE.eid]=stTranslate(ST_MOVE.orig,p[0]-ST_MOVE.ox,p[1]-ST_MOVE.oy); stRedraw(); return; }
+    if(ST_MOVE){ if(!ST_MOVE.snapped){ stSnapshot(); ST_MOVE.snapped=true; } const p=stPt(e,svg); ST_EDIT.els[ST_MOVE.eid]=stTranslate(ST_MOVE.orig,p[0]-ST_MOVE.ox,p[1]-ST_MOVE.oy); stRedraw(); return; }
     if(!ST_DRAW) return; const p=stPt(e,svg);
     if(ST_DRAW.type==='pen'){ ST_DRAW.pts.push([p[0],p[1]]); } else { ST_DRAW.x2=p[0]; ST_DRAW.y2=p[1]; }
     stRedraw();
@@ -4567,10 +4621,17 @@ function stWireEditor(){
     if(ST_MOVE){ ST_MOVE=null; return; }
     if(!ST_DRAW){ return; }
     const d=ST_DRAW; ST_DRAW=null;
-    if(d.type==='pen'){ if(d.pts.length>1) ST_EDIT.els.push(d); }
-    else { if(Math.hypot(d.x2-d.x1,d.y2-d.y1)>12) ST_EDIT.els.push(d); }
+    if(d.type==='pen'){ if(d.pts.length>1){ stSnapshot(); ST_EDIT.els.push(d); } }
+    else { if(Math.hypot(d.x2-d.x1,d.y2-d.y1)>12){ stSnapshot(); ST_EDIT.els.push(d); } }
     stRedraw();
   };
+  svg.ondblclick=e=>{ const hit=e.target.closest("[data-eid]"); if(hit) stRename(+hit.dataset.eid); };
+  ed.querySelector(".st-svg").onkeydown=null;
+  if(!ed._stKeys){ ed._stKeys=true; document.addEventListener("keydown",e=>{ if(!ST_EDIT||document.getElementById("stEditor").classList.contains("hidden"))return; const t=e.target.tagName; if(t==='INPUT'||t==='TEXTAREA'||t==='SELECT')return;
+    if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){ e.preventDefault(); e.shiftKey?stRedo():stUndo(); }
+    else if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='y'){ e.preventDefault(); stRedo(); }
+    else if((e.key==='Delete'||e.key==='Backspace')&&ST_SEL!=null){ e.preventDefault(); stSnapshot(); ST_EDIT.els.splice(ST_SEL,1); ST_SEL=null; stRedraw(); stUpdCount(); } }); }
+  stTankSync(); stUpdCount(); stUpdUndoBtns();
 }
 async function saveStrat(){
   if(!ST_EDIT.map){ alert("Choisis une carte."); return; }
