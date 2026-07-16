@@ -4436,16 +4436,20 @@ const ST_MODE_FR={ctf:"Standard",domination:"Rencontre",assault:"Assaut",assault
 // convertit une position monde (x,z) en coords minimap 0-1000 selon la boundingBox
 function stWorld(map,x,z){ const b=ST_BASES&&ST_BASES[map]&&ST_BASES[map].bbox; if(!b) return [0,0];
   return [ (x-b[0])/((b[2]-b[0])||1)*1000, (b[3]-z)/((b[3]-b[1])||1)*1000 ]; }
-function stFlag(mx,my,color){ return `<g class="st-ov" transform="translate(${Math.round(mx)},${Math.round(my)})"><circle r="30" fill="#0c0c0c" fill-opacity=".55" stroke="${color}" stroke-width="6"/><path d="M-9,-15 V15 M-9,-14 H11 L6,-8 L11,-2 H-9" fill="#fff" stroke="#fff" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/></g>`; }
-function stSpawn(mx,my,color,n){ return `<g class="st-ov" transform="translate(${Math.round(mx)},${Math.round(my)})"><path d="M0,-25 L21,0 L0,25 L-21,0 Z" fill="#0c0c0c" fill-opacity=".62" stroke="${color}" stroke-width="5"/><text y="9" font-size="27" font-weight="800" text-anchor="middle" fill="${color}">${esc(String(n))}</text></g>`; }
+// Marqueurs OFFICIELS extraits du jeu (gui/flash/atlases/battleAtlas -> web/strat/*.png)
+const ST_ICON=56;   // taille du marqueur dans le repère 0-1000
+// drapeau de base : kind = 'green' (équipe 1) | 'red' (équipe 2) | 'neutral' (point de contrôle)
+function stFlag(mx,my,kind){ const f=(kind==='red')?'base_red':'base_green'; const h=ST_ICON/2; return `<image class="st-ov" href="strat/${f}.png" x="${Math.round(mx)-h}" y="${Math.round(my)-h}" width="${ST_ICON}" height="${ST_ICON}"/>`; }
+// point d'apparition officiel numéroté : team = 1|2 (couleur), n = numéro 1..4
+function stSpawn(mx,my,team,n){ const c=team===1?'green':'red', k=Math.max(1,Math.min(4,n||1)); const h=ST_ICON/2; return `<image class="st-ov" href="strat/spawn_${c}_${k}.png" x="${Math.round(mx)-h}" y="${Math.round(my)-h}" width="${ST_ICON}" height="${ST_ICON}"/>`; }
 const ST_MODE_ORDER=["ctf","domination","assault2","assault","comp7"];   // modes reels affiches (exclut maps_training)
 function stModes(map){ const md=ST_BASES&&ST_BASES[map]; if(!md||!md.modes) return []; return ST_MODE_ORDER.filter(mo=>md.modes[mo]); }
 function stBasesSvg(map,mode){
   const md=ST_BASES&&ST_BASES[map]; if(!md||!md.modes||!md.modes[mode]) return '';
   const m=md.modes[mode]; let s='';
-  (m.bases||[]).forEach(b=>{ const p=stWorld(map,b.x,b.z); s+=stFlag(p[0],p[1], b.team===1?'#5dbb46':'#e0483f'); });
-  if(m.control){ const p=stWorld(map,m.control[0],m.control[1]); s+=stFlag(p[0],p[1],'#f2f2f2'); }
-  const cnt={1:0,2:0}; (m.spawns||[]).forEach(sp=>{ cnt[sp.team]=(cnt[sp.team]||0)+1; const p=stWorld(map,sp.x,sp.z); s+=stSpawn(p[0],p[1], sp.team===1?'#5dbb46':'#e0483f', cnt[sp.team]); });
+  (m.bases||[]).forEach(b=>{ const p=stWorld(map,b.x,b.z); s+=stFlag(p[0],p[1], b.team===1?'green':'red'); });
+  if(m.control){ const p=stWorld(map,m.control[0],m.control[1]); s+=stFlag(p[0],p[1],'neutral'); }
+  const cnt={1:0,2:0}; (m.spawns||[]).forEach(sp=>{ cnt[sp.team]=(cnt[sp.team]||0)+1; const p=stWorld(map,sp.x,sp.z); s+=stSpawn(p[0],p[1], sp.team, cnt[sp.team]); });
   return s;
 }
 function stTextOn(hex){ hex=String(hex||"").replace("#",""); if(hex.length===3) hex=hex.split("").map(c=>c+c).join(""); const r=parseInt(hex.slice(0,2),16)||0,g=parseInt(hex.slice(2,4),16)||0,b=parseInt(hex.slice(4,6),16)||0; return (0.299*r+0.587*g+0.114*b)>150?"#141414":"#fff"; }
