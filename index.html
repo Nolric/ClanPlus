@@ -1095,6 +1095,34 @@
   .st-pbtn:hover:not(:disabled){background:var(--gold);color:#12110d}
   .st-pbtn:disabled{opacity:.3;cursor:default}
   .st-present-ind{font-size:15px;font-weight:800;color:#ece6d6;min-width:112px;text-align:center}
+  /* chat par stratégie */
+  .st-chat{border-top:1px solid #202226;margin-top:6px;padding:14px 16px 16px}
+  .st-chat-h{font-size:12px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--gold);margin-bottom:10px}
+  .st-chat-list{max-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding-right:4px}
+  .st-chat-empty{color:#8b9099;font-size:13px;padding:8px 2px}
+  .st-msg{background:#1a1b1e;border:1px solid #2b2d31;border-radius:11px;padding:8px 12px;max-width:82%;align-self:flex-start}
+  .st-msg.mine{align-self:flex-end;background:var(--gold-soft);border-color:var(--gold-line)}
+  .st-msg-who{font-size:11.5px;font-weight:700;color:var(--gold);margin-bottom:2px}
+  .st-msg-t{color:#7a7f88;font-weight:500;margin-left:6px}
+  .st-msg-b{font-size:14px;color:#e9ecef;white-space:pre-wrap;word-break:break-word;line-height:1.4}
+  .st-chat-form{display:flex;gap:8px;margin-top:12px}
+  .st-chat-in{flex:1;background:#141518;border:1px solid #2b2d31;color:#e9ecef;border-radius:9px;padding:10px 12px;font:inherit;font-size:14px}
+  .st-chat-in:focus{outline:none;border-color:var(--gold)}
+  /* collaborateurs (overlay) */
+  .st-collab-ov{position:fixed;inset:0;z-index:9999;background:rgba(6,7,9,.72);display:flex;align-items:center;justify-content:center;padding:16px}
+  .st-collab-box{background:#16171a;border:1px solid var(--gold-line);border-radius:14px;width:min(440px,100%);max-height:82vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+  .st-collab-top{display:flex;align-items:center;justify-content:space-between;padding:16px 18px 10px}
+  .st-collab-top b{font-size:16px;color:#ece6d6}
+  .st-collab-hint{padding:0 18px 12px;color:#9a9280;font-size:13px}
+  .st-collab-search{margin:0 18px 10px;background:#141518;border:1px solid #2b2d31;color:#e9ecef;border-radius:9px;padding:9px 12px;font:inherit;font-size:14px}
+  .st-collab-search:focus{outline:none;border-color:var(--gold)}
+  .st-collab-list{overflow-y:auto;padding:0 10px;display:flex;flex-direction:column}
+  .st-collab-row{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;cursor:pointer;font-size:14px;color:#e9ecef}
+  .st-collab-row:hover{background:#1e1f22}
+  .st-collab-row input{width:17px;height:17px;accent-color:var(--gold);cursor:pointer}
+  .st-collab-empty{color:#8b9099;padding:16px;text-align:center}
+  .st-collab-foot{display:flex;align-items:center;justify-content:space-between;padding:12px 18px 16px;border-top:1px solid #202226;margin-top:6px}
+  .st-collab-cnt{font-size:13px;color:#9a9280}
   /* stage */
   .st-stage-wrap{padding:14px;background:#0c0d0f;display:flex;justify-content:center}
   .st-svg{width:100%;max-width:660px;aspect-ratio:1;border-radius:10px;background:#000;border:1px solid #2b2d31;touch-action:none;cursor:crosshair;display:block}
@@ -4470,7 +4498,9 @@ function openTierlistView(tl){
 /* ============================================================
    STRATÉGIE — éditeur de minimap (style StratSketch)
    ============================================================ */
-let STRATS=[], STRAT_CANEDIT=false, STRAT_LOADED=false;
+let STRATS=[], STRAT_CANEDIT=false, STRAT_LOADED=false, STRAT_ME=null;
+// peut éditer CETTE stratégie : officier/manager, OU collaborateur listé dans editors
+function stCanEdit(s){ return STRAT_CANEDIT || (s && Array.isArray(s.editors) && s.editors.map(Number).includes(Number(STRAT_ME))); }
 let ST_EDIT=null;   // {id,name,map,els:[]}
 let ST_TOOL='arrow', ST_COLOR='#e5544b', ST_SEL=null, ST_DRAW=null, ST_MOVE=null;
 let ST_TANK={cls:'medium',color:'#5dbb46'};   // "pinceau" pion de char courant (classe + couleur choisie)
@@ -4532,7 +4562,7 @@ async function loadStrats(){
   try{
     const r=await fnCall("strategies",{session:localStorage.getItem(LS_SESSION),action:"list"});
     if(!r.ok){ list.innerHTML='<div class="card"><div class="empty">Erreur stratégies : '+esc((r.j&&r.j.error)||String(r.status))+' — la fonction « strategies » est-elle déployée ?</div></div>'; return; }
-    STRATS=r.j.strategies||[]; STRAT_CANEDIT=meIsManager();
+    STRATS=r.j.strategies||[]; STRAT_CANEDIT=meIsManager(); STRAT_ME=(r.j.me!=null?Number(r.j.me):ME_ID);
     document.getElementById("stNewBtn").classList.toggle("hidden",!STRAT_CANEDIT);
     document.getElementById("stRole").textContent = STRAT_CANEDIT ? "Ton grade te permet de créer et modifier les stratégies." : "Consultation : tu peux ouvrir et lire les stratégies du clan.";
     renderStrats();
@@ -4542,7 +4572,7 @@ function renderStrats(){
   const el=document.getElementById("stList");
   if(!STRATS.length){ el.innerHTML=`<div class="lo-empty"><div class="lo-empty-ic">🗺️</div><div class="lo-empty-t">Aucune stratégie</div><div class="lo-empty-s">${STRAT_CANEDIT?'Clique « Nouvelle stratégie » pour en dessiner une.':'Les officiers n’ont pas encore préparé de stratégie.'}</div></div>`; return; }
   el.innerHTML='<div class="tl-cards">'+STRATS.map(s=>{
-    const btns=STRAT_CANEDIT?`<div class="tl-cardact"><button class="lo-mini" data-stedit="${s.id}" title="Modifier">✎</button><button class="lo-mini lo-minidel" data-stdel="${s.id}" title="Supprimer">✕</button></div>`:"";
+    const canE=stCanEdit(s); const btns=canE?`<div class="tl-cardact"><button class="lo-mini" data-stedit="${s.id}" title="Modifier">✎</button>${STRAT_CANEDIT?`<button class="lo-mini lo-minidel" data-stdel="${s.id}" title="Supprimer">✕</button>`:''}</div>`:"";
     const nst=(s.steps&&s.steps.length)||1; const meta=nst>1?`${nst} étapes`:`${(s.elements||[]).length} éléments`;
     return `<div class="tl-card st-card" data-stopen="${s.id}"><div class="st-card-map"><img src="maps/top/${esc(s.map||'')}.jpg" onerror="this.style.opacity='.12'"><span class="st-card-mapn">${esc(ST_MAPNAME[s.map]||prettyMap(s.map))}</span></div><div class="tl-card-h"><b>${esc(s.name||"Stratégie")}</b>${btns}</div><div class="tl-card-by">${meta} · par ${esc(s.created_by_name||"?")}</div></div>`;
   }).join("")+'</div>';
@@ -4551,8 +4581,8 @@ function renderStrats(){
   el.querySelectorAll("[data-stdel]").forEach(b=>b.onclick=e=>{e.stopPropagation();deleteStrat(b.dataset.stdel);});
 }
 function openStratEditor(s){
-  if(!STRAT_CANEDIT){ alert("Réservé aux officiers de combat et plus."); return; }
-  ST_EDIT={ id:(s&&s.id)||null, name:(s&&s.name)||"Nouvelle stratégie", map:(s&&s.map)||"", mode:(s&&s.mode)||"ctf", steps:stStepsOf(s) };
+  if(!(s?stCanEdit(s):STRAT_CANEDIT)){ alert("Réservé aux officiers de combat et aux collaborateurs de cette stratégie."); return; }
+  ST_EDIT={ id:(s&&s.id)||null, name:(s&&s.name)||"Nouvelle stratégie", map:(s&&s.map)||"", mode:(s&&s.mode)||"ctf", steps:stStepsOf(s), editors:(s&&Array.isArray(s.editors))?s.editors.map(Number):[] };
   ST_STEP=0; ST_EDIT.els=ST_EDIT.steps[0].els;
   ST_SEL=null; ST_UNDO=[]; ST_REDO=[];
   if(!ST_EDIT.map) renderMapPicker(); else renderStratEditor();
@@ -4573,7 +4603,7 @@ function renderStratEditor(){
   const modeSel=modes.length?`<label class="st-modewrap">Bases <select class="st-modesel" id="stMode" title="Mode de jeu (bases officielles)">${modes.map(mo=>`<option value="${mo}"${ST_EDIT.mode===mo?' selected':''}>${esc(ST_MODE_FR[mo]||mo)}</option>`).join("")}</select></label>`:'';
   ed.innerHTML=`<div class="card st-shell dashx">
     <div class="st-top"><input class="tl-name" id="stName" value="${esc(ST_EDIT.name)}" maxlength="80" placeholder="Nom de la stratégie">
-      <div class="st-top-act"><button class="btn" id="stChangeMap">🗺️ Carte</button><button class="btn" id="stCancel">Annuler</button><button class="btn tl-save" id="stSave">✓ Enregistrer</button></div></div>
+      <div class="st-top-act"><button class="btn" id="stChangeMap">🗺️ Carte</button>${STRAT_CANEDIT?`<button class="btn" id="stCollab" title="Autoriser des membres à éditer cette stratégie">👥 Collaborateurs</button>`:''}<button class="btn" id="stCancel">Annuler</button><button class="btn tl-save" id="stSave">✓ Enregistrer</button></div></div>
     <div class="st-toolbar"><div class="st-tools">${tools}</div><div class="st-colors">${colors}</div><div class="st-stroke"><button type="button" class="st-sbtn${ST_STROKE.dash?' on':''}" id="stDash" title="Trait en pointillés">┅</button><button type="button" class="st-sbtn${ST_STROKE.curve?' on':''}" id="stCurve" title="Flèche courbe">⌒</button><span class="st-wsel">${[["thin",4],["med",7],["thick",12]].map(w=>`<button type="button" class="st-wbtn${ST_STROKE.w===w[1]?' on':''}" data-w="${w[1]}" title="Épaisseur du trait"><i style="height:${Math.round(w[1]/2)+1}px"></i></button>`).join("")}</span></div>${modeSel}<div class="st-tb-act"><button class="btn st-mini2${ST_GRID?' on':''}" id="stGridBtn" title="Afficher la grille A-K / 1-0">▦ Grille</button><button class="btn st-mini2" id="stUndo" title="Annuler (Ctrl+Z)">↶</button><button class="btn st-mini2" id="stRedo" title="Refaire (Ctrl+Y)">↷</button><button class="btn st-mini2" id="stDup" title="Dupliquer l'élément sélectionné">⧉ Dupliquer</button><button class="btn st-mini2" id="stDelSel" title="Supprimer l'élément sélectionné">Suppr.</button><button class="btn st-mini2" id="stClear" title="Tout effacer">Vider</button></div></div>
     <div class="st-tankbar"><span class="st-tankbar-l">Chars</span><div class="st-classsel" style="--tc:${ST_TANK.color}">${ST_CLASSES.map(c=>`<button type="button" class="st-class${ST_TANK.cls===c[0]?' on':''}" data-cls="${c[0]}" title="Char ${c[1]}"><span class="ic" style="-webkit-mask:url(strat/class_${c[0]}.png) center/contain no-repeat;mask:url(strat/class_${c[0]}.png) center/contain no-repeat"></span><span class="lbl">${c[1]}</span></button>`).join("")}</div><div class="st-tank-cols">${ST_TANK_COLORS.map(c=>`<button type="button" class="st-tcol${ST_TANK.color===c[0]?' on':''}" data-tcol="${c[0]}" title="${esc(c[1])}" style="background:${c[0]}"></button>`).join("")}</div><div class="st-count" id="stCount"></div></div>
     <div class="st-stepsbar"><span class="st-tankbar-l">Étapes</span><div class="st-steptabs" id="stStepTabs"></div><div class="st-steps-act"><button class="btn st-mini2" id="stStepDel" title="Supprimer l'étape courante">🗑 Étape</button><button class="btn st-present" id="stPresent" title="Dérouler la stratégie en plein écran">▶ Présenter</button></div></div>
@@ -4654,6 +4684,7 @@ function stWireEditor(){
   ed.querySelector("#stClear").onclick=()=>{ if(!ST_EDIT.els.length) return; if(confirm("Effacer tous les éléments de cette étape ?")){ stSnapshot(); stSetEls([]); ST_SEL=null; stRedraw(); stUpdCount(); } };
   ed.querySelector("#stStepDel").onclick=stDelStep;
   ed.querySelector("#stPresent").onclick=()=>stPresent(ST_EDIT.steps,ST_EDIT.map,ST_EDIT.mode,ST_EDIT.name,ST_STEP);
+  const cbtn=ed.querySelector("#stCollab"); if(cbtn) cbtn.onclick=stCollabPicker;
   ed.querySelector("#stDelSel").onclick=()=>{ if(ST_SEL!=null){ stSnapshot(); ST_EDIT.els.splice(ST_SEL,1); ST_SEL=null; stRedraw(); stUpdCount(); } };
   ed.querySelector("#stDup").onclick=()=>{ if(ST_SEL!=null){ stSnapshot(); const c=stTranslate(ST_EDIT.els[ST_SEL],28,28); ST_EDIT.els.push(c); ST_SEL=ST_EDIT.els.length-1; stRedraw(); stUpdCount(); } };
   ed.querySelector("#stUndo").onclick=stUndo;
@@ -4703,7 +4734,7 @@ function stWireEditor(){
 async function saveStrat(){
   if(!ST_EDIT.map){ alert("Choisis une carte."); return; }
   const steps=ST_EDIT.steps.map(st=>({els:st.els}));
-  const payload={ id:ST_EDIT.id||null, name:(ST_EDIT.name||"Stratégie").trim()||"Stratégie", map:ST_EDIT.map, mode:ST_EDIT.mode||"ctf", steps, elements:steps[0].els };
+  const payload={ id:ST_EDIT.id||null, name:(ST_EDIT.name||"Stratégie").trim()||"Stratégie", map:ST_EDIT.map, mode:ST_EDIT.mode||"ctf", steps, elements:steps[0].els, editors:ST_EDIT.editors||[] };
   const btn=document.getElementById("stSave"); if(btn){btn.disabled=true;btn.textContent="Enregistrement…";}
   const r=await fnCall("strategies",{session:localStorage.getItem(LS_SESSION),action:"save",strategy:payload});
   if(!r.ok){ if(btn){btn.disabled=false;btn.textContent="✓ Enregistrer";} alert("Erreur : "+(r.j.error||r.status)); return; }
@@ -4721,7 +4752,7 @@ function openStratView(s){
   const ed=document.getElementById("stEditor"); ed.classList.remove("hidden");
   const steps=stStepsOf(s); let idx=0;
   const nav=steps.length>1?`<div class="st-viewnav"><button class="btn st-navbtn" id="stvPrev">‹</button><span class="st-viewind" id="stvInd"></span><button class="btn st-navbtn" id="stvNext">›</button></div>`:'';
-  ed.innerHTML=`<div class="card st-shell dashx"><div class="st-top"><b class="tl-view-name">${esc(s.name||"Stratégie")} <span class="st-view-map">· ${esc(ST_MAPNAME[s.map]||prettyMap(s.map))}</span></b><div class="st-top-act"><button class="btn st-mini2${ST_GRID?' on':''}" id="stvGridBtn" title="Grille A-K / 1-0">▦ Grille</button><button class="btn st-present" id="stvPresent" title="Plein écran">⛶ Présenter</button>${STRAT_CANEDIT?`<button class="btn" id="stEditThis">✎ Modifier</button>`:""}<button class="btn" id="stCloseView">Fermer</button></div></div>
+  ed.innerHTML=`<div class="card st-shell dashx"><div class="st-top"><b class="tl-view-name">${esc(s.name||"Stratégie")} <span class="st-view-map">· ${esc(ST_MAPNAME[s.map]||prettyMap(s.map))}</span></b><div class="st-top-act"><button class="btn st-mini2${ST_GRID?' on':''}" id="stvGridBtn" title="Grille A-K / 1-0">▦ Grille</button><button class="btn st-present" id="stvPresent" title="Plein écran">⛶ Présenter</button>${stCanEdit(s)?`<button class="btn" id="stEditThis">✎ Modifier</button>`:""}<button class="btn" id="stCloseView">Fermer</button></div></div>
     ${nav}
     <div class="st-stage-wrap"><svg class="st-svg st-svg-view" viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg">
       <defs><marker id="st-ah" markerWidth="4.5" markerHeight="4.5" refX="3" refY="2.25" orient="auto"><path d="M0,0 L4.5,2.25 L0,4.5 z" fill="context-stroke"/></marker></defs>
@@ -4729,7 +4760,8 @@ function openStratView(s){
       <g style="pointer-events:none">${stBasesSvg(s.map,s.mode||'ctf')}</g>
       <g id="stvGrid" style="pointer-events:none">${ST_GRID?stGridInner():''}</g>
       <g id="stvEls"></g></svg></div>
-    <div class="tl-card-by">Par ${esc(s.created_by_name||"?")}</div></div>`;
+    <div class="tl-card-by">Par ${esc(s.created_by_name||"?")}</div>
+    <div class="st-chat"><div class="st-chat-h">💬 Discussion</div><div class="st-chat-list" id="stChatList"><div class="st-chat-empty">Chargement…</div></div><form class="st-chat-form" id="stChatForm"><input class="st-chat-in" id="stChatIn" maxlength="500" placeholder="Écrire un message au clan…" autocomplete="off"><button class="btn tl-save" type="submit">Envoyer</button></form></div></div>`;
   function draw(){ document.getElementById("stvEls").innerHTML=steps[idx].els.map((e,i)=>stElSvg(e,i)).join("");
     const ind=document.getElementById("stvInd"); if(ind) ind.textContent=`Étape ${idx+1} / ${steps.length}`;
     const p=document.getElementById("stvPrev"),n=document.getElementById("stvNext"); if(p)p.disabled=idx===0; if(n)n.disabled=idx===steps.length-1; }
@@ -4737,14 +4769,59 @@ function openStratView(s){
   const nx=document.getElementById("stvNext"); if(nx) nx.onclick=()=>{ if(idx<steps.length-1){idx++;draw();} };
   document.getElementById("stvPresent").onclick=()=>stPresent(steps,s.map,s.mode,s.name,idx);
   document.getElementById("stvGridBtn").onclick=e=>{ ST_GRID=!ST_GRID; try{localStorage.setItem('cp_stgrid',ST_GRID?'1':'0');}catch(_){}  e.currentTarget.classList.toggle("on",ST_GRID); document.getElementById("stvGrid").innerHTML=ST_GRID?stGridInner():''; };
-  document.getElementById("stCloseView").onclick=()=>{ ed.classList.add("hidden"); ed.innerHTML=""; };
-  const eb=document.getElementById("stEditThis"); if(eb) eb.onclick=()=>openStratEditor(s);
-  draw(); ed.scrollIntoView({behavior:"smooth",block:"start"});
+  document.getElementById("stCloseView").onclick=()=>{ stChatStop(); ed.classList.add("hidden"); ed.innerHTML=""; };
+  const eb=document.getElementById("stEditThis"); if(eb) eb.onclick=()=>{ stChatStop(); openStratEditor(s); };
+  draw(); if(s.id) stChatStart(Number(s.id)); ed.scrollIntoView({behavior:"smooth",block:"start"});
+}
+// -- Chat par stratégie (sondage léger toutes les 5 s tant que la vue est ouverte) --
+let ST_CHAT_TIMER=null, ST_CHAT_SID=null, ST_CHAT_SEEN=0;
+function stChatStop(){ if(ST_CHAT_TIMER){ clearInterval(ST_CHAT_TIMER); ST_CHAT_TIMER=null; } ST_CHAT_SID=null; }
+async function stChatStart(sid){ stChatStop(); ST_CHAT_SID=sid; ST_CHAT_SEEN=0;
+  const form=document.getElementById("stChatForm");
+  if(form) form.onsubmit=async e=>{ e.preventDefault(); const inp=document.getElementById("stChatIn"); const t=(inp.value||"").trim(); if(!t) return; inp.value=""; inp.disabled=true;
+    const r=await fnCall("strat-chat",{session:localStorage.getItem(LS_SESSION),action:"post",strategy_id:sid,body:t});
+    inp.disabled=false; inp.focus(); if(!r.ok){ alert("Message non envoyé : "+((r.j&&r.j.error)||r.status)); return; } stChatLoad(true); };
+  await stChatLoad(true);
+  ST_CHAT_TIMER=setInterval(()=>stChatLoad(false),5000);
+}
+async function stChatLoad(scroll){ const sid=ST_CHAT_SID; if(!sid) return;
+  const r=await fnCall("strat-chat",{session:localStorage.getItem(LS_SESSION),action:"list",strategy_id:sid});
+  if(ST_CHAT_SID!==sid) return;   // vue changée entre-temps
+  const box=document.getElementById("stChatList"); if(!box) return;
+  if(!r.ok){ box.innerHTML='<div class="st-chat-empty">Discussion indisponible ('+esc((r.j&&r.j.error)||String(r.status))+').</div>'; return; }
+  const msgs=r.j.messages||[];
+  if(!msgs.length){ box.innerHTML='<div class="st-chat-empty">Aucun message. Lance la discussion !</div>'; return; }
+  const atBottom = box.scrollHeight-box.scrollTop-box.clientHeight < 40;
+  box.innerHTML=msgs.map(m=>{ const mine=Number(m.account_id)===Number(STRAT_ME);
+    return `<div class="st-msg${mine?' mine':''}"><div class="st-msg-who">${esc(m.nickname||'?')} <span class="st-msg-t">${stChatTime(m.created_at)}</span></div><div class="st-msg-b">${esc(m.body||'')}</div></div>`; }).join('');
+  if(scroll||atBottom||msgs.length>ST_CHAT_SEEN) box.scrollTop=box.scrollHeight;
+  ST_CHAT_SEEN=msgs.length;
+}
+function stChatTime(iso){ try{ const d=new Date(iso); return d.toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}); }catch(_){ return ''; } }
+// Sélecteur de collaborateurs (rôles fins) : membres autorisés à éditer cette stratégie
+function stCollabPicker(){
+  if(!ST_EDIT) return;
+  const list=(MEMBERS||[]).slice().sort((a,b)=>String(a.nickname||a.name||'').localeCompare(String(b.nickname||b.name||'')));
+  const ov=document.createElement('div'); ov.className='st-collab-ov dashx'; ov.id='stCollabOv';
+  const row=m=>{ const id=Number(m.account_id); if(!id) return ''; const nm=esc(m.nickname||m.name||('#'+id)); const on=ST_EDIT.editors.includes(id);
+    return `<label class="st-collab-row"><input type="checkbox" data-acc="${id}"${on?' checked':''}><span>${nm}</span></label>`; };
+  ov.innerHTML=`<div class="st-collab-box"><div class="st-collab-top"><b>👥 Collaborateurs</b><button class="st-present-x" id="stcX" title="Fermer">✕</button></div>
+    <div class="st-collab-hint">Coche les membres autorisés à modifier cette stratégie (en plus des officiers de combat et +).</div>
+    <input class="st-collab-search" id="stcSearch" placeholder="Rechercher un membre…" autocomplete="off">
+    <div class="st-collab-list" id="stcList">${list.map(row).join('')||'<div class="st-collab-empty">Aucun membre chargé.</div>'}</div>
+    <div class="st-collab-foot"><span class="st-collab-cnt" id="stcCount"></span><button class="btn tl-save" id="stcDone">Terminé</button></div></div>`;
+  document.body.appendChild(ov);
+  const upd=()=>{ ov.querySelector('#stcCount').textContent=ST_EDIT.editors.length+' autorisé(s) en plus'; };
+  ov.querySelectorAll('input[data-acc]').forEach(cb=>cb.onchange=()=>{ const id=+cb.dataset.acc; if(cb.checked){ if(!ST_EDIT.editors.includes(id)) ST_EDIT.editors.push(id); } else { ST_EDIT.editors=ST_EDIT.editors.filter(x=>x!==id); } upd(); });
+  ov.querySelector('#stcSearch').oninput=e=>{ const qy=e.target.value.toLowerCase(); ov.querySelectorAll('.st-collab-row').forEach(r=>{ r.style.display=r.textContent.toLowerCase().includes(qy)?'':'none'; }); };
+  const close=()=>ov.remove(); ov.querySelector('#stcX').onclick=close; ov.querySelector('#stcDone').onclick=close;
+  ov.onclick=e=>{ if(e.target===ov) close(); };
+  upd();
 }
 // Mode présentation plein écran : déroule les étapes (‹ › clavier, Échap pour quitter)
 function stPresent(steps,map,mode,name,start){
   if(!steps||!steps.length) return; let idx=Math.max(0,Math.min(steps.length-1,start||0));
-  const ov=document.createElement("div"); ov.className="st-present-ov"; ov.id="stPresentOv";
+  const ov=document.createElement("div"); ov.className="st-present-ov dashx"; ov.id="stPresentOv";
   ov.innerHTML=`<div class="st-present-top"><b>${esc(name||"Stratégie")}</b><span class="st-present-map">${esc(ST_MAPNAME[map]||prettyMap(map))}</span><button class="st-present-x" id="stpGridBtn" title="Grille A-K / 1-0" style="margin-left:auto;width:auto;padding:0 12px">▦</button><button class="st-present-x" id="stpX" title="Quitter (Échap)">✕</button></div>
     <div class="st-present-stage"><svg viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg">
       <defs><marker id="st-ah" markerWidth="4.5" markerHeight="4.5" refX="3" refY="2.25" orient="auto"><path d="M0,0 L4.5,2.25 L0,4.5 z" fill="context-stroke"/></marker></defs>
