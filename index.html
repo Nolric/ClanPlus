@@ -962,29 +962,36 @@
   .wz-cfg-off:hover{border-color:#c9484a;color:#e46b6d}
   .wz-cfg-add{margin-bottom:12px;width:100%;padding:11px;border-radius:10px;border:1px dashed var(--wz-bdg);background:rgba(229,185,92,.06);color:var(--wz-gold);font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;transition:.15s}
   .wz-cfg-add:hover{background:rgba(229,185,92,.12)}
-  /* étape 5 : arbre de modifications de terrain par niveau */
-  .fm-tree{display:flex;flex-direction:column;gap:8px;max-height:56vh;overflow-y:auto;padding-right:4px}
-  .fm-lvl{display:flex;align-items:stretch;gap:10px}
-  .fm-lvl-n{flex:0 0 26px;width:26px;height:26px;border-radius:50%;background:var(--wz-rai);border:1px solid var(--wz-bd);color:var(--wz-mut);display:grid;place-items:center;font-size:12px;font-weight:800;margin-top:6px}
-  .fm-lvl-b{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
-  .fm-base{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--wz-mut);padding:6px 10px;background:var(--wz-pan);border:1px solid var(--wz-bd);border-radius:8px}
-  .fm-b-tag{font-size:8.5px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:#141310;background:var(--wz-mut);border-radius:4px;padding:1px 5px}
-  .fm-pair{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-  .fm-opt{position:relative;display:flex;align-items:center;gap:8px;padding:9px 11px;border:1.5px solid var(--wz-bd);border-radius:9px;background:var(--wz-pan);color:var(--wz-ink);cursor:pointer;font:inherit;text-align:left;transition:.15s}
-  .fm-opt img{width:38px;height:38px;object-fit:contain;flex:0 0 38px}
-  .fm-opt.noimg img{display:none}
-  .fm-opt-s{flex:1;min-width:0;font-size:11px;line-height:1.25;color:var(--wz-ink)}
-  .fm-opt:hover{border-color:var(--wz-bdg);transform:translateY(-1px)}
+  /* étape 5 : arbre de modifications de terrain par niveau (visuel, images larges + stats aérées) */
+  .fm-tree{display:flex;flex-direction:column;gap:14px;max-height:60vh;overflow-y:auto;padding-right:6px}
+  .fm-lvl{display:flex;align-items:flex-start;gap:14px}
+  .fm-lvl-n{flex:0 0 32px;width:32px;height:32px;border-radius:50%;background:var(--wz-rai);border:1px solid var(--wz-bd);color:var(--wz-gold);display:grid;place-items:center;font-size:14px;font-weight:800;margin-top:8px}
+  .fm-lvl-b{flex:1;min-width:0;display:flex;flex-direction:column;gap:10px}
+  .fm-base{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--wz-pan);border:1px solid var(--wz-bd);border-radius:11px}
+  .fm-b-tag{flex:0 0 auto;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#141310;background:var(--wz-good);border-radius:5px;padding:3px 8px}
+  .fm-base-st{flex:1;display:flex;flex-wrap:wrap;gap:6px 16px}
+  .fm-pair{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .fm-opt{position:relative;display:flex;align-items:center;gap:16px;padding:16px 18px;min-height:96px;border:2px solid var(--wz-bd);border-radius:13px;background:var(--wz-pan);color:var(--wz-ink);cursor:pointer;font:inherit;text-align:left;transition:.15s}
+  .fm-opt-ic{flex:0 0 72px;width:72px;height:72px;display:grid;place-items:center;background:var(--wz-rai);border:1px solid var(--wz-bd);border-radius:12px}
+  .fm-opt-ic img{width:64px;height:64px;object-fit:contain}
+  .fm-opt-ic.noimg{background:transparent;border-color:transparent}
+  .fm-opt-ph{font-size:30px;color:var(--wz-mut);opacity:.5}
+  .fm-opt-st{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+  .fm-st{font-size:13.5px;line-height:1.4;color:var(--wz-ink);font-variant-numeric:tabular-nums}
+  .fm-base-st .fm-st{font-size:12.5px;color:var(--wz-mut)}
+  .fm-opt:hover{border-color:var(--wz-bdg);transform:translateY(-2px)}
   .fm-opt.on{border-color:var(--wz-gold);background:rgba(229,185,92,.12);box-shadow:0 0 0 1px var(--wz-gold) inset}
-  .fm-fcard{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;border:1.5px solid var(--wz-bdg);border-radius:11px;background:rgba(229,185,92,.05);color:var(--wz-ink);cursor:pointer;font:inherit;transition:.15s}
-  .fm-fcard img{width:46px;height:34px;object-fit:contain;flex:0 0 46px}
-  .fm-fc-t{flex:1;font-size:13.5px;font-weight:800}
-  .fm-fcard:hover{background:rgba(229,185,92,.1)}
-  .fm-fcard.on{border-color:var(--wz-good);background:rgba(76,192,119,.12)}
-  .fm-chk{flex:0 0 auto;width:22px;height:22px;border-radius:50%;border:1px solid var(--wz-bd);display:grid;place-items:center;font-size:13px;font-weight:800;color:var(--wz-mut)}
+  .fm-opt.on .fm-opt-ic{border-color:var(--wz-gold)}
+  .fm-fcard{display:flex;align-items:center;gap:16px;width:100%;padding:16px 18px;border:2px solid var(--wz-bdg);border-radius:14px;background:rgba(229,185,92,.06);color:var(--wz-ink);cursor:pointer;font:inherit;transition:.15s}
+  .fm-fcard img{width:64px;height:48px;object-fit:contain;flex:0 0 64px}
+  .fm-fc-t{flex:1;font-size:16px;font-weight:800}
+  .fm-fcard:hover{background:rgba(229,185,92,.12);transform:translateY(-1px)}
+  .fm-fcard.on{border-color:var(--wz-good);background:rgba(76,192,119,.13)}
+  .fm-chk{flex:0 0 auto;width:28px;height:28px;border-radius:50%;border:1.5px solid var(--wz-bd);display:grid;place-items:center;font-size:15px;font-weight:800;color:var(--wz-mut)}
   .fm-fcard.on .fm-chk,.fm-opt.on .fm-chk{background:var(--wz-good);color:#0b0c0c;border-color:var(--wz-good)}
   .wz-fmsum{display:flex;gap:5px;flex-wrap:wrap}
   .wz-fmtag{font-size:10px;font-weight:700;color:var(--wz-gold);background:rgba(229,185,92,.12);border:1px solid var(--wz-bd);border-radius:6px;padding:2px 7px}
+  @media(max-width:640px){ .fm-pair{grid-template-columns:1fr} }
   @media(max-width:820px){ .wz-body{grid-template-columns:1fr} .wz-side{position:static} .wz-line{width:18px} .fm-pair{grid-template-columns:1fr} }
 
   @media(max-width:840px){ .bl-metar{display:none} }
@@ -3502,6 +3509,7 @@ const FM_STAT_FR={Strength:"PV",EnginePower:"moteur",AllGroundRotationSpeed:"rot
 function fmTankTree(){ if(!LO_FM||!LO_FM.tankTree) return null; const k=LO_FM.tankTree[String(LO_WIZ.tank_id)]; return k?LO_FM.trees[k]:null; }
 function fmFmt(s){ const nm=FM_STAT_FR[s.name]||s.name; if(s.op==='mul'){ const pct=Math.round((s.val-1)*1000)/10; return (pct>=0?'+':'')+pct+'% '+nm; } return (s.val>=0?'+':'')+s.val+' '+nm; }
 function fmModStats(m){ if(!m) return ''; return (m.stats||[]).filter(s=>s.name).map(fmFmt).join(' · '); }
+function fmStatList(m){ if(!m) return ''; const st=(m.stats||[]).filter(s=>s.name); if(!st.length) return ''; return st.map(s=>`<span class="fm-st">${fmFmt(s)}</span>`).join(''); }
 function wizStep5(){
   const W=LO_WIZ, tree=fmTankTree(), t=loMaps().t[W.tank_id]||{};
   if(!LO_FM||!tree) return `<div class="wz-hdr"><h3>Modifications de terrain</h3><p class="wz-mut">Aucune donnée d’amélioration pour ce char (fichier fieldmods.json manquant ou char non répertorié).</p></div>
@@ -3517,12 +3525,12 @@ function wizStep5(){
     }
     const base=nodes.find(n=>n.kind==='mod'), pair=nodes.find(n=>n.kind==='pair');
     let inner='';
-    if(base){ const st=fmModStats(LO_FM.mods[base.ref]); inner+=`<div class="fm-base"><span class="fm-b-tag">auto</span>${st||'amélioration de base'}</div>`; }
+    if(base){ const bl=fmStatList(LO_FM.mods[base.ref]); inner+=`<div class="fm-base"><span class="fm-b-tag">Inclus</span><div class="fm-base-st">${bl||'amélioration de base'}</div></div>`; }
     if(pair){ const p=LO_FM.pairs[pair.ref], cur=W.fm.pairs[pair.ref];
       inner+=`<div class="fm-pair">`+['a','b'].map(side=>{ const m=LO_FM.mods[p[side]], on=cur===side;
         return `<button type="button" class="fm-opt${on?' on':''}" data-pair="${esc(pair.ref)}" data-side="${side}">
-          ${m&&m.img?`<img src="fieldmods/${esc(m.img)}.png" onerror="this.parentNode.classList.add('noimg')">`:''}
-          <span class="fm-opt-s">${fmModStats(m)||'—'}</span><i class="fm-chk">${on?'✓':''}</i></button>`; }).join('')+`</div>`;
+          <div class="fm-opt-ic">${m&&m.img?`<img src="fieldmods/${esc(m.img)}.png" onerror="this.closest('.fm-opt-ic').classList.add('noimg')">`:'<span class="fm-opt-ph">◈</span>'}</div>
+          <div class="fm-opt-st">${fmStatList(m)||'<span class="fm-st">—</span>'}</div><i class="fm-chk">${on?'✓':''}</i></button>`; }).join('')+`</div>`;
     }
     return `<div class="fm-lvl"><div class="fm-lvl-n">${lvl}</div><div class="fm-lvl-b">${inner}</div></div>`;
   }).join("");
