@@ -4442,7 +4442,7 @@ const ST_ICON=56;   // taille du marqueur dans le repère 0-1000
 function stFlag(mx,my,kind){ const f=(kind==='red')?'base_red':(kind==='neutral')?'base_neutral':'base_green'; const h=ST_ICON/2; return `<image class="st-ov" href="strat/${f}.png" x="${Math.round(mx)-h}" y="${Math.round(my)-h}" width="${ST_ICON}" height="${ST_ICON}"/>`; }
 // point d'apparition officiel numéroté : team = 1|2 (couleur), n = numéro 1..4
 function stSpawn(mx,my,team,n){ const c=team===1?'green':'red', k=Math.max(1,Math.min(4,n||1)); const h=ST_ICON/2; return `<image class="st-ov" href="strat/spawn_${c}_${k}.png" x="${Math.round(mx)-h}" y="${Math.round(my)-h}" width="${ST_ICON}" height="${ST_ICON}"/>`; }
-const ST_MODE_ORDER=["ctf","domination","assault2","assault","comp7"];   // modes reels affiches (exclut maps_training)
+const ST_MODE_ORDER=["ctf","domination"];   // seulement Standard + Rencontre
 function stModes(map){ const md=ST_BASES&&ST_BASES[map]; if(!md||!md.modes) return []; return ST_MODE_ORDER.filter(mo=>md.modes[mo]); }
 function stBasesSvg(map,mode){
   const md=ST_BASES&&ST_BASES[map]; if(!md||!md.modes||!md.modes[mode]) return '';
