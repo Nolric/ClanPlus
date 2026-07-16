@@ -1033,6 +1033,10 @@
   .st-color{width:24px;height:24px;border-radius:50%;border:2px solid #2b2d31;cursor:pointer;padding:0;transition:.12s}
   .st-color:hover{transform:scale(1.12)}
   .st-color.on{border-color:#fff;box-shadow:0 0 0 2px var(--gold)}
+  .st-modewrap{display:flex;align-items:center;gap:7px;font-size:11px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);padding-left:12px;border-left:1px solid #24262a}
+  .st-modesel{background:#1e1f22;border:1px solid var(--gold-line);color:var(--gold);border-radius:8px;padding:7px 10px;font:inherit;font-size:12px;font-weight:700;cursor:pointer;text-transform:none;letter-spacing:0}
+  .st-modesel:hover{border-color:var(--gold)}
+  .st-ov{pointer-events:none}
   .st-tb-act{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap}
   .st-mini2{background:#1e1f22;border:1px solid #2b2d31;color:#c9ccd1;border-radius:8px;padding:7px 11px;font:inherit;font-size:12px;font-weight:600;cursor:pointer}
   .st-mini2:hover{border-color:#c9484a;color:#e46b6d}
@@ -4427,10 +4431,28 @@ const ST_MAPS=[
 const ST_MAPNAME=Object.fromEntries(ST_MAPS.map(m=>[m[0],m[1]]));
 const ST_COLORS=["#e5544b","#e5c84b","#5bb0e5","#8fd14f","#ffffff","#e59a4b","#c264ff","#141414"];
 const ST_TOOLS=[["select","Déplacer","✋"],["arrow","Flèche","➤"],["line","Trait","／"],["pen","Crayon","✎"],["marker","Jeton","◉"],["text","Texte","T"],["erase","Gomme","⌫"]];
+let ST_BASES=null;   // positions officielles des bases (web/maps_bases.json)
+const ST_MODE_FR={ctf:"Standard",domination:"Rencontre",assault:"Assaut",assault2:"Assaut",comp7:"7 vs 7",epic:"Ligne de front"};
+// convertit une position monde (x,z) en coords minimap 0-1000 selon la boundingBox
+function stWorld(map,x,z){ const b=ST_BASES&&ST_BASES[map]&&ST_BASES[map].bbox; if(!b) return [0,0];
+  return [ (x-b[0])/((b[2]-b[0])||1)*1000, (b[3]-z)/((b[3]-b[1])||1)*1000 ]; }
+function stFlag(mx,my,color){ return `<g class="st-ov" transform="translate(${Math.round(mx)},${Math.round(my)})"><circle r="30" fill="#0c0c0c" fill-opacity=".55" stroke="${color}" stroke-width="6"/><path d="M-9,-15 V15 M-9,-14 H11 L6,-8 L11,-2 H-9" fill="#fff" stroke="#fff" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/></g>`; }
+function stSpawn(mx,my,color,n){ return `<g class="st-ov" transform="translate(${Math.round(mx)},${Math.round(my)})"><path d="M0,-25 L21,0 L0,25 L-21,0 Z" fill="#0c0c0c" fill-opacity=".62" stroke="${color}" stroke-width="5"/><text y="9" font-size="27" font-weight="800" text-anchor="middle" fill="${color}">${esc(String(n))}</text></g>`; }
+const ST_MODE_ORDER=["ctf","domination","assault2","assault","comp7"];   // modes reels affiches (exclut maps_training)
+function stModes(map){ const md=ST_BASES&&ST_BASES[map]; if(!md||!md.modes) return []; return ST_MODE_ORDER.filter(mo=>md.modes[mo]); }
+function stBasesSvg(map,mode){
+  const md=ST_BASES&&ST_BASES[map]; if(!md||!md.modes||!md.modes[mode]) return '';
+  const m=md.modes[mode]; let s='';
+  (m.bases||[]).forEach(b=>{ const p=stWorld(map,b.x,b.z); s+=stFlag(p[0],p[1], b.team===1?'#5dbb46':'#e0483f'); });
+  if(m.control){ const p=stWorld(map,m.control[0],m.control[1]); s+=stFlag(p[0],p[1],'#f2f2f2'); }
+  const cnt={1:0,2:0}; (m.spawns||[]).forEach(sp=>{ cnt[sp.team]=(cnt[sp.team]||0)+1; const p=stWorld(map,sp.x,sp.z); s+=stSpawn(p[0],p[1], sp.team===1?'#5dbb46':'#e0483f', cnt[sp.team]); });
+  return s;
+}
 function stTextOn(hex){ hex=String(hex||"").replace("#",""); if(hex.length===3) hex=hex.split("").map(c=>c+c).join(""); const r=parseInt(hex.slice(0,2),16)||0,g=parseInt(hex.slice(2,4),16)||0,b=parseInt(hex.slice(4,6),16)||0; return (0.299*r+0.587*g+0.114*b)>150?"#141414":"#fff"; }
 async function loadStrats(){
   STRAT_LOADED=true;
   const list=document.getElementById("stList"); list.innerHTML='<div class="card">'+cpLoader()+'</div>';
+  if(!ST_BASES){ try{ const b=await fetch('maps_bases.json',{cache:'no-cache'}); if(b.ok) ST_BASES=await b.json(); }catch(e){ ST_BASES={}; } }
   try{
     const r=await fnCall("strategies",{session:localStorage.getItem(LS_SESSION),action:"list"});
     if(!r.ok){ list.innerHTML='<div class="card"><div class="empty">Erreur stratégies : '+esc((r.j&&r.j.error)||String(r.status))+' — la fonction « strategies » est-elle déployée ?</div></div>'; return; }
@@ -4453,7 +4475,7 @@ function renderStrats(){
 }
 function openStratEditor(s){
   if(!STRAT_CANEDIT){ alert("Réservé aux officiers de combat et plus."); return; }
-  ST_EDIT={ id:(s&&s.id)||null, name:(s&&s.name)||"Nouvelle stratégie", map:(s&&s.map)||"", els:(s&&Array.isArray(s.elements))?JSON.parse(JSON.stringify(s.elements)):[] };
+  ST_EDIT={ id:(s&&s.id)||null, name:(s&&s.name)||"Nouvelle stratégie", map:(s&&s.map)||"", mode:(s&&s.mode)||"ctf", els:(s&&Array.isArray(s.elements))?JSON.parse(JSON.stringify(s.elements)):[] };
   ST_SEL=null;
   if(!ST_EDIT.map) renderMapPicker(); else renderStratEditor();
   document.getElementById("stEditor").scrollIntoView({behavior:"smooth",block:"start"});
@@ -4469,13 +4491,16 @@ function renderStratEditor(){
   const ed=document.getElementById("stEditor"); ed.classList.remove("hidden");
   const tools=ST_TOOLS.map(t=>`<button type="button" class="st-tool${ST_TOOL===t[0]?' on':''}" data-tool="${t[0]}" title="${t[1]}"><span class="st-tool-ic">${t[2]}</span><span class="st-tool-l">${t[1]}</span></button>`).join("");
   const colors=ST_COLORS.map(c=>`<button type="button" class="st-color${ST_COLOR===c?' on':''}" data-color="${c}" style="background:${c}"></button>`).join("");
+  const modes=stModes(ST_EDIT.map); if(modes.length && !modes.includes(ST_EDIT.mode)) ST_EDIT.mode=modes[0];
+  const modeSel=modes.length?`<label class="st-modewrap">Bases <select class="st-modesel" id="stMode" title="Mode de jeu (bases officielles)">${modes.map(mo=>`<option value="${mo}"${ST_EDIT.mode===mo?' selected':''}>${esc(ST_MODE_FR[mo]||mo)}</option>`).join("")}</select></label>`:'';
   ed.innerHTML=`<div class="card st-shell dashx">
     <div class="st-top"><input class="tl-name" id="stName" value="${esc(ST_EDIT.name)}" maxlength="80" placeholder="Nom de la stratégie">
       <div class="st-top-act"><button class="btn" id="stChangeMap">🗺️ Carte</button><button class="btn" id="stCancel">Annuler</button><button class="btn tl-save" id="stSave">✓ Enregistrer</button></div></div>
-    <div class="st-toolbar"><div class="st-tools">${tools}</div><div class="st-colors">${colors}</div><div class="st-tb-act"><button class="btn st-mini2" id="stDelSel" title="Supprimer l'élément sélectionné">Suppr. élément</button><button class="btn st-mini2" id="stClear" title="Tout effacer">Vider</button></div></div>
+    <div class="st-toolbar"><div class="st-tools">${tools}</div><div class="st-colors">${colors}</div>${modeSel}<div class="st-tb-act"><button class="btn st-mini2" id="stDelSel" title="Supprimer l'élément sélectionné">Suppr. élément</button><button class="btn st-mini2" id="stClear" title="Tout effacer">Vider</button></div></div>
     <div class="st-stage-wrap"><svg class="st-svg" id="stSvg" viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg">
       <defs><marker id="st-ah" markerWidth="4.5" markerHeight="4.5" refX="3" refY="2.25" orient="auto"><path d="M0,0 L4.5,2.25 L0,4.5 z" fill="context-stroke"/></marker></defs>
       <image href="maps/top/${esc(ST_EDIT.map)}.jpg" x="0" y="0" width="1000" height="1000" preserveAspectRatio="none"/>
+      <g id="stBases" style="pointer-events:none">${stBasesSvg(ST_EDIT.map,ST_EDIT.mode)}</g>
       <g id="stEls"></g></svg></div>
     <div class="st-hint">Outil <b id="stToolName">${esc((ST_TOOLS.find(t=>t[0]===ST_TOOL)||[])[1]||'')}</b> — dessine sur la carte. Jeton/Texte : clique. Sélection : glisse pour déplacer, « Suppr. élément » pour retirer.</div></div>`;
   stRedraw();
@@ -4517,6 +4542,7 @@ function stWireEditor(){
   ed.querySelector("#stDelSel").onclick=()=>{ if(ST_SEL!=null){ ST_EDIT.els.splice(ST_SEL,1); ST_SEL=null; stRedraw(); } };
   ed.querySelectorAll(".st-tool").forEach(b=>b.onclick=()=>{ ST_TOOL=b.dataset.tool; ST_SEL=null; ed.querySelectorAll(".st-tool").forEach(x=>x.classList.toggle("on",x===b)); const tn=document.getElementById("stToolName"); if(tn)tn.textContent=(ST_TOOLS.find(t=>t[0]===ST_TOOL)||[])[1]||''; stRedraw(); });
   ed.querySelectorAll(".st-color").forEach(b=>b.onclick=()=>{ ST_COLOR=b.dataset.color; ed.querySelectorAll(".st-color").forEach(x=>x.classList.toggle("on",x===b)); });
+  const msel=ed.querySelector("#stMode"); if(msel) msel.onchange=()=>{ ST_EDIT.mode=msel.value; const g=document.getElementById("stBases"); if(g) g.innerHTML=stBasesSvg(ST_EDIT.map,ST_EDIT.mode); };
   svg.onpointerdown=e=>{
     e.preventDefault(); const p=stPt(e,svg); const hit=e.target.closest("[data-eid]"); const eid=hit?+hit.dataset.eid:null;
     if(ST_TOOL==='erase'){ if(eid!=null){ ST_EDIT.els.splice(eid,1); ST_SEL=null; stRedraw(); } return; }
@@ -4544,7 +4570,7 @@ function stWireEditor(){
 }
 async function saveStrat(){
   if(!ST_EDIT.map){ alert("Choisis une carte."); return; }
-  const payload={ id:ST_EDIT.id||null, name:(ST_EDIT.name||"Stratégie").trim()||"Stratégie", map:ST_EDIT.map, elements:ST_EDIT.els };
+  const payload={ id:ST_EDIT.id||null, name:(ST_EDIT.name||"Stratégie").trim()||"Stratégie", map:ST_EDIT.map, mode:ST_EDIT.mode||"ctf", elements:ST_EDIT.els };
   const btn=document.getElementById("stSave"); if(btn){btn.disabled=true;btn.textContent="Enregistrement…";}
   const r=await fnCall("strategies",{session:localStorage.getItem(LS_SESSION),action:"save",strategy:payload});
   if(!r.ok){ if(btn){btn.disabled=false;btn.textContent="✓ Enregistrer";} alert("Erreur : "+(r.j.error||r.status)); return; }
@@ -4565,6 +4591,7 @@ function openStratView(s){
     <div class="st-stage-wrap"><svg class="st-svg st-svg-view" viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg">
       <defs><marker id="st-ah" markerWidth="4.5" markerHeight="4.5" refX="3" refY="2.25" orient="auto"><path d="M0,0 L4.5,2.25 L0,4.5 z" fill="context-stroke"/></marker></defs>
       <image href="maps/top/${esc(s.map||'')}.jpg" x="0" y="0" width="1000" height="1000" preserveAspectRatio="none"/>
+      <g style="pointer-events:none">${stBasesSvg(s.map,s.mode||'ctf')}</g>
       <g>${els.map((e,i)=>stElSvg(e,i)).join("")}</g></svg></div>
     <div class="tl-card-by">Par ${esc(s.created_by_name||"?")}</div></div>`;
   document.getElementById("stCloseView").onclick=()=>{ ed.classList.add("hidden"); ed.innerHTML=""; };
