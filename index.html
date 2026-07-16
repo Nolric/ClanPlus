@@ -921,7 +921,12 @@
   .lo-card2{position:relative;background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:var(--shadow-sm);animation:loIn .45s cubic-bezier(.2,.7,.2,1) both;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
   .lo-card2:hover{transform:translateY(-3px);box-shadow:var(--shadow);border-color:var(--cls)}
   .lo-card2::after{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--cls)}
-  .lo-card2-h{position:relative;display:flex;align-items:flex-start;gap:14px;padding:15px 16px 12px;overflow:hidden}
+  .lo-card2-h{position:relative;display:flex;align-items:flex-start;gap:14px;padding:15px 34px 12px 16px;overflow:hidden;cursor:pointer}
+  .lo-card2-body{overflow:hidden;transition:max-height .38s cubic-bezier(.2,.7,.2,1),opacity .25s ease;max-height:1800px;opacity:1}
+  .lo-card2.lo-collapsed .lo-card2-body{max-height:0;opacity:0}
+  .lo-chev{position:absolute;right:12px;top:50%;transform:translateY(-50%) rotate(180deg);color:var(--muted);font-size:16px;line-height:1;transition:transform .3s ease,color .15s;z-index:3}
+  .lo-card2.lo-collapsed .lo-chev{transform:translateY(-50%) rotate(0deg)}
+  .lo-card2-h:hover .lo-chev{color:var(--cls)}
   .lo-card2-h::before{content:"";position:absolute;inset:0;background:linear-gradient(100deg,var(--cls),transparent 62%);opacity:.11;pointer-events:none}
   .lo-t-ic{width:122px;flex:0 0 auto;z-index:1}
   .lo-t-ic img{width:122px;height:auto;object-fit:contain;filter:drop-shadow(0 2px 5px rgba(0,0,0,.45))}
@@ -936,6 +941,58 @@
   .lo-fmtile{width:auto;min-width:52px}
   .lo-fmcap{display:flex;flex-direction:column;align-items:center;font-size:8.5px;color:var(--muted);line-height:1.3;text-align:center;margin-top:2px}
   .lo-fmcap b{font-weight:800;color:var(--cls);font-size:9.5px}
+  /* Sous-onglets Loadouts (Réglages / Tier lists) */
+  .lo-subtabs{display:flex;gap:6px;margin:6px 0 14px}
+  .lo-subtab{display:inline-flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--border);color:var(--ink-2);font:inherit;font-size:13px;font-weight:600;padding:9px 16px;border-radius:10px;cursor:pointer;transition:.15s}
+  .lo-subtab svg{width:15px;height:15px}
+  .lo-subtab:hover{color:var(--ink);border-color:var(--gold-line)}
+  .lo-subtab.on{background:var(--gold-soft);color:var(--gold-2);border-color:var(--gold-line)}
+  /* Tier lists — cartes récap */
+  .tl-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;max-width:1080px}
+  @media(max-width:860px){ .tl-cards{grid-template-columns:1fr} }
+  .tl-card{background:#16171a;border:1px solid #2b2d31;border-radius:13px;overflow:hidden;cursor:pointer;transition:.15s}
+  .tl-card:hover{border-color:rgba(229,185,92,.4);transform:translateY(-2px)}
+  .tl-card-h{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 14px;border-bottom:1px solid #24262a}
+  .tl-card-h b{font-size:14.5px;color:#ecebe8}
+  .tl-cardact{display:flex;gap:6px}
+  .tl-mini{padding:8px 10px;display:flex;flex-direction:column;gap:4px}
+  .tl-mini-row{display:flex;align-items:center;gap:8px}
+  .tl-mini-lbl{flex:0 0 26px;width:26px;height:22px;border-radius:5px;display:grid;place-items:center;font-size:12px;font-weight:800;color:#17130b}
+  .tl-mini-tanks{display:flex;gap:2px;flex-wrap:wrap;overflow:hidden;max-height:24px}
+  .tl-mini-tanks img{width:34px;height:22px;object-fit:contain}
+  .tl-card-by{padding:8px 14px;font-size:11px;color:#8b9099;border-top:1px solid #24262a}
+  /* Tier list — éditeur / vue (style TierMaker) */
+  .tl-editor{background:#101113;border:1px solid #2b2d31;padding:0;overflow:hidden;margin-bottom:16px}
+  .tl-ed-h{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid #2b2d31;flex-wrap:wrap}
+  .tl-name{flex:1;min-width:180px;font:inherit;font-size:16px;font-weight:800;color:#ecebe8;background:#17181b;border:1px solid #2b2d31;border-radius:9px;padding:9px 12px}
+  .tl-view-name{font-size:17px;font-weight:800;color:var(--gold)}
+  .tl-ed-act{display:flex;gap:8px;flex-wrap:wrap}
+  .tl-rows{display:flex;flex-direction:column;gap:3px;padding:12px;background:#0c0d0f}
+  .tl-row{display:flex;align-items:stretch;gap:0;background:#0b0c0e;border:1px solid #202226;border-radius:0;min-height:66px}
+  .tl-row-lbl{position:relative;flex:0 0 92px;width:92px;display:flex;align-items:center;justify-content:center;padding:6px}
+  .tl-lbl-in{width:100%;text-align:center;font:inherit;font-size:15px;font-weight:800;color:#17130b;background:transparent;border:0;outline:none}
+  .tl-lbl-in::placeholder{color:rgba(0,0,0,.4)}
+  .tl-row-ctl{position:absolute;top:2px;right:2px;display:none;gap:2px;background:rgba(0,0,0,.35);border-radius:6px;padding:2px}
+  .tl-row-lbl:hover .tl-row-ctl{display:flex}
+  .tl-color{width:18px;height:18px;padding:0;border:0;background:none;cursor:pointer}
+  .tl-rowbtn{width:18px;height:18px;border:0;background:rgba(255,255,255,.15);color:#fff;border-radius:4px;font-size:9px;cursor:pointer;display:grid;place-items:center;line-height:1}
+  .tl-rowbtn:hover{background:rgba(255,255,255,.3)}
+  .tl-rowdel:hover{background:#c9484a}
+  .tl-drop{flex:1;min-width:0;display:flex;flex-wrap:wrap;gap:4px;align-content:flex-start;padding:6px;background:#141518;transition:background .12s}
+  .tl-drop.over{background:rgba(229,185,92,.16);outline:2px dashed rgba(229,185,92,.5);outline-offset:-3px}
+  .tl-tank{width:62px;height:40px;flex:0 0 auto;cursor:grab;border-radius:5px;background:#1e1f22;border:1px solid #2b2d31;display:grid;place-items:center;transition:transform .1s,border-color .1s}
+  .tl-tank img{max-width:58px;max-height:36px;object-fit:contain;pointer-events:none}
+  .tl-tank:hover{border-color:var(--gold);transform:scale(1.05)}
+  .tl-tank.dragging{opacity:.35}
+  .tl-row-view .tl-tank{cursor:default}
+  .tl-empty-row{color:#5a5e66;font-size:12px;padding:8px}
+  .tl-pool-h{padding:12px 16px 4px;font-size:13px;font-weight:700;color:var(--gold)}
+  .tl-pool-h .hint{font-weight:400;color:#8b9099;font-size:11px;margin-left:6px}
+  .tl-flt{display:flex;gap:8px;flex-wrap:wrap;padding:6px 16px 10px}
+  .tl-flt select,.tl-flt .lo-search{font:inherit;font-size:12.5px;padding:8px 11px;border-radius:8px;border:1px solid #2b2d31;background:#17181b;color:#ecebe8}
+  .tl-flt .lo-search{flex:1;min-width:150px}
+  .tl-pool{display:flex;flex-wrap:wrap;gap:5px;align-content:flex-start;padding:10px 16px 16px;min-height:70px;max-height:44vh;overflow-y:auto;background:#0d0e10;border-top:1px solid #202226;transition:background .12s}
+  .tl-pool.over{background:rgba(229,185,92,.1)}
   .lo-pills{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
   .lo-pill{font-size:11px;font-weight:600;background:var(--surface-2);border:1px solid var(--border);border-radius:20px;padding:3px 10px;color:var(--ink-2);font-variant-numeric:tabular-nums}
   .lo-cardact{display:flex;gap:6px;flex:0 0 auto;z-index:2}
@@ -1452,10 +1509,22 @@
         <div class="lu-sub" id="loRole"></div>
       </div>
       <button class="btn lu-new hidden" id="loNewBtn">＋ Ajouter un loadout</button>
+      <button class="btn lu-new hidden" id="tlNewBtn">＋ Nouvelle tier list</button>
     </div>
-    <p class="sec-desc" style="margin-top:-8px">Les <b>réglages recommandés par le clan</b> pour chaque char tier 10 : <b>équipements</b>, <b>consommables</b> et <b>notes</b>. Créés par les <b>officiers de combat et +</b>. (Les modifications de terrain arrivent en phase 3.)</p>
-    <div id="loEditor" class="hidden"></div>
-    <div id="loList"></div>
+    <div class="lo-subtabs">
+      <button class="lo-subtab on" data-losub="loadouts"><svg class="ic"><use href="#i-tools"/></svg>Réglages par char</button>
+      <button class="lo-subtab" data-losub="tier"><svg class="ic"><use href="#i-grid"/></svg>Tier lists</button>
+    </div>
+    <div id="loMain">
+      <p class="sec-desc" style="margin-top:2px">Les <b>réglages recommandés par le clan</b> pour chaque char tier 10 : <b>équipements</b>, <b>consommables</b>, <b>équipage</b> et <b>modifications de terrain</b>. Créés par les <b>officiers de combat et +</b>.</p>
+      <div id="loEditor" class="hidden"></div>
+      <div id="loList"></div>
+    </div>
+    <div id="tlMain" class="hidden dashx">
+      <p class="sec-desc" style="margin-top:2px">Classe les chars tier 10 par tier (S, A, B…) façon <b>TierMaker</b> : glisse-dépose les chars dans les lignes. Créées par les officiers.</p>
+      <div id="tlEditor" class="hidden"></div>
+      <div id="tlList"></div>
+    </div>
   </div>
 
   <div id="viewRanking" class="hidden">
@@ -2985,6 +3054,8 @@ function wireUI(){
   document.getElementById("clanQuery").addEventListener("keydown",e=>{ if(e.key==="Enter") searchClans(); });
   document.getElementById("luNewBtn").onclick=()=>openLineupEditor(null);
   document.getElementById("loNewBtn").onclick=()=>openLoadoutEditor(null);
+  document.getElementById("tlNewBtn").onclick=()=>openTierlistEditor(null);
+  document.querySelectorAll(".lo-subtab").forEach(b=>b.onclick=()=>switchLoSub(b.dataset.losub));
   document.getElementById("sideToggle").onclick=toggleSidebar;
   const rkSel=document.getElementById("rkMetric");
   rkSel.innerHTML=RK_METRICS.map(([k,l])=>`<option value="${k}">${esc(l)}</option>`).join("");
@@ -3754,13 +3825,14 @@ function renderLoadouts(){
     if(t.view_range)pills.push(`<span class="lo-pill">${t.view_range} m</span>`);
     if(t.speed)pills.push(`<span class="lo-pill">${t.speed} km/h</span>`);
     const btns=LO_CANEDIT?`<div class="lo-cardact"><button class="lo-mini" data-edit="${lo.tank_id}" title="Modifier">✎</button><button class="lo-mini lo-minidel" data-del="${lo.tank_id}" title="Supprimer">✕</button></div>`:"";
-    return `<div class="lo-card2" style="--cls:${col};animation-delay:${Math.min(idx,12)*55}ms">
+    return `<div class="lo-card2 lo-collapsed" style="--cls:${col};animation-delay:${Math.min(idx,12)*55}ms">
       <div class="lo-card2-h">
         ${t.icon?`<div class="lo-t-ic"><img src="${esc(t.icon)}" onerror="this.style.display='none'"></div>`:""}
         <div class="lo-t-info"><div class="lo-t-name">${esc(t.name)}</div>
           <div class="lo-t-meta">${t.type?`<span class="lo-clsic" style="--cimg:url(classes/${esc(t.type)}.png)"></span>`:""}<span class="lo-cls">${esc(clsLbl)}</span><span class="lo-tier">X</span></div>
           <div class="lo-pills">${pills.join("")}</div>
-        </div>${btns}</div>
+        </div>${btns}<span class="lo-chev" aria-hidden="true">⌄</span></div>
+      <div class="lo-card2-body">
       <div class="lo-sec2"><div class="lo-sec2-l">Équipements${eq2.length?' A':''}</div><div class="lo-dtiles">${dtiles(eq,true)}</div></div>
       ${eq2.length?`<div class="lo-sec2"><div class="lo-sec2-l">Équip. B</div><div class="lo-dtiles">${dtiles(eq2,true)}</div></div>`:""}
       <div class="lo-sec2"><div class="lo-sec2-l">Consommables${co2.length?' A':''}</div><div class="lo-dtiles">${dtiles(co,true)}</div></div>
@@ -3769,10 +3841,12 @@ function renderLoadouts(){
       ${(fmTags.length||fmMods.length)?`<div class="lo-sec2"><div class="lo-sec2-l">Modif. terrain</div><div class="lo-dtiles lo-fmrow">${fmTags.map(x=>`<span class="lo-fmbadge">${x}</span>`).join("")}${fmMods.map(x=>`<div class="lo-dtile lo-fmtile" title="Niveau ${x.lvl} · ${x.side==='a'?'Gauche':'Droite'} — ${esc((x.m.stats||[]).map(s=>s.name).join(', '))}"><div class="lo-dtile-ic">${x.m.img?`<img src="fieldmods/${esc(x.m.img)}.png" onerror="this.style.display='none'">`:""}</div><span class="lo-fmcap">Niv.${x.lvl}<b>${x.side==='a'?'Gauche':'Droite'}</b></span></div>`).join("")}</div></div>`:""}
       ${lo.notes?`<div class="lo-note2">${esc(lo.notes)}</div>`:""}
       <div class="lo-by2">Recommandé par ${esc(lo.created_by_name||"?")}</div>
+      </div>
     </div>`;
   }).join("")+'</div>';
-  el.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>openLoadoutEditor(LOADOUTS.find(x=>String(x.tank_id)===b.dataset.edit)));
-  el.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>deleteLoadout(b.dataset.del));
+  el.querySelectorAll(".lo-card2-h").forEach(h=>h.onclick=e=>{ if(e.target.closest("[data-edit],[data-del]")) return; h.closest(".lo-card2").classList.toggle("lo-collapsed"); });
+  el.querySelectorAll("[data-edit]").forEach(b=>b.onclick=e=>{e.stopPropagation();openLoadoutEditor(LOADOUTS.find(x=>String(x.tank_id)===b.dataset.edit));});
+  el.querySelectorAll("[data-del]").forEach(b=>b.onclick=e=>{e.stopPropagation();deleteLoadout(b.dataset.del);});
 }
 const WIZ_STEPS=[["Char","i-grid"],["Équipements","i-tools"],["Consommables","i-heart"],["Équipage","i-users"],["Améliorations","i-bolt"]];
 let LO_FM=null;   // donnees des modifications de terrain (web/fieldmods.json)
@@ -4134,6 +4208,130 @@ async function deleteLoadout(tid){
   const r=await fnCall("loadouts",{session:localStorage.getItem(LS_SESSION),action:"delete",tank_id:Number(tid)});
   if(!r.ok){ alert("Erreur : "+(r.j.error||r.status)); return; }
   loadLoadouts();
+}
+
+/* ============================================================
+   TIER LISTS (style TierMaker) — glisse-dépose des chars par tier
+   ============================================================ */
+let TIERLISTS=[], TL_CANEDIT=false, TL_EDIT=null, TL_DRAG=null, TL_LOADED=false, TL_TQ="", TL_TCLS="", TL_TNAT="";
+const TL_DEFAULT_ROWS=()=>[
+  {label:"S",color:"#e5544b",tanks:[]},{label:"A",color:"#e59a4b",tanks:[]},
+  {label:"B",color:"#e5c84b",tanks:[]},{label:"C",color:"#8fd14f",tanks:[]},{label:"D",color:"#5bb0e5",tanks:[]}];
+function switchLoSub(sub){
+  document.querySelectorAll(".lo-subtab").forEach(b=>b.classList.toggle("on",b.dataset.losub===sub));
+  const isTier=sub==="tier";
+  document.getElementById("loMain").classList.toggle("hidden",isTier);
+  document.getElementById("tlMain").classList.toggle("hidden",!isTier);
+  document.getElementById("loNewBtn").classList.toggle("hidden", isTier || !LO_CANEDIT);
+  document.getElementById("tlNewBtn").classList.toggle("hidden", !isTier || !TL_CANEDIT);
+  if(isTier && !TL_LOADED) loadTierlists();
+}
+async function loadTierlists(){
+  TL_LOADED=true;
+  const list=document.getElementById("tlList"); list.innerHTML='<div class="card">'+cpLoader()+'</div>';
+  if(!LO_REF || !(LO_REF.tanks||[]).length){ try{ const rf=await fnCall("reference",{session:localStorage.getItem(LS_SESSION)}); if(rf.ok&&rf.j&&rf.j.tanks) LO_REF=rf.j; }catch(e){} }
+  try{
+    const r=await fnCall("tierlists",{session:localStorage.getItem(LS_SESSION),action:"list"});
+    if(!r.ok){ list.innerHTML='<div class="card"><div class="empty">Erreur tier lists : '+esc((r.j&&r.j.error)||String(r.status))+' — la fonction « tierlists » est-elle déployée ?</div></div>'; return; }
+    TIERLISTS=r.j.tierlists||[]; TL_CANEDIT=meIsManager();
+    if(!document.getElementById("tlMain").classList.contains("hidden")) document.getElementById("tlNewBtn").classList.toggle("hidden",!TL_CANEDIT);
+    renderTierlists();
+  }catch(e){ list.innerHTML='<div class="card"><div class="empty">Impossible de joindre « tierlists » ('+esc(String(e))+').</div></div>'; }
+}
+function renderTierlists(){
+  const el=document.getElementById("tlList"), M=loMaps();
+  if(!TIERLISTS.length){ el.innerHTML=`<div class="lo-empty"><div class="lo-empty-ic">🏆</div><div class="lo-empty-t">Aucune tier list</div><div class="lo-empty-s">${TL_CANEDIT?'Clique « Nouvelle tier list » pour en créer une.':'Les officiers n’ont pas encore créé de tier list.'}</div></div>`; return; }
+  el.innerHTML='<div class="tl-cards">'+TIERLISTS.map(tl=>{
+    const preview=(tl.rows||[]).slice(0,6).map(r=>`<div class="tl-mini-row"><span class="tl-mini-lbl" style="background:${esc(r.color)}">${esc(r.label)}</span><div class="tl-mini-tanks">${(r.tanks||[]).slice(0,12).map(id=>{const t=M.t[id]; return t?`<img src="${esc(t.icon||'')}" onerror="this.style.display='none'" loading="lazy">`:''; }).join("")}</div></div>`).join("");
+    const btns=TL_CANEDIT?`<div class="tl-cardact"><button class="lo-mini" data-tledit="${tl.id}" title="Modifier">✎</button><button class="lo-mini lo-minidel" data-tldel="${tl.id}" title="Supprimer">✕</button></div>`:"";
+    return `<div class="tl-card" data-tlopen="${tl.id}"><div class="tl-card-h"><b>${esc(tl.name||"Tier list")}</b>${btns}</div><div class="tl-mini">${preview}</div><div class="tl-card-by">Par ${esc(tl.created_by_name||"?")}</div></div>`;
+  }).join("")+'</div>';
+  el.querySelectorAll("[data-tlopen]").forEach(c=>c.onclick=e=>{ if(e.target.closest("[data-tledit],[data-tldel]"))return; openTierlistView(TIERLISTS.find(x=>String(x.id)===c.dataset.tlopen)); });
+  el.querySelectorAll("[data-tledit]").forEach(b=>b.onclick=e=>{e.stopPropagation();openTierlistEditor(TIERLISTS.find(x=>String(x.id)===b.dataset.tledit));});
+  el.querySelectorAll("[data-tldel]").forEach(b=>b.onclick=e=>{e.stopPropagation();deleteTierlist(b.dataset.tldel);});
+}
+function tlAllTankIds(){ return ((LO_REF&&LO_REF.tanks)||[]).map(t=>Number(t.tank_id)); }
+function tlPool(){ const placed=new Set(); TL_EDIT.rows.forEach(r=>r.tanks.forEach(id=>placed.add(Number(id)))); return tlAllTankIds().filter(id=>!placed.has(id)); }
+function openTierlistEditor(tl){
+  if(!TL_CANEDIT){ alert("Réservé aux officiers de combat et plus."); return; }
+  const rows=(tl&&Array.isArray(tl.rows)&&tl.rows.length)? tl.rows.map(r=>({label:r.label||"",color:r.color||"#3a3d42",tanks:(r.tanks||[]).map(Number)})) : TL_DEFAULT_ROWS();
+  TL_EDIT={ id:(tl&&tl.id)||null, name:(tl&&tl.name)||"Nouvelle tier list", rows };
+  renderTierEditor();
+  document.getElementById("tlEditor").scrollIntoView({behavior:"smooth",block:"start"});
+}
+function tlTankTile(id,drag){ const t=loMaps().t[id]; if(!t) return '';
+  return `<div class="tl-tank" ${drag?'draggable="true"':''} data-tank="${id}" title="${esc(t.name)}"><img src="${esc(t.icon||'')}" onerror="this.style.display='none'" loading="lazy"></div>`; }
+function renderTierEditor(){
+  const ed=document.getElementById("tlEditor"); ed.classList.remove("hidden");
+  const rowsHtml=TL_EDIT.rows.map((r,i)=>`<div class="tl-row" data-row="${i}">
+    <div class="tl-row-lbl" style="background:${esc(r.color)}"><input class="tl-lbl-in" value="${esc(r.label)}" maxlength="24" data-lbl="${i}" title="Nom du tier">
+      <div class="tl-row-ctl"><input type="color" class="tl-color" value="${esc(r.color)}" data-color="${i}" title="Couleur"><button type="button" class="tl-rowbtn" data-rowup="${i}" title="Monter">▲</button><button type="button" class="tl-rowbtn" data-rowdown="${i}" title="Descendre">▼</button><button type="button" class="tl-rowbtn tl-rowdel" data-rowdel="${i}" title="Supprimer la ligne">✕</button></div></div>
+    <div class="tl-drop" data-drop="${i}">${r.tanks.map(id=>tlTankTile(id,true)).join("")}</div></div>`).join("");
+  const src=(LO_REF.tanks||[]);
+  const nats=[...new Set(src.map(x=>x.nation).filter(Boolean))].sort();
+  const natOpts='<option value="">Toutes nations</option>'+nats.map(n=>`<option value="${n}"${TL_TNAT===n?' selected':''}>${LO_NATION_FR[n]||n}</option>`).join("");
+  const clsOpts='<option value="">Toutes classes</option>'+LO_CLS_OPT.filter(c=>src.some(x=>x.type===c[0])).map(c=>`<option value="${c[0]}"${TL_TCLS===c[0]?' selected':''}>${c[1]}</option>`).join("");
+  ed.innerHTML=`<div class="card tl-editor dashx">
+    <div class="tl-ed-h"><input class="tl-name" value="${esc(TL_EDIT.name)}" maxlength="80" placeholder="Nom de la tier list"><div class="tl-ed-act"><button class="btn" id="tlAddRow">＋ Ligne</button><button class="btn" id="tlCancel">Annuler</button><button class="btn2 wz-save" id="tlSave">✓ Enregistrer</button></div></div>
+    <div class="tl-rows" id="tlRows">${rowsHtml}</div>
+    <div class="tl-pool-h">Chars à classer <span class="hint">glisse-les dans les lignes ↑ (ou reglisse-les ici)</span></div>
+    <div class="tl-flt"><select class="lo-fclass" id="tlFCls">${clsOpts}</select><select class="lo-fnation" id="tlFNat">${natOpts}</select><input class="lo-search" id="tlQ" placeholder="Rechercher un char…" value="${esc(TL_TQ)}"></div>
+    <div class="tl-pool" id="tlPool" data-drop="pool">${tlPool().map(id=>tlTankTile(id,true)).join("")}</div></div>`;
+  tlWireEditor();
+}
+function tlWireEditor(){
+  const ed=document.getElementById("tlEditor");
+  ed.querySelector(".tl-name").oninput=e=>TL_EDIT.name=e.target.value;
+  document.getElementById("tlAddRow").onclick=()=>{ if(TL_EDIT.rows.length>=12){alert("12 lignes maximum.");return;} TL_EDIT.rows.push({label:"Nouveau",color:"#3a3d42",tanks:[]}); renderTierEditor(); };
+  document.getElementById("tlCancel").onclick=()=>{ ed.classList.add("hidden"); ed.innerHTML=""; TL_EDIT=null; };
+  document.getElementById("tlSave").onclick=saveTierlist;
+  ed.querySelectorAll("[data-lbl]").forEach(inp=>inp.oninput=e=>TL_EDIT.rows[+inp.dataset.lbl].label=e.target.value);
+  ed.querySelectorAll("[data-color]").forEach(inp=>inp.oninput=e=>{ TL_EDIT.rows[+inp.dataset.color].color=e.target.value; inp.closest(".tl-row-lbl").style.background=e.target.value; });
+  ed.querySelectorAll("[data-rowup]").forEach(b=>b.onclick=()=>{ const i=+b.dataset.rowup; if(i>0){ const r=TL_EDIT.rows.splice(i,1)[0]; TL_EDIT.rows.splice(i-1,0,r); renderTierEditor(); } });
+  ed.querySelectorAll("[data-rowdown]").forEach(b=>b.onclick=()=>{ const i=+b.dataset.rowdown; if(i<TL_EDIT.rows.length-1){ const r=TL_EDIT.rows.splice(i,1)[0]; TL_EDIT.rows.splice(i+1,0,r); renderTierEditor(); } });
+  ed.querySelectorAll("[data-rowdel]").forEach(b=>b.onclick=()=>{ if(TL_EDIT.rows.length<=1)return; if(!confirm("Supprimer cette ligne ? Ses chars retournent au pool.")) return; TL_EDIT.rows.splice(+b.dataset.rowdel,1); renderTierEditor(); });
+  const q=document.getElementById("tlQ"),fc=document.getElementById("tlFCls"),fn=document.getElementById("tlFNat"),M=loMaps();
+  const applyF=()=>{ TL_TQ=q.value; TL_TCLS=fc.value; TL_TNAT=fn.value; const qq=TL_TQ.toLowerCase();
+    document.querySelectorAll("#tlPool .tl-tank").forEach(el=>{ const t=M.t[+el.dataset.tank]||{}; const ok=(!qq||String(t.name||'').toLowerCase().indexOf(qq)>=0)&&(!TL_TCLS||t.type===TL_TCLS)&&(!TL_TNAT||t.nation===TL_TNAT); el.style.display=ok?'':'none'; }); };
+  q.oninput=applyF; fc.onchange=applyF; fn.onchange=applyF; applyF();
+  ed.querySelectorAll(".tl-tank").forEach(tile=>{
+    tile.ondragstart=e=>{ TL_DRAG=+tile.dataset.tank; e.dataTransfer.effectAllowed="move"; try{e.dataTransfer.setData("text/plain",String(TL_DRAG));}catch(_){} setTimeout(()=>tile.classList.add("dragging"),0); };
+    tile.ondragend=()=>{ tile.classList.remove("dragging"); ed.querySelectorAll(".tl-drop.over,.tl-pool.over").forEach(d=>d.classList.remove("over")); };
+  });
+  ed.querySelectorAll("[data-drop]").forEach(zone=>{
+    zone.ondragover=e=>{ e.preventDefault(); e.dataTransfer.dropEffect="move"; zone.classList.add("over"); };
+    zone.ondragleave=()=>zone.classList.remove("over");
+    zone.ondrop=e=>{ e.preventDefault(); zone.classList.remove("over"); const id=TL_DRAG||Number(e.dataTransfer.getData("text/plain")); if(id) tlMoveTank(id,zone.dataset.drop); };
+  });
+}
+function tlMoveTank(id,target){
+  id=Number(id);
+  TL_EDIT.rows.forEach(r=>{ const i=r.tanks.indexOf(id); if(i>=0) r.tanks.splice(i,1); });
+  if(target!=="pool"){ const ri=+target; if(TL_EDIT.rows[ri] && TL_EDIT.rows[ri].tanks.indexOf(id)<0) TL_EDIT.rows[ri].tanks.push(id); }
+  TL_DRAG=null; renderTierEditor();
+}
+async function saveTierlist(){
+  const payload={ id:TL_EDIT.id||null, name:(TL_EDIT.name||"Tier list").trim()||"Tier list", rows:TL_EDIT.rows.map(r=>({label:r.label,color:r.color,tanks:r.tanks})) };
+  const btn=document.getElementById("tlSave"); if(btn){btn.disabled=true;btn.textContent="Enregistrement…";}
+  const r=await fnCall("tierlists",{session:localStorage.getItem(LS_SESSION),action:"save",tierlist:payload});
+  if(!r.ok){ if(btn){btn.disabled=false;btn.textContent="✓ Enregistrer";} alert("Erreur : "+(r.j.error||r.status)); return; }
+  const ed=document.getElementById("tlEditor"); ed.classList.add("hidden"); ed.innerHTML=""; TL_EDIT=null;
+  loadTierlists();
+}
+async function deleteTierlist(id){
+  if(!confirm("Supprimer cette tier list ?")) return;
+  const r=await fnCall("tierlists",{session:localStorage.getItem(LS_SESSION),action:"delete",id:Number(id)});
+  if(!r.ok){ alert("Erreur : "+(r.j.error||r.status)); return; }
+  loadTierlists();
+}
+function openTierlistView(tl){
+  if(!tl) return; const M=loMaps();
+  const ed=document.getElementById("tlEditor"); ed.classList.remove("hidden");
+  const rowsHtml=(tl.rows||[]).map(r=>`<div class="tl-row tl-row-view"><div class="tl-row-lbl tl-row-lbl-view" style="background:${esc(r.color)}">${esc(r.label)}</div><div class="tl-drop">${(r.tanks||[]).map(id=>{const t=M.t[id];return t?`<div class="tl-tank" title="${esc(t.name)}"><img src="${esc(t.icon||'')}" onerror="this.style.display='none'" loading="lazy"></div>`:'';}).join("")||'<span class="tl-empty-row">—</span>'}</div></div>`).join("");
+  ed.innerHTML=`<div class="card tl-editor dashx"><div class="tl-ed-h"><b class="tl-view-name">${esc(tl.name||"Tier list")}</b><div class="tl-ed-act">${TL_CANEDIT?`<button class="btn" id="tlEditThis">✎ Modifier</button>`:""}<button class="btn" id="tlCloseView">Fermer</button></div></div><div class="tl-rows">${rowsHtml}</div><div class="tl-card-by">Par ${esc(tl.created_by_name||"?")}</div></div>`;
+  document.getElementById("tlCloseView").onclick=()=>{ ed.classList.add("hidden"); ed.innerHTML=""; };
+  const eb=document.getElementById("tlEditThis"); if(eb) eb.onclick=()=>openTierlistEditor(tl);
+  ed.scrollIntoView({behavior:"smooth",block:"start"});
 }
 
 /* ============================================================
