@@ -317,37 +317,173 @@
   .pmeta b{font-weight:700}
   .role-badge{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--accent);
     background:var(--accent-soft);border:1px solid var(--accent);border-radius:999px;padding:3px 10px}
-  /* ---- Line-ups ---- */
-  .lu-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:18px;flex-wrap:wrap}
-  .lu-title{font-size:18px;margin:0;letter-spacing:-.3px}
-  .lu-sub{font-size:12.5px;color:var(--muted);margin-top:3px}
-  .lu-new{font-weight:700;background:var(--accent-soft);border-color:var(--accent);color:var(--ink)}
-  .lu-card{margin-bottom:14px}
-  .lu-card-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap}
-  .lu-card-h h3{font-size:16px;margin:0;display:flex;align-items:baseline;gap:8px}
-  .lu-actions{display:flex;gap:8px}
-  .lu-del:hover{border-color:var(--bad);color:var(--bad)}
-  .lu-notes{font-size:13px;color:var(--ink-2);margin-bottom:10px;padding:9px 12px;background:var(--surface-2);border-radius:8px}
-  .lu-by{font-size:11.5px;color:var(--muted);margin-top:10px}
-  .lu-editor{margin-bottom:16px;border-top:3px solid var(--accent)}
-  .lu-form{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
-  .lu-lab{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--muted);font-weight:600}
-  .lu-lab input{font:inherit;font-size:13px;color:var(--ink);background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:9px 11px}
-  .lu-lab input:focus{border-color:var(--accent);background:var(--card)}
-  .lu-slots{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
-  .lu-slot{display:grid;grid-template-columns:26px 1.2fr 1fr 1fr 36px;gap:8px;align-items:center}
-  .lu-idx{color:var(--muted);font-weight:700;text-align:center;font-variant-numeric:tabular-nums}
-  .lu-slot select,.lu-slot input{font:inherit;font-size:13px;color:var(--ink);background:var(--surface-2);
-    border:1px solid var(--border);border-radius:8px;padding:8px 10px;min-width:0}
-  .lu-slot select:focus,.lu-slot input:focus{border-color:var(--accent);background:var(--card)}
-  .lu-rm:hover{border-color:var(--bad);color:var(--bad)}
-  .lu-form-actions{display:flex;gap:10px;justify-content:flex-end}
-  .lu-save{font-weight:700;background:var(--accent-soft);border-color:var(--accent);color:var(--ink)}
-  @media(max-width:640px){
-    .lu-form{grid-template-columns:1fr}
-    .lu-slot{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
-    .lu-slot select,.lu-slot .lu-tank,.lu-slot .lu-pos{flex:1 1 100%}
-    .lu-slot .lu-rm{margin-left:auto}
+  #viewLineups{color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+  #viewLineups .lu-head{margin-bottom:12px;align-items:center}
+  #viewLineups .lu-title{font-family:var(--fx);font-size:18px;line-height:1.1;letter-spacing:.8px;text-transform:uppercase}
+  #viewLineups .lu-sub{font-size:11.5px;color:var(--ink-2)}
+  #viewLineups .lu-new{border-color:var(--gold-line);background:var(--gold-soft);color:var(--gold-2);padding:8px 13px}
+  #viewLineups .lu-new:hover{border-color:var(--gold);background:rgba(229,185,92,.18)}
+  #viewLineups .lu-notice{margin:0 0 10px;padding:9px 12px;border:1px solid var(--gold-line);border-radius:8px;background:var(--gold-soft);color:var(--gold-2);font-size:11.5px;font-weight:650}
+  #viewLineups .lu-notice.bad{border-color:rgba(232,98,107,.45);background:rgba(232,98,107,.12);color:var(--bad)}
+  #viewLineups .lu-notice.good{border-color:rgba(76,192,119,.42);background:rgba(76,192,119,.12);color:var(--good2)}
+  #viewLineups .lu-context{display:flex;align-items:center;gap:18px;margin-bottom:12px;padding:9px 12px;
+    border:1px solid var(--line);border-radius:11px;background:linear-gradient(180deg,var(--panel),var(--panel-2))}
+  #viewLineups .lu-context-item{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.55px}
+  #viewLineups .lu-context-item b{color:var(--ink-2);font-size:12px;font-weight:650;letter-spacing:0;text-transform:none}
+  #viewLineups .lu-format-tabs{display:flex;gap:0;margin-left:auto;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#0f1012}
+  #viewLineups .lu-format-tabs button{appearance:none;border:0;border-left:1px solid var(--line);background:transparent;color:var(--ink-2);
+    padding:7px 18px;min-width:112px;font-family:inherit;font-size:11.5px;font-weight:600;cursor:pointer;transition:.15s}
+  #viewLineups .lu-format-tabs button:first-child{border-left:0}
+  #viewLineups .lu-format-tabs button:hover{color:var(--ink);background:rgba(255,255,255,.025)}
+  #viewLineups .lu-format-tabs button.on{color:var(--gold-2);background:var(--gold-soft);box-shadow:inset 0 -2px 0 var(--gold)}
+  #viewLineups .lu-editor-shell{display:grid;grid-template-columns:minmax(0,1fr) 225px;gap:12px;margin-bottom:14px}
+  #viewLineups .lu-editor{margin:0;padding:14px;border:1px solid var(--gold-line);border-top:2px solid var(--gold);border-radius:12px;
+    background:linear-gradient(180deg,var(--panel),var(--panel-2));box-shadow:none}
+  #viewLineups .lu-card-h{margin-bottom:12px}
+  #viewLineups .lu-card-h h3{font-family:var(--fx);font-size:14px;text-transform:uppercase;letter-spacing:.75px;color:var(--gold-2)}
+  #viewLineups .lu-form{grid-template-columns:minmax(180px,1fr) minmax(240px,1.3fr);gap:10px;margin-bottom:12px}
+  #viewLineups .lu-lab{font-size:10px;gap:4px;text-transform:uppercase;letter-spacing:.35px;color:var(--muted)}
+  #viewLineups .lu-lab input,#viewLineups .lu-lab select{height:32px;font:inherit;font-size:11.5px;text-transform:none;letter-spacing:0;color:var(--ink);
+    background:#111214;border:1px solid var(--line);border-radius:6px;padding:6px 9px;outline:0}
+  #viewLineups .lu-lab input:focus,#viewLineups .lu-lab select:focus{border-color:var(--gold-line);background:#0d0e10}
+  #viewLineups .lu-weekbar{display:flex;align-items:center;justify-content:center;gap:10px;margin:5px 0 11px}
+  #viewLineups .lu-week-pick{appearance:none;position:relative;min-width:330px;min-height:48px;padding:7px 14px;border:1px solid var(--gold-line);border-radius:9px;background:linear-gradient(180deg,var(--gold-soft),#111214);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;transition:.15s;font:inherit}
+  #viewLineups .lu-week-pick:hover{border-color:var(--gold);background:linear-gradient(180deg,rgba(229,185,92,.19),#111214)}
+  #viewLineups .lu-week-pick-k{font:700 9px var(--fx);text-transform:uppercase;letter-spacing:.65px;color:var(--gold)}
+  #viewLineups .lu-week-pick b{margin-top:2px;text-align:center;font:700 14px var(--fx);color:var(--ink);letter-spacing:.15px;text-transform:none}
+  #viewLineups .lu-week-nav{appearance:none;width:34px;height:34px;border-radius:8px;border:1px solid var(--line);background:#111214;color:var(--ink-2);cursor:pointer;font-size:19px}
+  #viewLineups .lu-week-nav:hover{color:var(--gold);border-color:var(--gold-line)}
+  #viewLineups .lu-month-picker{width:min(360px,100%);margin:-4px auto 11px;padding:10px;border:1px solid var(--gold-line);border-radius:10px;background:#111214;box-shadow:0 12px 30px rgba(0,0,0,.35)}
+  #viewLineups .lu-month-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px}
+  #viewLineups .lu-month-title{font:700 13px var(--fx);text-transform:capitalize;color:var(--gold-2)}
+  #viewLineups .lu-month-nav{appearance:none;width:28px;height:28px;border:1px solid var(--line);border-radius:7px;background:#0d0e10;color:var(--ink-2);cursor:pointer;font-size:16px}
+  #viewLineups .lu-month-nav:hover{border-color:var(--gold);color:var(--gold)}
+  #viewLineups .lu-month-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+  #viewLineups .lu-month-wd{text-align:center;padding:3px 0;font:700 9px var(--fx);text-transform:uppercase;color:var(--muted)}
+  #viewLineups .lu-month-day{appearance:none;height:30px;border:1px solid transparent;border-radius:6px;background:transparent;color:var(--ink-2);font:650 10.5px var(--fx);cursor:pointer}
+  #viewLineups .lu-month-day:hover{border-color:var(--gold-line);color:var(--gold-2);background:var(--gold-soft)}
+  #viewLineups .lu-month-day.in-week{background:rgba(229,185,92,.13);color:var(--gold-2)}
+  #viewLineups .lu-month-day.week-start{border-left-color:var(--gold);border-top-color:var(--gold);border-bottom-color:var(--gold)}
+  #viewLineups .lu-month-day.week-end{border-right-color:var(--gold);border-top-color:var(--gold);border-bottom-color:var(--gold)}
+  #viewLineups .lu-month-day.today{box-shadow:inset 0 0 0 1px var(--ink-2)}
+  #viewLineups .lu-month-blank{height:30px}
+  #viewLineups .lu-attendance{max-height:560px;overflow:auto;border-top:1px solid var(--line-2);border-bottom:1px solid var(--line-2);scrollbar-color:var(--gold-line) #0d0e10}
+  #viewLineups .lu-att-row{display:grid;grid-template-columns:25px minmax(135px,1.2fr) repeat(7,46px) minmax(82px,.65fr) 27px;
+    min-width:715px;gap:0;align-items:center;min-height:31px;border-top:1px solid var(--line-2)}
+  #viewLineups .lu-att-row:first-child{border-top:0}
+  #viewLineups .lu-att-head{position:sticky;top:0;z-index:3;min-height:47px;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.45px;background:var(--panel)}
+  #viewLineups .lu-att-head span{text-align:center}
+  #viewLineups .lu-att-head .lu-player-h,#viewLineups .lu-att-head .lu-pos-h{text-align:left}
+  #viewLineups .lu-day-head{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;line-height:1;font-family:var(--fx);font-size:11px;font-weight:750;color:var(--ink-2)}
+  #viewLineups .lu-day-count{min-width:23px;height:19px;padding:0 5px;border:1px solid var(--gold-line);border-radius:10px;background:var(--gold-soft);color:var(--gold-2);font-family:var(--fx);font-size:11px;font-weight:850;line-height:1;text-align:center;display:grid;place-items:center}
+  #viewLineups button.lu-day-count{appearance:none;cursor:pointer;transition:.15s}
+  #viewLineups button.lu-day-count:hover,#viewLineups button.lu-day-count.on{border-color:var(--gold);background:var(--gold);color:#17130b;transform:scale(1.08)}
+  #viewLineups .lu-idx{font-size:10.5px;color:var(--gold);text-align:center}
+  #viewLineups .lu-player,#viewLineups .lu-pos{width:calc(100% - 7px);height:26px;border:0;border-radius:5px;background:transparent;color:var(--ink-2);
+    font-family:inherit;font-size:11px;font-weight:500;padding:3px 6px;min-width:0}
+  #viewLineups .lu-player:hover,#viewLineups .lu-pos:hover,#viewLineups .lu-player:focus,#viewLineups .lu-pos:focus{background:#111214;outline:1px solid var(--line)}
+  #viewLineups .lu-day{display:grid;place-items:center}
+  #viewLineups .lu-check{appearance:none;width:13px;height:13px;min-width:13px;margin:0;padding:0;border:1px solid #59606a;border-radius:2px;background:#0d0e10;cursor:pointer;position:relative}
+  #viewLineups .lu-check:hover{border-color:var(--gold)}
+  #viewLineups .lu-check:checked{border-color:var(--gold);background:rgba(229,185,92,.16)}
+  #viewLineups .lu-check:checked::after{content:"";position:absolute;left:3px;top:0;width:4px;height:7px;border:solid var(--gold-2);border-width:0 1.5px 1.5px 0;transform:rotate(45deg)}
+  #viewLineups .lu-rm{width:22px;height:22px;border-radius:5px;background:transparent;font-size:10px}
+  #viewLineups .lu-form-actions{padding-top:10px}
+  #viewLineups .lu-form-actions .btn{padding:7px 11px;font-size:11px;border-radius:7px;background:#111214}
+  #viewLineups .lu-form-actions .btn:disabled{opacity:.38;cursor:not-allowed;border-color:var(--line);color:var(--muted)}
+  #viewLineups .lu-form-actions .lu-save{color:#19150b;background:linear-gradient(180deg,var(--gold-2),var(--gold));border-color:var(--gold);font-weight:800}
+  #viewLineups .lu-summary{min-height:100%;border:1px solid var(--gold-line);border-radius:12px;padding:14px;
+    background:linear-gradient(155deg,rgba(229,185,92,.08),rgba(16,17,19,.96) 48%);display:flex;flex-direction:column;align-items:center}
+  #viewLineups .lu-summary-em{width:92px;height:92px;object-fit:contain;border-radius:14px;background:#0d0d0b;border:1px solid var(--gold-line);padding:8px;margin:3px auto 13px}
+  #viewLineups .lu-summary-em-ph{display:grid;place-items:center;color:var(--gold);font:800 18px var(--fx)}
+  #viewLineups .lu-summary-grid{width:100%;display:grid;gap:9px}
+  #viewLineups .lu-summary-stat{border-top:1px solid var(--line);padding-top:8px}
+  #viewLineups .lu-summary-stat:first-child{border-top:0;padding-top:0}
+  #viewLineups .lu-summary-l{font-size:9px;text-transform:uppercase;letter-spacing:.55px;color:var(--muted)}
+  #viewLineups .lu-summary-v{font-family:var(--fx);font-size:22px;color:var(--gold-2);line-height:1.15;margin-top:2px}
+  #viewLineups .lu-summary-v small{font-size:11px;color:var(--ink-2)}
+  #viewLineups .lu-summary-best{font-size:11px;color:var(--gold);font-weight:650;margin-top:3px;text-transform:uppercase}
+  #viewLineups .lu-progress{height:5px;border-radius:6px;background:#0d0e10;border:1px solid var(--line);margin-top:7px;overflow:hidden}
+  #viewLineups .lu-progress span{display:block;height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-2));border-radius:6px}
+  #viewLineups .lu-day-detail{border-top:1px solid var(--line);padding-top:9px}
+  #viewLineups .lu-day-detail-value{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;margin-top:3px;padding:8px 10px;border:1px solid var(--gold-line);border-radius:7px;background:var(--gold-soft)}
+  #viewLineups .lu-day-detail-day{font:700 11px var(--fx);text-transform:uppercase;letter-spacing:.5px;color:var(--gold);padding-bottom:4px}
+  #viewLineups .lu-day-detail-number{font:850 32px/1 var(--fx);color:var(--gold-2)}
+  #viewLineups .lu-day-detail-number small{font:650 9px var(--fx);text-transform:uppercase;letter-spacing:.35px;color:var(--ink-2);margin-left:3px}
+  #viewLineups .lu-day-help{margin-top:6px;font-size:9.5px;line-height:1.4;color:var(--muted)}
+  #viewLineups .lu-saved-title{display:flex;align-items:center;gap:8px;margin:16px 2px 9px;font:700 12px var(--fx);letter-spacing:.7px;text-transform:uppercase;color:var(--gold)}
+  #viewLineups .lu-list{display:grid;gap:9px}
+  #viewLineups .lu-card{margin:0;padding:12px 14px;background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--line);border-radius:11px;box-shadow:none}
+  #viewLineups .lu-card[data-view]{cursor:pointer;transition:border-color .15s,background .15s,transform .15s}
+  #viewLineups .lu-card[data-view]:hover{border-color:var(--gold-line);background:linear-gradient(180deg,#171716,var(--panel-2));transform:translateY(-1px)}
+  #viewLineups .lu-card[data-view]:focus-visible{outline:1px solid var(--gold);outline-offset:2px}
+  #viewLineups .lu-card.is-viewing{border-color:var(--gold);background:linear-gradient(100deg,rgba(214,164,61,.15),#171716 34%,var(--panel-2));box-shadow:inset 3px 0 0 var(--gold),0 0 0 1px rgba(214,164,61,.12)}
+  #viewLineups .lu-card.is-viewing .lu-card-name{color:var(--gold-2)}
+  #viewLineups .lu-card.is-viewing .lu-card-openhint{color:var(--gold-2)}
+  #viewLineups .lu-inline-host{display:grid;grid-template-rows:0fr;opacity:0;transform:translateY(-7px);transition:grid-template-rows .34s ease,opacity .24s ease,transform .34s ease}
+  #viewLineups .lu-inline-host.open{grid-template-rows:1fr;opacity:1;transform:translateY(0)}
+  #viewLineups .lu-inline-inner{min-height:0;overflow:hidden}
+  #viewLineups .lu-inline-host .lu-preview{margin:12px 0 0;border-color:var(--gold-line);background:linear-gradient(180deg,#121416,#0d0e10)}
+  #viewLineups .lu-card-top{display:grid;grid-template-columns:minmax(180px,1.2fr) minmax(150px,.8fr) auto;gap:12px;align-items:center}
+  #viewLineups .lu-card-name{font:700 13px var(--fx);color:var(--ink);letter-spacing:.25px}
+  #viewLineups .lu-card-week{display:inline-flex;align-items:center;margin-top:5px;padding:4px 8px;border:1px solid var(--gold-line);border-radius:7px;background:var(--gold-soft);font:700 11px var(--fx);color:var(--gold-2);letter-spacing:.15px}
+  #viewLineups .lu-card-meta{font-size:10.5px;color:var(--muted);margin-top:3px}
+  #viewLineups .lu-card-map{font-size:11px;color:var(--ink-2)}
+  #viewLineups .lu-card-pres{display:flex;align-items:center;gap:4px}
+  #viewLineups .lu-card-pres span{width:18px;height:15px;border:1px solid var(--line);border-radius:3px;display:grid;place-items:center;font-size:8px;color:var(--muted);background:#0d0e10}
+  #viewLineups .lu-card-pres span.on{color:var(--gold-2);border-color:var(--gold-line);background:var(--gold-soft)}
+  #viewLineups .lu-card-actions{display:flex;gap:6px;justify-content:flex-end}
+  #viewLineups .lu-card-actions .btn{font-size:10.5px;padding:6px 9px;border-radius:7px;background:#111214}
+  #viewLineups .lu-card-openhint{display:inline-flex;align-items:center;gap:5px;color:var(--gold);font-size:10.5px;font-weight:650;white-space:nowrap;padding:6px 2px}
+  #viewLineups .lu-preview{margin-bottom:14px;padding:15px;border:1px solid var(--gold-line);border-top:2px solid var(--gold);border-radius:12px;background:linear-gradient(180deg,var(--panel),var(--panel-2))}
+  #viewLineups .lu-preview-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
+  #viewLineups .lu-preview-kicker{font:700 10px var(--fx);letter-spacing:.7px;text-transform:uppercase;color:var(--gold)}
+  #viewLineups .lu-preview-name{font:700 17px var(--fx);letter-spacing:.3px;color:var(--ink);margin-top:2px}
+  #viewLineups .lu-preview-meta{display:flex;gap:12px;flex-wrap:wrap;margin-top:5px;font-size:10.5px;color:var(--ink-2)}
+  #viewLineups .lu-preview-notes{margin:0 0 12px;padding:9px 11px;border-left:2px solid var(--gold-line);border-radius:0 7px 7px 0;background:#111214;color:var(--ink-2);font-size:11px}
+  #viewLineups .lu-preview-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:8px;background:#0d0e10}
+  #viewLineups .lu-preview-row{display:grid;grid-template-columns:minmax(170px,1.35fr) minmax(110px,.75fr) repeat(7,50px);align-items:center;min-width:750px;min-height:31px;border-top:1px solid var(--line);padding:0 8px}
+  #viewLineups .lu-preview-row:first-child{border-top:0}
+  #viewLineups .lu-preview-row.head{min-height:45px;background:#111214;color:var(--muted);font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.35px}
+  #viewLineups .lu-preview-row.head .lu-day-head{gap:4px;padding:5px 0}
+  #viewLineups .lu-preview-player{font-size:11px;font-weight:650;color:var(--ink)}
+  #viewLineups .lu-preview-role{font-size:10.5px;color:var(--ink-2)}
+  #viewLineups .lu-preview-day{width:14px;height:14px;margin:auto;border:1px solid #4b5058;border-radius:3px;display:grid;place-items:center;color:transparent;font-size:9px;background:#0b0c0e}
+  #viewLineups .lu-preview-day.on{border-color:var(--gold);background:var(--gold-soft);color:var(--gold-2)}
+  #viewLineups .lu-preview-foot{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:9px;font-size:10px;color:var(--muted)}
+  #viewLineups .lu-self-editor{margin-top:12px;padding:13px;border:1px solid var(--gold-line);border-radius:10px;background:linear-gradient(180deg,#121416,#0d0e10)}
+  #viewLineups .lu-self-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:11px}
+  #viewLineups .lu-self-title{font:700 14px var(--fx);color:var(--ink)}
+  #viewLineups .lu-self-sub{margin-top:3px;font-size:10.5px;color:var(--muted)}
+  #viewLineups .lu-self-days{display:grid;grid-template-columns:repeat(7,1fr);gap:7px}
+  #viewLineups .lu-self-day{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;min-height:58px;border:1px solid var(--line);border-radius:8px;background:#101113;color:var(--ink-2);font:700 10.5px var(--fx);cursor:pointer}
+  #viewLineups .lu-self-day:has(.lu-check:checked){border-color:var(--gold-line);background:var(--gold-soft);color:var(--gold-2)}
+  #viewLineups .lu-self-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:11px}
+  #viewLineups .lu-self-save{color:#19150b;background:linear-gradient(180deg,var(--gold-2),var(--gold));border-color:var(--gold);font-weight:800}
+  @media(max-width:700px){#viewLineups .lu-self-days{grid-template-columns:repeat(4,1fr)}}
+  #viewLineups .lu-empty{min-height:105px;border:1px dashed var(--line);border-radius:11px;display:grid;place-items:center;text-align:center;color:var(--muted);font-size:11.5px;background:rgba(255,255,255,.012)}
+  #viewLineups .lu-empty b{display:block;color:var(--ink-2);font-size:12.5px;margin-bottom:3px}
+  @media(prefers-reduced-motion:reduce){#viewLineups .lu-inline-host{transition:none;transform:none}}
+  @media(max-width:920px){
+    #viewLineups .lu-editor-shell{grid-template-columns:1fr}
+    #viewLineups .lu-summary{display:grid;grid-template-columns:82px repeat(3,1fr);gap:10px;align-items:center}
+    #viewLineups .lu-summary-em{width:72px;height:72px;margin:0}
+    #viewLineups .lu-summary-grid{display:contents}
+    #viewLineups .lu-summary-stat{border-top:0;border-left:1px solid var(--line);padding:0 0 0 10px}
+  }
+  @media(max-width:720px){
+    #viewLineups .lu-context{align-items:flex-start;flex-wrap:wrap}
+    #viewLineups .lu-format-tabs{width:100%;margin-left:0}
+    #viewLineups .lu-format-tabs button{flex:1;min-width:0;padding:7px 5px}
+    #viewLineups .lu-form{grid-template-columns:1fr}
+    #viewLineups .lu-card-top{grid-template-columns:1fr}
+    #viewLineups .lu-card-actions{justify-content:flex-start}
+    #viewLineups .lu-week-pick{min-width:0;flex:1}
+  }
+  @media(max-width:520px){
+    #viewLineups .lu-summary{grid-template-columns:64px 1fr}
+    #viewLineups .lu-summary-em{width:58px;height:58px}
+    #viewLineups .lu-summary-stat{border-left:0}
   }
   .mini{width:100%;border-collapse:collapse}
   .mini th{font-size:11px;color:var(--muted);text-align:right;padding:6px 8px;font-weight:700;text-transform:uppercase;letter-spacing:.3px}
@@ -1276,16 +1412,25 @@
     <div class="card plan"><h2>🎯 Plan de progression</h2><div id="pPlan"></div></div>
   </div>
 
-  <div id="viewLineups" class="hidden">
+  <div id="viewLineups" class="hidden dashx">
     <div class="lu-head">
       <div>
         <h2 class="lu-title">Line-ups du clan</h2>
+        <div class="lu-sub">Organise la présence des membres pour la semaine. Chaque membre indique ses jours disponibles.</div>
         <div class="lu-sub" id="luRole"></div>
       </div>
       <button class="btn lu-new hidden" id="luNewBtn">＋ Nouveau line-up</button>
     </div>
-    <p class="sec-desc" style="margin-top:-8px">Un <b>line-up</b>, c'est une <b>composition d'équipe préparée à l'avance</b> : qui joue, sur quel char, à quel poste. Pratique pour s'organiser avant une manœuvre Bastion.</p>
+    <div class="lu-context">
+      <span class="lu-context-item">Mode <b id="luModeLabel">Bastion</b></span>
+      <span class="lu-context-item">Tier <b id="luTierLabel">X</b></span>
+      <div class="lu-format-tabs" id="luFormatTabs">
+        <button class="on" data-lu-format="manoeuvres">Manœuvres</button>
+      </div>
+    </div>
+    <div class="lu-notice hidden" id="luNotice" role="status" aria-live="polite"></div>
     <div id="luEditor" class="hidden"></div>
+    <div class="lu-saved-title"><svg class="ic"><use href="#i-grid"/></svg>Line-ups enregistrées</div>
     <div id="luList"></div>
   </div>
 
@@ -3046,101 +3191,371 @@ function renderPlan(name,my,byClass,byMap,elist,prec,survrate,myDmg,clanDmg,obj)
 /* ============================================================
    LINE-UPS (compos de manoeuvre) — création réservée aux officiers+
    ============================================================ */
-let LINEUPS=[], LU_CANEDIT=false, LU_EDITING=null;
+const LU_DAYS=["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"];
+const LU_DAY_NAMES=["lundi","mardi","mercredi","jeudi","vendredi","samedi","dimanche"];
+const LU_FORMAT_LABELS={bastion10:"Bastion T10",bastion8:"Bastion T8",manoeuvres:"Manœuvres"};
+const LU_ROLES=[["Stratège","📯"],["Soldat","⚔"]];
+const LU_MAX_PLAYERS=10;
+const LU_MANAGER_ROLES=new Set(["commander","deputy_commander","executive_officer","combat_officer","personnel_officer",
+  "recruitment_officer","intelligence_officer","quartermaster","junior_officer"]);
+const LU_MAPS=[
+  ["","Carte à définir"],["lakeville","Lakeville"],["ensk","Ensk"],["redshire","Redshire"],
+  ["himmelsdorf","Himmelsdorf"],["prohorovka","Prokhorovka"],["murovanka","Murovanka"],
+  ["malinovka","Malinovka"],["ruinberg","Ruinberg"],["siegfriedline","Ligne Siegfried"],
+  ["steppes","Steppes"],["tundra","Toundra"],["cliff","Falaise"],["fjord","Fjords"],
+  ["fishingbay","Baie du pêcheur"],["erlenberg","Erlenberg"],["elhallouf","El Halluf"],
+  ["karelia","Carélie"],["mannerheimline","Ligne Mannerheim"],["westfeld","Westfield"],["airfield","Aérodrome"]
+];
+let LINEUPS=[], LU_CANEDIT=false, LU_EDITING=null, LU_VIEWING_ID=null, LU_ATTENDING_ID=null, LU_SELECTED_DAY=null, LU_MONTH_CURSOR=null, LU_FORMAT="manoeuvres", LU_PREVIEW=false;
+function luCurrentMember(){
+  return (MEMBERS||[]).find(m=>Number(m.account_id)===Number(ME_ID))||null;
+}
+function luCurrentUserCanManage(){
+  const me=luCurrentMember();
+  return !!(DEV || (me&&LU_MANAGER_ROLES.has(normRole(me.wg_role))));
+}
+function luCanEditOwnAvailability(lu){
+  if(LU_CANEDIT||ME_ID==null) return false;
+  return luCleanSlots(lu).some(s=>Number(s.account_id)===Number(ME_ID));
+}
+function luDateISO(d){
+  const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,"0"),day=String(d.getDate()).padStart(2,"0");
+  return `${y}-${m}-${day}`;
+}
+function luMonday(value){
+  const d=value?new Date(String(value).slice(0,10)+"T12:00:00"):new Date();
+  const safe=Number.isNaN(d.getTime())?new Date():d;
+  safe.setHours(12,0,0,0); safe.setDate(safe.getDate()-((safe.getDay()+6)%7));
+  return safe;
+}
+function luWeekLabel(value){
+  const a=luMonday(value),b=new Date(a); b.setDate(a.getDate()+6);
+  const short=d=>d.toLocaleDateString("fr-FR",{day:"numeric",month:"short"}).replace(".","");
+  return `Semaine du ${short(a)} au ${short(b)} ${b.getFullYear()}`;
+}
+function luAvailability(slot){
+  const src=Array.isArray(slot&&slot.availability)?slot.availability:(Array.isArray(slot&&slot.presence)?slot.presence:[]);
+  return Array.from({length:7},(_,i)=>src[i]===true || src[i]===1 || src[i]==="1");
+}
+function luRoleName(value){ return String(value||"").toLowerCase().startsWith("strat")?"Stratège":"Soldat"; }
+function luRoleOptions(selected){
+  const current=luRoleName(selected);
+  return LU_ROLES.map(([name,icon])=>`<option value="${name}" ${name===current?'selected':''}>${icon} ${name}</option>`).join("");
+}
+function luRoleLabel(value){
+  const name=luRoleName(value),role=LU_ROLES.find(([n])=>n===name);
+  return `${role?role[1]:""} ${name}`.trim();
+}
+function luMeta(lu){
+  const slots=Array.isArray(lu&&lu.slots)?lu.slots:[], first=slots.find(s=>s&&s._type!=="meta")||{};
+  return {
+    format:String((lu&&lu.format)||first.format||"manoeuvres"),
+    map:String((lu&&(lu.map||lu.map_name))||first.map||""),
+    week_start:luDateISO(luMonday((lu&&lu.week_start)||first.week_start||null))
+  };
+}
+function luCleanSlots(lu){
+  const slots=Array.isArray(lu&&lu.slots)?lu.slots:[];
+  return slots.filter(s=>s&&s._type!=="meta").map(s=>({
+    account_id:s.account_id==null?"":s.account_id,name:s.name||"",position:luRoleName(s.position),
+    tank:s.tank||"",availability:luAvailability(s)
+  }));
+}
+function luMapLabel(id){ const x=LU_MAPS.find(m=>m[0]===String(id||"")); return x?x[1]:(id||"Carte à définir"); }
+function showLuNotice(message,type){
+  const el=document.getElementById("luNotice"); if(!el) return;
+  el.textContent=message||""; el.className="lu-notice"+(type?" "+type:"")+(message?"":" hidden");
+}
+function luSortedMembers(){
+  return (MEMBERS||[]).slice().sort((a,b)=>{
+    if(Number(a.account_id)===Number(ME_ID)) return -1; if(Number(b.account_id)===Number(ME_ID)) return 1;
+    const ra=ROLE_ORDER[normRole(a.wg_role)]??9,rb=ROLE_ORDER[normRole(b.wg_role)]??9;
+    return ra-rb||String(a.nickname).localeCompare(String(b.nickname),"fr");
+  });
+}
+function luRosterSlots(existing){
+  const old=Array.isArray(existing)?existing:[],names=new Map(luSortedMembers().map(m=>[String(m.account_id),m.nickname]));
+  return old.slice(0,LU_MAX_PLAYERS).map(s=>({...s,name:names.get(String(s.account_id))||s.name||""}));
+}
+function luFormatUI(){
+  document.querySelectorAll("#luFormatTabs [data-lu-format]").forEach(b=>b.classList.toggle("on",b.dataset.luFormat===LU_FORMAT));
+  const tier=document.getElementById("luTierLabel"),mode=document.getElementById("luModeLabel");
+  if(tier) tier.textContent=LU_FORMAT==="bastion8"?"VIII":"X";
+  if(mode) mode.textContent=LU_FORMAT==="manoeuvres"?"Manœuvres":"Bastion";
+}
+function wireLineupFormats(){
+  document.querySelectorAll("#luFormatTabs [data-lu-format]").forEach(b=>b.onclick=()=>{
+    LU_FORMAT=b.dataset.luFormat; luFormatUI(); renderLineups();
+    if(LU_EDITING&&!document.getElementById("luEditor").classList.contains("hidden")){
+      LU_EDITING.format=LU_FORMAT; renderLineupEditor();
+    }
+  });
+  luFormatUI();
+}
 async function loadLineups(){
   const list=document.getElementById("luList");
-  list.innerHTML='<div class="card">'+cpLoader()+'</div>';
-  const r=await fnCall("lineups",{session:localStorage.getItem(LS_SESSION),action:"list"});
-  if(!r.ok){ list.innerHTML='<div class="card"><div class="empty">Erreur : '+esc(r.j.error||String(r.status))+'</div></div>'; return; }
-  LINEUPS=r.j.lineups||[]; LU_CANEDIT=!!r.j.canEdit;
-  document.getElementById("luNewBtn").classList.toggle("hidden",!LU_CANEDIT);
-  document.getElementById("luRole").textContent = LU_CANEDIT
-    ? "Tu peux créer et modifier les line-ups du clan."
-    : "Consultation seule — la création est réservée aux officiers de combat et plus.";
-  renderLineups();
+  list.innerHTML='<div class="lu-empty">'+cpLoader()+'</div>'; wireLineupFormats();
+  try{
+    const r=await fnCall("lineups",{session:localStorage.getItem(LS_SESSION),action:"list"});
+    if(!r.ok){ list.innerHTML='<div class="lu-empty"><div><b>Impossible de charger les line-ups</b>'+esc((r.j&&r.j.error)||String(r.status))+'</div></div>'; return; }
+    LINEUPS=r.j.lineups||[];
+    // Double verrou : le serveur doit autoriser l'écriture et le grade Wargaming
+    // du membre connecté doit appartenir à la liste des officiers/commandants.
+    LU_CANEDIT=(!!r.j.canEdit&&luCurrentUserCanManage())||DEV;
+    document.getElementById("luNewBtn").classList.toggle("hidden",!LU_CANEDIT);
+    document.getElementById("luRole").textContent = LU_CANEDIT
+      ? "Ton grade permet de créer et modifier les line-ups du clan."
+      : "Accès membre : tu peux consulter les line-ups et cocher uniquement tes propres disponibilités.";
+    renderLineups();
+  }catch(e){ list.innerHTML='<div class="lu-empty"><div><b>Connexion indisponible</b>'+esc(String(e))+'</div></div>'; }
 }
 function renderLineups(){
   const el=document.getElementById("luList");
-  if(!LINEUPS.length){ el.innerHTML='<div class="card"><div class="empty">Aucun line-up pour l\'instant.'+(LU_CANEDIT?' Clique « Nouveau line-up » pour en créer un.':'')+'</div></div>'; return; }
-  el.innerHTML=LINEUPS.map(lu=>{
-    const slots=Array.isArray(lu.slots)?lu.slots:[];
-    const rows=slots.map((s,i)=>`<tr><td>${i+1}</td><td>${esc(s.name||"?")}</td><td>${esc(s.tank||"—")}</td><td>${esc(s.position||"—")}</td></tr>`).join("");
-    const btns=LU_CANEDIT?`<div class="lu-actions">
-      <button class="btn" data-edit="${lu.id}">Modifier</button>
-      <button class="btn lu-del" data-del="${lu.id}">Supprimer</button></div>`:"";
-    return `<div class="card lu-card">
-      <div class="lu-card-h"><h3>${esc(lu.name||"Line-up")} <span class="hint">${slots.length} postes</span></h3>${btns}</div>
-      ${lu.notes?`<div class="lu-notes">${esc(lu.notes)}</div>`:""}
-      <table class="mini lu-mini"><thead><tr><th>#</th><th>Joueur</th><th>Char</th><th>Poste</th></tr></thead>
-        <tbody>${rows||'<tr><td colspan="4" class="empty">Compo vide</td></tr>'}</tbody></table>
-      <div class="lu-by">Créé par ${esc(lu.created_by_name||"?")}</div>
-    </div>`;
+  const list=LINEUPS.filter(lu=>luMeta(lu).format===LU_FORMAT);
+  if(!list.length){
+    el.innerHTML=`<div class="lu-empty"><div><b>Aucune line-up enregistrée</b>${LU_CANEDIT?'Crée la première semaine de présence avec le bouton « Nouveau line-up ».':'Les officiers n\'ont pas encore préparé cette composition.'}</div></div>`;
+    return;
+  }
+  el.innerHTML='<div class="lu-list">'+list.map(lu=>{
+    const meta=luMeta(lu),slots=luCleanSlots(lu),counts=LU_DAYS.map((_,i)=>slots.filter(s=>s.availability[i]).length);
+    const total=counts.reduce((a,b)=>a+b,0),dots=counts.map((n,i)=>`<span class="${n?'on':''}" title="${LU_DAY_NAMES[i]} : ${n}">${LU_DAYS[i][0]}${n||''}</span>`).join("");
+    const viewing=String(lu.id)===String(LU_VIEWING_ID),attending=String(lu.id)===String(LU_ATTENDING_ID);
+    const selfBtn=luCanEditOwnAvailability(lu)?`<button class="btn" data-attend="${lu.id}">Mes disponibilités</button>`:"";
+    const btns=`<div class="lu-card-actions"><span class="lu-card-openhint">${attending?'● Mes disponibilités':viewing?'● Aperçu ouvert':'Aperçu ›'}</span>${selfBtn}${LU_CANEDIT?`<button class="btn" data-edit="${lu.id}">Modifier</button><button class="btn lu-del" data-del="${lu.id}">Supprimer</button>`:""}</div>`;
+    return `<article class="lu-card ${viewing?'is-viewing':''}" data-view="${lu.id}" tabindex="0" ${viewing?'aria-current="true"':''} aria-label="Voir l’aperçu de ${esc(lu.name||"la line-up")}"><div class="lu-card-top">
+      <div><div class="lu-card-name">${esc(lu.name||LU_FORMAT_LABELS[meta.format]||"Line-up")}</div><div class="lu-card-week">${esc(luWeekLabel(meta.week_start))}</div>
+        <div class="lu-card-meta">${slots.length} joueur${slots.length>1?'s':''} · ${total} présence${total>1?'s':''}</div></div>
+      <div><div class="lu-card-pres">${dots}</div></div>${btns}</div>${viewing?'<div class="lu-inline-host"><div class="lu-inline-inner"></div></div>':''}</article>`;
   }).join("");
-  el.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>openLineupEditor(LINEUPS.find(x=>String(x.id)===b.dataset.edit)));
-  el.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>deleteLineup(b.dataset.del));
+  el.querySelectorAll("[data-view]").forEach(card=>{
+    const open=()=>String(LU_VIEWING_ID)===String(card.dataset.view)?closeLineupPreview():openLineupPreview(LINEUPS.find(x=>String(x.id)===card.dataset.view));
+    card.onclick=open;
+    card.onkeydown=e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); open(); } };
+  });
+  el.querySelectorAll("[data-edit]").forEach(b=>b.onclick=e=>{e.stopPropagation();openLineupEditor(LINEUPS.find(x=>String(x.id)===b.dataset.edit));});
+  el.querySelectorAll("[data-del]").forEach(b=>b.onclick=e=>{e.stopPropagation();deleteLineup(b.dataset.del);});
+  el.querySelectorAll("[data-attend]").forEach(b=>b.onclick=e=>{e.stopPropagation();openMyAvailability(LINEUPS.find(x=>String(x.id)===b.dataset.attend));});
+}
+function openLineupPreview(lu){
+  if(!lu) return;
+  showLuNotice(""); LU_EDITING=null; LU_ATTENDING_ID=null; LU_VIEWING_ID=lu.id;
+  const editor=document.getElementById("luEditor"); editor.classList.add("hidden"); editor.innerHTML="";
+  renderLineups();
+  const meta=luMeta(lu),slots=luCleanSlots(lu),counts=LU_DAYS.map((_,i)=>slots.filter(s=>s.availability[i]).length);
+  const total=counts.reduce((a,b)=>a+b,0);
+  const rows=slots.map(s=>`<div class="lu-preview-row"><span class="lu-preview-player">${esc(s.name||"Joueur")}</span><span class="lu-preview-role">${esc(luRoleLabel(s.position))}</span>${s.availability.map(v=>`<span class="lu-preview-day ${v?'on':''}" aria-label="${v?'Présent':'Absent'}">${v?'✓':''}</span>`).join("")}</div>`).join("");
+  const head=`<div class="lu-preview-row head"><span>Joueur</span><span>Rôle</span>${LU_DAYS.map((d,i)=>`<span class="lu-day-head">${d}<b class="lu-day-count" title="${counts[i]} présent${counts[i]>1?'s':''}">${counts[i]}</b></span>`).join("")}</div>`;
+  const host=document.querySelector("#luList .lu-card.is-viewing .lu-inline-host"),inner=host&&host.querySelector(".lu-inline-inner");
+  if(!host||!inner) return;
+  inner.innerHTML=`<section class="lu-preview" aria-label="Aperçu de la line-up"><div class="lu-preview-head"><div><div class="lu-preview-kicker">Aperçu de la line-up</div><div class="lu-preview-name">${esc(lu.name||LU_FORMAT_LABELS[meta.format]||"Line-up")}</div><div class="lu-preview-meta"><span>${esc(LU_FORMAT_LABELS[meta.format]||meta.format)}</span><span>${esc(luWeekLabel(meta.week_start))}</span></div></div><button class="btn" id="luPreviewClose">Fermer</button></div>${lu.notes?`<div class="lu-preview-notes">${esc(lu.notes)}</div>`:""}<div class="lu-preview-scroll">${head}${rows||'<div class="lu-empty" style="border:0;min-height:68px"><div><b>Aucun joueur</b>Cette line-up ne contient pas encore de membre.</div></div>'}</div><div class="lu-preview-foot"><span>${slots.length} joueur${slots.length>1?'s':''} · ${total} disponibilité${total>1?'s':''}</span><span>Lecture seule — utilise « Modifier » pour changer la line-up.</span></div></section>`;
+  host.onclick=e=>e.stopPropagation(); host.onkeydown=e=>e.stopPropagation();
+  host.querySelector("#luPreviewClose").onclick=e=>{e.stopPropagation();closeLineupPreview();};
+  requestAnimationFrame(()=>host.classList.add("open"));
+  host.closest(".lu-card").scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+function openMyAvailability(lu){
+  if(!lu||!luCanEditOwnAvailability(lu)){
+    showLuNotice("Tu peux modifier uniquement ta propre ligne de disponibilités.","bad"); return;
+  }
+  showLuNotice(""); LU_EDITING=null; LU_VIEWING_ID=lu.id; LU_ATTENDING_ID=lu.id;
+  const editor=document.getElementById("luEditor"); editor.classList.add("hidden"); editor.innerHTML="";
+  renderLineups();
+  const slots=luCleanSlots(lu),mine=slots.find(s=>Number(s.account_id)===Number(ME_ID));
+  const host=document.querySelector("#luList .lu-card.is-viewing .lu-inline-host"),inner=host&&host.querySelector(".lu-inline-inner");
+  if(!host||!inner||!mine) return;
+  inner.innerHTML=`<section class="lu-self-editor" aria-label="Mes disponibilités"><div class="lu-self-head"><div><div class="lu-self-title">Mes disponibilités</div><div class="lu-self-sub">${esc(mine.name||"Mon compte")} · ${esc(luWeekLabel(luMeta(lu).week_start))}</div></div><button class="btn" id="luSelfClose">Fermer</button></div><div class="lu-self-days">${LU_DAYS.map((d,i)=>`<label class="lu-self-day">${d}<input class="lu-check" type="checkbox" data-self-day="${i}" ${mine.availability[i]?'checked':''} aria-label="Disponible ${LU_DAY_NAMES[i]}"></label>`).join("")}</div><div class="lu-self-actions"><button class="btn lu-self-save" id="luSelfSave">Enregistrer mes disponibilités</button></div></section>`;
+  host.onclick=e=>e.stopPropagation(); host.onkeydown=e=>e.stopPropagation();
+  host.querySelector("#luSelfClose").onclick=e=>{e.stopPropagation();closeLineupPreview();};
+  host.querySelector("#luSelfSave").onclick=e=>{e.stopPropagation();saveMyAvailability(lu);};
+  requestAnimationFrame(()=>host.classList.add("open"));
+  host.closest(".lu-card").scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+async function saveMyAvailability(lu){
+  if(!lu||!luCanEditOwnAvailability(lu)){
+    showLuNotice("Modification refusée : seule ta propre disponibilité peut être changée.","bad"); return;
+  }
+  const btn=document.getElementById("luSelfSave"),availability=Array.from(document.querySelectorAll("#luList [data-self-day]"),c=>c.checked);
+  if(availability.length!==7) return;
+  btn.disabled=true; btn.textContent="…";
+  if(LU_PREVIEW){
+    const slot=(lu.slots||[]).find(s=>Number(s.account_id)===Number(ME_ID));
+    if(slot) slot.availability=availability;
+    LU_ATTENDING_ID=null; LU_VIEWING_ID=null; renderLineups();
+    showLuNotice("✓ Tes disponibilités sont enregistrées.","good"); return;
+  }
+  // Cette action ne transmet jamais le reste du tableau : le serveur peut ainsi
+  // vérifier la session, le clan et le compte avant de modifier une seule ligne.
+  const r=await fnCall("lineups",{session:localStorage.getItem(LS_SESSION),action:"attendance",id:Number(lu.id),availability});
+  if(!r.ok){
+    btn.disabled=false; btn.textContent="Enregistrer mes disponibilités";
+    showLuNotice("Impossible d'enregistrer tes disponibilités : "+(r.j.error||r.status),"bad"); return;
+  }
+  LU_ATTENDING_ID=null; LU_VIEWING_ID=null; loadLineups();
+}
+function closeLineupPreview(){
+  const id=LU_VIEWING_ID,host=document.querySelector("#luList .lu-card.is-viewing .lu-inline-host");
+  if(host) host.classList.remove("open");
+  setTimeout(()=>{if(String(LU_VIEWING_ID)===String(id)){LU_VIEWING_ID=null;LU_ATTENDING_ID=null;renderLineups();}},340);
 }
 function openLineupEditor(lu){
-  LU_EDITING = lu ? JSON.parse(JSON.stringify(lu)) : {name:"",notes:"",slots:[]};
-  if(!Array.isArray(LU_EDITING.slots)) LU_EDITING.slots=[];
+  if(!LU_CANEDIT){ showLuNotice("Ton grade ne permet pas de créer ou modifier une line-up.","bad"); return; }
+  showLuNotice(""); LU_VIEWING_ID=null; LU_SELECTED_DAY=null; renderLineups();
+  const meta=luMeta(lu||{});
+  const slots=lu?luRosterSlots(luCleanSlots(lu)):Array.from({length:7},()=>({account_id:"",name:"",position:"Soldat",availability:Array(7).fill(false)}));
+  LU_EDITING={id:lu&&lu.id||null,name:lu&&lu.name||"",notes:lu&&lu.notes||"",slots,
+    format:lu?meta.format:LU_FORMAT,map:meta.map,week_start:meta.week_start,week_states:{}};
+  saveLineupWeekState();
+  LU_FORMAT=LU_EDITING.format; luFormatUI(); renderLineupEditor();
+}
+function renderLineupEditor(){
   const ed=document.getElementById("luEditor"); ed.classList.remove("hidden");
-  const tankOpts=[...new Set(Object.values(VEHMAP).map(v=>v.name).filter(Boolean))].sort()
-    .map(n=>`<option value="${esc(n)}">`).join("");
-  window.__memberOpts=`<option value="">—</option>`+(MEMBERS||[]).slice().sort((a,b)=>String(a.nickname).localeCompare(b.nickname))
-    .map(m=>`<option value="${m.account_id}">${esc(m.nickname)}</option>`).join("");
-  ed.innerHTML=`<div class="card lu-editor">
-    <div class="lu-card-h"><h3>${lu?"Modifier le line-up":"Nouveau line-up"}</h3>
-      <button class="btn" id="luCancel">Annuler</button></div>
+  const emb=ourEmblemUrl(), emblem=emb?`<img class="lu-summary-em" src="${esc(emb)}" alt="Emblème ${esc(CLANTAG||'du clan')}">`:`<div class="lu-summary-em lu-summary-em-ph">${esc(CLANTAG||'A-T-O')}</div>`;
+  ed.innerHTML=`<div class="lu-editor-shell"><div class="lu-editor">
+    <div class="lu-card-h"><h3>${LU_EDITING.id?"Modifier le line-up":"Nouveau line-up"}</h3><button class="btn" id="luCancel">Annuler</button></div>
     <div class="lu-form">
-      <label class="lu-lab">Nom<input id="luName" type="text" maxlength="80" value="${esc(LU_EDITING.name||"")}" placeholder="Ex : Bastion T10 — Défense"></label>
-      <label class="lu-lab">Notes (facultatif)<input id="luNotes" type="text" maxlength="500" value="${esc(LU_EDITING.notes||"")}" placeholder="Consignes générales…"></label>
+      <label class="lu-lab">Nom de la line-up<input id="luName" type="text" maxlength="80" value="${esc(LU_EDITING.name)}" placeholder="Ex : Manœuvres — Équipe 1"></label>
+      <label class="lu-lab">Notes (facultatif)<input id="luNotes" type="text" maxlength="500" value="${esc(LU_EDITING.notes)}" placeholder="Consignes générales…"></label>
     </div>
-    <datalist id="luTanks">${tankOpts}</datalist>
-    <div class="lu-slots" id="luSlots"></div>
-    <div class="lu-form-actions">
-      <button class="btn" id="luAddSlot">＋ Ajouter un poste</button>
-      <button class="btn lu-save" id="luSave">Enregistrer</button>
-    </div></div>`;
+    <div class="lu-weekbar"><button class="lu-week-nav" id="luWeekPrev" title="Semaine précédente">‹</button><button type="button" class="lu-week-pick" id="luWeekOpen" title="Choisir une semaine dans le mois"><span class="lu-week-pick-k">Choisir la semaine</span><b id="luWeekLabel">${esc(luWeekLabel(LU_EDITING.week_start))}</b></button><button class="lu-week-nav" id="luWeekNext" title="Semaine suivante">›</button></div>
+    <div class="lu-month-picker hidden" id="luWeekMonth"></div>
+    <div class="lu-attendance" id="luSlots"></div>
+    <div class="lu-form-actions"><button class="btn" id="luAddSlot">＋ Ajouter une ligne</button><button class="btn lu-save" id="luSave">Valider la line-up</button></div>
+  </div><aside class="lu-summary">${emblem}<div class="lu-summary-grid" id="luSummary"></div></aside></div>`;
   renderSlots();
   document.getElementById("luCancel").onclick=()=>{ed.classList.add("hidden");ed.innerHTML="";};
-  document.getElementById("luAddSlot").onclick=()=>{LU_EDITING.slots.push({account_id:"",name:"",tank:"",position:""});renderSlots();};
+  document.getElementById("luName").oninput=e=>LU_EDITING.name=e.target.value;
+  document.getElementById("luNotes").oninput=e=>LU_EDITING.notes=e.target.value;
+  document.getElementById("luWeekPrev").onclick=()=>shiftLineupWeek(-7);
+  document.getElementById("luWeekNext").onclick=()=>shiftLineupWeek(7);
+  document.getElementById("luWeekOpen").onclick=()=>{
+    const picker=document.getElementById("luWeekMonth"),opening=picker.classList.contains("hidden");
+    picker.classList.toggle("hidden",!opening);
+    if(opening){ const d=luMonday(LU_EDITING.week_start); LU_MONTH_CURSOR=new Date(d.getFullYear(),d.getMonth(),1); renderLineupMonthPicker(); }
+  };
+  document.getElementById("luAddSlot").onclick=()=>{
+    if(LU_EDITING.slots.length>=LU_MAX_PLAYERS){ alert("Une line-up est limitée à "+LU_MAX_PLAYERS+" joueurs."); return; }
+    LU_EDITING.slots.push({account_id:"",name:"",position:"Soldat",availability:Array(7).fill(false)});renderSlots();
+  };
   document.getElementById("luSave").onclick=saveLineup;
   ed.scrollIntoView({behavior:"smooth",block:"start"});
 }
+function shiftLineupWeek(days){
+  const d=luMonday(LU_EDITING.week_start); d.setDate(d.getDate()+days); selectLineupWeek(luDateISO(d));
+}
+function selectLineupWeek(value){
+  if(!value||!LU_EDITING) return;
+  saveLineupWeekState();
+  LU_EDITING.week_start=luDateISO(luMonday(value));
+  loadLineupWeekState(LU_EDITING.week_start);
+  const lab=document.getElementById("luWeekLabel"); if(lab) lab.textContent=luWeekLabel(LU_EDITING.week_start);
+  renderSlots();
+}
+function renderLineupMonthPicker(){
+  const box=document.getElementById("luWeekMonth"); if(!box||!LU_EDITING) return;
+  if(!LU_MONTH_CURSOR){ const d=luMonday(LU_EDITING.week_start); LU_MONTH_CURSOR=new Date(d.getFullYear(),d.getMonth(),1); }
+  const y=LU_MONTH_CURSOR.getFullYear(),m=LU_MONTH_CURSOR.getMonth(),first=new Date(y,m,1),days=new Date(y,m+1,0).getDate();
+  const leading=(first.getDay()+6)%7,selectedStart=luMonday(LU_EDITING.week_start),selectedEnd=new Date(selectedStart); selectedEnd.setDate(selectedStart.getDate()+6);
+  const today=new Date(),wd=["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"];
+  let cells=Array.from({length:leading},()=>'<span class="lu-month-blank"></span>').join("");
+  for(let day=1;day<=days;day++){
+    const d=new Date(y,m,day,12),iso=luDateISO(d),inWeek=d>=selectedStart&&d<=selectedEnd;
+    const cls=["lu-month-day",inWeek?"in-week":"",inWeek&&d.getDay()===1?"week-start":"",inWeek&&d.getDay()===0?"week-end":"",d.toDateString()===today.toDateString()?"today":""].filter(Boolean).join(" ");
+    cells+=`<button type="button" class="${cls}" data-week-date="${iso}" title="Choisir la semaine du ${day}">${day}</button>`;
+  }
+  box.innerHTML=`<div class="lu-month-head"><button type="button" class="lu-month-nav" id="luMonthPrev">‹</button><div class="lu-month-title">${esc(capFirst(LU_MONTH_CURSOR.toLocaleDateString("fr-FR",{month:"long",year:"numeric"})))}</div><button type="button" class="lu-month-nav" id="luMonthNext">›</button></div><div class="lu-month-grid">${wd.map(d=>`<span class="lu-month-wd">${d}</span>`).join("")}${cells}</div>`;
+  document.getElementById("luMonthPrev").onclick=()=>{LU_MONTH_CURSOR=new Date(y,m-1,1);renderLineupMonthPicker();};
+  document.getElementById("luMonthNext").onclick=()=>{LU_MONTH_CURSOR=new Date(y,m+1,1);renderLineupMonthPicker();};
+  box.querySelectorAll("[data-week-date]").forEach(b=>b.onclick=()=>{selectLineupWeek(b.dataset.weekDate);box.classList.add("hidden");});
+}
+function lineupWeekSlotKey(slot,index){ return slot&&slot.account_id?"id:"+String(slot.account_id):"row:"+index; }
+function saveLineupWeekState(){
+  if(!LU_EDITING) return;
+  LU_EDITING.week_states=LU_EDITING.week_states||{};
+  const state={};
+  (LU_EDITING.slots||[]).forEach((slot,index)=>state[lineupWeekSlotKey(slot,index)]=luAvailability(slot));
+  LU_EDITING.week_states[LU_EDITING.week_start]=state;
+}
+function loadLineupWeekState(week){
+  if(!LU_EDITING) return;
+  const state=(LU_EDITING.week_states||{})[week]||null;
+  (LU_EDITING.slots||[]).forEach((slot,index)=>{
+    const saved=state&&state[lineupWeekSlotKey(slot,index)];
+    slot.availability=saved?luAvailability({availability:saved}):Array(7).fill(false);
+  });
+}
+function luMemberOptions(selected){
+  const members=luSortedMembers();
+  return `<option value="">Choisir un membre…</option>`+members.map(m=>`<option value="${m.account_id}" ${String(m.account_id)===String(selected)?'selected':''}>${esc(m.nickname)}</option>`).join("");
+}
 function renderSlots(){
   const box=document.getElementById("luSlots");
-  if(!LU_EDITING.slots.length){ box.innerHTML='<div class="empty" style="padding:16px">Aucun poste. Clique « Ajouter un poste ».</div>'; return; }
-  box.innerHTML=LU_EDITING.slots.map((s,i)=>`<div class="lu-slot" data-i="${i}">
-    <span class="lu-idx">${i+1}</span>
-    <select class="lu-player">${window.__memberOpts}</select>
-    <input class="lu-tank" list="luTanks" placeholder="Char" value="${esc(s.tank||"")}">
-    <input class="lu-pos" placeholder="Poste (ex : Pointe)" value="${esc(s.position||"")}">
-    <button class="icon-btn lu-rm" title="Retirer">✕</button></div>`).join("");
+  const head=`<div class="lu-att-row lu-att-head"><span>N°</span><span class="lu-player-h">Joueur</span>${LU_DAYS.map((d,i)=>`<span class="lu-day-head">${d}<button type="button" class="lu-day-count ${i===LU_SELECTED_DAY?'on':''}" data-day-count="${i}" title="Voir les présents du ${LU_DAY_NAMES[i]}">0</button></span>`).join("")}<span class="lu-pos-h">Poste</span><span></span></div>`;
+  const rows=LU_EDITING.slots.map((s,i)=>`<div class="lu-att-row lu-slot" data-i="${i}"><span class="lu-idx">${i+1}</span>
+    <select class="lu-player">${luMemberOptions(s.account_id)}</select>
+    ${LU_DAYS.map((d,di)=>`<label class="lu-day" title="Disponible ${LU_DAY_NAMES[di]}"><input class="lu-check" type="checkbox" data-day="${di}" ${s.availability[di]?'checked':''} aria-label="${LU_DAY_NAMES[di]}"></label>`).join("")}
+    <select class="lu-pos" aria-label="Rôle du joueur">${luRoleOptions(s.position)}</select>
+    <button class="icon-btn lu-rm" title="Retirer ce joueur">✕</button></div>`).join("");
+  box.innerHTML=head+(rows||'<div class="lu-empty" style="min-height:66px;border:0"><div><b>Aucun joueur ajouté</b>Utilise « Ajouter un joueur » pour préparer l’équipe.</div></div>');
   box.querySelectorAll(".lu-slot").forEach(row=>{
     const i=+row.dataset.i;
-    if(LU_EDITING.slots[i].account_id) row.querySelector(".lu-player").value=LU_EDITING.slots[i].account_id;
+    row.querySelector(".lu-player").onchange=e=>{ const op=e.target.selectedOptions[0]; LU_EDITING.slots[i].account_id=e.target.value; LU_EDITING.slots[i].name=e.target.value&&op?op.textContent:""; updateLineupSummary(); };
+    row.querySelector(".lu-pos").onchange=e=>LU_EDITING.slots[i].position=luRoleName(e.target.value);
+    row.querySelectorAll(".lu-check").forEach(c=>c.onchange=()=>{LU_EDITING.slots[i].availability[+c.dataset.day]=c.checked;updateLineupSummary();});
     row.querySelector(".lu-rm").onclick=()=>{LU_EDITING.slots.splice(i,1);renderSlots();};
   });
+  box.querySelectorAll("[data-day-count]").forEach(b=>b.onclick=()=>{LU_SELECTED_DAY=+b.dataset.dayCount;updateLineupSummary();});
+  const add=document.getElementById("luAddSlot");
+  if(add){ add.disabled=LU_EDITING.slots.length>=LU_MAX_PLAYERS; add.title=add.disabled?"Maximum "+LU_MAX_PLAYERS+" joueurs":"Ajouter un joueur"; }
+  updateLineupSummary();
 }
 function collectSlots(){
-  const out=[];
-  document.querySelectorAll("#luSlots .lu-slot").forEach(row=>{
-    const sel=row.querySelector(".lu-player"); const aid=sel.value;
-    out.push({account_id:aid?Number(aid):null, name:aid&&sel.selectedOptions[0]?sel.selectedOptions[0].textContent:"",
-      tank:row.querySelector(".lu-tank").value.trim(), position:row.querySelector(".lu-pos").value.trim()});
-  });
-  return out;
+  return (LU_EDITING.slots||[]).map(s=>({account_id:s.account_id?Number(s.account_id):null,name:s.name||"",tank:s.tank||"",
+    position:luRoleName(s.position),availability:luAvailability(s),format:LU_EDITING.format,map:LU_EDITING.map,week_start:LU_EDITING.week_start}));
+}
+function updateLineupSummary(){
+  if(!LU_EDITING) return;
+  const slots=(LU_EDITING.slots||[]).filter(s=>s.account_id),counts=LU_DAYS.map((_,i)=>slots.filter(s=>s.availability&&s.availability[i]).length);
+  document.querySelectorAll("#luSlots [data-day-count]").forEach(b=>{const i=+b.dataset.dayCount,n=counts[i]||0;b.textContent=n;b.title="Voir les "+n+" présent"+(n>1?"s":"")+" du "+LU_DAY_NAMES[i];b.classList.toggle("on",i===LU_SELECTED_DAY);});
+  const el=document.getElementById("luSummary"); if(!el) return;
+  const confirmed=counts.reduce((a,b)=>a+b,0),possible=slots.length*7,pct=possible?Math.round(confirmed/possible*100):0;
+  const best=Math.max(0,...counts),bestIndex=counts.indexOf(best);
+  const selected=Number.isInteger(LU_SELECTED_DAY)?LU_SELECTED_DAY:null;
+  const daySlots=selected===null?[]:slots.filter(s=>s.availability&&s.availability[selected]);
+  const dayDetail=selected===null
+    ? `<div class="lu-day-detail"><div class="lu-day-help">Clique sur le chiffre sous un jour pour afficher les joueurs disponibles.</div></div>`
+    : `<div class="lu-day-detail"><div class="lu-day-detail-value"><span class="lu-day-detail-day">${esc(LU_DAY_NAMES[selected])}</span><span class="lu-day-detail-number">${daySlots.length}<small>${daySlots.length===1?'présent':'présents'}</small></span></div></div>`;
+  el.innerHTML=`<div class="lu-summary-stat"><div class="lu-summary-l">Joueurs sélectionnés</div><div class="lu-summary-v">${slots.length} <small>/ ${LU_MAX_PLAYERS}</small></div></div>
+    <div class="lu-summary-stat"><div class="lu-summary-l">Disponibilités confirmées</div><div class="lu-summary-v">${confirmed} <small>/ ${possible}</small></div></div>
+    <div class="lu-summary-stat"><div class="lu-summary-l">Meilleur jour</div><div class="lu-summary-best">${best?LU_DAY_NAMES[bestIndex]+" · "+best+" présent"+(best>1?"s":""):"À confirmer"}</div>
+      <div class="lu-progress" title="Préparation ${pct} %"><span style="width:${pct}%"></span></div><div class="lu-summary-l" style="margin-top:4px">Préparation ${pct} %</div></div>${dayDetail}`;
 }
 async function saveLineup(){
-  const payload={ id:LU_EDITING.id||null, name:document.getElementById("luName").value.trim()||"Line-up",
-    notes:document.getElementById("luNotes").value.trim(), slots:collectSlots() };
+  if(!LU_CANEDIT){ showLuNotice("Enregistrement refusé : cette action est réservée aux officiers et commandants.","bad"); return; }
+  const slots=collectSlots().filter(s=>s.account_id);
+  showLuNotice("");
+  if(!slots.length){ showLuNotice("Ajoute au moins un membre avant de valider la line-up.","bad"); return; }
+  if(slots.length>LU_MAX_PLAYERS){ showLuNotice("Une line-up est limitée à "+LU_MAX_PLAYERS+" joueurs.","bad"); return; }
+  if(new Set(slots.map(s=>s.account_id)).size!==slots.length){ showLuNotice("Le même membre est sélectionné plusieurs fois. Choisis un joueur différent sur chaque ligne.","bad"); return; }
+  const payload={id:LU_EDITING.id||null,name:(LU_EDITING.name||"").trim()||LU_FORMAT_LABELS[LU_EDITING.format]||"Line-up",
+    notes:(LU_EDITING.notes||"").trim(),slots};
   const btn=document.getElementById("luSave"); btn.disabled=true; btn.textContent="…";
+  if(LU_PREVIEW){
+    const demo={...payload,id:payload.id||Date.now(),created_by_name:"BeNoBaX"};
+    const pos=LINEUPS.findIndex(x=>String(x.id)===String(demo.id));
+    if(pos>=0) LINEUPS[pos]=demo; else LINEUPS.unshift(demo);
+    document.getElementById("luEditor").classList.add("hidden"); document.getElementById("luEditor").innerHTML="";
+    renderLineups(); showLuNotice("✓ Line-up validée dans la maquette.","good");
+    document.getElementById("luNotice").scrollIntoView({behavior:"smooth",block:"center"}); return;
+  }
   const r=await fnCall("lineups",{session:localStorage.getItem(LS_SESSION),action:"save",lineup:payload});
-  if(!r.ok){ btn.disabled=false; btn.textContent="Enregistrer"; alert("Erreur : "+(r.j.error||r.status)); return; }
+  if(!r.ok){ btn.disabled=false; btn.textContent="Valider la line-up"; showLuNotice("Erreur pendant l’enregistrement : "+(r.j.error||r.status),"bad"); return; }
   document.getElementById("luEditor").classList.add("hidden"); document.getElementById("luEditor").innerHTML="";
   loadLineups();
 }
 async function deleteLineup(id){
+  if(!LU_CANEDIT){ showLuNotice("Suppression refusée : cette action est réservée aux officiers et commandants.","bad"); return; }
   if(!confirm("Supprimer ce line-up ?")) return;
+  if(LU_PREVIEW){ LINEUPS=LINEUPS.filter(x=>String(x.id)!==String(id)); renderLineups(); return; }
   const r=await fnCall("lineups",{session:localStorage.getItem(LS_SESSION),action:"delete",id:Number(id)});
   if(!r.ok){ alert("Erreur : "+(r.j.error||r.status)); return; }
   loadLineups();
