@@ -4438,8 +4438,8 @@ function stWorld(map,x,z){ const b=ST_BASES&&ST_BASES[map]&&ST_BASES[map].bbox; 
   return [ (x-b[0])/((b[2]-b[0])||1)*1000, (b[3]-z)/((b[3]-b[1])||1)*1000 ]; }
 // Marqueurs OFFICIELS extraits du jeu (gui/flash/atlases/battleAtlas -> web/strat/*.png)
 const ST_ICON=56;   // taille du marqueur dans le repère 0-1000
-// drapeau de base : kind = 'green' (équipe 1) | 'red' (équipe 2) | 'neutral' (point de contrôle)
-function stFlag(mx,my,kind){ const f=(kind==='red')?'base_red':'base_green'; const h=ST_ICON/2; return `<image class="st-ov" href="strat/${f}.png" x="${Math.round(mx)-h}" y="${Math.round(my)-h}" width="${ST_ICON}" height="${ST_ICON}"/>`; }
+// drapeau de base : kind = 'green' (équipe 1) | 'red' (équipe 2) | 'neutral' (point de contrôle, blanc)
+function stFlag(mx,my,kind){ const f=(kind==='red')?'base_red':(kind==='neutral')?'base_neutral':'base_green'; const h=ST_ICON/2; return `<image class="st-ov" href="strat/${f}.png" x="${Math.round(mx)-h}" y="${Math.round(my)-h}" width="${ST_ICON}" height="${ST_ICON}"/>`; }
 // point d'apparition officiel numéroté : team = 1|2 (couleur), n = numéro 1..4
 function stSpawn(mx,my,team,n){ const c=team===1?'green':'red', k=Math.max(1,Math.min(4,n||1)); const h=ST_ICON/2; return `<image class="st-ov" href="strat/spawn_${c}_${k}.png" x="${Math.round(mx)-h}" y="${Math.round(my)-h}" width="${ST_ICON}" height="${ST_ICON}"/>`; }
 const ST_MODE_ORDER=["ctf","domination","assault2","assault","comp7"];   // modes reels affiches (exclut maps_training)
