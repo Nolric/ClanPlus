@@ -67,6 +67,7 @@
     <div class="sep"></div>
     <button class="btn on" id="texBtn">Texture</button>
     <button class="btn" id="wireBtn">Grille</button>
+    <button class="btn" id="bldBtn" style="display:none" title="Aperçu des bâtiments (positions extraites du jeu)">Bâtiments</button>
     <button class="btn" id="resetBtn">Recadrer</button>
   </div>
   <div id="hint"><b>Glisser</b> pour tourner · <b>Molette</b> pour zoomer · <b>Clic droit</b> déplacer</div>
@@ -113,22 +114,39 @@ function pretty(k){ return NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1); }
   const aPos=gl.getAttribLocation(prog,"aPos"),aNrm=gl.getAttribLocation(prog,"aNrm"),aUv=gl.getAttribLocation(prog,"aUv");
   const uMVP=gl.getUniformLocation(prog,"uMVP"),uUseTex=gl.getUniformLocation(prog,"uUseTex"),uMaxH=gl.getUniformLocation(prog,"uMaxH"),uTexLoc=gl.getUniformLocation(prog,"uTex");
 
+  // ---- programme des blocs (bâtiments) ----
+  const bvs=`attribute vec3 aPos;attribute vec3 aNrm;uniform mat4 uMVP;varying vec3 vN;varying float vH;
+    void main(){vN=aNrm;vH=aPos.y;gl_Position=uMVP*vec4(aPos,1.0);}`;
+  const bfs=`precision mediump float;varying vec3 vN;varying float vH;uniform float uMaxH;
+    void main(){ vec3 L=normalize(vec3(0.5,0.8,0.35)); float d=max(dot(normalize(vN),L),0.0);
+      float t=clamp(vH/max(uMaxH,1.0),0.0,1.0); vec3 base=mix(vec3(0.60,0.58,0.54),vec3(0.82,0.78,0.70),t);
+      gl_FragColor=vec4(base*(0.42+d*0.78),1.0); }`;
+  const bprog=gl.createProgram();
+  gl.attachShader(bprog,sh(gl.VERTEX_SHADER,bvs));gl.attachShader(bprog,sh(gl.FRAGMENT_SHADER,bfs));gl.linkProgram(bprog);
+  const bPos=gl.getAttribLocation(bprog,"aPos"),bNrm=gl.getAttribLocation(bprog,"aNrm");
+  const buMVP=gl.getUniformLocation(bprog,"uMVP"),buMaxH=gl.getUniformLocation(bprog,"uMaxH");
+  let blkPB=gl.createBuffer(),blkNB=gl.createBuffer(),blkIB=gl.createBuffer(),blkLen=0,showBld=0;
+  let curHeights=null,curHN=0,curHmin=0,curHmax=1;
+
   // ---- texture ----
   const tex=gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D,tex);
   gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,1,1,0,gl.RGBA,gl.UNSIGNED_BYTE,new Uint8Array([70,68,62,255]));
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
-  function loadTex(url){ const img=new Image();
+  const isPOT=n=>(n&(n-1))===0;
+  function loadTex(url,fallback){ const img=new Image();
     img.onload=()=>{ gl.bindTexture(gl.TEXTURE_2D,tex); gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,false);
-      gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,img); gl.generateMipmap(gl.TEXTURE_2D);
-      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR); };
-    img.onerror=()=>{}; img.src=url; }
+      gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,img);
+      if(isPOT(img.width)&&isPOT(img.height)){ gl.generateMipmap(gl.TEXTURE_2D); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR); }
+      else { gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR); } };
+    img.onerror=()=>{ if(fallback) loadTex(fallback); }; img.src=url; }
 
   // ---- buffers (recréés à chaque carte) ----
   let pB=gl.createBuffer(),nB=gl.createBuffer(),uB=gl.createBuffer(),iB=gl.createBuffer(),idxLen=0,curMaxH=1;
   const MESH=384;
   function buildMesh(heights,HN,world,hmin,hmax){
+    curHeights=heights;curHN=HN;curHmin=hmin;curHmax=hmax;
     const span=Math.max(1,hmax-hmin); const HS=world*0.22; curMaxH=HS;
     const sampleH=(u,v)=>{ const x=Math.min(HN-1,Math.max(0,u*(HN-1))),y=Math.min(HN-1,Math.max(0,v*(HN-1)));
       const x0=x|0,y0=y|0,x1=Math.min(HN-1,x0+1),y1=Math.min(HN-1,y0+1),fx=x-x0,fy=y-y0;
@@ -154,6 +172,34 @@ function pretty(k){ return NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1); }
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,iB);gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,idx,gl.STATIC_DRAW);
     idxLen=idx.length;
   }
+  // hauteur normalisée du terrain aux coords monde (x,z)
+  function terrainNorm(x,z){ if(!curHeights) return 0; const HN=curHN, u=(x+WORLD/2)/WORLD, v=(z+WORLD/2)/WORLD;
+    const px=Math.min(HN-1,Math.max(0,u*(HN-1))),py=Math.min(HN-1,Math.max(0,v*(HN-1)));
+    const x0=px|0,y0=py|0,x1=Math.min(HN-1,x0+1),y1=Math.min(HN-1,y0+1),fx=px-x0,fy=py-y0;
+    const a=curHeights[y0*HN+x0],b2=curHeights[y0*HN+x1],c=curHeights[y1*HN+x0],d=curHeights[y1*HN+x1];
+    return (((a*(1-fx)+b2*fx)*(1-fy)+(c*(1-fx)+d*fx)*fy)-curHmin)/Math.max(1,curHmax-curHmin); }
+  // construit tous les blocs (bâtiments) en un seul maillage
+  function buildBlocks(f32){
+    const n=f32.length/4, HS=WORLD*0.22; const P=[],Nn=[],I=[]; let vi=0;
+    const push=(x,y,z,nx,ny,nz)=>{ P.push(x,y,z); Nn.push(nx,ny,nz); return vi++; };
+    const quad=(a,b,c,d,nx,ny,nz)=>{ const A=push(a[0],a[1],a[2],nx,ny,nz),B=push(b[0],b[1],b[2],nx,ny,nz),C=push(c[0],c[1],c[2],nx,ny,nz),D=push(d[0],d[1],d[2],nx,ny,nz); I.push(A,B,C,A,C,D); };
+    for(let k=0;k<n;k++){
+      const x=f32[k*4],z=f32[k*4+1],rotY=f32[k*4+2];
+      const baseY=terrainNorm(x,z)*HS, fp=6, h=8, hh=fp/2, y0=baseY, y1=baseY+h;
+      const c=Math.cos(rotY),s=Math.sin(rotY); const R=(lx,lz)=>[x+lx*c-lz*s, z+lx*s+lz*c];
+      const p00=R(-hh,-hh),p01=R(-hh,hh),p11=R(hh,hh),p10=R(hh,-hh);
+      const wall=(a,b,nx,nz)=>quad([a[0],y0,a[1]],[b[0],y0,b[1]],[b[0],y1,b[1]],[a[0],y1,a[1]],nx,0,nz);
+      wall(p00,p01,-c,-s); wall(p01,p11,-s,c); wall(p11,p10,c,s); wall(p10,p00,s,-c);
+      quad([p00[0],y1,p00[1]],[p01[0],y1,p01[1]],[p11[0],y1,p11[1]],[p10[0],y1,p10[1]],0,1,0);
+    }
+    gl.bindBuffer(gl.ARRAY_BUFFER,blkPB);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(P),gl.STATIC_DRAW);
+    gl.bindBuffer(gl.ARRAY_BUFFER,blkNB);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(Nn),gl.STATIC_DRAW);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,blkIB);gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint32Array(I),gl.STATIC_DRAW);
+    blkLen=I.length;
+  }
+  async function loadObjects(key){ blkLen=0; const btn=document.getElementById("bldBtn");
+    try{ const r=await fetch("maps3d/"+key+"/objects.f32"); if(!r.ok) throw 0; const ab=await r.arrayBuffer(); buildBlocks(new Float32Array(ab)); btn.style.display=""; }
+    catch(e){ btn.style.display="none"; showBld=0; btn.classList.remove("on"); } }
 
   // ---- maths ----
   function persp(f,a,n,fa){const t=1/Math.tan(f/2);return[t/a,0,0,0,0,t,0,0,0,0,(fa+n)/(n-fa),-1,0,0,2*fa*n/(n-fa),0];}
@@ -182,6 +228,7 @@ function pretty(k){ return NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1); }
   document.getElementById("exag").addEventListener("input",e=>exag=parseFloat(e.target.value));
   document.getElementById("texBtn").addEventListener("click",e=>{useTex^=1;e.currentTarget.classList.toggle("on",useTex);});
   document.getElementById("wireBtn").addEventListener("click",e=>{wire^=1;e.currentTarget.classList.toggle("on",wire);});
+  document.getElementById("bldBtn").addEventListener("click",e=>{showBld^=1;e.currentTarget.classList.toggle("on",showBld);});
   document.getElementById("resetBtn").addEventListener("click",()=>{frameCam();document.getElementById("exag").value=1;exag=1;});
 
   // ---- chargement d'une carte ----
@@ -195,7 +242,8 @@ function pretty(k){ return NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1); }
       const heights=new Uint16Array(ab); const HN=meta.n;
       WORLD=meta.world||1100;
       buildMesh(heights,HN,WORLD,meta.hmin,meta.hmax);
-      loadTex("maps/top/"+key+".jpg");
+      loadTex("maps3d/"+key+"/tex.jpg","maps/top/"+key+".jpg");
+      loadObjects(key);
       frameCam();
       document.getElementById("mapSub").textContent="Relief réel · "+WORLD+" m";
       try{ localStorage.setItem("cp_map3d",key); }catch(_){}
@@ -214,14 +262,22 @@ function pretty(k){ return NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1); }
       const P=persp(0.86,cv.width/cv.height,WORLD*0.02,WORLD*7);
       const e=eye(),V=look(e,[tgt[0]+pan.x,tgt[1],tgt[2]+pan.z],[0,1,0]);
       const M=[1,0,0,0,0,exag,0,0,0,0,1,0,0,0,0,1];
-      const MVP=mul(mul(P,V),M);
+      const MVP=new Float32Array(mul(mul(P,V),M));
       gl.useProgram(prog);
-      gl.uniformMatrix4fv(uMVP,false,new Float32Array(MVP));
+      gl.uniformMatrix4fv(uMVP,false,MVP);
       gl.uniform1f(uUseTex,useTex?1:0); gl.uniform1f(uMaxH,curMaxH);
       gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D,tex); gl.uniform1i(uTexLoc,0);
       bind(aPos,pB,3);bind(aNrm,nB,3);bind(aUv,uB,2);
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,iB);
       gl.drawElements(wire?gl.LINES:gl.TRIANGLES,idxLen,gl.UNSIGNED_INT,0);
+      if(showBld&&blkLen){
+        gl.useProgram(bprog);
+        gl.uniformMatrix4fv(buMVP,false,MVP); gl.uniform1f(buMaxH,curMaxH);
+        gl.disableVertexAttribArray(aUv);
+        bind(bPos,blkPB,3); bind(bNrm,blkNB,3);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,blkIB);
+        gl.drawElements(gl.TRIANGLES,blkLen,gl.UNSIGNED_INT,0);
+      }
     }
     requestAnimationFrame(frame);
   }
