@@ -145,20 +145,20 @@ function pretty(k){ return NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1); }
 
   // ---- buffers (recréés à chaque carte) ----
   let pB=gl.createBuffer(),nB=gl.createBuffer(),uB=gl.createBuffer(),iB=gl.createBuffer(),idxLen=0,curMaxH=1;
-  const MESH=384;
-  // sous-échantillonne (moyenne par blocs) : ne garde que la tendance large du relief -> propre, sans bosses parasites
-  function coarseHeights(src,N,M){ const out=new Float32Array(M*M);
-    for(let j=0;j<M;j++)for(let i=0;i<M;i++){ let s=0,c=0;
-      const x0=(i*N/M)|0,x1=Math.max(x0+1,((i+1)*N/M)|0),y0=(j*N/M)|0,y1=Math.max(y0+1,((j+1)*N/M)|0);
-      for(let y=y0;y<y1;y++)for(let x=x0;x<x1;x++){ s+=src[y*N+x]; c++; } out[j*M+i]=s/c; }
-    // un léger lissage du grossier pour des pentes bien douces
-    const b=new Float32Array(M*M);
-    for(let y=0;y<M;y++)for(let x=0;x<M;x++){ let s=0,c=0; for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const X=x+dx,Y=y+dy;if(X<0||Y<0||X>=M||Y>=M)continue;s+=out[Y*M+X];c++;} b[y*M+x]=s/c; }
-    return b; }
+  const MESH=512;
+  // filtre MÉDIAN : enlève les petits carrés/pics parasites tout en gardant les arêtes nettes (falaises)
+  function medianHeights(src,N,passes){ let a=Float32Array.from(src); const w=new Float32Array(9);
+    for(let p=0;p<passes;p++){ const b=new Float32Array(N*N);
+      for(let y=0;y<N;y++)for(let x=0;x<N;x++){ let k=0;
+        for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){ const X=Math.max(0,Math.min(N-1,x+dx)),Y=Math.max(0,Math.min(N-1,y+dy)); w[k++]=a[Y*N+X]; }
+        // tri partiel des 9 -> médiane (indice 4)
+        for(let i=0;i<9;i++)for(let j=i+1;j<9;j++){ if(w[j]<w[i]){const t=w[i];w[i]=w[j];w[j]=t;} }
+        b[y*N+x]=w[4]; } a=b; }
+    return a; }
   function buildMesh(heights,HN0,world,hmin,hmax){
-    const M=52; const H=coarseHeights(heights,HN0,M); const HN=M; curHeights=H; curHN=M;
-    // normalisation robuste p2..p96
-    const srt=Float32Array.from(H).sort(); const lo=srt[(srt.length*0.02)|0], hi=srt[(srt.length*0.96)|0];
+    const HN=HN0; const H=medianHeights(heights,HN0,1); curHeights=H; curHN=HN;   // pleine résolution, arêtes préservées (données déjà propres)
+    // normalisation robuste p1..p97
+    const srt=Float32Array.from(H).sort(); const lo=srt[(srt.length*0.01)|0], hi=srt[(srt.length*0.97)|0];
     curHmin=lo; curHmax=hi; const span=Math.max(1,hi-lo); const HS=world*VSCALE; curMaxH=HS;
     const sampleH=(u,v)=>{ const x=Math.min(HN-1,Math.max(0,u*(HN-1))),y=Math.min(HN-1,Math.max(0,v*(HN-1)));
       const x0=x|0,y0=y|0,x1=Math.min(HN-1,x0+1),y1=Math.min(HN-1,y0+1),fx=x-x0,fy=y-y0;
