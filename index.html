@@ -1186,8 +1186,11 @@
   .st-present-map{color:#9a9280;font-size:14px}
   .st-present-x{margin-left:auto;background:#1a1b1e;border:1px solid #2b2d31;color:#c2c5cb;width:38px;height:38px;border-radius:9px;font-size:16px;cursor:pointer}
   .st-present-x:hover{border-color:#c9484a;color:#e46b6d}
-  .st-present-stage{flex:1;min-height:0;display:flex;justify-content:center;align-items:center;width:100%}
+  .st-present-x.on{border-color:var(--gold);color:var(--gold);background:var(--gold-soft)}
+  .st-present-stage{flex:1;min-height:0;display:flex;justify-content:center;align-items:center;width:100%;position:relative}
   .st-present-stage svg{height:100%;max-height:100%;max-width:100%;aspect-ratio:1;border-radius:10px;background:#000;border:1px solid #2b2d31}
+  .st-present-stage.st-laser-on svg{cursor:none}
+  .st-present-note{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);max-width:82%;background:rgba(12,13,15,.9);border:1px solid var(--gold-line,#4a3f22);border-left:3px solid var(--gold);border-radius:8px;padding:9px 15px;color:#ece6d6;font-size:15px;font-weight:500;line-height:1.4;box-shadow:0 8px 26px rgba(0,0,0,.5);display:none}
   .st-present-nav{display:flex;align-items:center;gap:18px;padding-bottom:4px}
   .st-pbtn{background:var(--gold-soft);border:1px solid var(--gold);color:var(--gold);border-radius:10px;padding:11px 20px;font:inherit;font-size:15px;font-weight:700;cursor:pointer}
   .st-pbtn:hover:not(:disabled){background:var(--gold);color:#12110d}
@@ -1252,8 +1255,10 @@
   .opt-lbl{font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--muted)}
   .st-opts[data-tool="tank"] .opt-tank{display:flex}
   .st-opts[data-tool="stamp"] .opt-stamp{display:flex}
-  .st-opts[data-tool="arrow"] .opt-colors,.st-opts[data-tool="line"] .opt-colors,.st-opts[data-tool="rect"] .opt-colors,.st-opts[data-tool="circle"] .opt-colors,.st-opts[data-tool="pen"] .opt-colors,.st-opts[data-tool="marker"] .opt-colors,.st-opts[data-tool="text"] .opt-colors,.st-opts[data-tool="stamp"] .opt-colors,.st-opts[data-tool="range"] .opt-colors{display:flex}
-  .st-opts[data-tool="arrow"] .opt-stroke,.st-opts[data-tool="line"] .opt-stroke,.st-opts[data-tool="rect"] .opt-stroke,.st-opts[data-tool="circle"] .opt-stroke,.st-opts[data-tool="pen"] .opt-stroke{display:flex}
+  .st-opts[data-tool="arrow"] .opt-colors,.st-opts[data-tool="line"] .opt-colors,.st-opts[data-tool="rect"] .opt-colors,.st-opts[data-tool="circle"] .opt-colors,.st-opts[data-tool="pen"] .opt-colors,.st-opts[data-tool="marker"] .opt-colors,.st-opts[data-tool="text"] .opt-colors,.st-opts[data-tool="stamp"] .opt-colors,.st-opts[data-tool="range"] .opt-colors,.st-opts[data-tool="cone"] .opt-colors,.st-opts[data-tool="path"] .opt-colors{display:flex}
+  .st-opts[data-tool="arrow"] .opt-stroke,.st-opts[data-tool="line"] .opt-stroke,.st-opts[data-tool="rect"] .opt-stroke,.st-opts[data-tool="circle"] .opt-stroke,.st-opts[data-tool="pen"] .opt-stroke,.st-opts[data-tool="path"] .opt-stroke{display:flex}
+  .st-opts[data-tool="cone"] .opt-cone{display:flex}
+  .st-opts[data-tool="path"] .opt-path{display:flex}
   .opt-curve{display:none}
   .st-opts[data-tool="arrow"] .opt-curve,.st-opts[data-tool="line"] .opt-curve{display:inline-flex}
   .opt-stamp{flex-wrap:wrap}
@@ -1262,10 +1267,19 @@
   .st-stampb:hover{border-color:#3a3d42;color:#fff}
   .st-stampb.on{border-color:var(--gold);color:var(--gold);background:var(--gold-soft)}
   .st-szsel{display:inline-flex;gap:4px}
-  .st-szb,.st-tkszb{background:#1a1b1e;border:1px solid #2b2d31;color:#c2c5cb;border-radius:8px;padding:6px 10px;font:inherit;font-size:12px;font-weight:600;cursor:pointer}
-  .st-szb:hover,.st-tkszb:hover{border-color:#3a3d42;color:#fff}
-  .st-szb.on,.st-tkszb.on{border-color:var(--gold);color:var(--gold);background:var(--gold-soft)}
+  .st-szb,.st-tkszb,.st-coneb,.st-formb{background:#1a1b1e;border:1px solid #2b2d31;color:#c2c5cb;border-radius:8px;padding:6px 10px;font:inherit;font-size:12px;font-weight:600;cursor:pointer}
+  .st-szb:hover,.st-tkszb:hover,.st-coneb:hover,.st-formb:hover{border-color:#3a3d42;color:#fff}
+  .st-szb.on,.st-tkszb.on,.st-coneb.on{border-color:var(--gold);color:var(--gold);background:var(--gold-soft)}
+  .st-formb{border-style:dashed}
+  .st-opt-hint2{font-size:12px;color:#8b9099}
   .st-textin{position:fixed;z-index:950;min-width:120px;max-width:340px;background:rgba(18,19,22,.92);border:1px solid #e5b95c;border-radius:8px;padding:4px 10px;font-family:inherit;font-weight:800;outline:none;box-shadow:0 6px 22px rgba(0,0,0,.55);caret-color:#e5b95c}
+  .st-ctxmenu{position:fixed;z-index:1200;min-width:172px;background:rgba(20,21,24,.98);border:1px solid var(--gold-line,#4a3f22);border-radius:10px;padding:5px;box-shadow:0 12px 34px rgba(0,0,0,.6);backdrop-filter:blur(6px);display:flex;flex-direction:column;gap:1px}
+  .st-ctxitem{display:block;width:100%;text-align:left;background:none;border:0;border-radius:7px;padding:8px 12px;color:#e8e6df;font:inherit;font-size:13.5px;font-weight:600;cursor:pointer}
+  .st-ctxitem:hover{background:rgba(229,185,92,.15);color:#f4d78c}
+  .st-ctxitem.off,.st-ctxitem:disabled{opacity:.36;cursor:default}
+  .st-ctxitem.off:hover,.st-ctxitem:disabled:hover{background:none;color:#e8e6df}
+  .st-ctxsep{height:1px;margin:4px 6px;background:var(--gold-line,#4a3f22);opacity:.5}
+  .st-handle:hover{fill:#f4d78c}
   .opt-tank .st-count{margin-left:4px}
   .st-opt-hint{font-size:12px;color:#8b9099;flex:1 1 auto;min-width:80px}
   .st-opt-act{display:flex;gap:6px;align-items:center;margin-left:auto}
@@ -1273,7 +1287,10 @@
   .st-stage{flex:1;padding:16px;background:radial-gradient(120% 90% at 50% 0%,#131417,#0a0b0d);display:flex;justify-content:center;align-items:center;position:relative}
   .st-steps2{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:11px 14px;background:#0e0f11;border-top:1px solid #202226}
   .st-steps2-l{font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--muted)}
-  .st-steps2 #stStepDel{margin-left:auto}
+  .st-stepnote{flex:1 1 220px;min-width:160px;background:#16171a;border:1px solid #2b2d31;border-radius:8px;padding:7px 11px;color:#e8e6df;font:inherit;font-size:13px;outline:none}
+  .st-stepnote:focus{border-color:var(--gold);background:#1a1b1e}
+  .st-stepnote::placeholder{color:#6b7079}
+  .st-steps2 #stStepDel{margin-left:0}
   @media(max-width:760px){
     .st-work{flex-direction:column}
     .st-rail{flex-direction:row;flex-wrap:wrap;justify-content:center;border-right:0;border-bottom:1px solid #202226}
@@ -1306,6 +1323,10 @@
   .st-zoom button:not(.z-lvl){width:32px;font-size:19px;line-height:1}
   .st-zoom button:hover{background:#26282c;color:#fff}
   .st-zoom .z-lvl{min-width:52px;font-size:12.5px;font-weight:700;color:var(--gold-2)}
+  .st-minimap{position:absolute;left:16px;bottom:16px;width:132px;height:132px;border:1px solid #2f3136;border-radius:10px;overflow:hidden;box-shadow:0 6px 20px rgba(0,0,0,.5);z-index:5;cursor:crosshair;background:#000;touch-action:none}
+  .st-minimap img{width:100%;height:100%;object-fit:cover;display:block;opacity:.9;pointer-events:none;-webkit-user-select:none;user-select:none}
+  .st-mini-vp{position:absolute;border:2px solid var(--gold);background:rgba(229,185,92,.14);box-shadow:0 0 0 9999px rgba(6,7,9,.42);pointer-events:none;border-radius:2px}
+  .st-editor.st-full .st-minimap{width:168px;height:168px}
   .st-tool{position:relative}
   .st-tool.on{box-shadow:inset 3px 0 0 var(--gold)}
   .st-tool-k{position:absolute;top:3px;right:4px;font-size:8px;font-weight:800;color:#6b6f76;line-height:1}
@@ -4886,19 +4907,37 @@ function stPresenceUsers(){ if(!ST_ROOM) return []; let st={}; try{ st=ST_ROOM.p
 function stRenderPresence(){ const boxes=document.querySelectorAll('.st-presence'); if(!boxes.length) return; const us=stPresenceUsers();
   const html=us.map(u=>`<span class="st-pres${u.role==='edit'?' editing':''}" title="${esc(u.name||'?')} — ${u.role==='edit'?'édite':'regarde'}">${esc(String(u.name||'?').slice(0,14))}${u.role==='edit'?' ✎':' 👁'}</span>`).join('');
   boxes.forEach(b=>b.innerHTML=html); }
-function stStartBroadcastLoop(){ stStopBroadcastLoop(); ST_BC_LOOP=setInterval(()=>{ if(!ST_ROOM||!ST_EDIT||ST_MOVE||ST_DRAW) return; let j; try{ j=JSON.stringify(ST_EDIT.steps); }catch(_){ return; } if(j!==ST_BC_LAST){ ST_BC_LAST=j; try{ ST_ROOM.send({type:'broadcast',event:'els',payload:{by:STRAT_ME,steps:ST_EDIT.steps}}); }catch(_){} } },400); }
+function stStartBroadcastLoop(){ stStopBroadcastLoop(); ST_BC_LOOP=setInterval(()=>{ if(!ST_ROOM||!ST_EDIT||ST_MOVE||ST_DRAW||ST_XFORM||ST_PATHBUILD) return; let j; try{ j=JSON.stringify(ST_EDIT.steps); }catch(_){ return; } if(j!==ST_BC_LAST){ ST_BC_LAST=j; try{ ST_ROOM.send({type:'broadcast',event:'els',payload:{by:STRAT_ME,steps:ST_EDIT.steps}}); }catch(_){} } },400); }
 function stStopBroadcastLoop(){ if(ST_BC_LOOP){ clearInterval(ST_BC_LOOP); ST_BC_LOOP=null; } }
-function stApplyRemoteEls(p){ if(!p||!ST_EDIT||String(p.by)===String(STRAT_ME)||ST_MOVE||ST_DRAW||!Array.isArray(p.steps)||!p.steps.length) return;
-  ST_EDIT.steps=p.steps.map(s=>({els:Array.isArray(s.els)?s.els:[]})); if(ST_STEP>=ST_EDIT.steps.length) ST_STEP=ST_EDIT.steps.length-1; ST_EDIT.els=ST_EDIT.steps[ST_STEP].els; ST_SEL=null;
+function stApplyRemoteEls(p){ if(!p||!ST_EDIT||String(p.by)===String(STRAT_ME)||ST_MOVE||ST_DRAW||ST_XFORM||ST_PATHBUILD||!Array.isArray(p.steps)||!p.steps.length) return;
+  ST_EDIT.steps=p.steps.map(s=>({els:Array.isArray(s.els)?s.els:[]})); if(ST_STEP>=ST_EDIT.steps.length) ST_STEP=ST_EDIT.steps.length-1; ST_EDIT.els=ST_EDIT.steps[ST_STEP].els; stSelClear();
   ST_BC_LAST=JSON.stringify(ST_EDIT.steps);
   if(document.getElementById('stStepTabs')) renderStepTabs(); stRedraw(); if(typeof stUpdCount==='function') stUpdCount(); }
 let ST_EDIT=null;   // {id,name,map,els:[]}
-let ST_TOOL='arrow', ST_COLOR='#e5544b', ST_SEL=null, ST_DRAW=null, ST_MOVE=null;
+let ST_TOOL='arrow', ST_COLOR='#e5544b', ST_DRAW=null, ST_MOVE=null;
+let ST_SELS=new Set();   // indices des éléments sélectionnés (multi-sélection)
+let ST_BOX=null;         // rectangle de sélection en cours
+let ST_XFORM=null;       // redimensionnement / rotation en cours
+let ST_CLIP=[];          // presse-papier (copier/coller)
+let ST_SNAP=(typeof localStorage!=='undefined' && localStorage.getItem('cp_stsnap')==='1');   // aimantation à la grille
+const SNAP_STEP=50;      // pas d'aimantation (0-1000)
+function stSnap(v){ return Math.round(v/SNAP_STEP)*SNAP_STEP; }
 let ST_TANK={cls:'medium',color:'#5dbb46',size:0.78};   // "pinceau" pion de char courant (classe + couleur + taille, petit par défaut)
 const ST_TANK_SIZES=[["Petit",0.78],["Moyen",1.0],["Grand",1.3]];
 const ST_TANK_COLORS=[["#5dbb46","Vert (alliés)"],["#e0483f","Rouge (ennemis)"],["#e5c84b","Jaune"],["#5bb0e5","Bleu"],["#c264ff","Violet"],["#ffffff","Blanc"]];
 let ST_STAMP={kind:'focus',size:0.75};   // symbole tactique courant (+ taille, petit par défaut)
 const ST_STAMP_SIZES=[["Petit",0.75],["Moyen",1.05],["Grand",1.4]];
+let ST_CONE={spread:30};                 // demi-angle du cône de tir (degrés)
+const ST_CONE_SPREADS=[["Étroit",15],["Moyen",30],["Large",50]];
+let ST_PATHBUILD=null;                    // trajet multipoint en cours de construction
+// Formations pré-enregistrées : décalages relatifs des pions (unités viewBox 0-1000).
+const ST_FORMATIONS=[["line","Ligne"],["column","Colonne"],["wedge","Coin"],["echelon","Échelon"]];
+const ST_FORM_SHAPES={
+  line:[[-116,0],[-58,0],[0,0],[58,0],[116,0]],
+  column:[[0,-116],[0,-58],[0,0],[0,58],[0,116]],
+  wedge:[[0,-72],[-48,-26],[48,-26],[-96,20],[96,20]],
+  echelon:[[-96,-72],[-48,-36],[0,0],[48,36],[96,72]],
+};
 // Symboles tactiques : SVG dessiné dans une boîte ~ -15..15, coloré via currentColor.
 const ST_STAMPS={
   focus:'<circle r="13"/><circle r="5"/><path d="M0,-15 V-11 M0,15 V11 M-15,0 H-11 M15,0 H11"/>',
@@ -4922,12 +4961,16 @@ let ST_ZOOM={x:0,y:0,w:1000,h:1000};   // viewBox courant du canvas (zoom + dép
 let ST_PANNING=null, ST_SPACE=false;   // déplacement (main) en cours / barre Espace maintenue
 let ST_FULL=true;                      // éditeur en plein écran (défaut)
 // raccourcis clavier : touche -> outil
-const ST_KEYS={v:'select',h:'tank',f:'arrow',l:'line',z:'rect',o:'circle',s:'stamp',d:'measure',r:'range',p:'pen',j:'marker',t:'text',g:'erase'};
+const ST_KEYS={v:'select',h:'tank',f:'arrow',l:'line',z:'rect',o:'circle',s:'stamp',d:'measure',r:'range',c:'cone',m:'path',p:'pen',j:'marker',t:'text',g:'erase'};
 function stApplyZoom(){ const svg=document.getElementById("stSvg"); if(!svg) return;
   const W=ST_ZOOM.w=ST_ZOOM.h=Math.max(250,Math.min(1000,ST_ZOOM.w));   // viewBox carré, zoom max x4
   ST_ZOOM.x=Math.max(0,Math.min(1000-W,ST_ZOOM.x)); ST_ZOOM.y=Math.max(0,Math.min(1000-W,ST_ZOOM.y));
   svg.setAttribute("viewBox",`${Math.round(ST_ZOOM.x)} ${Math.round(ST_ZOOM.y)} ${Math.round(W)} ${Math.round(W)}`);
-  const lvl=document.getElementById("stZoomLvl"); if(lvl) lvl.textContent=Math.round(1000/W*100)+"%"; }
+  const lvl=document.getElementById("stZoomLvl"); if(lvl) lvl.textContent=Math.round(1000/W*100)+"%"; stMiniSync(); }
+// Mini-carte de navigation : affichée seulement en zoom, avec le cadre de la zone visible.
+function stMiniSync(){ const mm=document.getElementById("stMinimap"), vp=document.getElementById("stMiniVp"); if(!mm||!vp) return;
+  const zoomed=ST_ZOOM.w<999; mm.style.display=zoomed?'block':'none'; if(!zoomed) return; const P=v=>Math.max(0,Math.min(100,v/1000*100));
+  vp.style.left=P(ST_ZOOM.x)+'%'; vp.style.top=P(ST_ZOOM.y)+'%'; vp.style.width=P(ST_ZOOM.w)+'%'; vp.style.height=P(ST_ZOOM.h)+'%'; }
 function stZoomAt(factor,cx,cy){ const nw=Math.max(250,Math.min(1000,ST_ZOOM.w*factor));
   // garde le point (cx,cy) fixe sous le curseur (cx,cy en coords 0-1000)
   ST_ZOOM.x=cx-(cx-ST_ZOOM.x)*(nw/ST_ZOOM.w); ST_ZOOM.y=cy-(cy-ST_ZOOM.y)*(nw/ST_ZOOM.w);
@@ -4942,7 +4985,7 @@ function stGridInner(){ let s=''; const cols='1234567890'.split(''), rows='ABCDE
 // chemin d'une flèche/ligne courbe (bezier quadratique, contrôle perpendiculaire au milieu)
 function stCurvePath(el){ const mx=(el.x1+el.x2)/2,my=(el.y1+el.y2)/2, dx=el.x2-el.x1,dy=el.y2-el.y1, len=Math.hypot(dx,dy)||1, off=len*0.26; const cx=mx+(-dy/len)*off, cy=my+(dx/len)*off; return `M ${el.x1} ${el.y1} Q ${Math.round(cx)} ${Math.round(cy)} ${el.x2} ${el.y2}`; }
 // construit les étapes d'une stratégie (nouveau format .steps, sinon .elements sur 1 étape)
-function stStepsOf(s){ if(s&&Array.isArray(s.steps)&&s.steps.length) return s.steps.map(st=>({els:Array.isArray(st.els)?JSON.parse(JSON.stringify(st.els)):[]})); const e=(s&&Array.isArray(s.elements))?JSON.parse(JSON.stringify(s.elements)):[]; return [{els:e}]; }
+function stStepsOf(s){ if(s&&Array.isArray(s.steps)&&s.steps.length) return s.steps.map(st=>({els:Array.isArray(st.els)?JSON.parse(JSON.stringify(st.els)):[], note:st.note?String(st.note):''})); const e=(s&&Array.isArray(s.elements))?JSON.parse(JSON.stringify(s.elements)):[]; return [{els:e,note:''}]; }
 const ST_MAPS=[
   ["himmelsdorf","Himmelsdorf"],["ensk","Ensk"],["lakeville","Lakeville"],["redshire","Redshire"],
   ["prohorovka","Prokhorovka"],["murovanka","Murovanka"],["malinovka","Malinovka"],["ruinberg","Ruinberg"],
@@ -4955,7 +4998,7 @@ const ST_MAPS=[
 ];
 const ST_MAPNAME=Object.fromEntries(ST_MAPS.map(m=>[m[0],m[1]]));
 const ST_COLORS=["#e5544b","#e5c84b","#5bb0e5","#8fd14f","#ffffff","#e59a4b","#c264ff","#141414"];
-const ST_TOOLS=[["select","Déplacer","✋"],["tank","Chars","▰"],["arrow","Flèche","➤"],["line","Trait","／"],["rect","Zone","▭"],["circle","Cercle","◯"],["stamp","Symbole","✪"],["measure","Mesure","↔"],["range","Portée","◎"],["pen","Crayon","✎"],["marker","Jeton","◉"],["text","Texte","T"],["erase","Gomme","⌫"]];
+const ST_TOOLS=[["select","Déplacer","✋"],["tank","Chars","▰"],["arrow","Flèche","➤"],["line","Trait","／"],["rect","Zone","▭"],["circle","Cercle","◯"],["stamp","Symbole","✪"],["cone","Cône de tir","◔"],["path","Trajet","⋯"],["measure","Mesure","↔"],["range","Portée","◎"],["pen","Crayon","✎"],["marker","Jeton","◉"],["text","Texte","T"],["erase","Gomme","⌫"]];
 const ST_CLASSES=[["light","Léger"],["medium","Moyen"],["heavy","Lourd"],["td","TD"],["spg","Arto"]];   // classes = silhouettes officielles du jeu (web/strat/class_*.png)
 // Icônes SVG des outils (style ligne, cohérent avec la DA du site — viewBox 0 0 24 24).
 const ST_TOOL_ICONS={
@@ -4966,6 +5009,8 @@ const ST_TOOL_ICONS={
   rect:'<rect x="4" y="6.5" width="16" height="11" rx="1.5"/>',
   circle:'<circle cx="12" cy="12" r="8"/>',
   stamp:'<path d="M12 3l2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.5-4.8 2.5.9-5.4L4.2 8.7l5.4-.8z"/>',
+  cone:'<path d="M12 20L5.5 6.5a13 13 0 0 1 13 0z" fill="currentColor" fill-opacity=".18"/><circle cx="12" cy="20" r="1.6" fill="currentColor" stroke="none"/>',
+  path:'<path d="M4 18L9 9l5 4 6-9" fill="none"/><circle cx="4" cy="18" r="1.7" fill="currentColor" stroke="none"/><circle cx="9" cy="9" r="1.7" fill="currentColor" stroke="none"/><circle cx="14" cy="13" r="1.7" fill="currentColor" stroke="none"/><circle cx="20" cy="4" r="1.7" fill="currentColor" stroke="none"/>',
   measure:'<path d="M4 8l4-4 12 12-4 4z"/><path d="M8.5 8.5l1.6 1.6M11.5 5.5l1.6 1.6M14.5 8.5l1.6 1.6"/>',
   range:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1.1" fill="currentColor" stroke="none"/>',
   pen:'<path d="M4 20l1.2-4L16 5.2l2.8 2.8L8 18.8z"/><path d="M14 7.2l2.8 2.8"/>',
@@ -5025,7 +5070,7 @@ function openStratEditor(s){
   stChatStop(); stLeaveRoom();
   ST_EDIT={ id:(s&&s.id)||null, name:(s&&s.name)||"Nouvelle stratégie", map:(s&&s.map)||"", mode:(s&&s.mode)||"ctf", steps:stStepsOf(s), editors:(s&&Array.isArray(s.editors))?s.editors.map(Number):[] };
   ST_STEP=0; ST_EDIT.els=ST_EDIT.steps[0].els;
-  ST_SEL=null; ST_UNDO=[]; ST_REDO=[];
+  stSelClear(); ST_UNDO=[]; ST_REDO=[];
   if(!ST_EDIT.map) renderMapPicker(); else renderStratEditor();
   if(ST_EDIT.id&&ST_EDIT.map) stJoinRoom(ST_EDIT.id,'edit');
   document.getElementById("stEditor").scrollIntoView({behavior:"smooth",block:"start"});
@@ -5049,7 +5094,9 @@ function renderStratEditor(){
   const strokeGrp=`<div class="optgrp opt-stroke"><span class="opt-lbl">Trait</span><button type="button" class="st-sbtn${ST_STROKE.dash?' on':''}" id="stDash" title="Pointillés">┅</button><button type="button" class="st-sbtn opt-curve${ST_STROKE.curve?' on':''}" id="stCurve" title="Flèche courbe">⌒</button><span class="st-wsel">${[["thin",4],["med",7],["thick",12]].map(w=>`<button type="button" class="st-wbtn${ST_STROKE.w===w[1]?' on':''}" data-w="${w[1]}" title="Épaisseur"><i style="height:${Math.round(w[1]/2)+1}px"></i></button>`).join("")}</span></div>`;
   const colorGrp=`<div class="optgrp opt-colors"><span class="opt-lbl">Couleur</span>${colors}</div>`;
   const stampGrp=`<div class="optgrp opt-stamp"><span class="opt-lbl">Symbole</span>${ST_STAMP_LIST.map(([k,lbl])=>`<button type="button" class="st-stampb${ST_STAMP.kind===k?' on':''}" data-stamp="${k}" title="${esc(lbl)}"><svg viewBox="-20 -20 40 40" class="st-stamp-ic"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">${ST_STAMPS[k]}</g></svg></button>`).join("")}<span class="st-opt-sep"></span><span class="opt-lbl">Taille</span><span class="st-szsel">${ST_STAMP_SIZES.map(([lbl,v])=>`<button type="button" class="st-szb${ST_STAMP.size===v?' on':''}" data-sz="${v}">${esc(lbl)}</button>`).join("")}</span></div>`;
-  const tankGrp=`<div class="optgrp opt-tank"><div class="st-classsel" style="--tc:${ST_TANK.color}">${ST_CLASSES.map(c=>`<button type="button" class="st-class${ST_TANK.cls===c[0]?' on':''}" data-cls="${c[0]}" title="Char ${c[1]}"><span class="ic" style="-webkit-mask:url(strat/class_${c[0]}.png) center/contain no-repeat;mask:url(strat/class_${c[0]}.png) center/contain no-repeat"></span><span class="lbl">${c[1]}</span></button>`).join("")}</div><div class="st-tank-cols">${ST_TANK_COLORS.map(c=>`<button type="button" class="st-tcol${ST_TANK.color===c[0]?' on':''}" data-tcol="${c[0]}" title="${esc(c[1])}" style="background:${c[0]}"></button>`).join("")}</div><span class="st-opt-sep"></span><span class="opt-lbl">Taille</span><span class="st-szsel">${ST_TANK_SIZES.map(([lbl,v])=>`<button type="button" class="st-tkszb${ST_TANK.size===v?' on':''}" data-sz="${v}">${esc(lbl)}</button>`).join("")}</span><div class="st-count" id="stCount"></div></div>`;
+  const tankGrp=`<div class="optgrp opt-tank"><div class="st-classsel" style="--tc:${ST_TANK.color}">${ST_CLASSES.map(c=>`<button type="button" class="st-class${ST_TANK.cls===c[0]?' on':''}" data-cls="${c[0]}" title="Char ${c[1]}"><span class="ic" style="-webkit-mask:url(strat/class_${c[0]}.png) center/contain no-repeat;mask:url(strat/class_${c[0]}.png) center/contain no-repeat"></span><span class="lbl">${c[1]}</span></button>`).join("")}</div><div class="st-tank-cols">${ST_TANK_COLORS.map(c=>`<button type="button" class="st-tcol${ST_TANK.color===c[0]?' on':''}" data-tcol="${c[0]}" title="${esc(c[1])}" style="background:${c[0]}"></button>`).join("")}</div><span class="st-opt-sep"></span><span class="opt-lbl">Taille</span><span class="st-szsel">${ST_TANK_SIZES.map(([lbl,v])=>`<button type="button" class="st-tkszb${ST_TANK.size===v?' on':''}" data-sz="${v}">${esc(lbl)}</button>`).join("")}</span><span class="st-opt-sep"></span><span class="opt-lbl">Formation</span><span class="st-szsel">${ST_FORMATIONS.map(([k,lbl])=>`<button type="button" class="st-formb" data-form="${k}" title="Déposer une formation ${esc(lbl)}">${esc(lbl)}</button>`).join("")}</span><div class="st-count" id="stCount"></div></div>`;
+  const coneGrp=`<div class="optgrp opt-cone"><span class="opt-lbl">Ouverture</span><span class="st-szsel">${ST_CONE_SPREADS.map(([lbl,v])=>`<button type="button" class="st-coneb${ST_CONE.spread===v?' on':''}" data-cone="${v}">${esc(lbl)}</button>`).join("")}</span></div>`;
+  const pathGrp=`<div class="optgrp opt-path"><span class="opt-lbl">Trajet</span><span class="st-opt-hint2">Clique pour ajouter des points · double-clic ou Entrée pour terminer</span></div>`;
   ed.innerHTML=`<div class="card st-shell dashx st-editor${ST_FULL?' st-full':''}">
     <div class="st-bar">
       <button class="st-x" id="stCancel" title="Fermer sans enregistrer">✕</button>
@@ -5061,9 +5108,9 @@ function renderStratEditor(){
       <div class="st-rail">${tools}</div>
       <div class="st-canvas">
         <div class="st-opts" id="stOpts" data-tool="${ST_TOOL}">
-          ${colorGrp}${strokeGrp}${tankGrp}${stampGrp}
+          ${colorGrp}${strokeGrp}${tankGrp}${stampGrp}${coneGrp}${pathGrp}
           <span class="st-opt-hint" id="stOptHint"></span>
-          <div class="st-opt-act"><button class="st-mini2" id="stUndo" title="Annuler (Ctrl+Z)">↶</button><button class="st-mini2" id="stRedo" title="Refaire (Ctrl+Y)">↷</button><button class="st-mini2${ST_GRID?' on':''}" id="stGridBtn" title="Grille A-K / 1-0">▦</button><span class="st-opt-sep"></span><button class="st-mini2" id="stDup" title="Dupliquer la sélection">⧉</button><button class="st-mini2" id="stDelSel" title="Supprimer la sélection">🗑</button><button class="st-mini2" id="stClear" title="Tout effacer">Vider</button></div>
+          <div class="st-opt-act"><button class="st-mini2" id="stUndo" title="Annuler (Ctrl+Z)">↶</button><button class="st-mini2" id="stRedo" title="Refaire (Ctrl+Y)">↷</button><button class="st-mini2${ST_GRID?' on':''}" id="stGridBtn" title="Grille A-K / 1-0">▦</button><button class="st-mini2${ST_SNAP?' on':''}" id="stSnapBtn" title="Aimantation à la grille">🧲</button><span class="st-opt-sep"></span><button class="st-mini2" id="stFront" title="Passer au premier plan ( ] )">⬆</button><button class="st-mini2" id="stBack" title="Envoyer à l'arrière-plan ( [ )">⬇</button><button class="st-mini2" id="stDup" title="Dupliquer la sélection (Ctrl+D)">⧉</button><button class="st-mini2" id="stDelSel" title="Supprimer la sélection">🗑</button><button class="st-mini2" id="stClear" title="Tout effacer">Vider</button></div>
         </div>
         <div class="st-stage"><svg class="st-svg" id="stSvg" data-tool="${ST_TOOL}" viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg">
           <defs><marker id="st-ah" markerWidth="4.5" markerHeight="4.5" refX="3" refY="2.25" orient="auto"><path d="M0,0 L4.5,2.25 L0,4.5 z" fill="context-stroke"/></marker></defs>
@@ -5071,25 +5118,104 @@ function renderStratEditor(){
           <g id="stBases" style="pointer-events:none">${stBasesSvg(ST_EDIT.map,ST_EDIT.mode)}</g>
           <g id="stGrid" style="pointer-events:none">${ST_GRID?stGridInner():''}</g>
           <g id="stEls"></g></svg>
-          <div class="st-zoom"><button type="button" id="stZoomOut" title="Dézoomer (−)">−</button><button type="button" class="z-lvl" id="stZoomLvl" title="Réinitialiser le zoom">100%</button><button type="button" id="stZoomIn" title="Zoomer (+)">+</button></div></div>
+          <div class="st-zoom"><button type="button" id="stZoomOut" title="Dézoomer (−)">−</button><button type="button" class="z-lvl" id="stZoomLvl" title="Réinitialiser le zoom">100%</button><button type="button" id="stZoomIn" title="Zoomer (+)">+</button></div>
+          <div class="st-minimap" id="stMinimap" style="display:none" title="Mini-carte : clique ou glisse pour naviguer"><img src="maps/top/${esc(ST_EDIT.map)}.jpg" alt="" draggable="false"><div class="st-mini-vp" id="stMiniVp"></div></div></div>
       </div>
     </div>
-    <div class="st-steps2"><span class="st-steps2-l">Étapes</span><div class="st-steptabs" id="stStepTabs"></div><button class="st-mini2" id="stStepDel" title="Supprimer l'étape courante">🗑 Supprimer l'étape</button></div>
+    <div class="st-steps2"><span class="st-steps2-l">Étapes</span><div class="st-steptabs" id="stStepTabs"></div><input class="st-stepnote" id="stStepNote" maxlength="140" placeholder="✎ Note de cette étape (affichée en présentation)…"><button class="st-mini2" id="stStepDel" title="Supprimer l'étape courante">🗑 Supprimer l'étape</button></div>
   </div>`;
   stRedraw();
   stWireEditor();
 }
-const ST_HINTS={select:"Clique un élément puis glisse pour le déplacer.",tank:"Choisis une couleur + une classe, puis clique sur la carte. Double-clic = nommer.",arrow:"Glisse pour tracer une flèche.",line:"Glisse pour tracer un trait.",rect:"Glisse pour dessiner une zone à surligner.",circle:"Glisse pour dessiner un cercle.",stamp:"Choisis un symbole tactique + une couleur, puis clique sur la carte.",measure:"Glisse d'un point à un autre : la distance s'affiche en mètres.",range:"Clique-glisse depuis un point : cercle de portée/vision en mètres.",pen:"Dessine à main levée.",marker:"Clique pour poser un jeton numéroté.",text:"Clique pour ajouter du texte.",erase:"Clique un élément pour l'effacer."};
+const ST_HINTS={select:"Clique un élément puis glisse pour le déplacer.",tank:"Choisis une couleur + une classe, puis clique sur la carte. Double-clic = nommer.",arrow:"Glisse pour tracer une flèche.",line:"Glisse pour tracer un trait.",rect:"Glisse pour dessiner une zone à surligner.",circle:"Glisse pour dessiner un cercle.",stamp:"Choisis un symbole tactique + une couleur, puis clique sur la carte.",measure:"Glisse d'un point à un autre : la distance s'affiche en mètres.",range:"Clique-glisse depuis un point : cercle de portée/vision en mètres.",cone:"Clique-glisse depuis un char : cône de tir orienté.",path:"Clique pour poser des points ; double-clic ou Entrée pour terminer le trajet.",pen:"Dessine à main levée.",marker:"Clique pour poser un jeton numéroté.",text:"Clique pour ajouter du texte.",erase:"Clique un élément pour l'effacer."};
 function stSyncOptions(){ const o=document.getElementById("stOpts"); if(o) o.dataset.tool=ST_TOOL; const h=document.getElementById("stOptHint"); if(h) h.textContent=ST_HINTS[ST_TOOL]||""; }
 function stTranslate(el,dx,dy){
   const c=JSON.parse(JSON.stringify(el));
   if(c.type==='arrow'||c.type==='line'||c.type==='rect'||c.type==='circle'||c.type==='measure'){ c.x1+=dx;c.y1+=dy;c.x2+=dx;c.y2+=dy; }
-  else if(c.type==='pen'){ c.pts=c.pts.map(p=>[p[0]+dx,p[1]+dy]); }
+  else if(c.type==='pen'||c.type==='path'){ c.pts=c.pts.map(p=>[p[0]+dx,p[1]+dy]); }
   else { c.x+=dx; c.y+=dy; }
   return c;
 }
-function stElSvg(el,i){
-  const sel=ST_SEL===i?' st-sel':'';
+// ---- sélection multiple, calques, presse-papier ----
+function stSelClear(){ ST_SELS.clear(); }
+function stSelEls(){ return [...ST_SELS].map(i=>ST_EDIT.els[i]).filter(Boolean); }
+function stElBounds(el){
+  if(el.type==='pen'||el.type==='path'){ const xs=el.pts.map(p=>p[0]),ys=el.pts.map(p=>p[1]); return [Math.min(...xs),Math.min(...ys),Math.max(...xs),Math.max(...ys)]; }
+  if(el.x1!=null){ return [Math.min(el.x1,el.x2),Math.min(el.y1,el.y2),Math.max(el.x1,el.x2),Math.max(el.y1,el.y2)]; }
+  if(el.type==='range'||el.type==='cone'){ const r=el.r||0; return [el.x-r,el.y-r,el.x+r,el.y+r]; }
+  return [el.x-24,el.y-24,el.x+24,el.y+24];
+}
+function stDeleteSel(){ if(!ST_SELS.size)return; stSnapshot(); [...ST_SELS].sort((a,b)=>b-a).forEach(i=>ST_EDIT.els.splice(i,1)); stSelClear(); stRedraw(); stUpdCount(); }
+function stDupSel(){ if(!ST_SELS.size)return; stSnapshot(); const copies=stSelEls().map(el=>stTranslate(el,30,30)); const start=ST_EDIT.els.length; copies.forEach(c=>ST_EDIT.els.push(c)); stSelClear(); copies.forEach((_,k)=>ST_SELS.add(start+k)); stRedraw(); stUpdCount(); }
+function stZOrder(front){ if(!ST_SELS.size)return; stSnapshot(); const sel=stSelEls(); [...ST_SELS].sort((a,b)=>b-a).forEach(i=>ST_EDIT.els.splice(i,1)); stSelClear();
+  if(front){ const start=ST_EDIT.els.length; sel.forEach(el=>ST_EDIT.els.push(el)); sel.forEach((_,k)=>ST_SELS.add(start+k)); }
+  else { sel.slice().reverse().forEach(el=>ST_EDIT.els.unshift(el)); sel.forEach((_,k)=>ST_SELS.add(k)); }
+  stRedraw(); }
+function stNudge(dx,dy){ if(!ST_SELS.size)return; stSnapshot(); [...ST_SELS].forEach(i=>{ ST_EDIT.els[i]=stTranslate(ST_EDIT.els[i],dx,dy); }); stRedraw(); }
+function stDropFormation(key){ const offs=ST_FORM_SHAPES[key]||ST_FORM_SHAPES.line;
+  const cx=ST_ZOOM.x+ST_ZOOM.w/2, cy=ST_ZOOM.y+ST_ZOOM.h/2; stSnapshot(); stSelClear(); const start=ST_EDIT.els.length;
+  offs.forEach(o=>ST_EDIT.els.push({type:'tank',cls:ST_TANK.cls,color:ST_TANK.color,x:Math.round(cx+o[0]),y:Math.round(cy+o[1]),name:'',size:ST_TANK.size}));
+  offs.forEach((_,k)=>ST_SELS.add(start+k)); stRedraw(); stUpdCount(); }
+function stCopy(){ ST_CLIP=stSelEls().map(el=>JSON.parse(JSON.stringify(el))); }
+function stPaste(){ if(!ST_CLIP.length)return; stSnapshot(); const start=ST_EDIT.els.length; ST_CLIP.forEach(el=>ST_EDIT.els.push(stTranslate(JSON.parse(JSON.stringify(el)),42,42))); stSelClear(); ST_CLIP.forEach((_,k)=>ST_SELS.add(start+k)); stRedraw(); stUpdCount(); }
+function stSelBoxSvg(){ if(!ST_BOX)return''; const x=Math.min(ST_BOX.x0,ST_BOX.x1),y=Math.min(ST_BOX.y0,ST_BOX.y1),w=Math.abs(ST_BOX.x1-ST_BOX.x0),h=Math.abs(ST_BOX.y1-ST_BOX.y0);
+  return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#d8b25e" fill-opacity=".08" stroke="#d8b25e" stroke-width="2" stroke-dasharray="8 6" style="pointer-events:none"/>`; }
+// ---- poignées de redimensionnement / rotation ----
+function stScaleEl(el,f,cx,cy){ const c=JSON.parse(JSON.stringify(el)); f=Math.max(0.1,Math.min(6,f));
+  const sp=(x,y)=>[cx+(x-cx)*f, cy+(y-cy)*f];
+  if(c.x1!=null){ [c.x1,c.y1]=sp(c.x1,c.y1); [c.x2,c.y2]=sp(c.x2,c.y2); }
+  else if(c.pts){ c.pts=c.pts.map(p=>sp(p[0],p[1])); }
+  if(c.size!=null) c.size=Math.max(0.3,Math.min(3,(el.size||1)*f));
+  if(c.type==='range'||c.type==='cone'){ c.r=Math.max(2,(el.r||1)*f); if(c.type==='range') c.m=Math.round(c.r/1000*stMapMeters()); }
+  return c; }
+function stHandlesSvg(){ if(ST_TOOL!=='select'||ST_SELS.size!==1||ST_BOX||ST_MOVE) return '';
+  const i=[...ST_SELS][0]; const el=ST_EDIT.els[i]; if(!el) return '';
+  let [x0,y0,x1,y1]=stElBounds(el); const cx=(x0+x1)/2, cy=(y0+y1)/2, pad=10;
+  x0-=pad;y0-=pad;x1+=pad;y1+=pad; const rot=el.rot||0;
+  const resizable=!['marker','text','measure'].includes(el.type);
+  const ry=y0-40;
+  let s=`<g class="st-handles" transform="rotate(${rot} ${cx} ${cy})" style="pointer-events:none">`;
+  s+=`<rect x="${x0}" y="${y0}" width="${x1-x0}" height="${y1-y0}" fill="none" stroke="#e5b95c" stroke-width="2" stroke-dasharray="6 5" opacity=".85"/>`;
+  if(resizable){ [['nw',x0,y0],['ne',x1,y0],['se',x1,y1],['sw',x0,y1]].forEach(c=>{ s+=`<circle class="st-handle" data-h="${c[0]}" cx="${c[1]}" cy="${c[2]}" r="9" fill="#15161a" stroke="#e5b95c" stroke-width="2.6" style="pointer-events:all;cursor:nwse-resize"/>`; }); }
+  s+=`<line x1="${cx}" y1="${y0}" x2="${cx}" y2="${ry}" stroke="#e5b95c" stroke-width="2" opacity=".8"/><circle class="st-handle" data-h="rot" cx="${cx}" cy="${ry}" r="9" fill="#e5b95c" stroke="#0c0d0f" stroke-width="2.4" style="pointer-events:all;cursor:grab"/>`;
+  return s+`</g>`; }
+// ---- menu clic droit ----
+function stHideCtxMenu(){ const m=document.getElementById("stCtxMenu"); if(m) m.remove(); }
+function stShowCtxMenu(cx,cy,eid){
+  stHideCtxMenu();
+  const n=ST_SELS.size;
+  const items = n ? [
+    ["Copier","stCopy",!!n],
+    ["Coller","stPaste",ST_CLIP.length>0],
+    ["Dupliquer","stDupSel",!!n],
+    ["sep"],
+    ["Premier plan","stFront",!!n],
+    ["Arrière-plan","stBack",!!n],
+    ["sep"],
+    ["Supprimer","stDelete",!!n],
+  ] : [
+    ["Coller","stPaste",ST_CLIP.length>0],
+    ["Tout sélectionner","stAll",ST_EDIT.els.length>0],
+  ];
+  const m=document.createElement("div"); m.id="stCtxMenu"; m.className="st-ctxmenu";
+  m.innerHTML=items.map(it=> it[0]==="sep"?`<div class="st-ctxsep"></div>`
+    :`<button type="button" class="st-ctxitem${it[2]?'':' off'}" data-act="${it[1]}"${it[2]?'':' disabled'}>${it[0]}</button>`).join("");
+  document.body.appendChild(m);
+  const vw=innerWidth,vh=innerHeight,mw=m.offsetWidth||180,mh=m.offsetHeight||10;
+  m.style.left=Math.min(cx,vw-mw-6)+"px"; m.style.top=Math.min(cy,vh-mh-6)+"px";
+  m.querySelectorAll(".st-ctxitem").forEach(b=>b.onclick=()=>{ const a=b.dataset.act; stHideCtxMenu();
+    if(a==='stCopy')stCopy(); else if(a==='stPaste')stPaste(); else if(a==='stDupSel')stDupSel();
+    else if(a==='stFront')stZOrder(true); else if(a==='stBack')stZOrder(false);
+    else if(a==='stDelete')stDeleteSel(); else if(a==='stAll'){ stSelClear(); ST_EDIT.els.forEach((_,i)=>ST_SELS.add(i)); stRedraw(); } });
+  setTimeout(()=>{ document.addEventListener("pointerdown",stCtxOutside,true); },0);
+}
+function stCtxOutside(e){ const m=document.getElementById("stCtxMenu"); if(m&&!m.contains(e.target)){ stHideCtxMenu(); document.removeEventListener("pointerdown",stCtxOutside,true); } }
+// Centre géométrique d'un élément (pour rotation/poignées).
+function stElCenter(el){ const b=stElBounds(el); return [(b[0]+b[2])/2,(b[1]+b[3])/2]; }
+// Wrapper : applique une rotation `rot` (deg) autour du centre si présente.
+function stElSvg(el,i){ const s=stElInner(el,i); if(el.rot){ const c=stElCenter(el); return `<g transform="rotate(${el.rot} ${c[0]} ${c[1]})">${s}</g>`; } return s; }
+function stElInner(el,i){
+  const sel=ST_SELS.has(i)?' st-sel':'';
   if(el.type==='arrow'||el.type==='line'){ const w=el.w||7, m=el.type==='arrow'?' marker-end="url(#st-ah)"':'', dash=el.dash?` stroke-dasharray="${w*2.1} ${w*1.6}"`:'';
     if(el.curve) return `<path class="st-el${sel}" data-eid="${i}" d="${stCurvePath(el)}" fill="none" stroke="${esc(el.color)}" stroke-width="${w}" stroke-linecap="round"${dash}${m}/>`;
     return `<line class="st-el${sel}" data-eid="${i}" x1="${el.x1}" y1="${el.y1}" x2="${el.x2}" y2="${el.y2}" stroke="${esc(el.color)}" stroke-width="${w}" stroke-linecap="round"${dash}${m}/>`; }
@@ -5110,10 +5236,27 @@ function stElSvg(el,i){
     return `<g class="st-el st-measure${sel}" data-eid="${i}"><line x1="${el.x1}" y1="${el.y1}" x2="${el.x2}" y2="${el.y2}" stroke="#f4d78c" stroke-width="3.4" stroke-dasharray="11 7" stroke-linecap="round"/><circle cx="${el.x1}" cy="${el.y1}" r="4.5" fill="#f4d78c"/><circle cx="${el.x2}" cy="${el.y2}" r="4.5" fill="#f4d78c"/><g style="pointer-events:none"><rect x="${mx-tw/2}" y="${my-13}" width="${tw}" height="23" rx="6" fill="#0c0d0f" fill-opacity=".88"/><text x="${mx}" y="${my+4}" font-size="15" font-weight="800" text-anchor="middle" fill="#f4d78c">${el.m} m</text></g></g>`; }
   if(el.type==='range'){ const col=el.color||'#5bb0e5', tw=(String(el.m).length*9+30);
     return `<g class="st-el st-range${sel}" data-eid="${i}"><circle cx="${el.x}" cy="${el.y}" r="${Math.round(el.r)}" fill="${esc(col)}" fill-opacity=".07" stroke="${esc(col)}" stroke-width="3" stroke-dasharray="10 8" style="pointer-events:none"/><circle cx="${el.x}" cy="${el.y}" r="6" fill="${esc(col)}"/><g style="pointer-events:none"><rect x="${el.x-tw/2}" y="${el.y-Math.round(el.r)-25}" width="${tw}" height="22" rx="6" fill="#0c0d0f" fill-opacity=".88"/><text x="${el.x}" y="${el.y-Math.round(el.r)-9}" font-size="14" font-weight="800" text-anchor="middle" fill="${esc(col)}">${el.m} m</text></g></g>`; }
+  if(el.type==='cone'){ const col=el.color||'#e5c84b', r=Math.max(1,el.r||120), sp=Math.max(4,Math.min(160,el.spread||30));
+    const a0=(el.a-sp)*Math.PI/180, a1=(el.a+sp)*Math.PI/180;
+    const x0=el.x+r*Math.cos(a0), y0=el.y+r*Math.sin(a0), x1=el.x+r*Math.cos(a1), y1=el.y+r*Math.sin(a1), large=(2*sp)>180?1:0;
+    return `<g class="st-el st-cone${sel}" data-eid="${i}"><path d="M ${el.x} ${el.y} L ${x0.toFixed(1)} ${y0.toFixed(1)} A ${r} ${r} 0 ${large} 1 ${x1.toFixed(1)} ${y1.toFixed(1)} Z" fill="${esc(col)}" fill-opacity=".16" stroke="${esc(col)}" stroke-width="2.5" stroke-linejoin="round"/><circle cx="${el.x}" cy="${el.y}" r="6" fill="${esc(col)}"/></g>`; }
+  if(el.type==='path'){ const w=el.w||7, dash=el.dash?` stroke-dasharray="${w*2.1} ${w*1.6}"`:'', pts=el.pts||[];
+    if(pts.length<2) return '';
+    const dots=pts.map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="${w*0.7+1}" fill="${esc(el.color)}" style="pointer-events:none"/>`).join("");
+    return `<g class="st-el st-path${sel}" data-eid="${i}"><polyline points="${pts.map(p=>p.map(n=>Math.round(n)).join(',')).join(' ')}" fill="none" stroke="${esc(el.color)}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"${dash} marker-end="url(#st-ah)"/>${dots}</g>`; }
   return '';
 }
-function stDrawPreview(){ const d=ST_DRAW; if(!d) return ''; if(d.type==='pen'&&d.pts.length<2) return ''; return `<g opacity=".8" style="pointer-events:none">${stElSvg(d,'prev')}</g>`; }
-function stRedraw(){ const g=document.getElementById("stEls"); if(g) g.innerHTML=ST_EDIT.els.map((e,i)=>stElSvg(e,i)).join("")+stDrawPreview(); }
+function stDrawPreview(){ let s='';
+  if(ST_PATHBUILD){ const b=ST_PATHBUILD, w=b.w||7; const pts=b.cursor?b.pts.concat([b.cursor]):b.pts;
+    s+=`<g opacity=".9" style="pointer-events:none"><polyline points="${pts.map(p=>p.map(n=>Math.round(n)).join(',')).join(' ')}" fill="none" stroke="${esc(b.color)}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="2 ${w*1.7}" marker-end="url(#st-ah)"/>${b.pts.map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="${w*0.7+1}" fill="${esc(b.color)}"/>`).join('')}</g>`; }
+  const d=ST_DRAW; if(d && !(d.type==='pen'&&d.pts.length<2)) s+=`<g opacity=".8" style="pointer-events:none">${stElSvg(d,'prev')}</g>`;
+  return s; }
+// Termine (ou annule) un trajet multipoint en cours.
+function stFinishPath(commit){ const b=ST_PATHBUILD; ST_PATHBUILD=null;
+  if(commit&&b){ const pts=b.pts.filter((p,i)=> i===0 || Math.hypot(p[0]-b.pts[i-1][0],p[1]-b.pts[i-1][1])>4 );
+    if(pts.length>1){ stSnapshot(); ST_EDIT.els.push({type:'path',color:b.color,w:b.w,dash:b.dash,pts}); } }
+  stRedraw(); }
+function stRedraw(){ const g=document.getElementById("stEls"); if(g) g.innerHTML=ST_EDIT.els.map((e,i)=>stElSvg(e,i)).join("")+stDrawPreview()+stSelBoxSvg()+stHandlesSvg(); }
 // Métriques du canvas : le viewBox (carré) est centré dans l'élément SVG (letterbox
 // via preserveAspectRatio "meet"), donc échelle = plus petite dimension / côté du viewBox.
 function stMetrics(svg){ const r=svg.getBoundingClientRect(); const s=Math.min(r.width,r.height)/ST_ZOOM.w||1;
@@ -5125,16 +5268,17 @@ function stNextMarkerLabel(){ let n=0; ST_EDIT.els.forEach(e=>{ if(e.type==='mar
 // -- historique annuler / refaire --
 function stSnapshot(){ if(!ST_EDIT) return; ST_UNDO.push(JSON.stringify(ST_EDIT.els)); if(ST_UNDO.length>80) ST_UNDO.shift(); ST_REDO.length=0; stUpdUndoBtns(); }
 function stSetEls(a){ ST_EDIT.els=a; if(ST_EDIT.steps&&ST_EDIT.steps[ST_STEP]) ST_EDIT.steps[ST_STEP].els=a; }
-function stUndo(){ if(!ST_UNDO.length) return; ST_REDO.push(JSON.stringify(ST_EDIT.els)); stSetEls(JSON.parse(ST_UNDO.pop())); ST_SEL=null; stRedraw(); stUpdCount(); stUpdUndoBtns(); }
-function stRedo(){ if(!ST_REDO.length) return; ST_UNDO.push(JSON.stringify(ST_EDIT.els)); stSetEls(JSON.parse(ST_REDO.pop())); ST_SEL=null; stRedraw(); stUpdCount(); stUpdUndoBtns(); }
+function stUndo(){ if(!ST_UNDO.length) return; ST_REDO.push(JSON.stringify(ST_EDIT.els)); stSetEls(JSON.parse(ST_UNDO.pop())); stSelClear(); stRedraw(); stUpdCount(); stUpdUndoBtns(); }
+function stRedo(){ if(!ST_REDO.length) return; ST_UNDO.push(JSON.stringify(ST_EDIT.els)); stSetEls(JSON.parse(ST_REDO.pop())); stSelClear(); stRedraw(); stUpdCount(); stUpdUndoBtns(); }
 // -- étapes (slideshow) --
 function renderStepTabs(){ const c=document.getElementById("stStepTabs"); if(!c||!ST_EDIT.steps) return;
   c.innerHTML=ST_EDIT.steps.map((st,i)=>`<button type="button" class="st-steptab${i===ST_STEP?' on':''}" data-step="${i}" title="Étape ${i+1}">${i+1}</button>`).join("")+(ST_EDIT.steps.length<12?`<button type="button" class="st-stepadd" id="stStepAdd" title="Ajouter une étape (copie l'étape actuelle)">+</button>`:'');
   c.querySelectorAll(".st-steptab").forEach(b=>b.onclick=()=>stGoStep(+b.dataset.step));
-  const add=c.querySelector("#stStepAdd"); if(add) add.onclick=stAddStep; }
-function stGoStep(i){ if(!ST_EDIT.steps||i<0||i>=ST_EDIT.steps.length||i===ST_STEP) return; ST_STEP=i; ST_EDIT.els=ST_EDIT.steps[i].els; ST_SEL=null; ST_UNDO=[]; ST_REDO=[]; renderStepTabs(); stRedraw(); stUpdCount(); stUpdUndoBtns(); }
-function stAddStep(){ if(ST_EDIT.steps.length>=12){ alert("Maximum 12 étapes."); return; } ST_EDIT.steps.splice(ST_STEP+1,0,{els:JSON.parse(JSON.stringify(ST_EDIT.els))}); ST_STEP++; ST_EDIT.els=ST_EDIT.steps[ST_STEP].els; ST_SEL=null; ST_UNDO=[]; ST_REDO=[]; renderStepTabs(); stRedraw(); stUpdCount(); stUpdUndoBtns(); }
-function stDelStep(){ if(ST_EDIT.steps.length<=1){ alert("Il faut au moins une étape."); return; } if(!confirm("Supprimer l'étape "+(ST_STEP+1)+" ?")) return; ST_EDIT.steps.splice(ST_STEP,1); if(ST_STEP>=ST_EDIT.steps.length) ST_STEP=ST_EDIT.steps.length-1; ST_EDIT.els=ST_EDIT.steps[ST_STEP].els; ST_SEL=null; ST_UNDO=[]; ST_REDO=[]; renderStepTabs(); stRedraw(); stUpdCount(); stUpdUndoBtns(); }
+  const add=c.querySelector("#stStepAdd"); if(add) add.onclick=stAddStep; stSyncNote(); }
+function stSyncNote(){ const inp=document.getElementById("stStepNote"); if(inp&&ST_EDIT&&ST_EDIT.steps&&ST_EDIT.steps[ST_STEP]) inp.value=ST_EDIT.steps[ST_STEP].note||''; }
+function stGoStep(i){ if(!ST_EDIT.steps||i<0||i>=ST_EDIT.steps.length||i===ST_STEP) return; ST_STEP=i; ST_EDIT.els=ST_EDIT.steps[i].els; stSelClear(); ST_UNDO=[]; ST_REDO=[]; renderStepTabs(); stRedraw(); stUpdCount(); stUpdUndoBtns(); }
+function stAddStep(){ if(ST_EDIT.steps.length>=12){ alert("Maximum 12 étapes."); return; } ST_EDIT.steps.splice(ST_STEP+1,0,{els:JSON.parse(JSON.stringify(ST_EDIT.els))}); ST_STEP++; ST_EDIT.els=ST_EDIT.steps[ST_STEP].els; stSelClear(); ST_UNDO=[]; ST_REDO=[]; renderStepTabs(); stRedraw(); stUpdCount(); stUpdUndoBtns(); }
+function stDelStep(){ if(ST_EDIT.steps.length<=1){ alert("Il faut au moins une étape."); return; } if(!confirm("Supprimer l'étape "+(ST_STEP+1)+" ?")) return; ST_EDIT.steps.splice(ST_STEP,1); if(ST_STEP>=ST_EDIT.steps.length) ST_STEP=ST_EDIT.steps.length-1; ST_EDIT.els=ST_EDIT.steps[ST_STEP].els; stSelClear(); ST_UNDO=[]; ST_REDO=[]; renderStepTabs(); stRedraw(); stUpdCount(); stUpdUndoBtns(); }
 function stUpdUndoBtns(){ const u=document.getElementById("stUndo"),r=document.getElementById("stRedo"); if(u)u.disabled=!ST_UNDO.length; if(r)r.disabled=!ST_REDO.length; }
 // -- compteur de chars par équipe --
 function stUpdCount(){ const el=document.getElementById("stCount"); if(!el||!ST_EDIT) return; const by={},order=[]; ST_EDIT.els.forEach(x=>{ if(x.type==='tank'){ const c=x.color||'#5dbb46'; if(by[c]===undefined){by[c]=0;order.push(c);} by[c]++; } }); el.innerHTML=order.map(c=>`<span class="st-cnt"><i style="background:${c}"></i>${by[c]}</span>`).join(''); }
@@ -5143,7 +5287,7 @@ function stTankSync(){ const ed=document.getElementById("stEditor"); if(!ed) ret
   ed.querySelectorAll(".st-class").forEach(b=>b.classList.toggle("on",b.dataset.cls===ST_TANK.cls));
   ed.querySelectorAll(".st-tcol").forEach(b=>b.classList.toggle("on",b.dataset.tcol===ST_TANK.color));
 }
-function stSetTool(t){ ST_TOOL=t; ST_SEL=null; const ed=document.getElementById("stEditor");
+function stSetTool(t){ if(ST_PATHBUILD&&t!=='path') stFinishPath(true); ST_TOOL=t; stSelClear(); const ed=document.getElementById("stEditor");
   ed.querySelectorAll(".st-tool").forEach(x=>x.classList.toggle("on",x.dataset.tool===t));
   const svg=document.getElementById("stSvg"); if(svg) svg.dataset.tool=t;
   stSyncOptions(); stRedraw(); }
@@ -5178,12 +5322,13 @@ function stWireEditor(){
   ed.querySelector("#stChangeMap").onclick=()=>renderMapPicker();
   ed.querySelector("#stCancel").onclick=()=>{ stLeaveRoom(); document.body.classList.remove("st-noscroll"); ed.classList.add("hidden"); ed.innerHTML=""; ST_EDIT=null; };
   ed.querySelector("#stSave").onclick=saveStrat;
-  ed.querySelector("#stClear").onclick=()=>{ if(!ST_EDIT.els.length) return; if(confirm("Effacer tous les éléments de cette étape ?")){ stSnapshot(); stSetEls([]); ST_SEL=null; stRedraw(); stUpdCount(); } };
+  ed.querySelector("#stClear").onclick=()=>{ if(!ST_EDIT.els.length) return; if(confirm("Effacer tous les éléments de cette étape ?")){ stSnapshot(); stSetEls([]); stSelClear(); stRedraw(); stUpdCount(); } };
   ed.querySelector("#stStepDel").onclick=stDelStep;
+  const noteInp=ed.querySelector("#stStepNote"); if(noteInp){ noteInp.oninput=()=>{ if(ST_EDIT.steps&&ST_EDIT.steps[ST_STEP]) ST_EDIT.steps[ST_STEP].note=noteInp.value.slice(0,140); }; }
   ed.querySelector("#stPresent").onclick=()=>stPresent(ST_EDIT.steps,ST_EDIT.map,ST_EDIT.mode,ST_EDIT.name,ST_STEP);
   const cbtn=ed.querySelector("#stCollab"); if(cbtn) cbtn.onclick=stCollabPicker;
-  ed.querySelector("#stDelSel").onclick=()=>{ if(ST_SEL!=null){ stSnapshot(); ST_EDIT.els.splice(ST_SEL,1); ST_SEL=null; stRedraw(); stUpdCount(); } };
-  ed.querySelector("#stDup").onclick=()=>{ if(ST_SEL!=null){ stSnapshot(); const c=stTranslate(ST_EDIT.els[ST_SEL],28,28); ST_EDIT.els.push(c); ST_SEL=ST_EDIT.els.length-1; stRedraw(); stUpdCount(); } };
+  ed.querySelector("#stDelSel").onclick=()=>stDeleteSel();
+  ed.querySelector("#stDup").onclick=()=>stDupSel();
   ed.querySelector("#stUndo").onclick=stUndo;
   ed.querySelector("#stRedo").onclick=stRedo;
   ed.querySelectorAll(".st-tool").forEach(b=>b.onclick=()=>stSetTool(b.dataset.tool));
@@ -5192,36 +5337,74 @@ function stWireEditor(){
   ed.querySelector("#stCurve").onclick=e=>{ ST_STROKE.curve=!ST_STROKE.curve; e.currentTarget.classList.toggle("on",ST_STROKE.curve); };
   ed.querySelectorAll(".st-wbtn").forEach(b=>b.onclick=()=>{ ST_STROKE.w=+b.dataset.w; ed.querySelectorAll(".st-wbtn").forEach(x=>x.classList.toggle("on",x===b)); });
   ed.querySelector("#stGridBtn").onclick=e=>{ ST_GRID=!ST_GRID; try{localStorage.setItem('cp_stgrid',ST_GRID?'1':'0');}catch(_){}  e.currentTarget.classList.toggle("on",ST_GRID); const g=document.getElementById("stGrid"); if(g) g.innerHTML=ST_GRID?stGridInner():''; };
+  ed.querySelector("#stSnapBtn").onclick=e=>{ ST_SNAP=!ST_SNAP; try{localStorage.setItem('cp_stsnap',ST_SNAP?'1':'0');}catch(_){}  e.currentTarget.classList.toggle("on",ST_SNAP); };
+  ed.querySelector("#stFront").onclick=()=>stZOrder(true);
+  ed.querySelector("#stBack").onclick=()=>stZOrder(false);
   ed.querySelectorAll(".st-tcol").forEach(b=>b.onclick=()=>{ ST_TANK.color=b.dataset.tcol; stSetTool('tank'); stTankSync(); });
   ed.querySelectorAll(".st-class").forEach(b=>b.onclick=()=>{ ST_TANK.cls=b.dataset.cls; stSetTool('tank'); stTankSync(); });
   ed.querySelectorAll(".st-stampb").forEach(b=>b.onclick=()=>{ ST_STAMP.kind=b.dataset.stamp; stSetTool('stamp'); ed.querySelectorAll(".st-stampb").forEach(x=>x.classList.toggle("on",x===b)); });
   ed.querySelectorAll(".st-szb").forEach(b=>b.onclick=()=>{ ST_STAMP.size=+b.dataset.sz; ed.querySelectorAll(".st-szb").forEach(x=>x.classList.toggle("on",x===b)); });
   ed.querySelectorAll(".st-tkszb").forEach(b=>b.onclick=()=>{ ST_TANK.size=+b.dataset.sz; ed.querySelectorAll(".st-tkszb").forEach(x=>x.classList.toggle("on",x===b)); });
+  ed.querySelectorAll(".st-coneb").forEach(b=>b.onclick=()=>{ ST_CONE.spread=+b.dataset.cone; stSetTool('cone'); ed.querySelectorAll(".st-coneb").forEach(x=>x.classList.toggle("on",x===b)); });
+  ed.querySelectorAll(".st-formb").forEach(b=>b.onclick=()=>stDropFormation(b.dataset.form));
   const msel=ed.querySelector("#stMode"); if(msel) msel.onchange=()=>{ ST_EDIT.mode=msel.value; const g=document.getElementById("stBases"); if(g) g.innerHTML=stBasesSvg(ST_EDIT.map,ST_EDIT.mode); };
   const cc=()=>[ST_ZOOM.x+ST_ZOOM.w/2, ST_ZOOM.y+ST_ZOOM.h/2];
   ed.querySelector("#stZoomIn").onclick=()=>{ const [x,y]=cc(); stZoomAt(0.8,x,y); };
   ed.querySelector("#stZoomOut").onclick=()=>{ const [x,y]=cc(); stZoomAt(1.25,x,y); };
   ed.querySelector("#stZoomLvl").onclick=stZoomReset;
+  const mm=ed.querySelector("#stMinimap"); if(mm){ const recenter=ev=>{ const r=mm.getBoundingClientRect(); ST_ZOOM.x=(ev.clientX-r.left)/r.width*1000-ST_ZOOM.w/2; ST_ZOOM.y=(ev.clientY-r.top)/r.height*1000-ST_ZOOM.h/2; stApplyZoom(); };
+    mm.onpointerdown=ev=>{ ev.preventDefault(); mm._drag=true; try{mm.setPointerCapture(ev.pointerId);}catch(_){}  recenter(ev); };
+    mm.onpointermove=ev=>{ if(mm._drag) recenter(ev); };
+    mm.onpointerup=ev=>{ mm._drag=false; try{mm.releasePointerCapture(ev.pointerId);}catch(_){} }; }
   ed.querySelector("#stFull").onclick=()=>{ ST_FULL=!ST_FULL; ed.querySelector(".st-editor").classList.toggle("st-full",ST_FULL); document.body.classList.toggle("st-noscroll",ST_FULL); if(!ST_FULL) ed.querySelector(".st-editor").scrollIntoView({behavior:"smooth",block:"start"}); };
   svg.onwheel=e=>{ e.preventDefault(); const p=stPt(e,svg); stZoomAt(e.deltaY<0?0.85:1.18, p[0], p[1]); };
   svg.onpointerdown=e=>{
     e.preventDefault();
     if(ST_SPACE || e.button===1){ ST_PANNING={sx:e.clientX,sy:e.clientY,vx:ST_ZOOM.x,vy:ST_ZOOM.y}; svg.classList.add("panning"); svg.setPointerCapture(e.pointerId); return; }
     const p=stPt(e,svg); const hit=e.target.closest("[data-eid]"); const eid=hit?+hit.dataset.eid:null;
-    if(ST_TOOL==='erase'){ if(eid!=null){ stSnapshot(); ST_EDIT.els.splice(eid,1); ST_SEL=null; stRedraw(); stUpdCount(); } return; }
-    if(ST_TOOL==='select'){ if(eid!=null){ ST_SEL=eid; ST_MOVE={eid,ox:p[0],oy:p[1],orig:ST_EDIT.els[eid],snapped:false}; svg.setPointerCapture(e.pointerId); } else { ST_SEL=null; } stRedraw(); return; }
+    if(ST_TOOL==='erase'){ if(eid!=null){ stSnapshot(); ST_EDIT.els.splice(eid,1); stSelClear(); stRedraw(); stUpdCount(); } return; }
+    if(ST_TOOL==='select'){
+      stHideCtxMenu();
+      const hitH=e.target.closest('.st-handle');
+      if(hitH && ST_SELS.size===1){ const si=[...ST_SELS][0]; const sel=ST_EDIT.els[si]; const c=stElCenter(sel);
+        ST_XFORM={ mode:hitH.dataset.h==='rot'?'rotate':'resize', i:si, orig:JSON.parse(JSON.stringify(sel)), cx:c[0], cy:c[1],
+          d0:Math.hypot(p[0]-c[0],p[1]-c[1])||1, a0:Math.atan2(p[1]-c[1],p[0]-c[0])*180/Math.PI, rot0:sel.rot||0, snapped:false };
+        svg.setPointerCapture(e.pointerId); return; }
+      if(eid!=null){
+        if(e.shiftKey){ if(ST_SELS.has(eid)) ST_SELS.delete(eid); else ST_SELS.add(eid); }
+        else if(!ST_SELS.has(eid)){ stSelClear(); ST_SELS.add(eid); }
+        if(ST_SELS.size){ const orig=new Map(); let ax=Infinity,ay=Infinity;
+          ST_SELS.forEach(i=>{ const el=JSON.parse(JSON.stringify(ST_EDIT.els[i])); orig.set(i,el); const b=stElBounds(el); ax=Math.min(ax,b[0]); ay=Math.min(ay,b[1]); });
+          ST_MOVE={ox:p[0],oy:p[1],orig,ax,ay,moved:false}; svg.setPointerCapture(e.pointerId); }
+      } else {
+        ST_BOX={x0:p[0],y0:p[1],x1:p[0],y1:p[1],base:e.shiftKey?new Set(ST_SELS):null}; svg.setPointerCapture(e.pointerId);
+      }
+      stRedraw(); return;
+    }
     if(ST_TOOL==='tank'){ stSnapshot(); ST_EDIT.els.push({type:'tank',cls:ST_TANK.cls,color:ST_TANK.color,x:Math.round(p[0]),y:Math.round(p[1]),name:'',size:ST_TANK.size}); stRedraw(); stUpdCount(); return; }
     if(ST_TOOL==='marker'){ stSnapshot(); ST_EDIT.els.push({type:'marker',color:ST_COLOR,x:Math.round(p[0]),y:Math.round(p[1]),label:stNextMarkerLabel()}); stRedraw(); return; }
     if(ST_TOOL==='text'){ stTextInput(p[0],p[1],null); return; }
     if(ST_TOOL==='stamp'){ stSnapshot(); ST_EDIT.els.push({type:'stamp',kind:ST_STAMP.kind,color:ST_COLOR,x:Math.round(p[0]),y:Math.round(p[1]),size:ST_STAMP.size}); stRedraw(); return; }
+    if(ST_TOOL==='cone'){ ST_DRAW={type:'cone',color:ST_COLOR,x:p[0],y:p[1],a:0,spread:ST_CONE.spread,r:0}; svg.setPointerCapture(e.pointerId); return; }
+    if(ST_TOOL==='path'){ if(!ST_PATHBUILD){ ST_PATHBUILD={type:'path',color:ST_COLOR,w:ST_STROKE.w,dash:ST_STROKE.dash,pts:[[p[0],p[1]]],cursor:[p[0],p[1]]}; } else { ST_PATHBUILD.pts.push([p[0],p[1]]); ST_PATHBUILD.cursor=[p[0],p[1]]; } stRedraw(); return; }
     if(ST_TOOL==='range'){ ST_DRAW={type:'range',color:ST_COLOR,x:p[0],y:p[1],r:0,m:0}; svg.setPointerCapture(e.pointerId); return; }
     if(ST_TOOL==='pen'){ ST_DRAW={type:'pen',color:ST_COLOR,w:ST_STROKE.w,dash:ST_STROKE.dash,pts:[[p[0],p[1]]]}; svg.setPointerCapture(e.pointerId); return; }
     ST_DRAW={type:ST_TOOL,color:ST_COLOR,w:ST_STROKE.w,dash:ST_STROKE.dash,curve:(ST_TOOL==='arrow'||ST_TOOL==='line')?ST_STROKE.curve:false,x1:p[0],y1:p[1],x2:p[0],y2:p[1],m:0}; svg.setPointerCapture(e.pointerId);
   };
   svg.onpointermove=e=>{
     if(ST_PANNING){ const m=stMetrics(svg); ST_ZOOM.x=ST_PANNING.vx-(e.clientX-ST_PANNING.sx)/m.s; ST_ZOOM.y=ST_PANNING.vy-(e.clientY-ST_PANNING.sy)/m.s; stApplyZoom(); return; }
-    if(ST_MOVE){ if(!ST_MOVE.snapped){ stSnapshot(); ST_MOVE.snapped=true; } const p=stPt(e,svg); ST_EDIT.els[ST_MOVE.eid]=stTranslate(ST_MOVE.orig,p[0]-ST_MOVE.ox,p[1]-ST_MOVE.oy); stRedraw(); return; }
+    if(ST_XFORM){ const p=stPt(e,svg); const x=ST_XFORM; if(!x.snapped){ stSnapshot(); x.snapped=true; }
+      if(x.mode==='resize'){ const d=Math.hypot(p[0]-x.cx,p[1]-x.cy); ST_EDIT.els[x.i]=stScaleEl(x.orig,d/x.d0,x.cx,x.cy); }
+      else { const a=Math.atan2(p[1]-x.cy,p[0]-x.cx)*180/Math.PI; let rot=Math.round(x.rot0+(a-x.a0)); if(ST_SNAP) rot=Math.round(rot/15)*15; rot=((rot%360)+360)%360; if(rot>180) rot-=360; const c=JSON.parse(JSON.stringify(x.orig)); if(rot) c.rot=rot; else delete c.rot; ST_EDIT.els[x.i]=c; }
+      stRedraw(); return; }
+    if(ST_BOX){ const p=stPt(e,svg); ST_BOX.x1=p[0]; ST_BOX.y1=p[1]; stRedraw(); return; }
+    if(ST_MOVE){ const p=stPt(e,svg); let dx=p[0]-ST_MOVE.ox, dy=p[1]-ST_MOVE.oy;
+      if(!ST_MOVE.moved&&(Math.abs(dx)>0.5||Math.abs(dy)>0.5)){ stSnapshot(); ST_MOVE.moved=true; }
+      if(ST_SNAP){ dx=stSnap(ST_MOVE.ax+dx)-ST_MOVE.ax; dy=stSnap(ST_MOVE.ay+dy)-ST_MOVE.ay; }
+      ST_MOVE.orig.forEach((el,i)=>{ ST_EDIT.els[i]=stTranslate(el,dx,dy); }); stRedraw(); return; }
+    if(ST_PATHBUILD){ const p=stPt(e,svg); ST_PATHBUILD.cursor=[p[0],p[1]]; stRedraw(); return; }
     if(!ST_DRAW) return; const p=stPt(e,svg);
+    if(ST_DRAW.type==='cone'){ const dx=p[0]-ST_DRAW.x, dy=p[1]-ST_DRAW.y; ST_DRAW.a=Math.atan2(dy,dx)*180/Math.PI; ST_DRAW.r=Math.hypot(dx,dy); stRedraw(); return; }
     if(ST_DRAW.type==='range'){ ST_DRAW.r=Math.hypot(p[0]-ST_DRAW.x,p[1]-ST_DRAW.y); ST_DRAW.m=Math.round(ST_DRAW.r/1000*stMapMeters()); stRedraw(); return; }
     if(ST_DRAW.type==='pen'){ ST_DRAW.pts.push([p[0],p[1]]); }
     else { ST_DRAW.x2=p[0]; ST_DRAW.y2=p[1]; if(ST_DRAW.type==='measure') ST_DRAW.m=Math.round(Math.hypot(ST_DRAW.x2-ST_DRAW.x1,ST_DRAW.y2-ST_DRAW.y1)/1000*stMapMeters()); }
@@ -5230,24 +5413,43 @@ function stWireEditor(){
   svg.onpointerup=e=>{
     try{ svg.releasePointerCapture(e.pointerId); }catch(_){}
     if(ST_PANNING){ ST_PANNING=null; svg.classList.remove("panning"); return; }
+    if(ST_XFORM){ ST_XFORM=null; return; }
+    if(ST_BOX){ const b=ST_BOX; ST_BOX=null;
+      const x0=Math.min(b.x0,b.x1),y0=Math.min(b.y0,b.y1),x1=Math.max(b.x0,b.x1),y1=Math.max(b.y0,b.y1);
+      if(Math.hypot(x1-x0,y1-y0)>6){ stSelClear(); if(b.base) b.base.forEach(i=>ST_SELS.add(i));
+        ST_EDIT.els.forEach((el,i)=>{ const bb=stElBounds(el); if(bb[0]<=x1&&bb[2]>=x0&&bb[1]<=y1&&bb[3]>=y0) ST_SELS.add(i); }); }
+      stRedraw(); return; }
     if(ST_MOVE){ ST_MOVE=null; return; }
     if(!ST_DRAW){ return; }
     const d=ST_DRAW; ST_DRAW=null;
     if(d.type==='pen'){ if(d.pts.length>1){ stSnapshot(); ST_EDIT.els.push(d); } }
     else if(d.type==='range'){ if(d.r>12){ stSnapshot(); ST_EDIT.els.push(d); } }
+    else if(d.type==='cone'){ if(d.r>15){ stSnapshot(); ST_EDIT.els.push(d); } }
     else { if(Math.hypot(d.x2-d.x1,d.y2-d.y1)>12){ stSnapshot(); ST_EDIT.els.push(d); } }
     stRedraw();
   };
-  svg.ondblclick=e=>{ const hit=e.target.closest("[data-eid]"); if(hit) stRename(+hit.dataset.eid); };
+  svg.ondblclick=e=>{ if(ST_PATHBUILD){ e.preventDefault(); stFinishPath(true); return; } const hit=e.target.closest("[data-eid]"); if(hit) stRename(+hit.dataset.eid); };
+  svg.oncontextmenu=e=>{ e.preventDefault(); const hit=e.target.closest("[data-eid]"); const eid=hit?+hit.dataset.eid:null;
+    if(eid!=null&&!ST_SELS.has(eid)){ stSelClear(); ST_SELS.add(eid); stRedraw(); }
+    stShowCtxMenu(e.clientX,e.clientY,eid); };
   if(!ed._stKeys){ ed._stKeys=true;
     document.addEventListener("keydown",e=>{ if(!ST_EDIT||document.getElementById("stEditor").classList.contains("hidden")||document.getElementById("stPresentOv"))return;
       const t=e.target.tagName; if(t==='INPUT'||t==='TEXTAREA'||t==='SELECT')return; const k=e.key.toLowerCase();
       if((e.ctrlKey||e.metaKey)&&k==='z'){ e.preventDefault(); e.shiftKey?stRedo():stUndo(); return; }
       if((e.ctrlKey||e.metaKey)&&k==='y'){ e.preventDefault(); stRedo(); return; }
+      if((e.ctrlKey||e.metaKey)&&k==='c'){ e.preventDefault(); stCopy(); return; }
+      if((e.ctrlKey||e.metaKey)&&k==='x'){ e.preventDefault(); stCopy(); stDeleteSel(); return; }
+      if((e.ctrlKey||e.metaKey)&&k==='v'){ e.preventDefault(); stPaste(); return; }
+      if((e.ctrlKey||e.metaKey)&&k==='d'){ e.preventDefault(); stDupSel(); return; }
+      if((e.ctrlKey||e.metaKey)&&k==='a'){ e.preventDefault(); stSelClear(); ST_EDIT.els.forEach((_,i)=>ST_SELS.add(i)); stRedraw(); return; }
       if(e.ctrlKey||e.metaKey||e.altKey) return;
       if(e.key===' '){ if(!ST_SPACE){ ST_SPACE=true; const s=document.getElementById("stSvg"); if(s)s.classList.add("spacing"); } e.preventDefault(); return; }
-      if(k==='delete'||k==='backspace'){ if(ST_SEL!=null){ e.preventDefault(); stSnapshot(); ST_EDIT.els.splice(ST_SEL,1); ST_SEL=null; stRedraw(); stUpdCount(); } return; }
-      if(k==='escape'){ if(ST_SEL!=null){ ST_SEL=null; stRedraw(); } return; }
+      if(k==='enter'){ if(ST_PATHBUILD){ e.preventDefault(); stFinishPath(true); } return; }
+      if(k==='delete'||k==='backspace'){ if(ST_SELS.size){ e.preventDefault(); stDeleteSel(); } return; }
+      if(k==='escape'){ stHideCtxMenu(); if(ST_PATHBUILD){ stFinishPath(false); return; } if(ST_SELS.size){ stSelClear(); stRedraw(); } return; }
+      if(k==='arrowup'||k==='arrowdown'||k==='arrowleft'||k==='arrowright'){ if(ST_SELS.size){ e.preventDefault(); const st=e.shiftKey?(ST_SNAP?SNAP_STEP:20):(ST_SNAP?SNAP_STEP:4); const dx=k==='arrowleft'?-st:k==='arrowright'?st:0, dy=k==='arrowup'?-st:k==='arrowdown'?st:0; stNudge(dx,dy); } return; }
+      if(k===']'){ if(ST_SELS.size){ e.preventDefault(); stZOrder(true); } return; }
+      if(k==='['){ if(ST_SELS.size){ e.preventDefault(); stZOrder(false); } return; }
       if(k==='+'||k==='='){ e.preventDefault(); stZoomAt(0.8, ST_ZOOM.x+ST_ZOOM.w/2, ST_ZOOM.y+ST_ZOOM.h/2); return; }
       if(k==='-'){ e.preventDefault(); stZoomAt(1.25, ST_ZOOM.x+ST_ZOOM.w/2, ST_ZOOM.y+ST_ZOOM.h/2); return; }
       if(k==='0'){ e.preventDefault(); stZoomReset(); return; }
@@ -5258,7 +5460,7 @@ function stWireEditor(){
 }
 async function saveStrat(){
   if(!ST_EDIT.map){ alert("Choisis une carte."); return; }
-  const steps=ST_EDIT.steps.map(st=>({els:st.els}));
+  const steps=ST_EDIT.steps.map(st=>({els:st.els, note:st.note||''}));
   const payload={ id:ST_EDIT.id||null, name:(ST_EDIT.name||"Stratégie").trim()||"Stratégie", map:ST_EDIT.map, mode:ST_EDIT.mode||"ctf", steps, elements:steps[0].els, editors:ST_EDIT.editors||[] };
   const btn=document.getElementById("stSave"); if(btn){btn.disabled=true;btn.textContent="Enregistrement…";}
   const r=await fnCall("strategies",{session:localStorage.getItem(LS_SESSION),action:"save",strategy:payload});
@@ -5346,23 +5548,52 @@ function stCollabPicker(){
   upd();
 }
 // Mode présentation plein écran : déroule les étapes (‹ › clavier, Échap pour quitter)
+// Interpolation d'un élément entre deux étapes (pour l'animation de présentation).
+function stLerpEl(a,b,t){ if(!a||!b||a.type!==b.type) return b; const c=JSON.parse(JSON.stringify(b)); const L=(x,y)=>x+(y-x)*t;
+  if(b.x1!=null&&a.x1!=null){ c.x1=L(a.x1,b.x1);c.y1=L(a.y1,b.y1);c.x2=L(a.x2,b.x2);c.y2=L(a.y2,b.y2); }
+  else if(b.pts&&a.pts&&a.pts.length===b.pts.length){ c.pts=b.pts.map((p,k)=>[L(a.pts[k][0],p[0]),L(a.pts[k][1],p[1])]); }
+  else if(b.x!=null&&a.x!=null){ c.x=L(a.x,b.x);c.y=L(a.y,b.y);
+    if(b.size!=null&&a.size!=null)c.size=L(a.size,b.size); if(b.r!=null&&a.r!=null)c.r=L(a.r,b.r);
+    if(b.a!=null&&a.a!=null)c.a=L(a.a,b.a); }
+  if(b.rot!=null||a.rot!=null){ const rr=L(a.rot||0,b.rot||0); if(rr) c.rot=rr; else delete c.rot; }
+  return c; }
+let ST_PRES_ANIM=(typeof localStorage==='undefined')||localStorage.getItem('cp_stanim')!=='0';
 function stPresent(steps,map,mode,name,start){
-  if(!steps||!steps.length) return; let idx=Math.max(0,Math.min(steps.length-1,start||0));
+  if(!steps||!steps.length) return; let idx=Math.max(0,Math.min(steps.length-1,start||0)); let animRAF=0;
   const ov=document.createElement("div"); ov.className="st-present-ov dashx"; ov.id="stPresentOv";
-  ov.innerHTML=`<div class="st-present-top"><b>${esc(name||"Stratégie")}</b><span class="st-present-map">${esc(ST_MAPNAME[map]||prettyMap(map))}</span><button class="st-present-x" id="stpGridBtn" title="Grille A-K / 1-0" style="margin-left:auto;width:auto;padding:0 12px">▦</button><button class="st-present-x" id="stpX" title="Quitter (Échap)">✕</button></div>
-    <div class="st-present-stage"><svg viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg">
+  ov.innerHTML=`<div class="st-present-top"><b>${esc(name||"Stratégie")}</b><span class="st-present-map">${esc(ST_MAPNAME[map]||prettyMap(map))}</span><button class="st-present-x" id="stpAnimBtn" title="Animer les transitions entre étapes" style="margin-left:auto;width:auto;padding:0 12px">✨</button><button class="st-present-x" id="stpLaserBtn" title="Pointeur laser (L)" style="width:auto;padding:0 12px">🔴</button><button class="st-present-x" id="stpGridBtn" title="Grille A-K / 1-0" style="width:auto;padding:0 12px">▦</button><button class="st-present-x" id="stpX" title="Quitter (Échap)">✕</button></div>
+    <div class="st-present-stage" id="stpStage"><svg viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg">
       <defs><marker id="st-ah" markerWidth="4.5" markerHeight="4.5" refX="3" refY="2.25" orient="auto"><path d="M0,0 L4.5,2.25 L0,4.5 z" fill="context-stroke"/></marker></defs>
       <image href="maps/top/${esc(map||'')}.jpg" x="0" y="0" width="1000" height="1000" preserveAspectRatio="none"/>
-      <g style="pointer-events:none">${stBasesSvg(map,mode||'ctf')}</g><g id="stpGrid" style="pointer-events:none">${ST_GRID?stGridInner():''}</g><g id="stpEls"></g></svg></div>
+      <g style="pointer-events:none">${stBasesSvg(map,mode||'ctf')}</g><g id="stpGrid" style="pointer-events:none">${ST_GRID?stGridInner():''}</g><g id="stpEls"></g><g id="stpLaser" style="pointer-events:none"></g></svg><div class="st-present-note" id="stpNote"></div></div>
     <div class="st-present-nav"><button class="st-pbtn" id="stpPrev">‹ Précédent</button><span class="st-present-ind" id="stpInd"></span><button class="st-pbtn" id="stpNext">Suivant ›</button></div>`;
   document.body.appendChild(ov);
-  function draw(){ ov.querySelector("#stpEls").innerHTML=steps[idx].els.map((e,i)=>stElSvg(e,i)).join("");
-    ov.querySelector("#stpInd").textContent=`Étape ${idx+1} / ${steps.length}`;
+  const elsG=ov.querySelector("#stpEls"), noteEl=ov.querySelector("#stpNote");
+  function paint(arr){ elsG.innerHTML=arr.map((e,i)=>stElSvg(e,i)).join(""); }
+  function setNote(){ const n=(steps[idx]&&steps[idx].note)?String(steps[idx].note):''; noteEl.textContent=n; noteEl.style.display=n?'block':'none'; }
+  function draw(fromIdx){ cancelAnimationFrame(animRAF);
+    const to=steps[idx].els;
+    if(ST_PRES_ANIM && fromIdx!=null && steps[fromIdx] && fromIdx!==idx){
+      const from=steps[fromIdx].els, t0=performance.now(), dur=460;
+      (function frame(now){ let t=Math.min(1,(now-t0)/dur); const e=t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+        paint(to.map((el,i)=>stLerpEl(from[i],el,e))); if(t<1) animRAF=requestAnimationFrame(frame); })(t0);
+    } else paint(to);
+    ov.querySelector("#stpInd").textContent=`Étape ${idx+1} / ${steps.length}`; setNote();
     ov.querySelector("#stpPrev").disabled=idx===0; ov.querySelector("#stpNext").disabled=idx===steps.length-1; }
-  function go(d){ idx=Math.max(0,Math.min(steps.length-1,idx+d)); draw(); }
-  function close(){ document.removeEventListener("keydown",key); if(document.fullscreenElement) document.exitFullscreen().catch(()=>{}); ov.remove(); }
-  function key(e){ if(e.key==="ArrowRight"||e.key===" "){ e.preventDefault(); go(1); } else if(e.key==="ArrowLeft"){ e.preventDefault(); go(-1); } else if(e.key==="Escape"){ close(); } }
+  function go(d){ const prev=idx; idx=Math.max(0,Math.min(steps.length-1,idx+d)); draw(prev); }
+  function close(){ document.removeEventListener("keydown",key); cancelAnimationFrame(animRAF); if(document.fullscreenElement) document.exitFullscreen().catch(()=>{}); ov.remove(); }
+  function key(e){ const k=(e.key||'').toLowerCase(); if(e.key==="ArrowRight"||e.key===" "){ e.preventDefault(); go(1); } else if(e.key==="ArrowLeft"){ e.preventDefault(); go(-1); } else if(k==="l"){ toggleLaser(); } else if(e.key==="Escape"){ close(); } }
+  // --- pointeur laser ---
+  const svg=ov.querySelector("svg"), laserG=ov.querySelector("#stpLaser"); let laserOn=false;
+  function laserPt(ev){ const r=svg.getBoundingClientRect(); return [ (ev.clientX-r.left)/r.width*1000, (ev.clientY-r.top)/r.height*1000 ]; }
+  function onMove(ev){ if(!laserOn) return; const p=laserPt(ev); laserG.innerHTML=`<circle cx="${p[0]}" cy="${p[1]}" r="13" fill="#ff2d2d" fill-opacity=".28"/><circle cx="${p[0]}" cy="${p[1]}" r="6" fill="#ff3b3b"/><circle cx="${p[0]}" cy="${p[1]}" r="6" fill="none" stroke="#fff" stroke-opacity=".8" stroke-width="1.4"/>`; }
+  function onDown(ev){ if(!laserOn) return; const p=laserPt(ev); const ping=document.createElementNS("http://www.w3.org/2000/svg","circle"); ping.setAttribute("cx",p[0]); ping.setAttribute("cy",p[1]); ping.setAttribute("fill","none"); ping.setAttribute("stroke","#ff3b3b"); ping.setAttribute("stroke-width","3"); ping.setAttribute("r","6"); ping.style.transition="all .5s ease-out"; laserG.appendChild(ping); requestAnimationFrame(()=>{ ping.setAttribute("r","46"); ping.style.opacity="0"; }); setTimeout(()=>ping.remove(),520); }
+  function toggleLaser(){ laserOn=!laserOn; ov.querySelector("#stpLaserBtn").classList.toggle("on",laserOn); ov.querySelector("#stpStage").classList.toggle("st-laser-on",laserOn); if(!laserOn) laserG.innerHTML=''; }
+  svg.addEventListener("pointermove",onMove); svg.addEventListener("pointerdown",onDown);
   ov.querySelector("#stpPrev").onclick=()=>go(-1); ov.querySelector("#stpNext").onclick=()=>go(1); ov.querySelector("#stpX").onclick=close;
+  ov.querySelector("#stpLaserBtn").onclick=toggleLaser;
+  ov.querySelector("#stpAnimBtn").classList.toggle("on",ST_PRES_ANIM);
+  ov.querySelector("#stpAnimBtn").onclick=e=>{ ST_PRES_ANIM=!ST_PRES_ANIM; try{localStorage.setItem('cp_stanim',ST_PRES_ANIM?'1':'0');}catch(_){}  e.currentTarget.classList.toggle("on",ST_PRES_ANIM); };
   ov.querySelector("#stpGridBtn").onclick=()=>{ ST_GRID=!ST_GRID; try{localStorage.setItem('cp_stgrid',ST_GRID?'1':'0');}catch(_){}  ov.querySelector("#stpGrid").innerHTML=ST_GRID?stGridInner():''; };
   document.addEventListener("keydown",key); draw();
   if(ov.requestFullscreen) ov.requestFullscreen().catch(()=>{});
