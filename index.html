@@ -1286,8 +1286,8 @@
   .st-editor.st-full{position:fixed;inset:0;z-index:900;max-width:none;width:100%;height:100dvh;border-radius:0;margin:0;border:0;display:flex;flex-direction:column;box-shadow:none}
   .st-editor.st-full .st-work{flex:1;min-height:0}
   .st-editor.st-full .st-canvas{min-height:0}
-  .st-editor.st-full .st-stage{padding:18px}
-  .st-editor.st-full .st-svg{max-width:none;width:auto;height:100%;max-height:100%}
+  .st-editor.st-full .st-stage{padding:0;display:block;position:relative;min-height:0;overflow:hidden}
+  .st-editor.st-full .st-svg{position:absolute;top:16px;left:16px;width:calc(100% - 32px);height:calc(100% - 32px);max-width:none;max-height:none;aspect-ratio:auto}
   .st-editor.st-full .st-mapgrid{max-height:none;flex:1;align-content:start}
   .st-zoom{position:absolute;right:16px;bottom:16px;display:flex;align-items:center;gap:2px;background:rgba(18,19,22,.82);backdrop-filter:blur(8px);border:1px solid #2f3136;border-radius:11px;padding:4px;box-shadow:0 6px 20px rgba(0,0,0,.4);z-index:5}
   .st-zoom button{appearance:none;border:0;background:transparent;color:#d4d7dc;cursor:pointer;font:inherit;font-weight:800;border-radius:8px;height:32px;transition:.12s}
@@ -5061,8 +5061,12 @@ function stElSvg(el,i){
 }
 function stDrawPreview(){ const d=ST_DRAW; if(!d) return ''; if(d.type==='pen'&&d.pts.length<2) return ''; return `<g opacity=".8" style="pointer-events:none">${stElSvg(d,'prev')}</g>`; }
 function stRedraw(){ const g=document.getElementById("stEls"); if(g) g.innerHTML=ST_EDIT.els.map((e,i)=>stElSvg(e,i)).join("")+stDrawPreview(); }
-function stPt(e,svg){ const r=svg.getBoundingClientRect();
-  const vx=ST_ZOOM.x+(e.clientX-r.left)/r.width*ST_ZOOM.w, vy=ST_ZOOM.y+(e.clientY-r.top)/r.height*ST_ZOOM.h;
+// Métriques du canvas : le viewBox (carré) est centré dans l'élément SVG (letterbox
+// via preserveAspectRatio "meet"), donc échelle = plus petite dimension / côté du viewBox.
+function stMetrics(svg){ const r=svg.getBoundingClientRect(); const s=Math.min(r.width,r.height)/ST_ZOOM.w||1;
+  return {r, s, offX:(r.width-ST_ZOOM.w*s)/2, offY:(r.height-ST_ZOOM.h*s)/2}; }
+function stPt(e,svg){ const m=stMetrics(svg);
+  const vx=ST_ZOOM.x+(e.clientX-m.r.left-m.offX)/m.s, vy=ST_ZOOM.y+(e.clientY-m.r.top-m.offY)/m.s;
   return [Math.max(0,Math.min(1000,vx)),Math.max(0,Math.min(1000,vy))]; }
 function stNextMarkerLabel(){ let n=0; ST_EDIT.els.forEach(e=>{ if(e.type==='marker'){ const v=parseInt(e.label,10); if(!isNaN(v)&&v>n) n=v; } }); return String(n+1); }
 // -- historique annuler / refaire --
@@ -5137,7 +5141,7 @@ function stWireEditor(){
     ST_DRAW={type:ST_TOOL,color:ST_COLOR,w:ST_STROKE.w,dash:ST_STROKE.dash,curve:(ST_TOOL==='arrow'||ST_TOOL==='line')?ST_STROKE.curve:false,x1:p[0],y1:p[1],x2:p[0],y2:p[1]}; svg.setPointerCapture(e.pointerId);
   };
   svg.onpointermove=e=>{
-    if(ST_PANNING){ const r=svg.getBoundingClientRect(); ST_ZOOM.x=ST_PANNING.vx-(e.clientX-ST_PANNING.sx)/r.width*ST_ZOOM.w; ST_ZOOM.y=ST_PANNING.vy-(e.clientY-ST_PANNING.sy)/r.height*ST_ZOOM.h; stApplyZoom(); return; }
+    if(ST_PANNING){ const m=stMetrics(svg); ST_ZOOM.x=ST_PANNING.vx-(e.clientX-ST_PANNING.sx)/m.s; ST_ZOOM.y=ST_PANNING.vy-(e.clientY-ST_PANNING.sy)/m.s; stApplyZoom(); return; }
     if(ST_MOVE){ if(!ST_MOVE.snapped){ stSnapshot(); ST_MOVE.snapped=true; } const p=stPt(e,svg); ST_EDIT.els[ST_MOVE.eid]=stTranslate(ST_MOVE.orig,p[0]-ST_MOVE.ox,p[1]-ST_MOVE.oy); stRedraw(); return; }
     if(!ST_DRAW) return; const p=stPt(e,svg);
     if(ST_DRAW.type==='pen'){ ST_DRAW.pts.push([p[0],p[1]]); } else { ST_DRAW.x2=p[0]; ST_DRAW.y2=p[1]; }
