@@ -1250,10 +1250,16 @@
   .optgrp{display:none;align-items:center;gap:7px}
   .opt-lbl{font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--muted)}
   .st-opts[data-tool="tank"] .opt-tank{display:flex}
-  .st-opts[data-tool="arrow"] .opt-colors,.st-opts[data-tool="line"] .opt-colors,.st-opts[data-tool="rect"] .opt-colors,.st-opts[data-tool="circle"] .opt-colors,.st-opts[data-tool="pen"] .opt-colors,.st-opts[data-tool="marker"] .opt-colors,.st-opts[data-tool="text"] .opt-colors{display:flex}
+  .st-opts[data-tool="stamp"] .opt-stamp{display:flex}
+  .st-opts[data-tool="arrow"] .opt-colors,.st-opts[data-tool="line"] .opt-colors,.st-opts[data-tool="rect"] .opt-colors,.st-opts[data-tool="circle"] .opt-colors,.st-opts[data-tool="pen"] .opt-colors,.st-opts[data-tool="marker"] .opt-colors,.st-opts[data-tool="text"] .opt-colors,.st-opts[data-tool="stamp"] .opt-colors,.st-opts[data-tool="range"] .opt-colors{display:flex}
   .st-opts[data-tool="arrow"] .opt-stroke,.st-opts[data-tool="line"] .opt-stroke,.st-opts[data-tool="rect"] .opt-stroke,.st-opts[data-tool="circle"] .opt-stroke,.st-opts[data-tool="pen"] .opt-stroke{display:flex}
   .opt-curve{display:none}
   .st-opts[data-tool="arrow"] .opt-curve,.st-opts[data-tool="line"] .opt-curve{display:inline-flex}
+  .opt-stamp{flex-wrap:wrap}
+  .st-stampb{width:34px;height:34px;padding:5px;background:#1a1b1e;border:1px solid #2b2d31;border-radius:9px;cursor:pointer;color:#c2c5cb;transition:.12s}
+  .st-stampb .st-stamp-ic{width:100%;height:100%;display:block}
+  .st-stampb:hover{border-color:#3a3d42;color:#fff}
+  .st-stampb.on{border-color:var(--gold);color:var(--gold);background:var(--gold-soft)}
   .opt-tank .st-count{margin-left:4px}
   .st-opt-hint{font-size:12px;color:#8b9099;flex:1 1 auto;min-width:80px}
   .st-opt-act{display:flex;gap:6px;align-items:center;margin-left:auto}
@@ -4884,6 +4890,22 @@ let ST_EDIT=null;   // {id,name,map,els:[]}
 let ST_TOOL='arrow', ST_COLOR='#e5544b', ST_SEL=null, ST_DRAW=null, ST_MOVE=null;
 let ST_TANK={cls:'medium',color:'#5dbb46'};   // "pinceau" pion de char courant (classe + couleur choisie)
 const ST_TANK_COLORS=[["#5dbb46","Vert (alliés)"],["#e0483f","Rouge (ennemis)"],["#e5c84b","Jaune"],["#5bb0e5","Bleu"],["#c264ff","Violet"],["#ffffff","Blanc"]];
+let ST_STAMP={kind:'focus'};   // symbole tactique courant
+// Symboles tactiques : SVG dessiné dans une boîte ~ -15..15, coloré via currentColor.
+const ST_STAMPS={
+  focus:'<circle r="13"/><circle r="5"/><path d="M0,-15 V-11 M0,15 V11 M-15,0 H-11 M15,0 H11"/>',
+  spot:'<path d="M-15,0 Q0,-10 15,0 Q0,10 -15,0 Z"/><circle r="4" fill="currentColor" stroke="none"/>',
+  defend:'<path d="M0,-15 L12,-9 V1 Q12,11 0,15 Q-12,11 -12,1 V-9 Z"/><path d="M-5,-1 L-1,4 L6,-6"/>',
+  danger:'<path d="M0,-14 L14,12 H-14 Z"/><path d="M0,-5 V4"/><circle cx="0" cy="8" r="1.5" fill="currentColor" stroke="none"/>',
+  objective:'<path d="M-8,-15 V15 M-8,-14 H11 L6,-8 L11,-2 H-8"/>',
+  push:'<path d="M-12,-11 L0,0 L-12,11 M1,-11 L13,0 L1,11"/>',
+  fallback:'<path d="M9,13 V0 A9,9 0 0 0 -9,0 V5"/><path d="M-9,5 L-13,1 M-9,5 L-5,1"/>',
+  stop:'<circle r="13"/><path d="M-8,0 H8"/>',
+  rally:'<path d="M-14,-14 L-6,-6 M-13,-14 H-6 V-13 M14,-14 L6,-6 M13,-14 H6 V-13 M-14,14 L-6,6 M-13,14 H-6 V13 M14,14 L6,6 M13,14 H6 V13"/><circle r="2.6" fill="currentColor" stroke="none"/>'
+};
+const ST_STAMP_LIST=[["focus","Focus"],["spot","Vision"],["defend","Tenir"],["danger","Danger"],["objective","Objectif"],["push","Pousser"],["fallback","Repli"],["stop","Interdit"],["rally","Regroupement"]];
+// échelle réelle de la carte : côté de la boundingBox officielle = taille en mètres (repli 1000).
+function stMapMeters(){ const b=ST_BASES&&ST_EDIT&&ST_BASES[ST_EDIT.map]&&ST_BASES[ST_EDIT.map].bbox; return b?Math.round(b[2]-b[0]):1000; }
 let ST_UNDO=[], ST_REDO=[];          // historique annuler/refaire (snapshots JSON de ST_EDIT.els)
 let ST_STEP=0;                       // étape courante (slideshow) ; ST_EDIT.els = ST_EDIT.steps[ST_STEP].els
 let ST_STROKE={dash:false,w:7,curve:false};   // style de trait courant (flèche/ligne/crayon/forme)
@@ -4892,7 +4914,7 @@ let ST_ZOOM={x:0,y:0,w:1000,h:1000};   // viewBox courant du canvas (zoom + dép
 let ST_PANNING=null, ST_SPACE=false;   // déplacement (main) en cours / barre Espace maintenue
 let ST_FULL=true;                      // éditeur en plein écran (défaut)
 // raccourcis clavier : touche -> outil
-const ST_KEYS={v:'select',h:'tank',f:'arrow',l:'line',z:'rect',o:'circle',p:'pen',j:'marker',t:'text',g:'erase'};
+const ST_KEYS={v:'select',h:'tank',f:'arrow',l:'line',z:'rect',o:'circle',s:'stamp',d:'measure',r:'range',p:'pen',j:'marker',t:'text',g:'erase'};
 function stApplyZoom(){ const svg=document.getElementById("stSvg"); if(!svg) return;
   const W=ST_ZOOM.w=ST_ZOOM.h=Math.max(250,Math.min(1000,ST_ZOOM.w));   // viewBox carré, zoom max x4
   ST_ZOOM.x=Math.max(0,Math.min(1000-W,ST_ZOOM.x)); ST_ZOOM.y=Math.max(0,Math.min(1000-W,ST_ZOOM.y));
@@ -4925,7 +4947,7 @@ const ST_MAPS=[
 ];
 const ST_MAPNAME=Object.fromEntries(ST_MAPS.map(m=>[m[0],m[1]]));
 const ST_COLORS=["#e5544b","#e5c84b","#5bb0e5","#8fd14f","#ffffff","#e59a4b","#c264ff","#141414"];
-const ST_TOOLS=[["select","Déplacer","✋"],["tank","Chars","▰"],["arrow","Flèche","➤"],["line","Trait","／"],["rect","Zone","▭"],["circle","Cercle","◯"],["pen","Crayon","✎"],["marker","Jeton","◉"],["text","Texte","T"],["erase","Gomme","⌫"]];
+const ST_TOOLS=[["select","Déplacer","✋"],["tank","Chars","▰"],["arrow","Flèche","➤"],["line","Trait","／"],["rect","Zone","▭"],["circle","Cercle","◯"],["stamp","Symbole","✪"],["measure","Mesure","↔"],["range","Portée","◎"],["pen","Crayon","✎"],["marker","Jeton","◉"],["text","Texte","T"],["erase","Gomme","⌫"]];
 const ST_CLASSES=[["light","Léger"],["medium","Moyen"],["heavy","Lourd"],["td","TD"],["spg","Arto"]];   // classes = silhouettes officielles du jeu (web/strat/class_*.png)
 let ST_BASES=null;   // positions officielles des bases (web/maps_bases.json)
 const ST_MODE_FR={ctf:"Standard",domination:"Rencontre",assault:"Assaut",assault2:"Assaut",comp7:"7 vs 7",epic:"Ligne de front"};
@@ -5002,6 +5024,7 @@ function renderStratEditor(){
   const modeSel=modes.length?`<label class="st-modewrap">Bases <select class="st-modesel" id="stMode" title="Mode de jeu (bases officielles)">${modes.map(mo=>`<option value="${mo}"${ST_EDIT.mode===mo?' selected':''}>${esc(ST_MODE_FR[mo]||mo)}</option>`).join("")}</select></label>`:'';
   const strokeGrp=`<div class="optgrp opt-stroke"><span class="opt-lbl">Trait</span><button type="button" class="st-sbtn${ST_STROKE.dash?' on':''}" id="stDash" title="Pointillés">┅</button><button type="button" class="st-sbtn opt-curve${ST_STROKE.curve?' on':''}" id="stCurve" title="Flèche courbe">⌒</button><span class="st-wsel">${[["thin",4],["med",7],["thick",12]].map(w=>`<button type="button" class="st-wbtn${ST_STROKE.w===w[1]?' on':''}" data-w="${w[1]}" title="Épaisseur"><i style="height:${Math.round(w[1]/2)+1}px"></i></button>`).join("")}</span></div>`;
   const colorGrp=`<div class="optgrp opt-colors"><span class="opt-lbl">Couleur</span>${colors}</div>`;
+  const stampGrp=`<div class="optgrp opt-stamp"><span class="opt-lbl">Symbole</span>${ST_STAMP_LIST.map(([k,lbl])=>`<button type="button" class="st-stampb${ST_STAMP.kind===k?' on':''}" data-stamp="${k}" title="${esc(lbl)}"><svg viewBox="-20 -20 40 40" class="st-stamp-ic"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">${ST_STAMPS[k]}</g></svg></button>`).join("")}</div>`;
   const tankGrp=`<div class="optgrp opt-tank"><div class="st-classsel" style="--tc:${ST_TANK.color}">${ST_CLASSES.map(c=>`<button type="button" class="st-class${ST_TANK.cls===c[0]?' on':''}" data-cls="${c[0]}" title="Char ${c[1]}"><span class="ic" style="-webkit-mask:url(strat/class_${c[0]}.png) center/contain no-repeat;mask:url(strat/class_${c[0]}.png) center/contain no-repeat"></span><span class="lbl">${c[1]}</span></button>`).join("")}</div><div class="st-tank-cols">${ST_TANK_COLORS.map(c=>`<button type="button" class="st-tcol${ST_TANK.color===c[0]?' on':''}" data-tcol="${c[0]}" title="${esc(c[1])}" style="background:${c[0]}"></button>`).join("")}</div><div class="st-count" id="stCount"></div></div>`;
   ed.innerHTML=`<div class="card st-shell dashx st-editor${ST_FULL?' st-full':''}">
     <div class="st-bar">
@@ -5014,7 +5037,7 @@ function renderStratEditor(){
       <div class="st-rail">${tools}</div>
       <div class="st-canvas">
         <div class="st-opts" id="stOpts" data-tool="${ST_TOOL}">
-          ${colorGrp}${strokeGrp}${tankGrp}
+          ${colorGrp}${strokeGrp}${tankGrp}${stampGrp}
           <span class="st-opt-hint" id="stOptHint"></span>
           <div class="st-opt-act"><button class="st-mini2" id="stUndo" title="Annuler (Ctrl+Z)">↶</button><button class="st-mini2" id="stRedo" title="Refaire (Ctrl+Y)">↷</button><button class="st-mini2${ST_GRID?' on':''}" id="stGridBtn" title="Grille A-K / 1-0">▦</button><span class="st-opt-sep"></span><button class="st-mini2" id="stDup" title="Dupliquer la sélection">⧉</button><button class="st-mini2" id="stDelSel" title="Supprimer la sélection">🗑</button><button class="st-mini2" id="stClear" title="Tout effacer">Vider</button></div>
         </div>
@@ -5032,11 +5055,11 @@ function renderStratEditor(){
   stRedraw();
   stWireEditor();
 }
-const ST_HINTS={select:"Clique un élément puis glisse pour le déplacer.",tank:"Choisis une couleur + une classe, puis clique sur la carte. Double-clic = nommer.",arrow:"Glisse pour tracer une flèche.",line:"Glisse pour tracer un trait.",rect:"Glisse pour dessiner une zone à surligner.",circle:"Glisse pour dessiner un cercle.",pen:"Dessine à main levée.",marker:"Clique pour poser un jeton numéroté.",text:"Clique pour ajouter du texte.",erase:"Clique un élément pour l'effacer."};
+const ST_HINTS={select:"Clique un élément puis glisse pour le déplacer.",tank:"Choisis une couleur + une classe, puis clique sur la carte. Double-clic = nommer.",arrow:"Glisse pour tracer une flèche.",line:"Glisse pour tracer un trait.",rect:"Glisse pour dessiner une zone à surligner.",circle:"Glisse pour dessiner un cercle.",stamp:"Choisis un symbole tactique + une couleur, puis clique sur la carte.",measure:"Glisse d'un point à un autre : la distance s'affiche en mètres.",range:"Clique-glisse depuis un point : cercle de portée/vision en mètres.",pen:"Dessine à main levée.",marker:"Clique pour poser un jeton numéroté.",text:"Clique pour ajouter du texte.",erase:"Clique un élément pour l'effacer."};
 function stSyncOptions(){ const o=document.getElementById("stOpts"); if(o) o.dataset.tool=ST_TOOL; const h=document.getElementById("stOptHint"); if(h) h.textContent=ST_HINTS[ST_TOOL]||""; }
 function stTranslate(el,dx,dy){
   const c=JSON.parse(JSON.stringify(el));
-  if(c.type==='arrow'||c.type==='line'||c.type==='rect'||c.type==='circle'){ c.x1+=dx;c.y1+=dy;c.x2+=dx;c.y2+=dy; }
+  if(c.type==='arrow'||c.type==='line'||c.type==='rect'||c.type==='circle'||c.type==='measure'){ c.x1+=dx;c.y1+=dy;c.x2+=dx;c.y2+=dy; }
   else if(c.type==='pen'){ c.pts=c.pts.map(p=>[p[0]+dx,p[1]+dy]); }
   else { c.x+=dx; c.y+=dy; }
   return c;
@@ -5057,6 +5080,12 @@ function stElSvg(el,i){
     const nm=String(el.name||'').trim(); const nw=nm?Math.round(nm.length*8.6+16):0;
     const label=nm?`<g style="pointer-events:none"><rect x="${el.x-nw/2}" y="${el.y+h-6}" width="${nw}" height="21" rx="6" fill="#0c0d0f" fill-opacity=".82"/><text x="${el.x}" y="${el.y+h+9}" font-size="15" font-weight="700" text-anchor="middle" fill="#fff">${esc(nm)}</text></g>`:'';
     return `<g class="st-el st-tank${sel}" data-eid="${i}"><filter id="stk${i}" x="-45%" y="-45%" width="190%" height="190%"><feFlood flood-color="${esc(col)}" result="f"/><feComposite in="f" in2="SourceAlpha" operator="in" result="s"/><feDropShadow in="s" dx="0" dy="0" stdDeviation="3.4" flood-color="#000" flood-opacity=".92"/></filter><image href="strat/class_${cls}.png" x="${el.x-h}" y="${el.y-h}" width="${s}" height="${s}" filter="url(#stk${i})"/>${label}</g>`; }
+  if(el.type==='stamp'){ const col=el.color||'#e5c84b', inner=ST_STAMPS[el.kind]||ST_STAMPS.focus;
+    return `<g class="st-el st-stamp${sel}" data-eid="${i}" transform="translate(${el.x},${el.y}) scale(1.35)"><circle r="20" fill="#0c0d0f" fill-opacity=".55" stroke="#0a0a0a" stroke-opacity=".45" stroke-width="2"/><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="color:${esc(col)}">${inner}</g></g>`; }
+  if(el.type==='measure'){ const mx=Math.round((el.x1+el.x2)/2),my=Math.round((el.y1+el.y2)/2),tw=(String(el.m).length*9+30);
+    return `<g class="st-el st-measure${sel}" data-eid="${i}"><line x1="${el.x1}" y1="${el.y1}" x2="${el.x2}" y2="${el.y2}" stroke="#f4d78c" stroke-width="3.4" stroke-dasharray="11 7" stroke-linecap="round"/><circle cx="${el.x1}" cy="${el.y1}" r="4.5" fill="#f4d78c"/><circle cx="${el.x2}" cy="${el.y2}" r="4.5" fill="#f4d78c"/><g style="pointer-events:none"><rect x="${mx-tw/2}" y="${my-13}" width="${tw}" height="23" rx="6" fill="#0c0d0f" fill-opacity=".88"/><text x="${mx}" y="${my+4}" font-size="15" font-weight="800" text-anchor="middle" fill="#f4d78c">${el.m} m</text></g></g>`; }
+  if(el.type==='range'){ const col=el.color||'#5bb0e5', tw=(String(el.m).length*9+30);
+    return `<g class="st-el st-range${sel}" data-eid="${i}"><circle cx="${el.x}" cy="${el.y}" r="${Math.round(el.r)}" fill="${esc(col)}" fill-opacity=".07" stroke="${esc(col)}" stroke-width="3" stroke-dasharray="10 8" style="pointer-events:none"/><circle cx="${el.x}" cy="${el.y}" r="6" fill="${esc(col)}"/><g style="pointer-events:none"><rect x="${el.x-tw/2}" y="${el.y-Math.round(el.r)-25}" width="${tw}" height="22" rx="6" fill="#0c0d0f" fill-opacity=".88"/><text x="${el.x}" y="${el.y-Math.round(el.r)-9}" font-size="14" font-weight="800" text-anchor="middle" fill="${esc(col)}">${el.m} m</text></g></g>`; }
   return '';
 }
 function stDrawPreview(){ const d=ST_DRAW; if(!d) return ''; if(d.type==='pen'&&d.pts.length<2) return ''; return `<g opacity=".8" style="pointer-events:none">${stElSvg(d,'prev')}</g>`; }
@@ -5121,6 +5150,7 @@ function stWireEditor(){
   ed.querySelector("#stGridBtn").onclick=e=>{ ST_GRID=!ST_GRID; try{localStorage.setItem('cp_stgrid',ST_GRID?'1':'0');}catch(_){}  e.currentTarget.classList.toggle("on",ST_GRID); const g=document.getElementById("stGrid"); if(g) g.innerHTML=ST_GRID?stGridInner():''; };
   ed.querySelectorAll(".st-tcol").forEach(b=>b.onclick=()=>{ ST_TANK.color=b.dataset.tcol; stSetTool('tank'); stTankSync(); });
   ed.querySelectorAll(".st-class").forEach(b=>b.onclick=()=>{ ST_TANK.cls=b.dataset.cls; stSetTool('tank'); stTankSync(); });
+  ed.querySelectorAll(".st-stampb").forEach(b=>b.onclick=()=>{ ST_STAMP.kind=b.dataset.stamp; stSetTool('stamp'); ed.querySelectorAll(".st-stampb").forEach(x=>x.classList.toggle("on",x===b)); });
   const msel=ed.querySelector("#stMode"); if(msel) msel.onchange=()=>{ ST_EDIT.mode=msel.value; const g=document.getElementById("stBases"); if(g) g.innerHTML=stBasesSvg(ST_EDIT.map,ST_EDIT.mode); };
   const cc=()=>[ST_ZOOM.x+ST_ZOOM.w/2, ST_ZOOM.y+ST_ZOOM.h/2];
   ed.querySelector("#stZoomIn").onclick=()=>{ const [x,y]=cc(); stZoomAt(0.8,x,y); };
@@ -5137,14 +5167,18 @@ function stWireEditor(){
     if(ST_TOOL==='tank'){ stSnapshot(); ST_EDIT.els.push({type:'tank',cls:ST_TANK.cls,color:ST_TANK.color,x:Math.round(p[0]),y:Math.round(p[1]),name:''}); stRedraw(); stUpdCount(); return; }
     if(ST_TOOL==='marker'){ stSnapshot(); ST_EDIT.els.push({type:'marker',color:ST_COLOR,x:Math.round(p[0]),y:Math.round(p[1]),label:stNextMarkerLabel()}); stRedraw(); return; }
     if(ST_TOOL==='text'){ const t=prompt("Texte :"); if(t&&t.trim()){ stSnapshot(); ST_EDIT.els.push({type:'text',color:ST_COLOR,x:Math.round(p[0]),y:Math.round(p[1]),text:t.trim().slice(0,60)}); stRedraw(); } return; }
+    if(ST_TOOL==='stamp'){ stSnapshot(); ST_EDIT.els.push({type:'stamp',kind:ST_STAMP.kind,color:ST_COLOR,x:Math.round(p[0]),y:Math.round(p[1])}); stRedraw(); return; }
+    if(ST_TOOL==='range'){ ST_DRAW={type:'range',color:ST_COLOR,x:p[0],y:p[1],r:0,m:0}; svg.setPointerCapture(e.pointerId); return; }
     if(ST_TOOL==='pen'){ ST_DRAW={type:'pen',color:ST_COLOR,w:ST_STROKE.w,dash:ST_STROKE.dash,pts:[[p[0],p[1]]]}; svg.setPointerCapture(e.pointerId); return; }
-    ST_DRAW={type:ST_TOOL,color:ST_COLOR,w:ST_STROKE.w,dash:ST_STROKE.dash,curve:(ST_TOOL==='arrow'||ST_TOOL==='line')?ST_STROKE.curve:false,x1:p[0],y1:p[1],x2:p[0],y2:p[1]}; svg.setPointerCapture(e.pointerId);
+    ST_DRAW={type:ST_TOOL,color:ST_COLOR,w:ST_STROKE.w,dash:ST_STROKE.dash,curve:(ST_TOOL==='arrow'||ST_TOOL==='line')?ST_STROKE.curve:false,x1:p[0],y1:p[1],x2:p[0],y2:p[1],m:0}; svg.setPointerCapture(e.pointerId);
   };
   svg.onpointermove=e=>{
     if(ST_PANNING){ const m=stMetrics(svg); ST_ZOOM.x=ST_PANNING.vx-(e.clientX-ST_PANNING.sx)/m.s; ST_ZOOM.y=ST_PANNING.vy-(e.clientY-ST_PANNING.sy)/m.s; stApplyZoom(); return; }
     if(ST_MOVE){ if(!ST_MOVE.snapped){ stSnapshot(); ST_MOVE.snapped=true; } const p=stPt(e,svg); ST_EDIT.els[ST_MOVE.eid]=stTranslate(ST_MOVE.orig,p[0]-ST_MOVE.ox,p[1]-ST_MOVE.oy); stRedraw(); return; }
     if(!ST_DRAW) return; const p=stPt(e,svg);
-    if(ST_DRAW.type==='pen'){ ST_DRAW.pts.push([p[0],p[1]]); } else { ST_DRAW.x2=p[0]; ST_DRAW.y2=p[1]; }
+    if(ST_DRAW.type==='range'){ ST_DRAW.r=Math.hypot(p[0]-ST_DRAW.x,p[1]-ST_DRAW.y); ST_DRAW.m=Math.round(ST_DRAW.r/1000*stMapMeters()); stRedraw(); return; }
+    if(ST_DRAW.type==='pen'){ ST_DRAW.pts.push([p[0],p[1]]); }
+    else { ST_DRAW.x2=p[0]; ST_DRAW.y2=p[1]; if(ST_DRAW.type==='measure') ST_DRAW.m=Math.round(Math.hypot(ST_DRAW.x2-ST_DRAW.x1,ST_DRAW.y2-ST_DRAW.y1)/1000*stMapMeters()); }
     stRedraw();
   };
   svg.onpointerup=e=>{
@@ -5154,6 +5188,7 @@ function stWireEditor(){
     if(!ST_DRAW){ return; }
     const d=ST_DRAW; ST_DRAW=null;
     if(d.type==='pen'){ if(d.pts.length>1){ stSnapshot(); ST_EDIT.els.push(d); } }
+    else if(d.type==='range'){ if(d.r>12){ stSnapshot(); ST_EDIT.els.push(d); } }
     else { if(Math.hypot(d.x2-d.x1,d.y2-d.y1)>12){ stSnapshot(); ST_EDIT.els.push(d); } }
     stRedraw();
   };
