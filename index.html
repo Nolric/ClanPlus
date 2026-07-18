@@ -1262,9 +1262,9 @@
   .st-stampb:hover{border-color:#3a3d42;color:#fff}
   .st-stampb.on{border-color:var(--gold);color:var(--gold);background:var(--gold-soft)}
   .st-szsel{display:inline-flex;gap:4px}
-  .st-szb{background:#1a1b1e;border:1px solid #2b2d31;color:#c2c5cb;border-radius:8px;padding:6px 10px;font:inherit;font-size:12px;font-weight:600;cursor:pointer}
-  .st-szb:hover{border-color:#3a3d42;color:#fff}
-  .st-szb.on{border-color:var(--gold);color:var(--gold);background:var(--gold-soft)}
+  .st-szb,.st-tkszb{background:#1a1b1e;border:1px solid #2b2d31;color:#c2c5cb;border-radius:8px;padding:6px 10px;font:inherit;font-size:12px;font-weight:600;cursor:pointer}
+  .st-szb:hover,.st-tkszb:hover{border-color:#3a3d42;color:#fff}
+  .st-szb.on,.st-tkszb.on{border-color:var(--gold);color:var(--gold);background:var(--gold-soft)}
   .st-textin{position:fixed;z-index:950;min-width:120px;max-width:340px;background:rgba(18,19,22,.92);border:1px solid #e5b95c;border-radius:8px;padding:4px 10px;font-family:inherit;font-weight:800;outline:none;box-shadow:0 6px 22px rgba(0,0,0,.55);caret-color:#e5b95c}
   .opt-tank .st-count{margin-left:4px}
   .st-opt-hint{font-size:12px;color:#8b9099;flex:1 1 auto;min-width:80px}
@@ -4894,7 +4894,8 @@ function stApplyRemoteEls(p){ if(!p||!ST_EDIT||String(p.by)===String(STRAT_ME)||
   if(document.getElementById('stStepTabs')) renderStepTabs(); stRedraw(); if(typeof stUpdCount==='function') stUpdCount(); }
 let ST_EDIT=null;   // {id,name,map,els:[]}
 let ST_TOOL='arrow', ST_COLOR='#e5544b', ST_SEL=null, ST_DRAW=null, ST_MOVE=null;
-let ST_TANK={cls:'medium',color:'#5dbb46'};   // "pinceau" pion de char courant (classe + couleur choisie)
+let ST_TANK={cls:'medium',color:'#5dbb46',size:0.78};   // "pinceau" pion de char courant (classe + couleur + taille, petit par défaut)
+const ST_TANK_SIZES=[["Petit",0.78],["Moyen",1.0],["Grand",1.3]];
 const ST_TANK_COLORS=[["#5dbb46","Vert (alliés)"],["#e0483f","Rouge (ennemis)"],["#e5c84b","Jaune"],["#5bb0e5","Bleu"],["#c264ff","Violet"],["#ffffff","Blanc"]];
 let ST_STAMP={kind:'focus',size:0.75};   // symbole tactique courant (+ taille, petit par défaut)
 const ST_STAMP_SIZES=[["Petit",0.75],["Moyen",1.05],["Grand",1.4]];
@@ -5048,7 +5049,7 @@ function renderStratEditor(){
   const strokeGrp=`<div class="optgrp opt-stroke"><span class="opt-lbl">Trait</span><button type="button" class="st-sbtn${ST_STROKE.dash?' on':''}" id="stDash" title="Pointillés">┅</button><button type="button" class="st-sbtn opt-curve${ST_STROKE.curve?' on':''}" id="stCurve" title="Flèche courbe">⌒</button><span class="st-wsel">${[["thin",4],["med",7],["thick",12]].map(w=>`<button type="button" class="st-wbtn${ST_STROKE.w===w[1]?' on':''}" data-w="${w[1]}" title="Épaisseur"><i style="height:${Math.round(w[1]/2)+1}px"></i></button>`).join("")}</span></div>`;
   const colorGrp=`<div class="optgrp opt-colors"><span class="opt-lbl">Couleur</span>${colors}</div>`;
   const stampGrp=`<div class="optgrp opt-stamp"><span class="opt-lbl">Symbole</span>${ST_STAMP_LIST.map(([k,lbl])=>`<button type="button" class="st-stampb${ST_STAMP.kind===k?' on':''}" data-stamp="${k}" title="${esc(lbl)}"><svg viewBox="-20 -20 40 40" class="st-stamp-ic"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">${ST_STAMPS[k]}</g></svg></button>`).join("")}<span class="st-opt-sep"></span><span class="opt-lbl">Taille</span><span class="st-szsel">${ST_STAMP_SIZES.map(([lbl,v])=>`<button type="button" class="st-szb${ST_STAMP.size===v?' on':''}" data-sz="${v}">${esc(lbl)}</button>`).join("")}</span></div>`;
-  const tankGrp=`<div class="optgrp opt-tank"><div class="st-classsel" style="--tc:${ST_TANK.color}">${ST_CLASSES.map(c=>`<button type="button" class="st-class${ST_TANK.cls===c[0]?' on':''}" data-cls="${c[0]}" title="Char ${c[1]}"><span class="ic" style="-webkit-mask:url(strat/class_${c[0]}.png) center/contain no-repeat;mask:url(strat/class_${c[0]}.png) center/contain no-repeat"></span><span class="lbl">${c[1]}</span></button>`).join("")}</div><div class="st-tank-cols">${ST_TANK_COLORS.map(c=>`<button type="button" class="st-tcol${ST_TANK.color===c[0]?' on':''}" data-tcol="${c[0]}" title="${esc(c[1])}" style="background:${c[0]}"></button>`).join("")}</div><div class="st-count" id="stCount"></div></div>`;
+  const tankGrp=`<div class="optgrp opt-tank"><div class="st-classsel" style="--tc:${ST_TANK.color}">${ST_CLASSES.map(c=>`<button type="button" class="st-class${ST_TANK.cls===c[0]?' on':''}" data-cls="${c[0]}" title="Char ${c[1]}"><span class="ic" style="-webkit-mask:url(strat/class_${c[0]}.png) center/contain no-repeat;mask:url(strat/class_${c[0]}.png) center/contain no-repeat"></span><span class="lbl">${c[1]}</span></button>`).join("")}</div><div class="st-tank-cols">${ST_TANK_COLORS.map(c=>`<button type="button" class="st-tcol${ST_TANK.color===c[0]?' on':''}" data-tcol="${c[0]}" title="${esc(c[1])}" style="background:${c[0]}"></button>`).join("")}</div><span class="st-opt-sep"></span><span class="opt-lbl">Taille</span><span class="st-szsel">${ST_TANK_SIZES.map(([lbl,v])=>`<button type="button" class="st-tkszb${ST_TANK.size===v?' on':''}" data-sz="${v}">${esc(lbl)}</button>`).join("")}</span><div class="st-count" id="stCount"></div></div>`;
   ed.innerHTML=`<div class="card st-shell dashx st-editor${ST_FULL?' st-full':''}">
     <div class="st-bar">
       <button class="st-x" id="stCancel" title="Fermer sans enregistrer">✕</button>
@@ -5099,7 +5100,7 @@ function stElSvg(el,i){
   if(el.type==='pen'){ const w=el.w||7, dash=el.dash?` stroke-dasharray="${w*2.1} ${w*1.6}"`:''; return `<polyline class="st-el${sel}" data-eid="${i}" points="${el.pts.map(p=>p.map(n=>Math.round(n)).join(',')).join(' ')}" fill="none" stroke="${esc(el.color)}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"${dash}/>`; }
   if(el.type==='marker'){ return `<g class="st-el st-marker${sel}" data-eid="${i}"><circle cx="${el.x}" cy="${el.y}" r="24" fill="${esc(el.color)}" stroke="#0009" stroke-width="3"/><text x="${el.x}" y="${el.y+9}" font-size="26" font-weight="800" text-anchor="middle" fill="${stTextOn(el.color)}" style="pointer-events:none">${esc(el.label||'')}</text></g>`; }
   if(el.type==='text'){ return `<text class="st-el${sel}" data-eid="${i}" x="${el.x}" y="${el.y}" font-size="34" font-weight="800" fill="${esc(el.color)}" stroke="#000" stroke-width="1" paint-order="stroke">${esc(el.text||'')}</text>`; }
-  if(el.type==='tank'){ const col=el.color||'#5dbb46'; const s=66,h=s/2, cls=(ST_CLASSES.find(c=>c[0]===el.cls)?el.cls:'medium');
+  if(el.type==='tank'){ const col=el.color||'#5dbb46'; const s=Math.round(66*(el.size||0.78)),h=s/2, cls=(ST_CLASSES.find(c=>c[0]===el.cls)?el.cls:'medium');
     const nm=String(el.name||'').trim(); const nw=nm?Math.round(nm.length*8.6+16):0;
     const label=nm?`<g style="pointer-events:none"><rect x="${el.x-nw/2}" y="${el.y+h-6}" width="${nw}" height="21" rx="6" fill="#0c0d0f" fill-opacity=".82"/><text x="${el.x}" y="${el.y+h+9}" font-size="15" font-weight="700" text-anchor="middle" fill="#fff">${esc(nm)}</text></g>`:'';
     return `<g class="st-el st-tank${sel}" data-eid="${i}"><filter id="stk${i}" x="-45%" y="-45%" width="190%" height="190%"><feFlood flood-color="${esc(col)}" result="f"/><feComposite in="f" in2="SourceAlpha" operator="in" result="s"/><feDropShadow in="s" dx="0" dy="0" stdDeviation="3.4" flood-color="#000" flood-opacity=".92"/></filter><image href="strat/class_${cls}.png" x="${el.x-h}" y="${el.y-h}" width="${s}" height="${s}" filter="url(#stk${i})"/>${label}</g>`; }
@@ -5195,6 +5196,7 @@ function stWireEditor(){
   ed.querySelectorAll(".st-class").forEach(b=>b.onclick=()=>{ ST_TANK.cls=b.dataset.cls; stSetTool('tank'); stTankSync(); });
   ed.querySelectorAll(".st-stampb").forEach(b=>b.onclick=()=>{ ST_STAMP.kind=b.dataset.stamp; stSetTool('stamp'); ed.querySelectorAll(".st-stampb").forEach(x=>x.classList.toggle("on",x===b)); });
   ed.querySelectorAll(".st-szb").forEach(b=>b.onclick=()=>{ ST_STAMP.size=+b.dataset.sz; ed.querySelectorAll(".st-szb").forEach(x=>x.classList.toggle("on",x===b)); });
+  ed.querySelectorAll(".st-tkszb").forEach(b=>b.onclick=()=>{ ST_TANK.size=+b.dataset.sz; ed.querySelectorAll(".st-tkszb").forEach(x=>x.classList.toggle("on",x===b)); });
   const msel=ed.querySelector("#stMode"); if(msel) msel.onchange=()=>{ ST_EDIT.mode=msel.value; const g=document.getElementById("stBases"); if(g) g.innerHTML=stBasesSvg(ST_EDIT.map,ST_EDIT.mode); };
   const cc=()=>[ST_ZOOM.x+ST_ZOOM.w/2, ST_ZOOM.y+ST_ZOOM.h/2];
   ed.querySelector("#stZoomIn").onclick=()=>{ const [x,y]=cc(); stZoomAt(0.8,x,y); };
@@ -5208,7 +5210,7 @@ function stWireEditor(){
     const p=stPt(e,svg); const hit=e.target.closest("[data-eid]"); const eid=hit?+hit.dataset.eid:null;
     if(ST_TOOL==='erase'){ if(eid!=null){ stSnapshot(); ST_EDIT.els.splice(eid,1); ST_SEL=null; stRedraw(); stUpdCount(); } return; }
     if(ST_TOOL==='select'){ if(eid!=null){ ST_SEL=eid; ST_MOVE={eid,ox:p[0],oy:p[1],orig:ST_EDIT.els[eid],snapped:false}; svg.setPointerCapture(e.pointerId); } else { ST_SEL=null; } stRedraw(); return; }
-    if(ST_TOOL==='tank'){ stSnapshot(); ST_EDIT.els.push({type:'tank',cls:ST_TANK.cls,color:ST_TANK.color,x:Math.round(p[0]),y:Math.round(p[1]),name:''}); stRedraw(); stUpdCount(); return; }
+    if(ST_TOOL==='tank'){ stSnapshot(); ST_EDIT.els.push({type:'tank',cls:ST_TANK.cls,color:ST_TANK.color,x:Math.round(p[0]),y:Math.round(p[1]),name:'',size:ST_TANK.size}); stRedraw(); stUpdCount(); return; }
     if(ST_TOOL==='marker'){ stSnapshot(); ST_EDIT.els.push({type:'marker',color:ST_COLOR,x:Math.round(p[0]),y:Math.round(p[1]),label:stNextMarkerLabel()}); stRedraw(); return; }
     if(ST_TOOL==='text'){ stTextInput(p[0],p[1],null); return; }
     if(ST_TOOL==='stamp'){ stSnapshot(); ST_EDIT.els.push({type:'stamp',kind:ST_STAMP.kind,color:ST_COLOR,x:Math.round(p[0]),y:Math.round(p[1]),size:ST_STAMP.size}); stRedraw(); return; }
