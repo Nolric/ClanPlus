@@ -116,20 +116,21 @@ function pretty(k){ return NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1); }
   const uMVP=gl.getUniformLocation(prog,"uMVP"),uUseTex=gl.getUniformLocation(prog,"uUseTex"),uMaxH=gl.getUniformLocation(prog,"uMaxH"),uTexLoc=gl.getUniformLocation(prog,"uTex");
 
   // ---- programme des blocs (bâtiments) ----
-  // normales calculées par dérivées d'écran (pas de buffer de normales à charger)
-  const bvs=`attribute vec3 aPos;uniform mat4 uMVP;varying vec3 vW;varying float vH;
-    void main(){vW=aPos;vH=aPos.y;gl_Position=uMVP*vec4(aPos,1.0);}`;
+  // bâtiments : base suit le relief exagéré, HAUTEUR réelle non exagérée ; normales par dérivées d'écran
+  const bvs=`attribute vec3 aPos;attribute float aBase;uniform mat4 uPV;uniform float uHS;uniform float uExag;
+    varying vec3 vW;varying float vH;
+    void main(){ float y=aBase*uHS*uExag+aPos.y; vec3 w=vec3(aPos.x,y,aPos.z); vW=w; vH=aPos.y; gl_Position=uPV*vec4(w,1.0); }`;
   const bfs=`#extension GL_OES_standard_derivatives : enable
-    precision highp float;varying vec3 vW;varying float vH;uniform float uMaxH;
+    precision highp float;varying vec3 vW;varying float vH;
     void main(){ vec3 N=normalize(cross(dFdx(vW),dFdy(vW))); vec3 L=normalize(vec3(0.5,0.8,0.35));
       float d=abs(dot(N,L));
-      float t=clamp(vH/max(uMaxH,1.0),0.0,1.0); vec3 base=mix(vec3(0.60,0.58,0.54),vec3(0.82,0.78,0.70),t);
+      float t=clamp(vH/26.0,0.0,1.0); vec3 base=mix(vec3(0.60,0.58,0.54),vec3(0.82,0.78,0.70),t);
       gl_FragColor=vec4(base*(0.40+d*0.80),1.0); }`;
   const bprog=gl.createProgram();
   gl.attachShader(bprog,sh(gl.VERTEX_SHADER,bvs));gl.attachShader(bprog,sh(gl.FRAGMENT_SHADER,bfs));gl.linkProgram(bprog);
-  const bPos=gl.getAttribLocation(bprog,"aPos"),bNrm=gl.getAttribLocation(bprog,"aNrm");
-  const buMVP=gl.getUniformLocation(bprog,"uMVP"),buMaxH=gl.getUniformLocation(bprog,"uMaxH");
-  let blkPB=gl.createBuffer(),blkNB=gl.createBuffer(),blkIB=gl.createBuffer(),blkLen=0,showBld=0,shpN=0;
+  const bPos=gl.getAttribLocation(bprog,"aPos"),bBase=gl.getAttribLocation(bprog,"aBase");
+  const buPV=gl.getUniformLocation(bprog,"uPV"),buHS=gl.getUniformLocation(bprog,"uHS"),buExag=gl.getUniformLocation(bprog,"uExag");
+  let blkPB=gl.createBuffer(),blkIB=gl.createBuffer(),blkLen=0,showBld=0,shpN=0;
   let curHeights=null,curHN=0,curHmin=0,curHmax=1,mSpanM=50;
   const VSCALE=0.07;   // échelle verticale du relief (fraction de la largeur de carte) — réaliste
 
@@ -196,23 +197,23 @@ function pretty(k){ return NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1); }
     return (((a*(1-fx)+b2*fx)*(1-fy)+(c*(1-fx)+d*fx)*fy)-curHmin)/Math.max(1,curHmax-curHmin); }
   // construit tous les blocs (bâtiments) en un seul maillage
   // bâtiments à la VRAIE taille : 8 floats/instance = x,z,rotY, cx,cz (centre bbox local), sizeX,sizeZ, hauteur(m)
+  // repli boîtes : format interleave 4 floats/sommet (X, hauteurLocale, Z, baseNorm) comme les vraies formes
   function buildBlocks(f32){
-    const n=f32.length/8, HS=WORLD*VSCALE, mPerU=HS/Math.max(12,mSpanM); const P=[],Nn=[],I=[]; let vi=0;
-    const push=(x,y,z,nx,ny,nz)=>{ P.push(x,y,z); Nn.push(nx,ny,nz); return vi++; };
-    const quad=(a,b,c,d,nx,ny,nz)=>{ const A=push(a[0],a[1],a[2],nx,ny,nz),B=push(b[0],b[1],b[2],nx,ny,nz),C=push(c[0],c[1],c[2],nx,ny,nz),D=push(d[0],d[1],d[2],nx,ny,nz); I.push(A,B,C,A,C,D); };
+    const n=f32.length/8, HS=WORLD*VSCALE, mPerU=HS/Math.max(12,mSpanM); const P=[],I=[]; let vi=0;
+    const push=(x,y,z,bn)=>{ P.push(x,y,z,bn); return vi++; };
+    const quad=(a,b,c,d,bn)=>{ const A=push(a[0],a[1],a[2],bn),B=push(b[0],b[1],b[2],bn),C=push(c[0],c[1],c[2],bn),D=push(d[0],d[1],d[2],bn); I.push(A,B,C,A,C,D); };
     for(let k=0;k<n;k++){
       const x=f32[k*8],z=f32[k*8+1],rotY=f32[k*8+2],cxl=f32[k*8+3],czl=f32[k*8+4],sx=f32[k*8+5],sz=f32[k*8+6],hgt=f32[k*8+7];
       const c=Math.cos(rotY),s=Math.sin(rotY);
       const wcx=x+cxl*c-czl*s, wcz=z+cxl*s+czl*c;               // centre empreinte en monde
-      const baseY=terrainNorm(wcx,wcz)*HS, y0=baseY, y1=baseY+Math.max(2,hgt*mPerU);
+      const bn=terrainNorm(wcx,wcz), y0=0, y1=Math.max(2,hgt*mPerU);   // hauteur locale (base = 0)
       const hx=sx/2, hz=sz/2; const R=(lx,lz)=>[wcx+lx*c-lz*s, wcz+lx*s+lz*c];
       const p00=R(-hx,-hz),p01=R(-hx,hz),p11=R(hx,hz),p10=R(hx,-hz);
-      const wall=(a,b,nx,nz)=>quad([a[0],y0,a[1]],[b[0],y0,b[1]],[b[0],y1,b[1]],[a[0],y1,a[1]],nx,0,nz);
-      wall(p00,p01,-c,-s); wall(p01,p11,-s,c); wall(p11,p10,c,s); wall(p10,p00,s,-c);
-      quad([p00[0],y1,p00[1]],[p01[0],y1,p01[1]],[p11[0],y1,p11[1]],[p10[0],y1,p10[1]],0,1,0);
+      const wall=(a,b)=>quad([a[0],y0,a[1]],[b[0],y0,b[1]],[b[0],y1,b[1]],[a[0],y1,a[1]],bn);
+      wall(p00,p01); wall(p01,p11); wall(p11,p10); wall(p10,p00);
+      quad([p00[0],y1,p00[1]],[p01[0],y1,p01[1]],[p11[0],y1,p11[1]],[p10[0],y1,p10[1]],bn);
     }
     gl.bindBuffer(gl.ARRAY_BUFFER,blkPB);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(P),gl.STATIC_DRAW);
-    gl.bindBuffer(gl.ARRAY_BUFFER,blkNB);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(Nn),gl.STATIC_DRAW);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,blkIB);gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint32Array(I),gl.STATIC_DRAW);
     blkLen=I.length;
   }
@@ -221,7 +222,7 @@ function pretty(k){ return NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1); }
     try{ const rp=await fetch("maps3d/"+key+"/shapes.pos");
       if(rp.ok){ const P=new Float32Array(await rp.arrayBuffer());
         gl.bindBuffer(gl.ARRAY_BUFFER,blkPB);gl.bufferData(gl.ARRAY_BUFFER,P,gl.STATIC_DRAW);
-        shpN=P.length/3; btn.style.display=""; showBld=1; btn.classList.add("on"); return; } }catch(e){}
+        shpN=P.length/4; btn.style.display=""; showBld=1; btn.classList.add("on"); return; } }catch(e){}
     // 2) repli : boîtes à la bonne taille
     try{ const r=await fetch("maps3d/"+key+"/buildings.f32"); if(!r.ok) throw 0; const ab=await r.arrayBuffer(); buildBlocks(new Float32Array(ab)); btn.style.display=""; }
     catch(e){ btn.style.display="none"; showBld=0; btn.classList.remove("on"); } }
@@ -297,11 +298,15 @@ function pretty(k){ return NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1); }
       gl.drawElements(wire?gl.LINES:gl.TRIANGLES,idxLen,gl.UNSIGNED_INT,0);
       if(showBld&&(shpN||blkLen)){
         gl.useProgram(bprog);
-        gl.uniformMatrix4fv(buMVP,false,MVP); gl.uniform1f(buMaxH,curMaxH);
+        const PV=new Float32Array(mul(P,V));   // PAS d'exag sur les bâtiments (calculé dans le shader)
+        gl.uniformMatrix4fv(buPV,false,PV); gl.uniform1f(buHS,curMaxH); gl.uniform1f(buExag,exag);
         gl.disableVertexAttribArray(aUv);
-        bind(bPos,blkPB,3);
+        gl.bindBuffer(gl.ARRAY_BUFFER,blkPB);
+        gl.enableVertexAttribArray(bPos); gl.vertexAttribPointer(bPos,3,gl.FLOAT,false,16,0);
+        gl.enableVertexAttribArray(bBase); gl.vertexAttribPointer(bBase,1,gl.FLOAT,false,16,12);
         if(shpN){ gl.drawArrays(gl.TRIANGLES,0,shpN); }
         else { gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,blkIB); gl.drawElements(gl.TRIANGLES,blkLen,gl.UNSIGNED_INT,0); }
+        gl.disableVertexAttribArray(bBase);
       }
     }
     requestAnimationFrame(frame);
