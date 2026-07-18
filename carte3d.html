@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Clan Plus — Cartes 3D</title>
+<style>
+  :root{
+    --bg:#0c0d0f; --panel:rgba(18,19,22,.86); --line:#2b2d31;
+    --gold:#e5b95c; --gold2:#f4d78c; --gold-soft:rgba(229,185,92,.14);
+    --ink:#ece6d6; --muted:#9a9280;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:radial-gradient(120% 90% at 50% -5%,#16181c 0%,var(--bg) 60%);
+    color:var(--ink);font-family:ui-sans-serif,system-ui,"Segoe UI",Roboto,Arial,sans-serif;overflow:hidden}
+  #wrap{position:fixed;inset:0}
+  canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+  canvas:active{cursor:grabbing}
+  .glass{background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    box-shadow:0 10px 34px rgba(0,0,0,.5);backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px)}
+  #title{position:absolute;top:16px;left:16px;padding:12px 16px 13px;max-width:60vw}
+  #title .eyebrow{font-size:10.5px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--gold);display:flex;align-items:center;gap:7px}
+  #title .eyebrow::before{content:"";width:16px;height:1.5px;background:var(--gold)}
+  #title h1{margin:5px 0 0;font-size:21px;font-weight:800;line-height:1.05}
+  #title .sub{margin-top:3px;font-size:12px;color:var(--muted)}
+  #back{position:absolute;top:16px;right:16px;padding:9px 13px;font-size:12.5px;font-weight:700;
+    color:var(--ink);text-decoration:none;display:flex;align-items:center;gap:6px}
+  #back:hover{color:var(--gold2);border-color:var(--gold)}
+  #hud{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);display:flex;gap:8px;align-items:center;
+    padding:8px 10px;flex-wrap:wrap;max-width:94vw;justify-content:center}
+  #hud .grp{display:flex;align-items:center;gap:8px;padding:0 3px}
+  #hud label{font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap;letter-spacing:.3px}
+  #hud input[type=range]{width:120px;accent-color:var(--gold)}
+  select{appearance:none;background:#191a1e url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M0 0l5 6 5-6z' fill='%23e5b95c'/></svg>") no-repeat right 10px center;
+    border:1px solid var(--line);color:var(--ink);font:inherit;font-size:13px;font-weight:600;padding:8px 28px 8px 12px;border-radius:9px;cursor:pointer;min-width:172px}
+  select:hover{border-color:var(--gold)}
+  .sep{width:1px;height:24px;background:var(--line)}
+  .btn{appearance:none;border:1px solid var(--line);background:#191a1e;color:var(--ink);font:inherit;font-size:12px;
+    font-weight:700;padding:8px 12px;border-radius:9px;cursor:pointer;transition:.12s;white-space:nowrap}
+  .btn:hover{border-color:var(--gold);color:var(--gold2)}
+  .btn.on{border-color:var(--gold);color:var(--gold);background:var(--gold-soft)}
+  #hint{position:absolute;right:16px;bottom:18px;font-size:11.5px;color:var(--muted);text-align:right;line-height:1.5;pointer-events:none}
+  #hint b{color:var(--ink);font-weight:700}
+  #load{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
+  #load .box{padding:14px 20px;font-size:13px;color:var(--muted);opacity:0;transition:opacity .2s}
+  #load.on .box{opacity:1}
+  .spin{display:inline-block;width:14px;height:14px;border:2px solid var(--line);border-top-color:var(--gold);
+    border-radius:50%;animation:sp .8s linear infinite;vertical-align:-2px;margin-right:8px}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  #err{position:absolute;inset:0;display:none;align-items:center;justify-content:center;text-align:center;padding:30px;color:var(--muted);font-size:14px}
+  @media(max-width:640px){ #title h1{font-size:17px} #hint{display:none} #hud input[type=range]{width:84px} }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="c"></canvas>
+  <div id="title" class="glass">
+    <div class="eyebrow">World of Tanks · Carte 3D</div>
+    <h1 id="mapName">Chargement…</h1>
+    <div class="sub" id="mapSub">Relief réel extrait du jeu</div>
+  </div>
+  <a id="back" class="glass" href="index.html">← Retour au site</a>
+  <div id="hud" class="glass">
+    <div class="grp"><select id="mapSel"></select></div>
+    <div class="sep"></div>
+    <div class="grp"><label>Relief</label><input id="exag" type="range" min="0.35" max="2.6" step="0.05" value="1"></div>
+    <div class="sep"></div>
+    <button class="btn on" id="texBtn">Texture</button>
+    <button class="btn" id="wireBtn">Grille</button>
+    <button class="btn" id="resetBtn">Recadrer</button>
+  </div>
+  <div id="hint"><b>Glisser</b> pour tourner · <b>Molette</b> pour zoomer · <b>Clic droit</b> déplacer</div>
+  <div id="load" class="on"><div class="box glass"><span class="spin"></span>Chargement du relief…</div></div>
+  <div id="err" class="glass">Ton navigateur n'a pas pu démarrer la 3D (WebGL requis).</div>
+</div>
+<script>
+const NAMES={himmelsdorf:"Himmelsdorf",karelia:"Karélie",malinovka:"Malinovka",campaniabig:"Campanie",prohorovka:"Prokhorovka",
+ensk:"Ensk",enskbig:"Ensk (grande)",lakeville:"Lakeville",ruinberg:"Ruinberg",ruinbergsm:"Ruinberg (hiver)",hills:"Mines",
+murovanka:"Murovanka",erlenberg:"Erlenberg",siegfriedline:"Ligne Siegfried",munchen:"Munich",cliff:"Falaise",monastery:"Monastère",
+westfeld:"Westfield",desert:"Sables mouvants",elhallouf:"El Halluf",airfield:"Aérodrome",fjord:"Fjord",redshire:"Comté rouge",
+steppes:"Steppes",fishingbay:"Baie de pêche",caucasus:"Serene Coast",mannerheimline:"Ligne Mannerheim",tundra:"Toundra",
+canadaa:"Highway",asiagreatwall:"Grande Muraille",asiamiao:"Pearl River",northamerica:"Live Oaks",czech:"Ville fortifiée",
+sweden:"Côte rocheuse",poland:"Passe glacée",grafzeppelin:"Graf Zeppelin",japort:"Port pacifique",
+lostcityctf:"Cité perdue",lostparadisev:"Paradis perdu",lastfrontierv:"Dernière frontière",eiffeltowerctf:"Paris",
+dday:"Débarquement",ddaysm:"Débarquement (hiver)",germany:"Berlin",germanysm:"Berlin (hiver)",grafzeppelinscc:"Graf Zeppelin",
+brbattlecity:"Ville",eralaska:"Alaska",bfepicdesert:"Désert (Épique)",bfepicnormandy:"Normandie (Épique)",
+wgepicsuburbia:"Banlieue (Épique)",epicrandomvalleysm:"Vallée (Épique)",normandynom:"Normandie"};
+function pretty(k){ return NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1); }
+
+(function(){
+  const cv=document.getElementById("c");
+  const gl=cv.getContext("webgl",{antialias:true,alpha:false})||cv.getContext("experimental-webgl");
+  if(!gl){ document.getElementById("err").style.display="flex"; document.getElementById("load").classList.remove("on"); return; }
+  const uintExt=gl.getExtension("OES_element_index_uint");
+
+  // ---- shaders ----
+  const vsrc=`attribute vec3 aPos;attribute vec3 aNrm;attribute vec2 aUv;uniform mat4 uMVP;
+    varying vec3 vN;varying vec2 vUv;varying float vH;
+    void main(){vN=aNrm;vUv=aUv;vH=aPos.y;gl_Position=uMVP*vec4(aPos,1.0);}`;
+  const fsrc=`precision highp float;varying vec3 vN;varying vec2 vUv;varying float vH;
+    uniform sampler2D uTex;uniform float uUseTex;uniform float uMaxH;
+    void main(){ vec3 L=normalize(vec3(0.55,0.78,0.32));
+      float d=max(dot(normalize(vN),L),0.0); float amb=0.42;
+      vec3 base=uUseTex>0.5?texture2D(uTex,vUv).rgb:vec3(0.42,0.40,0.36);
+      float t=clamp(vH/max(uMaxH,1.0),0.0,1.0);
+      vec3 tint=mix(vec3(0.83,0.87,0.96),vec3(1.07,1.0,0.85),t);
+      gl_FragColor=vec4(base*tint*(amb+d*0.95),1.0); }`;
+  function sh(t,s){const o=gl.createShader(t);gl.shaderSource(o,s);gl.compileShader(o);
+    if(!gl.getShaderParameter(o,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(o));return o;}
+  const prog=gl.createProgram();
+  gl.attachShader(prog,sh(gl.VERTEX_SHADER,vsrc));gl.attachShader(prog,sh(gl.FRAGMENT_SHADER,fsrc));
+  gl.linkProgram(prog);gl.useProgram(prog);
+  const aPos=gl.getAttribLocation(prog,"aPos"),aNrm=gl.getAttribLocation(prog,"aNrm"),aUv=gl.getAttribLocation(prog,"aUv");
+  const uMVP=gl.getUniformLocation(prog,"uMVP"),uUseTex=gl.getUniformLocation(prog,"uUseTex"),uMaxH=gl.getUniformLocation(prog,"uMaxH"),uTexLoc=gl.getUniformLocation(prog,"uTex");
+
+  // ---- texture ----
+  const tex=gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D,tex);
+  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,1,1,0,gl.RGBA,gl.UNSIGNED_BYTE,new Uint8Array([70,68,62,255]));
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+  function loadTex(url){ const img=new Image();
+    img.onload=()=>{ gl.bindTexture(gl.TEXTURE_2D,tex); gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,false);
+      gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,img); gl.generateMipmap(gl.TEXTURE_2D);
+      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR); };
+    img.onerror=()=>{}; img.src=url; }
+
+  // ---- buffers (recréés à chaque carte) ----
+  let pB=gl.createBuffer(),nB=gl.createBuffer(),uB=gl.createBuffer(),iB=gl.createBuffer(),idxLen=0,curMaxH=1;
+  const MESH=384;
+  function buildMesh(heights,HN,world,hmin,hmax){
+    const span=Math.max(1,hmax-hmin); const HS=world*0.22; curMaxH=HS;
+    const sampleH=(u,v)=>{ const x=Math.min(HN-1,Math.max(0,u*(HN-1))),y=Math.min(HN-1,Math.max(0,v*(HN-1)));
+      const x0=x|0,y0=y|0,x1=Math.min(HN-1,x0+1),y1=Math.min(HN-1,y0+1),fx=x-x0,fy=y-y0;
+      const a=heights[y0*HN+x0],b=heights[y0*HN+x1],c=heights[y1*HN+x0],d=heights[y1*HN+x1];
+      return ((a*(1-fx)+b*fx)*(1-fy)+(c*(1-fx)+d*fx)*fy - hmin)/span; };
+    const V=(MESH+1)*(MESH+1);
+    const pos=new Float32Array(V*3),nrm=new Float32Array(V*3),uv=new Float32Array(V*2);
+    let k=0,ku=0;
+    for(let gy=0;gy<=MESH;gy++)for(let gx=0;gx<=MESH;gx++){ const u=gx/MESH,v=gy/MESH;
+      pos[k]=(u-0.5)*world; pos[k+1]=sampleH(u,v)*HS; pos[k+2]=(v-0.5)*world; uv[ku]=u; uv[ku+1]=v; k+=3; ku+=2; }
+    const cell=world/MESH;
+    for(let gy=0;gy<=MESH;gy++)for(let gx=0;gx<=MESH;gx++){
+      const hl=sampleH(Math.max(0,gx-1)/MESH,gy/MESH)*HS, hr=sampleH(Math.min(MESH,gx+1)/MESH,gy/MESH)*HS;
+      const hd=sampleH(gx/MESH,Math.max(0,gy-1)/MESH)*HS, hu=sampleH(gx/MESH,Math.min(MESH,gy+1)/MESH)*HS;
+      let nx=hl-hr,ny=2*cell,nz=hd-hu; const L=Math.hypot(nx,ny,nz)||1; const i=(gy*(MESH+1)+gx)*3;
+      nrm[i]=nx/L;nrm[i+1]=ny/L;nrm[i+2]=nz/L; }
+    const idx=new Uint32Array(MESH*MESH*6); let p=0;
+    for(let gy=0;gy<MESH;gy++)for(let gx=0;gx<MESH;gx++){ const a=gy*(MESH+1)+gx,b=a+1,c=a+(MESH+1),d=c+1;
+      idx[p++]=a;idx[p++]=c;idx[p++]=b;idx[p++]=b;idx[p++]=c;idx[p++]=d; }
+    gl.bindBuffer(gl.ARRAY_BUFFER,pB);gl.bufferData(gl.ARRAY_BUFFER,pos,gl.STATIC_DRAW);
+    gl.bindBuffer(gl.ARRAY_BUFFER,nB);gl.bufferData(gl.ARRAY_BUFFER,nrm,gl.STATIC_DRAW);
+    gl.bindBuffer(gl.ARRAY_BUFFER,uB);gl.bufferData(gl.ARRAY_BUFFER,uv,gl.STATIC_DRAW);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,iB);gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,idx,gl.STATIC_DRAW);
+    idxLen=idx.length;
+  }
+
+  // ---- maths ----
+  function persp(f,a,n,fa){const t=1/Math.tan(f/2);return[t/a,0,0,0,0,t,0,0,0,0,(fa+n)/(n-fa),-1,0,0,2*fa*n/(n-fa),0];}
+  const sub=(a,b)=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]],cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]],dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+  const norm=a=>{const l=Math.hypot(a[0],a[1],a[2])||1;return[a[0]/l,a[1]/l,a[2]/l];};
+  function look(e,c,up){const z=norm(sub(e,c)),x=norm(cross(up,z)),y=cross(z,x);
+    return[x[0],y[0],z[0],0,x[1],y[1],z[1],0,x[2],y[2],z[2],0,-dot(x,e),-dot(y,e),-dot(z,e),1];}
+  function mul(a,b){const o=new Array(16);for(let i=0;i<4;i++)for(let j=0;j<4;j++){let s=0;for(let k=0;k<4;k++)s+=a[k*4+j]*b[i*4+k];o[i*4+j]=s;}return o;}
+
+  // ---- caméra ----
+  let WORLD=1100, az=-0.9, pol=0.72, rad=1250, tgt=[0,60,0], exag=1, useTex=1, wire=0, pan={x:0,z:0};
+  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+  function frameCam(){ rad=WORLD*1.15; tgt=[0,WORLD*0.05,0]; az=-0.9; pol=0.72; pan.x=0; pan.z=0; }
+  function eye(){ const ce=Math.cos(pol)*rad; return [tgt[0]+pan.x+Math.cos(az)*ce, tgt[1]+Math.sin(pol)*rad, tgt[2]+pan.z+Math.sin(az)*ce]; }
+
+  // ---- interactions ----
+  let drag=null;
+  cv.addEventListener("pointerdown",e=>{cv.setPointerCapture(e.pointerId);drag={x:e.clientX,y:e.clientY,az,pol,px:pan.x,pz:pan.z,btn:e.button};});
+  cv.addEventListener("pointermove",e=>{if(!drag)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;
+    if(drag.btn===2){const s=rad/900,rx=-Math.sin(az),rz=Math.cos(az),fx=-Math.cos(az),fz=-Math.sin(az);
+      pan.x=drag.px+(-dx*rx+dy*fx)*s;pan.z=drag.pz+(-dx*rz+dy*fz)*s;}
+    else{az=drag.az-dx*0.008;pol=clamp(drag.pol-dy*0.008,0.12,1.45);}});
+  cv.addEventListener("pointerup",()=>drag=null); cv.addEventListener("pointercancel",()=>drag=null);
+  cv.addEventListener("contextmenu",e=>e.preventDefault());
+  cv.addEventListener("wheel",e=>{e.preventDefault();rad=clamp(rad*(e.deltaY>0?1.1:0.9),WORLD*0.28,WORLD*2.4);},{passive:false});
+  document.getElementById("exag").addEventListener("input",e=>exag=parseFloat(e.target.value));
+  document.getElementById("texBtn").addEventListener("click",e=>{useTex^=1;e.currentTarget.classList.toggle("on",useTex);});
+  document.getElementById("wireBtn").addEventListener("click",e=>{wire^=1;e.currentTarget.classList.toggle("on",wire);});
+  document.getElementById("resetBtn").addEventListener("click",()=>{frameCam();document.getElementById("exag").value=1;exag=1;});
+
+  // ---- chargement d'une carte ----
+  const loadEl=document.getElementById("load");
+  async function loadMap(key){
+    loadEl.classList.add("on");
+    document.getElementById("mapName").textContent=pretty(key);
+    try{
+      const meta=await fetch("maps3d/"+key+"/meta.json").then(r=>r.json());
+      const ab=await fetch("maps3d/"+key+"/height.u16").then(r=>r.arrayBuffer());
+      const heights=new Uint16Array(ab); const HN=meta.n;
+      WORLD=meta.world||1100;
+      buildMesh(heights,HN,WORLD,meta.hmin,meta.hmax);
+      loadTex("maps/top/"+key+".jpg");
+      frameCam();
+      document.getElementById("mapSub").textContent="Relief réel · "+WORLD+" m";
+      try{ localStorage.setItem("cp_map3d",key); }catch(_){}
+    }catch(e){ document.getElementById("mapName").textContent="Erreur de chargement"; }
+    loadEl.classList.remove("on");
+  }
+
+  // ---- rendu ----
+  function resize(){const dpr=Math.min(2,window.devicePixelRatio||1);cv.width=cv.clientWidth*dpr;cv.height=cv.clientHeight*dpr;gl.viewport(0,0,cv.width,cv.height);}
+  window.addEventListener("resize",resize); resize();
+  gl.enable(gl.DEPTH_TEST); gl.clearColor(0.047,0.051,0.059,1);
+  function bind(loc,b,sz){gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.enableVertexAttribArray(loc);gl.vertexAttribPointer(loc,sz,gl.FLOAT,false,0,0);}
+  function frame(){
+    gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+    if(idxLen){
+      const P=persp(0.86,cv.width/cv.height,WORLD*0.02,WORLD*7);
+      const e=eye(),V=look(e,[tgt[0]+pan.x,tgt[1],tgt[2]+pan.z],[0,1,0]);
+      const M=[1,0,0,0,0,exag,0,0,0,0,1,0,0,0,0,1];
+      const MVP=mul(mul(P,V),M);
+      gl.useProgram(prog);
+      gl.uniformMatrix4fv(uMVP,false,new Float32Array(MVP));
+      gl.uniform1f(uUseTex,useTex?1:0); gl.uniform1f(uMaxH,curMaxH);
+      gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D,tex); gl.uniform1i(uTexLoc,0);
+      bind(aPos,pB,3);bind(aNrm,nB,3);bind(aUv,uB,2);
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,iB);
+      gl.drawElements(wire?gl.LINES:gl.TRIANGLES,idxLen,gl.UNSIGNED_INT,0);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  // ---- init : liste des cartes ----
+  if(!uintExt){ document.getElementById("err").style.display="flex"; document.getElementById("err").textContent="Ce navigateur ne supporte pas le maillage 32 bits requis."; loadEl.classList.remove("on"); return; }
+  fetch("maps3d/index.json").then(r=>r.json()).then(list=>{
+    const sel=document.getElementById("mapSel");
+    list.map(m=>m.key).sort((a,b)=>pretty(a).localeCompare(pretty(b),'fr')).forEach(k=>{
+      const o=document.createElement("option"); o.value=k; o.textContent=pretty(k); sel.appendChild(o);
+    });
+    let start="himmelsdorf"; try{ const s=localStorage.getItem("cp_map3d"); if(s&&list.some(m=>m.key===s)) start=s; }catch(_){}
+    if(!list.some(m=>m.key===start)) start=list[0]&&list[0].key;
+    sel.value=start;
+    sel.addEventListener("change",()=>loadMap(sel.value));
+    loadMap(start);
+    requestAnimationFrame(frame);
+  }).catch(()=>{ document.getElementById("err").style.display="flex"; document.getElementById("err").textContent="Impossible de charger la liste des cartes (maps3d/index.json)."; loadEl.classList.remove("on"); });
+})();
+</script>
+</body>
+</html>

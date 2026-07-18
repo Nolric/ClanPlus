@@ -1,0 +1,262 @@
+[
+ {
+  "key": "airfield",
+  "world": 1400,
+  "span": 17734
+ },
+ {
+  "key": "asiagreatwall",
+  "world": 1400,
+  "span": 65044
+ },
+ {
+  "key": "asiamiao",
+  "world": 1400,
+  "span": 15250
+ },
+ {
+  "key": "bfepicdesert",
+  "world": 3200,
+  "span": 65535
+ },
+ {
+  "key": "bfepicnormandy",
+  "world": 3200,
+  "span": 65533
+ },
+ {
+  "key": "brbattlecity",
+  "world": 2400,
+  "span": 29436
+ },
+ {
+  "key": "campaniabig",
+  "world": 1400,
+  "span": 64996
+ },
+ {
+  "key": "canadaa",
+  "world": 1400,
+  "span": 65244
+ },
+ {
+  "key": "caucasus",
+  "world": 1400,
+  "span": 26958
+ },
+ {
+  "key": "cliff",
+  "world": 1400,
+  "span": 32843
+ },
+ {
+  "key": "czech",
+  "world": 1400,
+  "span": 60963
+ },
+ {
+  "key": "dday",
+  "world": 1400,
+  "span": 49456
+ },
+ {
+  "key": "ddaysm",
+  "world": 1500,
+  "span": 49465
+ },
+ {
+  "key": "desert",
+  "world": 1400,
+  "span": 43282
+ },
+ {
+  "key": "eiffeltowerctf",
+  "world": 1200,
+  "span": 65533
+ },
+ {
+  "key": "elhallouf",
+  "world": 1400,
+  "span": 48956
+ },
+ {
+  "key": "ensk",
+  "world": 1000,
+  "span": 59543
+ },
+ {
+  "key": "enskbig",
+  "world": 1400,
+  "span": 59543
+ },
+ {
+  "key": "epicrandomvalleysm",
+  "world": 1800,
+  "span": 30867
+ },
+ {
+  "key": "eralaska",
+  "world": 1500,
+  "span": 65535
+ },
+ {
+  "key": "erlenberg",
+  "world": 1400,
+  "span": 65322
+ },
+ {
+  "key": "fishingbay",
+  "world": 1400,
+  "span": 47844
+ },
+ {
+  "key": "fjord",
+  "world": 1400,
+  "span": 37534
+ },
+ {
+  "key": "germany",
+  "world": 1400,
+  "span": 22757
+ },
+ {
+  "key": "germanysm",
+  "world": 1400,
+  "span": 22757
+ },
+ {
+  "key": "grafzeppelin",
+  "world": 1600,
+  "span": 65535
+ },
+ {
+  "key": "grafzeppelinscc",
+  "world": 1600,
+  "span": 65535
+ },
+ {
+  "key": "hills",
+  "world": 1200,
+  "span": 33849
+ },
+ {
+  "key": "himmelsdorf",
+  "world": 1100,
+  "span": 62898
+ },
+ {
+  "key": "japort",
+  "world": 1400,
+  "span": 55077
+ },
+ {
+  "key": "karelia",
+  "world": 1400,
+  "span": 65486
+ },
+ {
+  "key": "lakeville",
+  "world": 1200,
+  "span": 44948
+ },
+ {
+  "key": "lastfrontierv",
+  "world": 1400,
+  "span": 23518
+ },
+ {
+  "key": "lostcityctf",
+  "world": 1400,
+  "span": 23106
+ },
+ {
+  "key": "lostparadisev",
+  "world": 1500,
+  "span": 42427
+ },
+ {
+  "key": "malinovka",
+  "world": 1400,
+  "span": 38019
+ },
+ {
+  "key": "mannerheimline",
+  "world": 1400,
+  "span": 51518
+ },
+ {
+  "key": "monastery",
+  "world": 1400,
+  "span": 65191
+ },
+ {
+  "key": "munchen",
+  "world": 1000,
+  "span": 38240
+ },
+ {
+  "key": "murovanka",
+  "world": 1400,
+  "span": 37350
+ },
+ {
+  "key": "northamerica",
+  "world": 1400,
+  "span": 65515
+ },
+ {
+  "key": "poland",
+  "world": 1400,
+  "span": 27043
+ },
+ {
+  "key": "prohorovka",
+  "world": 1400,
+  "span": 36953
+ },
+ {
+  "key": "redshire",
+  "world": 1400,
+  "span": 50427
+ },
+ {
+  "key": "ruinberg",
+  "world": 1200,
+  "span": 39733
+ },
+ {
+  "key": "ruinbergsm",
+  "world": 1200,
+  "span": 39735
+ },
+ {
+  "key": "siegfriedline",
+  "world": 1400,
+  "span": 65489
+ },
+ {
+  "key": "steppes",
+  "world": 1500,
+  "span": 65533
+ },
+ {
+  "key": "sweden",
+  "world": 1400,
+  "span": 20959
+ },
+ {
+  "key": "tundra",
+  "world": 1200,
+  "span": 65510
+ },
+ {
+  "key": "westfeld",
+  "world": 1400,
+  "span": 29247
+ },
+ {
+  "key": "wgepicsuburbia",
+  "world": 3200,
+  "span": 58360
+ }
+]

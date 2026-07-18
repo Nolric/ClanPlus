@@ -195,7 +195,7 @@
   .si-ic svg{width:18px;height:18px;color:#e5b95c;opacity:.72;transition:opacity .15s}
   .side-item:hover .si-ic svg,.side-item.on .si-ic svg{opacity:1}
   .si-lbl{flex:1;overflow:hidden;text-overflow:ellipsis}
-  .sidebar.collapsed .si-lbl{display:none}
+  .sidebar.collapsed .si-lbl,.sidebar.collapsed .si-new{display:none}
   .sidebar.collapsed .side-item{justify-content:center;padding:10px}
   /* bloc utilisateur (pseudo + déconnexion) en bas de la sidebar */
   .side-user{margin-top:auto;padding-top:12px;border-top:1px solid rgba(255,255,255,.08)}
@@ -225,7 +225,7 @@
   @media(max-width:720px){
     .sidebar{flex-basis:58px;width:58px;padding:10px 7px}
     .side-brand,.side-toggle{display:none}
-    .sidebar .si-lbl,.sidebar .su-who,.sidebar .su-lbl{display:none}
+    .sidebar .si-lbl,.sidebar .su-who,.sidebar .su-lbl,.sidebar .si-new{display:none}
     .sidebar .side-item{justify-content:center;padding:10px}
     .sidebar .su-logout{padding:9px 0}
     .side-head{justify-content:center;padding:4px 0 10px}
@@ -1701,6 +1701,7 @@
         <button class="tab side-item" data-v="lineups"><span class="si-ic"><svg class="ic"><use href="#i-grid"/></svg></span><span class="si-lbl">Line-ups</span></button>
         <button class="tab side-item" data-v="loadouts"><span class="si-ic"><svg class="ic"><use href="#i-tools"/></svg></span><span class="si-lbl">Loadouts</span></button>
         <button class="tab side-item" data-v="strats"><span class="si-ic"><svg class="ic"><use href="#i-target"/></svg></span><span class="si-lbl">Stratégie</span></button>
+        <a class="side-item" href="carte3d.html" title="Cartes 3D — relief réel du jeu" style="text-decoration:none"><span class="si-ic"><svg class="ic" viewBox="0 0 24 24"><path d="M3 18l6-12 5 8 3-4 4 8z"/><path d="M3 18h20" opacity=".5"/></svg></span><span class="si-lbl">Carte 3D</span><span class="si-new" style="margin-left:auto;font-size:9px;font-weight:800;letter-spacing:.5px;color:#12110d;background:#e5b95c;border-radius:5px;padding:2px 5px">NEW</span></a>
         <button class="tab side-item" data-v="ranking"><span class="si-ic"><svg class="ic"><use href="#i-trophy"/></svg></span><span class="si-lbl">Classements</span></button>
         <button class="tab side-item" data-v="search"><span class="si-ic"><svg class="ic"><use href="#i-search"/></svg></span><span class="si-lbl">Chercher un clan</span></button>
       </nav>
