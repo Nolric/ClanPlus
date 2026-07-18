@@ -1243,7 +1243,8 @@
   .st-work{display:flex;align-items:stretch}
   .st-rail{display:flex;flex-direction:column;gap:6px;padding:12px 10px;background:#0c0d0f;border-right:1px solid #202226;flex:0 0 auto}
   .st-rail .st-tool{flex-direction:column;gap:3px;width:58px;padding:8px 3px 6px;justify-content:center}
-  .st-rail .st-tool .st-tool-ic{font-size:17px}
+  .st-rail .st-tool .st-tool-ic{display:flex;align-items:center;justify-content:center}
+  .st-rail .st-tool .st-tool-ic svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
   .st-rail .st-tool .st-tool-l{font-size:9.5px;font-weight:700;letter-spacing:.01em;line-height:1}
   .st-canvas{flex:1;min-width:0;display:flex;flex-direction:column}
   .st-opts{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 14px;min-height:54px;background:#0e0f11;border-bottom:1px solid #202226}
@@ -1260,6 +1261,11 @@
   .st-stampb .st-stamp-ic{width:100%;height:100%;display:block}
   .st-stampb:hover{border-color:#3a3d42;color:#fff}
   .st-stampb.on{border-color:var(--gold);color:var(--gold);background:var(--gold-soft)}
+  .st-szsel{display:inline-flex;gap:4px}
+  .st-szb{background:#1a1b1e;border:1px solid #2b2d31;color:#c2c5cb;border-radius:8px;padding:6px 10px;font:inherit;font-size:12px;font-weight:600;cursor:pointer}
+  .st-szb:hover{border-color:#3a3d42;color:#fff}
+  .st-szb.on{border-color:var(--gold);color:var(--gold);background:var(--gold-soft)}
+  .st-textin{position:fixed;z-index:950;min-width:120px;max-width:340px;background:rgba(18,19,22,.92);border:1px solid #e5b95c;border-radius:8px;padding:4px 10px;font-family:inherit;font-weight:800;outline:none;box-shadow:0 6px 22px rgba(0,0,0,.55);caret-color:#e5b95c}
   .opt-tank .st-count{margin-left:4px}
   .st-opt-hint{font-size:12px;color:#8b9099;flex:1 1 auto;min-width:80px}
   .st-opt-act{display:flex;gap:6px;align-items:center;margin-left:auto}
@@ -4890,7 +4896,8 @@ let ST_EDIT=null;   // {id,name,map,els:[]}
 let ST_TOOL='arrow', ST_COLOR='#e5544b', ST_SEL=null, ST_DRAW=null, ST_MOVE=null;
 let ST_TANK={cls:'medium',color:'#5dbb46'};   // "pinceau" pion de char courant (classe + couleur choisie)
 const ST_TANK_COLORS=[["#5dbb46","Vert (alliés)"],["#e0483f","Rouge (ennemis)"],["#e5c84b","Jaune"],["#5bb0e5","Bleu"],["#c264ff","Violet"],["#ffffff","Blanc"]];
-let ST_STAMP={kind:'focus'};   // symbole tactique courant
+let ST_STAMP={kind:'focus',size:0.75};   // symbole tactique courant (+ taille, petit par défaut)
+const ST_STAMP_SIZES=[["Petit",0.75],["Moyen",1.05],["Grand",1.4]];
 // Symboles tactiques : SVG dessiné dans une boîte ~ -15..15, coloré via currentColor.
 const ST_STAMPS={
   focus:'<circle r="13"/><circle r="5"/><path d="M0,-15 V-11 M0,15 V11 M-15,0 H-11 M15,0 H11"/>',
@@ -4949,6 +4956,22 @@ const ST_MAPNAME=Object.fromEntries(ST_MAPS.map(m=>[m[0],m[1]]));
 const ST_COLORS=["#e5544b","#e5c84b","#5bb0e5","#8fd14f","#ffffff","#e59a4b","#c264ff","#141414"];
 const ST_TOOLS=[["select","Déplacer","✋"],["tank","Chars","▰"],["arrow","Flèche","➤"],["line","Trait","／"],["rect","Zone","▭"],["circle","Cercle","◯"],["stamp","Symbole","✪"],["measure","Mesure","↔"],["range","Portée","◎"],["pen","Crayon","✎"],["marker","Jeton","◉"],["text","Texte","T"],["erase","Gomme","⌫"]];
 const ST_CLASSES=[["light","Léger"],["medium","Moyen"],["heavy","Lourd"],["td","TD"],["spg","Arto"]];   // classes = silhouettes officielles du jeu (web/strat/class_*.png)
+// Icônes SVG des outils (style ligne, cohérent avec la DA du site — viewBox 0 0 24 24).
+const ST_TOOL_ICONS={
+  select:'<path d="M5 3l14 6.5-6 1.8-1.8 6z"/>',
+  tank:'<path d="M4 13h13v3.5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><rect x="8" y="9" width="6" height="4" rx="1"/><path d="M13.5 11H20"/>',
+  arrow:'<path d="M4 12h13"/><path d="M12 7l5 5-5 5"/>',
+  line:'<path d="M5 19L19 5"/>',
+  rect:'<rect x="4" y="6.5" width="16" height="11" rx="1.5"/>',
+  circle:'<circle cx="12" cy="12" r="8"/>',
+  stamp:'<path d="M12 3l2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.5-4.8 2.5.9-5.4L4.2 8.7l5.4-.8z"/>',
+  measure:'<path d="M4 8l4-4 12 12-4 4z"/><path d="M8.5 8.5l1.6 1.6M11.5 5.5l1.6 1.6M14.5 8.5l1.6 1.6"/>',
+  range:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1.1" fill="currentColor" stroke="none"/>',
+  pen:'<path d="M4 20l1.2-4L16 5.2l2.8 2.8L8 18.8z"/><path d="M14 7.2l2.8 2.8"/>',
+  marker:'<path d="M12 21s6-5.6 6-10a6 6 0 0 0-12 0c0 4.4 6 10 6 10z"/><circle cx="12" cy="11" r="2.3"/>',
+  text:'<path d="M5 6.5V4.5h14v2M12 4.5v15M9 19.5h6"/>',
+  erase:'<path d="M8.5 20H20"/><path d="M15 5l4 4-7.5 7.5H7L4 13.5z"/>'
+};
 let ST_BASES=null;   // positions officielles des bases (web/maps_bases.json)
 const ST_MODE_FR={ctf:"Standard",domination:"Rencontre",assault:"Assaut",assault2:"Assaut",comp7:"7 vs 7",epic:"Ligne de front"};
 // convertit une position monde (x,z) en coords minimap 0-1000 selon la boundingBox
@@ -5018,13 +5041,13 @@ function renderStratEditor(){
   const ed=document.getElementById("stEditor"); ed.classList.remove("hidden");
   ST_ZOOM={x:0,y:0,w:1000,h:1000};
   const KEYOF={}; Object.keys(ST_KEYS).forEach(k=>KEYOF[ST_KEYS[k]]=k.toUpperCase());
-  const tools=ST_TOOLS.map(t=>`<button type="button" class="st-tool${ST_TOOL===t[0]?' on':''}" data-tool="${t[0]}" title="${t[1]}${KEYOF[t[0]]?' ('+KEYOF[t[0]]+')':''}"><span class="st-tool-ic">${t[2]}</span><span class="st-tool-l">${t[1]}</span>${KEYOF[t[0]]?`<span class="st-tool-k">${KEYOF[t[0]]}</span>`:''}</button>`).join("");
+  const tools=ST_TOOLS.map(t=>`<button type="button" class="st-tool${ST_TOOL===t[0]?' on':''}" data-tool="${t[0]}" title="${t[1]}${KEYOF[t[0]]?' ('+KEYOF[t[0]]+')':''}"><span class="st-tool-ic"><svg viewBox="0 0 24 24">${ST_TOOL_ICONS[t[0]]||''}</svg></span><span class="st-tool-l">${t[1]}</span>${KEYOF[t[0]]?`<span class="st-tool-k">${KEYOF[t[0]]}</span>`:''}</button>`).join("");
   const colors=ST_COLORS.map(c=>`<button type="button" class="st-color${ST_COLOR===c?' on':''}" data-color="${c}" style="background:${c}"></button>`).join("");
   const modes=stModes(ST_EDIT.map); if(modes.length && !modes.includes(ST_EDIT.mode)) ST_EDIT.mode=modes[0];
   const modeSel=modes.length?`<label class="st-modewrap">Bases <select class="st-modesel" id="stMode" title="Mode de jeu (bases officielles)">${modes.map(mo=>`<option value="${mo}"${ST_EDIT.mode===mo?' selected':''}>${esc(ST_MODE_FR[mo]||mo)}</option>`).join("")}</select></label>`:'';
   const strokeGrp=`<div class="optgrp opt-stroke"><span class="opt-lbl">Trait</span><button type="button" class="st-sbtn${ST_STROKE.dash?' on':''}" id="stDash" title="Pointillés">┅</button><button type="button" class="st-sbtn opt-curve${ST_STROKE.curve?' on':''}" id="stCurve" title="Flèche courbe">⌒</button><span class="st-wsel">${[["thin",4],["med",7],["thick",12]].map(w=>`<button type="button" class="st-wbtn${ST_STROKE.w===w[1]?' on':''}" data-w="${w[1]}" title="Épaisseur"><i style="height:${Math.round(w[1]/2)+1}px"></i></button>`).join("")}</span></div>`;
   const colorGrp=`<div class="optgrp opt-colors"><span class="opt-lbl">Couleur</span>${colors}</div>`;
-  const stampGrp=`<div class="optgrp opt-stamp"><span class="opt-lbl">Symbole</span>${ST_STAMP_LIST.map(([k,lbl])=>`<button type="button" class="st-stampb${ST_STAMP.kind===k?' on':''}" data-stamp="${k}" title="${esc(lbl)}"><svg viewBox="-20 -20 40 40" class="st-stamp-ic"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">${ST_STAMPS[k]}</g></svg></button>`).join("")}</div>`;
+  const stampGrp=`<div class="optgrp opt-stamp"><span class="opt-lbl">Symbole</span>${ST_STAMP_LIST.map(([k,lbl])=>`<button type="button" class="st-stampb${ST_STAMP.kind===k?' on':''}" data-stamp="${k}" title="${esc(lbl)}"><svg viewBox="-20 -20 40 40" class="st-stamp-ic"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">${ST_STAMPS[k]}</g></svg></button>`).join("")}<span class="st-opt-sep"></span><span class="opt-lbl">Taille</span><span class="st-szsel">${ST_STAMP_SIZES.map(([lbl,v])=>`<button type="button" class="st-szb${ST_STAMP.size===v?' on':''}" data-sz="${v}">${esc(lbl)}</button>`).join("")}</span></div>`;
   const tankGrp=`<div class="optgrp opt-tank"><div class="st-classsel" style="--tc:${ST_TANK.color}">${ST_CLASSES.map(c=>`<button type="button" class="st-class${ST_TANK.cls===c[0]?' on':''}" data-cls="${c[0]}" title="Char ${c[1]}"><span class="ic" style="-webkit-mask:url(strat/class_${c[0]}.png) center/contain no-repeat;mask:url(strat/class_${c[0]}.png) center/contain no-repeat"></span><span class="lbl">${c[1]}</span></button>`).join("")}</div><div class="st-tank-cols">${ST_TANK_COLORS.map(c=>`<button type="button" class="st-tcol${ST_TANK.color===c[0]?' on':''}" data-tcol="${c[0]}" title="${esc(c[1])}" style="background:${c[0]}"></button>`).join("")}</div><div class="st-count" id="stCount"></div></div>`;
   ed.innerHTML=`<div class="card st-shell dashx st-editor${ST_FULL?' st-full':''}">
     <div class="st-bar">
@@ -5080,8 +5103,8 @@ function stElSvg(el,i){
     const nm=String(el.name||'').trim(); const nw=nm?Math.round(nm.length*8.6+16):0;
     const label=nm?`<g style="pointer-events:none"><rect x="${el.x-nw/2}" y="${el.y+h-6}" width="${nw}" height="21" rx="6" fill="#0c0d0f" fill-opacity=".82"/><text x="${el.x}" y="${el.y+h+9}" font-size="15" font-weight="700" text-anchor="middle" fill="#fff">${esc(nm)}</text></g>`:'';
     return `<g class="st-el st-tank${sel}" data-eid="${i}"><filter id="stk${i}" x="-45%" y="-45%" width="190%" height="190%"><feFlood flood-color="${esc(col)}" result="f"/><feComposite in="f" in2="SourceAlpha" operator="in" result="s"/><feDropShadow in="s" dx="0" dy="0" stdDeviation="3.4" flood-color="#000" flood-opacity=".92"/></filter><image href="strat/class_${cls}.png" x="${el.x-h}" y="${el.y-h}" width="${s}" height="${s}" filter="url(#stk${i})"/>${label}</g>`; }
-  if(el.type==='stamp'){ const col=el.color||'#e5c84b', inner=ST_STAMPS[el.kind]||ST_STAMPS.focus;
-    return `<g class="st-el st-stamp${sel}" data-eid="${i}" transform="translate(${el.x},${el.y}) scale(1.35)"><circle r="20" fill="#0c0d0f" fill-opacity=".55" stroke="#0a0a0a" stroke-opacity=".45" stroke-width="2"/><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="color:${esc(col)}">${inner}</g></g>`; }
+  if(el.type==='stamp'){ const col=el.color||'#e5c84b', inner=ST_STAMPS[el.kind]||ST_STAMPS.focus, sz=el.size||0.75;
+    return `<g class="st-el st-stamp${sel}" data-eid="${i}" transform="translate(${el.x},${el.y}) scale(${sz})"><circle r="20" fill="#0c0d0f" fill-opacity=".55" stroke="#0a0a0a" stroke-opacity=".45" stroke-width="2"/><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="color:${esc(col)}">${inner}</g></g>`; }
   if(el.type==='measure'){ const mx=Math.round((el.x1+el.x2)/2),my=Math.round((el.y1+el.y2)/2),tw=(String(el.m).length*9+30);
     return `<g class="st-el st-measure${sel}" data-eid="${i}"><line x1="${el.x1}" y1="${el.y1}" x2="${el.x2}" y2="${el.y2}" stroke="#f4d78c" stroke-width="3.4" stroke-dasharray="11 7" stroke-linecap="round"/><circle cx="${el.x1}" cy="${el.y1}" r="4.5" fill="#f4d78c"/><circle cx="${el.x2}" cy="${el.y2}" r="4.5" fill="#f4d78c"/><g style="pointer-events:none"><rect x="${mx-tw/2}" y="${my-13}" width="${tw}" height="23" rx="6" fill="#0c0d0f" fill-opacity=".88"/><text x="${mx}" y="${my+4}" font-size="15" font-weight="800" text-anchor="middle" fill="#f4d78c">${el.m} m</text></g></g>`; }
   if(el.type==='range'){ const col=el.color||'#5bb0e5', tw=(String(el.m).length*9+30);
@@ -5123,9 +5146,29 @@ function stSetTool(t){ ST_TOOL=t; ST_SEL=null; const ed=document.getElementById(
   ed.querySelectorAll(".st-tool").forEach(x=>x.classList.toggle("on",x.dataset.tool===t));
   const svg=document.getElementById("stSvg"); if(svg) svg.dataset.tool=t;
   stSyncOptions(); stRedraw(); }
+// Champ de texte INLINE sur la carte (remplace prompt). wx,wy = coords 0-1000 ; el = texte existant à éditer, sinon null.
+function stTextInput(wx,wy,el){
+  const svg=document.getElementById("stSvg"); if(!svg) return;
+  const m=stMetrics(svg);
+  const sx=m.r.left+m.offX+(wx-ST_ZOOM.x)*m.s, sy=m.r.top+m.offY+(wy-ST_ZOOM.y)*m.s;
+  const old=document.getElementById("stTextIn"); if(old) old.remove();
+  const inp=document.createElement("input");
+  inp.id="stTextIn"; inp.className="st-textin"; inp.maxLength=60; inp.autocomplete="off";
+  inp.value=el?(el.text||""):"";
+  inp.style.left=Math.round(sx)+"px"; inp.style.top=Math.round(sy-16)+"px";
+  inp.style.color=el?(el.color||"#fff"):ST_COLOR;
+  inp.style.fontSize=Math.max(13,Math.round(34*m.s))+"px";
+  document.body.appendChild(inp); inp.focus(); inp.select();
+  let done=false;
+  const commit=save=>{ if(done)return; done=true; const t=inp.value.trim().slice(0,60); inp.remove();
+    if(save&&t){ stSnapshot(); if(el){ el.text=t; } else { ST_EDIT.els.push({type:'text',color:ST_COLOR,x:Math.round(wx),y:Math.round(wy),text:t}); } stRedraw(); }
+    else if(save&&!t&&el){ stSnapshot(); const i=ST_EDIT.els.indexOf(el); if(i>=0) ST_EDIT.els.splice(i,1); stRedraw(); } };
+  inp.onkeydown=e=>{ e.stopPropagation(); if(e.key==="Enter"){ e.preventDefault(); commit(true); } else if(e.key==="Escape"){ e.preventDefault(); commit(false); } };
+  inp.onblur=()=>commit(true);
+}
 function stRename(eid){ const el=ST_EDIT.els[eid]; if(!el) return;
   if(el.type==='tank'){ const v=prompt("Nom du char (pseudo / véhicule) :", el.name||""); if(v!==null){ stSnapshot(); el.name=v.trim().slice(0,18); stRedraw(); } }
-  else if(el.type==='text'){ const v=prompt("Texte :", el.text||""); if(v!==null&&v.trim()){ stSnapshot(); el.text=v.trim().slice(0,60); stRedraw(); } }
+  else if(el.type==='text'){ stTextInput(el.x, el.y, el); }
   else if(el.type==='marker'){ const v=prompt("Jeton :", el.label||""); if(v!==null){ stSnapshot(); el.label=v.trim().slice(0,4); stRedraw(); } }
 }
 function stWireEditor(){
@@ -5151,6 +5194,7 @@ function stWireEditor(){
   ed.querySelectorAll(".st-tcol").forEach(b=>b.onclick=()=>{ ST_TANK.color=b.dataset.tcol; stSetTool('tank'); stTankSync(); });
   ed.querySelectorAll(".st-class").forEach(b=>b.onclick=()=>{ ST_TANK.cls=b.dataset.cls; stSetTool('tank'); stTankSync(); });
   ed.querySelectorAll(".st-stampb").forEach(b=>b.onclick=()=>{ ST_STAMP.kind=b.dataset.stamp; stSetTool('stamp'); ed.querySelectorAll(".st-stampb").forEach(x=>x.classList.toggle("on",x===b)); });
+  ed.querySelectorAll(".st-szb").forEach(b=>b.onclick=()=>{ ST_STAMP.size=+b.dataset.sz; ed.querySelectorAll(".st-szb").forEach(x=>x.classList.toggle("on",x===b)); });
   const msel=ed.querySelector("#stMode"); if(msel) msel.onchange=()=>{ ST_EDIT.mode=msel.value; const g=document.getElementById("stBases"); if(g) g.innerHTML=stBasesSvg(ST_EDIT.map,ST_EDIT.mode); };
   const cc=()=>[ST_ZOOM.x+ST_ZOOM.w/2, ST_ZOOM.y+ST_ZOOM.h/2];
   ed.querySelector("#stZoomIn").onclick=()=>{ const [x,y]=cc(); stZoomAt(0.8,x,y); };
@@ -5166,8 +5210,8 @@ function stWireEditor(){
     if(ST_TOOL==='select'){ if(eid!=null){ ST_SEL=eid; ST_MOVE={eid,ox:p[0],oy:p[1],orig:ST_EDIT.els[eid],snapped:false}; svg.setPointerCapture(e.pointerId); } else { ST_SEL=null; } stRedraw(); return; }
     if(ST_TOOL==='tank'){ stSnapshot(); ST_EDIT.els.push({type:'tank',cls:ST_TANK.cls,color:ST_TANK.color,x:Math.round(p[0]),y:Math.round(p[1]),name:''}); stRedraw(); stUpdCount(); return; }
     if(ST_TOOL==='marker'){ stSnapshot(); ST_EDIT.els.push({type:'marker',color:ST_COLOR,x:Math.round(p[0]),y:Math.round(p[1]),label:stNextMarkerLabel()}); stRedraw(); return; }
-    if(ST_TOOL==='text'){ const t=prompt("Texte :"); if(t&&t.trim()){ stSnapshot(); ST_EDIT.els.push({type:'text',color:ST_COLOR,x:Math.round(p[0]),y:Math.round(p[1]),text:t.trim().slice(0,60)}); stRedraw(); } return; }
-    if(ST_TOOL==='stamp'){ stSnapshot(); ST_EDIT.els.push({type:'stamp',kind:ST_STAMP.kind,color:ST_COLOR,x:Math.round(p[0]),y:Math.round(p[1])}); stRedraw(); return; }
+    if(ST_TOOL==='text'){ stTextInput(p[0],p[1],null); return; }
+    if(ST_TOOL==='stamp'){ stSnapshot(); ST_EDIT.els.push({type:'stamp',kind:ST_STAMP.kind,color:ST_COLOR,x:Math.round(p[0]),y:Math.round(p[1]),size:ST_STAMP.size}); stRedraw(); return; }
     if(ST_TOOL==='range'){ ST_DRAW={type:'range',color:ST_COLOR,x:p[0],y:p[1],r:0,m:0}; svg.setPointerCapture(e.pointerId); return; }
     if(ST_TOOL==='pen'){ ST_DRAW={type:'pen',color:ST_COLOR,w:ST_STROKE.w,dash:ST_STROKE.dash,pts:[[p[0],p[1]]]}; svg.setPointerCapture(e.pointerId); return; }
     ST_DRAW={type:ST_TOOL,color:ST_COLOR,w:ST_STROKE.w,dash:ST_STROKE.dash,curve:(ST_TOOL==='arrow'||ST_TOOL==='line')?ST_STROKE.curve:false,x1:p[0],y1:p[1],x2:p[0],y2:p[1],m:0}; svg.setPointerCapture(e.pointerId);
