@@ -127,6 +127,7 @@ function pretty(k){ return NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1); }
   const buMVP=gl.getUniformLocation(bprog,"uMVP"),buMaxH=gl.getUniformLocation(bprog,"uMaxH");
   let blkPB=gl.createBuffer(),blkNB=gl.createBuffer(),blkIB=gl.createBuffer(),blkLen=0,showBld=0;
   let curHeights=null,curHN=0,curHmin=0,curHmax=1;
+  const VSCALE=0.07;   // échelle verticale du relief (fraction de la largeur de carte) — réaliste
 
   // ---- texture ----
   const tex=gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D,tex);
@@ -145,13 +146,24 @@ function pretty(k){ return NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1); }
   // ---- buffers (recréés à chaque carte) ----
   let pB=gl.createBuffer(),nB=gl.createBuffer(),uB=gl.createBuffer(),iB=gl.createBuffer(),idxLen=0,curMaxH=1;
   const MESH=384;
-  function buildMesh(heights,HN,world,hmin,hmax){
-    curHeights=heights;curHN=HN;curHmin=hmin;curHmax=hmax;
-    const span=Math.max(1,hmax-hmin); const HS=world*0.22; curMaxH=HS;
+  // sous-échantillonne (moyenne par blocs) : ne garde que la tendance large du relief -> propre, sans bosses parasites
+  function coarseHeights(src,N,M){ const out=new Float32Array(M*M);
+    for(let j=0;j<M;j++)for(let i=0;i<M;i++){ let s=0,c=0;
+      const x0=(i*N/M)|0,x1=Math.max(x0+1,((i+1)*N/M)|0),y0=(j*N/M)|0,y1=Math.max(y0+1,((j+1)*N/M)|0);
+      for(let y=y0;y<y1;y++)for(let x=x0;x<x1;x++){ s+=src[y*N+x]; c++; } out[j*M+i]=s/c; }
+    // un léger lissage du grossier pour des pentes bien douces
+    const b=new Float32Array(M*M);
+    for(let y=0;y<M;y++)for(let x=0;x<M;x++){ let s=0,c=0; for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const X=x+dx,Y=y+dy;if(X<0||Y<0||X>=M||Y>=M)continue;s+=out[Y*M+X];c++;} b[y*M+x]=s/c; }
+    return b; }
+  function buildMesh(heights,HN0,world,hmin,hmax){
+    const M=52; const H=coarseHeights(heights,HN0,M); const HN=M; curHeights=H; curHN=M;
+    // normalisation robuste p2..p96
+    const srt=Float32Array.from(H).sort(); const lo=srt[(srt.length*0.02)|0], hi=srt[(srt.length*0.96)|0];
+    curHmin=lo; curHmax=hi; const span=Math.max(1,hi-lo); const HS=world*VSCALE; curMaxH=HS;
     const sampleH=(u,v)=>{ const x=Math.min(HN-1,Math.max(0,u*(HN-1))),y=Math.min(HN-1,Math.max(0,v*(HN-1)));
       const x0=x|0,y0=y|0,x1=Math.min(HN-1,x0+1),y1=Math.min(HN-1,y0+1),fx=x-x0,fy=y-y0;
-      const a=heights[y0*HN+x0],b=heights[y0*HN+x1],c=heights[y1*HN+x0],d=heights[y1*HN+x1];
-      return ((a*(1-fx)+b*fx)*(1-fy)+(c*(1-fx)+d*fx)*fy - hmin)/span; };
+      const a=H[y0*HN+x0],b=H[y0*HN+x1],c=H[y1*HN+x0],d=H[y1*HN+x1];
+      return Math.max(0,Math.min(1,((a*(1-fx)+b*fx)*(1-fy)+(c*(1-fx)+d*fx)*fy - lo)/span)); };
     const V=(MESH+1)*(MESH+1);
     const pos=new Float32Array(V*3),nrm=new Float32Array(V*3),uv=new Float32Array(V*2);
     let k=0,ku=0;
@@ -180,7 +192,7 @@ function pretty(k){ return NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1); }
     return (((a*(1-fx)+b2*fx)*(1-fy)+(c*(1-fx)+d*fx)*fy)-curHmin)/Math.max(1,curHmax-curHmin); }
   // construit tous les blocs (bâtiments) en un seul maillage
   function buildBlocks(f32){
-    const n=f32.length/4, HS=WORLD*0.22; const P=[],Nn=[],I=[]; let vi=0;
+    const n=f32.length/4, HS=WORLD*VSCALE; const P=[],Nn=[],I=[]; let vi=0;
     const push=(x,y,z,nx,ny,nz)=>{ P.push(x,y,z); Nn.push(nx,ny,nz); return vi++; };
     const quad=(a,b,c,d,nx,ny,nz)=>{ const A=push(a[0],a[1],a[2],nx,ny,nz),B=push(b[0],b[1],b[2],nx,ny,nz),C=push(c[0],c[1],c[2],nx,ny,nz),D=push(d[0],d[1],d[2],nx,ny,nz); I.push(A,B,C,A,C,D); };
     for(let k=0;k<n;k++){
