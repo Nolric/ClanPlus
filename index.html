@@ -954,6 +954,104 @@
   .lo-subtab svg{width:15px;height:15px}
   .lo-subtab:hover{color:var(--ink);border-color:var(--gold-line)}
   .lo-subtab.on{background:var(--gold-soft);color:var(--gold-2);border-color:var(--gold-line)}
+  /* ===================== Tier X prioritaire ===================== */
+  #prioMain{ --opt:#c77dff; --opt-dot:#e05cd6; }
+  .lo-prio-tab{margin-left:6px;padding-left:12px;border-left:1px solid var(--border);border-radius:10px}
+  .lo-prio-cnt{min-width:18px;height:18px;padding:0 5px;border-radius:20px;background:var(--gold);
+    color:#141310;font-size:10px;font-weight:800;display:grid;place-items:center;line-height:1}
+  .lo-prio-cnt[data-zero="1"]{background:var(--border);color:var(--muted)}
+  .lo-subtab.on .lo-prio-cnt[data-zero="1"]{background:rgba(0,0,0,.25)}
+
+  .pr-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+  .pr-prog{font-size:12.5px;color:var(--ink-2)}
+  .pr-prog b{color:var(--gold-2);font-weight:800}
+  .pr-bar{margin-top:5px;width:220px;height:5px;border-radius:20px;background:var(--raised);overflow:hidden}
+  .pr-bar i{display:block;height:100%;background:var(--gold);border-radius:20px;transition:width .3s}
+
+  .pr-panel{background:var(--panel-2);border:1px solid var(--border);border-radius:14px;overflow:hidden;max-width:1120px}
+  .pr-title{padding:14px 18px;font-size:17px;font-weight:800;color:var(--ink);letter-spacing:-.2px;
+    border-bottom:1px solid var(--border)}
+  .pr-cols{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0}
+  @media(max-width:980px){ .pr-cols{grid-template-columns:repeat(2,minmax(0,1fr))} }
+  @media(max-width:600px){ .pr-cols{grid-template-columns:1fr} }
+  .pr-col{border-right:1px solid var(--border);min-width:0;display:flex;flex-direction:column}
+  .pr-col:last-child{border-right:0}
+  .pr-col-h{padding:11px 12px;text-align:center;font-size:13px;font-weight:800;color:var(--gold);letter-spacing:.2px}
+  .pr-col-cnt{margin-left:5px;font-size:11px;font-weight:700;color:var(--muted)}
+  .pr-col-list{padding:0 8px 10px;max-height:520px;overflow-y:auto}
+  .pr-row{display:flex;align-items:center;gap:7px;width:100%;padding:5px 6px;
+    border-bottom:1px solid var(--line-2);cursor:pointer;transition:background .12s}
+  .pr-row:last-child{border-bottom:0}
+  .pr-row:hover{background:var(--raised)}
+  .pr-dot{flex:0 0 auto;width:7px;height:7px;border-radius:50%;background:transparent}
+  .pr-row.opt .pr-dot{background:var(--opt-dot)}
+  .pr-ic{flex:0 0 auto;width:52px;height:26px;object-fit:contain}
+  .pr-nm{flex:1;min-width:0;font-size:12.5px;font-weight:600;color:var(--ink);
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pr-row.prem .pr-nm{color:var(--gold-2)}
+  .pr-row.opt .pr-nm{color:var(--opt)}   /* APRÈS .prem : le violet doit gagner */
+  .pr-prem-ic{flex:0 0 auto;width:11px;height:11px;fill:currentColor;stroke:none;color:var(--gold);opacity:.95}
+  .pr-cb{appearance:none;flex:0 0 auto;width:16px;height:16px;border-radius:3px;
+    border:1px solid rgba(255,255,255,.25);background:var(--panel);cursor:pointer;
+    display:grid;place-items:center;transition:.12s}
+  .pr-cb:hover{border-color:var(--gold-line)}
+  .pr-cb:checked{background:var(--gold);border-color:var(--gold)}
+  .pr-cb:checked::after{content:"✓";color:#141310;font-size:11px;font-weight:800;line-height:1}
+  .pr-col-empty{padding:18px 8px;text-align:center;font-size:11.5px;color:var(--muted)}
+  .pr-legend{display:flex;align-items:center;gap:20px;flex-wrap:wrap;padding:11px 18px;
+    border-top:1px solid var(--border);font-size:12px}
+  .pr-leg{display:inline-flex;align-items:center;gap:8px;color:var(--opt)}
+  .pr-leg-prem{color:var(--gold-2)}
+  .pr-legend .pr-dot{background:var(--opt-dot)}
+  .pr-empty{text-align:center;padding:56px 20px;color:var(--muted)}
+  .pr-empty-ic{font-size:40px;opacity:.5;margin-bottom:8px}
+  .pr-empty-t{font-size:16px;font-weight:700;color:var(--ink)}
+
+  .pr-ed{background:var(--panel-2);border:1px solid var(--gold-line);border-radius:14px;overflow:hidden;
+    max-width:1120px;margin-bottom:16px;animation:prioIn .18s cubic-bezier(.2,.7,.2,1) both}
+  @keyframes prioIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+  .pr-ed-h{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;
+    padding:13px 16px;border-bottom:1px solid var(--border)}
+  .pr-ed-h b{display:block;font-size:14.5px;color:var(--gold)}
+  .pr-ed-h span{display:block;margin-top:3px;font-size:11.5px;color:var(--muted);line-height:1.45}
+  .pr-ed-x{appearance:none;cursor:pointer;font:inherit;font-size:12.5px;font-weight:600;
+    background:none;border:0;color:var(--muted);padding:0}
+  .pr-ed-x:hover{color:var(--ink)}
+  .pr-ed-flt{padding:10px 16px;border-bottom:1px solid var(--border)}
+  .pr-ed-flt input{font:inherit;font-size:12.5px;padding:7px 10px;border-radius:8px;width:100%;max-width:280px;
+    border:1px solid var(--border);background:var(--panel);color:var(--ink)}
+  .pr-ed-flt input:focus{outline:none;border-color:var(--gold-line)}
+  .pr-ed-row{display:flex;align-items:center;gap:7px;width:100%;padding:5px 6px;
+    border-bottom:1px solid var(--line-2);cursor:pointer;transition:background .12s}
+  .pr-ed-row:last-child{border-bottom:0}
+  .pr-ed-row:hover{background:var(--raised)}
+  .pr-ed-row .pr-nm{color:var(--muted)}
+  .pr-ed-row.in .pr-nm{color:var(--ink)}
+  .pr-ed-row.in.prem .pr-nm{color:var(--gold-2)}
+  .pr-ed-row.in.opt .pr-nm{color:var(--opt)}
+  .pr-ed-row .pr-ic,.pr-ed-row .pr-prem-ic{opacity:.4;transition:opacity .12s}
+  .pr-ed-row .pr-prem-ic{color:var(--muted)}
+  .pr-ed-row.in .pr-ic,.pr-ed-row.in .pr-prem-ic{opacity:1}
+  .pr-ed-row.in .pr-prem-ic{color:var(--gold)}
+  .pr-ed-row .pr-dot{background:transparent}
+  .pr-ed-row.in.opt .pr-dot{background:var(--opt-dot)}
+  .pr-ed-row.opt .pr-dot{background:var(--border)}
+  .pr-ed-f{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+    padding:11px 16px;border-top:1px solid var(--border);font-size:12px;color:var(--muted)}
+  .pr-ed-l{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .pr-reset{appearance:none;cursor:pointer;font:inherit;font-size:12px;font-weight:600;
+    background:none;border:0;padding:0;color:var(--ink-2);text-decoration:underline}
+  .pr-reset:hover{color:var(--bad)}
+  .pr-ed-act{display:flex;gap:8px}
+  .pr-ed-act button{appearance:none;cursor:pointer;font:inherit;font-size:13px;font-weight:600;
+    padding:8px 14px;border-radius:9px;border:1px solid var(--border);background:var(--raised);
+    color:var(--ink-2);transition:.15s}
+  .pr-ed-act button:hover{color:var(--ink);border-color:var(--gold-line)}
+  .pr-ed-act .pr-save{background:var(--gold-soft);border-color:var(--gold-line);color:var(--gold-2);font-weight:800}
+  .pr-ed-act .pr-save:hover{background:rgba(229,185,92,.2);border-color:var(--gold)}
+
+  .lo-star{margin-right:5px;color:var(--gold);font-size:15px;line-height:1;vertical-align:-.05em}
+  .lo-card2.is-prio{border-color:var(--gold-line)}
   /* Tier lists — cartes récap */
   .tl-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;max-width:1080px}
   @media(max-width:860px){ .tl-cards{grid-template-columns:1fr} }
@@ -1426,6 +1524,8 @@
   <symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></symbol>
   <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 3L5 13h6l-1 8 8-10h-6l1-8z"/></symbol>
   <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-7-4.4-9.2-8.2C1.3 8.9 2.6 5.5 5.8 5.5c1.9 0 3.2 1.2 4.2 2.6 1-1.4 2.3-2.6 4.2-2.6 3.2 0 4.5 3.4 3 6.3C19 15.6 12 20 12 20z"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9 6.8 19.6l1-5.8-4.3-4.1 5.9-.9z"/></symbol>
+  <symbol id="i-prem" viewBox="0 0 24 24"><path d="M5 3h14l3 6-10 12L2 9z"/></symbol>
   <symbol id="i-swords" viewBox="0 0 24 24"><path d="M14.5 3.5L21 3l-.5 6.5L9 21l-3-3L14.5 3.5z"/><path d="M3 3l6.5.5"/></symbol>
   <symbol id="i-award" viewBox="0 0 24 24"><circle cx="12" cy="9" r="6"/><path d="M9 14l-2 7 5-3 5 3-2-7"/></symbol>
   <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14 0 18M12 3c-3 3.5-3 14 0 18"/></symbol>
@@ -1695,7 +1795,7 @@
     <div id="luList"></div>
   </div>
 
-  <div id="viewLoadouts" class="hidden">
+  <div id="viewLoadouts" class="hidden dashx">
     <div class="lu-head">
       <div>
         <h2 class="lu-title">Loadouts du clan</h2>
@@ -1707,6 +1807,7 @@
     <div class="lo-subtabs">
       <button class="lo-subtab on" data-losub="loadouts"><svg class="ic"><use href="#i-tools"/></svg>Réglages par char</button>
       <button class="lo-subtab" data-losub="tier"><svg class="ic"><use href="#i-grid"/></svg>Tier lists</button>
+      <button class="lo-subtab lo-prio-tab" data-losub="prio"><svg class="ic"><use href="#i-star"/></svg>Char prio<span class="lo-prio-cnt" id="loPrioCnt" data-zero="1">0</span></button>
     </div>
     <div id="loMain">
       <p class="sec-desc" style="margin-top:2px">Les <b>réglages recommandés par le clan</b> pour chaque char tier 10 : <b>équipements</b>, <b>consommables</b>, <b>équipage</b> et <b>modifications de terrain</b>. Créés par les <b>officiers de combat et +</b>.</p>
@@ -1717,6 +1818,16 @@
       <p class="sec-desc" style="margin-top:2px">Classe les chars tier 10 par tier (S, A, B…) façon <b>TierMaker</b> : glisse-dépose les chars dans les lignes. Créées par les officiers.</p>
       <div id="tlEditor" class="hidden"></div>
       <div id="tlList"></div>
+    </div>
+    <div id="prioMain" class="hidden dashx">
+      <p class="sec-desc" style="margin-top:2px">Les <b>chars tier 10 prioritaires</b> à obtenir pour le clan, classés par type. Coche ceux que tu possèdes pour suivre ta progression. La liste est composée par les <b>officiers de combat et +</b>.</p>
+      <div class="pr-head">
+        <div class="pr-prog" id="prProg"></div>
+        <button class="btn lu-new hidden" id="prEditBtn">★ Gérer la liste</button>
+      </div>
+      <div class="lu-sub" id="prRole" style="margin-bottom:12px"></div>
+      <div id="prEditor" class="hidden"></div>
+      <div id="prPanel"></div>
     </div>
   </div>
 
@@ -4016,6 +4127,8 @@ function renderLoadouts(){
     return;
   }
   const dtiles=(arr,cap)=>arr.length?arr.map(x=>`<div class="lo-dtile" title="${esc(x.name||"")}"><div class="lo-dtile-ic"><img src="${esc(x.image||x.icon||"")}" onerror="this.style.display='none'" loading="lazy"></div>${cap?`<span>${esc(x.name||"")}</span>`:""}</div>`).join(""):'<span class="lo-none">—</span>';
+  const prSet=new Set(PR_LIST);
+  LOADOUTS.sort((a,b)=>(prSet.has(Number(b.tank_id))-prSet.has(Number(a.tank_id))));
   el.innerHTML='<div class="lo-cards">'+LOADOUTS.map((lo,idx)=>{
     const t=M.t[lo.tank_id]||{name:lo.tank_name||("Char "+lo.tank_id),icon:"",type:""};
     const col=CLS_COLOR[t.type]||"var(--accent)";
@@ -4034,10 +4147,10 @@ function renderLoadouts(){
     if(t.view_range)pills.push(`<span class="lo-pill">${t.view_range} m</span>`);
     if(t.speed)pills.push(`<span class="lo-pill">${t.speed} km/h</span>`);
     const btns=LO_CANEDIT?`<div class="lo-cardact"><button class="lo-mini" data-edit="${lo.tank_id}" title="Modifier">✎</button><button class="lo-mini lo-minidel" data-del="${lo.tank_id}" title="Supprimer">✕</button></div>`:"";
-    return `<div class="lo-card2 lo-collapsed" style="--cls:${col};animation-delay:${Math.min(idx,12)*55}ms">
+    return `<div class="lo-card2 lo-collapsed${prSet.has(Number(lo.tank_id))?" is-prio":""}" style="--cls:${col};animation-delay:${Math.min(idx,12)*55}ms">
       <div class="lo-card2-h">
         ${t.icon?`<div class="lo-t-ic"><img src="${esc(t.icon)}" onerror="this.style.display='none'"></div>`:""}
-        <div class="lo-t-info"><div class="lo-t-name">${esc(t.name)}</div>
+        <div class="lo-t-info"><div class="lo-t-name">${prSet.has(Number(lo.tank_id))?'<span class="lo-star" title="Char prioritaire du clan">★</span>':''}${esc(t.name)}</div>
           <div class="lo-t-meta">${t.type?`<span class="lo-clsic" style="--cimg:url(classes/${esc(t.type)}.png)"></span>`:""}<span class="lo-cls">${esc(clsLbl)}</span><span class="lo-tier">X</span></div>
           <div class="lo-pills">${pills.join("")}</div>
         </div>${btns}<span class="lo-chev" aria-hidden="true">⌄</span></div>
@@ -4426,14 +4539,182 @@ let TIERLISTS=[], TL_CANEDIT=false, TL_EDIT=null, TL_DRAG=null, TL_LOADED=false,
 const TL_DEFAULT_ROWS=()=>[
   {label:"S",color:"#e5544b",tanks:[]},{label:"A",color:"#e59a4b",tanks:[]},
   {label:"B",color:"#e5c84b",tanks:[]},{label:"C",color:"#8fd14f",tanks:[]},{label:"D",color:"#5bb0e5",tanks:[]}];
+/* ============================================================
+   TIER X PRIORITAIRE
+     PR_LIST  : les chars retenus par le clan   -> stocké au niveau du CLAN
+     violet   : déduit de l'API, non éditable   -> voir prIsOpt()
+     PR_OWNED : ce que CE joueur possède déjà   -> stocké par ACCOUNT_ID
+   ============================================================ */
+let PR_LIST=[], PR_OWNED=new Set(), PR_CANEDIT=false, PR_LOADED=false, PR_DRAFT=null, PR_Q="";
+// L'API WG renvoie des espaces INSÉCABLES dans les noms (« Object 452K »).
+const prNrm = s => String(s||"").replace(/ /g," ").trim();
+// Statuts déduits de la fonction « reference » : premium (is_premium) / collection (pas de prices_xp) / arbre techno.
+const prIsPrem = t => !!t.is_premium || !t.prices_xp;
+const prIsOpt  = t => !!t.is_premium;
+const prStatut = t => t.is_premium ? "Char premium" : (!t.prices_xp ? "Char de collection" : null);
+const PR_COLS=[["heavyTank","Chars lourds"],["mediumTank","Chars moyens"],
+               ["lightTank","Chars légers"],["AT-SPG","Chars snipers"]];
+const prTanks = () => ((LO_REF&&LO_REF.tanks)||[]).filter(t=>!t.tier||Number(t.tier)===10);
+const prIcon  = t => t.small_icon || t.icon || "";
+const prGem   = t => prIsPrem(t)
+  ? `<svg class="pr-prem-ic" aria-label="${esc(prStatut(t)||"")}"><use href="#i-prem"/></svg>` : "";
+async function loadPrio(){
+  PR_LOADED=true;
+  const el=document.getElementById("prPanel"); el.innerHTML='<div class="card">'+cpLoader()+'</div>';
+  if(!LO_REF || !(LO_REF.tanks||[]).length){
+    try{ const rf=await fnCall("reference",{session:localStorage.getItem(LS_SESSION)});
+         if(rf.ok&&rf.j&&rf.j.tanks) LO_REF=rf.j; }catch(e){}
+  }
+  try{
+    const r=await fnCall("loadouts",{session:localStorage.getItem(LS_SESSION),action:"prio_get"});
+    if(!r.ok){ el.innerHTML='<div class="empty">Erreur : '+esc((r.j&&r.j.error)||String(r.status))
+      +' — l\'action « prio_get » est-elle déployée ?</div>'; return; }
+    PR_LIST=(r.j.prio||[]).map(Number);
+    PR_OWNED=new Set((r.j.owned||[]).map(Number));
+    PR_CANEDIT=meIsManager();
+    prRenderAll();
+  }catch(e){ el.innerHTML='<div class="empty">Impossible de joindre « loadouts » ('+esc(String(e))+').</div>'; }
+}
+function prRenderAll(){
+  document.getElementById("prEditBtn").classList.toggle("hidden", !PR_CANEDIT);
+  document.getElementById("prRole").textContent = PR_CANEDIT
+    ? "Tu peux composer la liste des chars prioritaires du clan."
+    : "Consultation seule — seuls les officiers de combat et plus composent la liste. Tu peux cocher les chars que tu possèdes.";
+  prRenderPanel(); prRenderProg(); renderLoadouts();   // renderLoadouts : remonte les ★
+}
+function prRenderPanel(){
+  const panel=document.getElementById("prPanel");
+  if(!PR_LIST.length){
+    panel.innerHTML=`<div class="pr-empty"><div class="pr-empty-ic">★</div>
+      <div class="pr-empty-t">Aucun char dans la liste</div>
+      <div class="lu-sub">${PR_CANEDIT
+        ? "Clique « Gérer la liste » pour composer la liste des chars prioritaires du clan."
+        : "Les officiers n'ont pas encore composé la liste."}</div></div>`;
+    return;
+  }
+  const inList=new Set(PR_LIST);
+  panel.innerHTML=`<div class="pr-panel"><div class="pr-title">Chars prioritaires à obtenir</div>
+    <div class="pr-cols">${PR_COLS.map(([type,label])=>{
+      const list=prTanks().filter(t=>t.type===type && inList.has(Number(t.tank_id)));
+      return `<div class="pr-col">
+        <div class="pr-col-h">${esc(label)}<span class="pr-col-cnt">${list.length}</span></div>
+        <div class="pr-col-list">${list.length?list.map(t=>{
+          const id=Number(t.tank_id), opt=prIsOpt(t);
+          const tip=[prNrm(t.name), prStatut(t), opt?"Optionnel ou difficile à obtenir":null].filter(Boolean).join(" — ");
+          return `<label class="pr-row${opt?" opt":""}${prIsPrem(t)?" prem":""}" title="${esc(tip)}">
+            <span class="pr-dot"></span>
+            <img class="pr-ic" src="${esc(prIcon(t))}" onerror="this.style.visibility='hidden'" loading="lazy">
+            <span class="pr-nm">${esc(prNrm(t.name))}</span>${prGem(t)}
+            <input type="checkbox" class="pr-cb" data-own="${id}"${PR_OWNED.has(id)?" checked":""}
+              title="Je possède ce char"></label>`;
+        }).join(""):'<div class="pr-col-empty">—</div>'}</div></div>`;
+    }).join("")}</div>
+    <div class="pr-legend">
+      <span class="pr-leg"><span class="pr-dot"></span>Violet : char optionnel ou difficile à obtenir — campagne, atelier d'assemblage ou box</span>
+      <span class="pr-leg pr-leg-prem"><svg class="pr-prem-ic"><use href="#i-prem"/></svg>Doré : char premium ou de collection — ne se débloque pas à l'XP</span>
+    </div></div>`;
+  panel.querySelectorAll("[data-own]").forEach(cb=>cb.onchange=()=>{
+    const id=Number(cb.dataset.own);
+    cb.checked ? PR_OWNED.add(id) : PR_OWNED.delete(id);
+    prRenderProg();
+    fnCall("loadouts",{session:localStorage.getItem(LS_SESSION),
+      action:"prio_owned", tank_id:id, owned:cb.checked});   // donnée du joueur
+  });
+}
+function prRenderProg(){
+  const total=PR_LIST.length, inList=new Set(PR_LIST);
+  const mine=[...PR_OWNED].filter(id=>inList.has(id)).length;
+  const pct=total?Math.round(mine/total*100):0;
+  document.getElementById("prProg").innerHTML = total
+    ? `Tu possèdes <b>${mine}</b> des <b>${total}</b> chars prioritaires
+       <div class="pr-bar"><i style="width:${pct}%"></i></div>` : "";
+  const c=document.getElementById("loPrioCnt");
+  c.textContent=total; c.dataset.zero = total?"0":"1";
+}
+/* ---------- Éditeur (officiers de combat et +) ---------- */
+function prOpenEditor(){
+  if(!PR_CANEDIT) return;
+  PR_DRAFT=new Set(PR_LIST); PR_Q="";
+  document.getElementById("prEditor").classList.remove("hidden");
+  document.getElementById("prPanel").classList.add("hidden");
+  document.getElementById("prEditBtn").classList.add("hidden");
+  prRenderEditor();
+}
+function prCloseEditor(){
+  PR_DRAFT=null;
+  const ed=document.getElementById("prEditor");
+  if(!ed) return;
+  ed.classList.add("hidden"); ed.innerHTML="";
+  document.getElementById("prPanel").classList.remove("hidden");
+  document.getElementById("prEditBtn").classList.toggle("hidden", !PR_CANEDIT);
+}
+function prRenderEditor(){
+  const q=PR_Q.trim().toLowerCase();
+  document.getElementById("prEditor").innerHTML=`<div class="pr-ed">
+    <div class="pr-ed-h">
+      <div><b>Composer la liste des chars prioritaires</b>
+        <span>Coche les chars à faire figurer dans la liste du clan. Le violet est automatique : il marque les chars premium.</span></div>
+      <button class="pr-ed-x" id="prEdX">✕ Annuler</button>
+    </div>
+    <div class="pr-ed-flt"><input type="search" id="prEdQ" placeholder="Chercher un char…" autocomplete="off" value="${esc(PR_Q)}"></div>
+    <div class="pr-cols">${PR_COLS.map(([type,label])=>{
+      const list=prTanks().filter(t=>t.type===type && (!q || prNrm(t.name).toLowerCase().includes(q)));
+      return `<div class="pr-col">
+        <div class="pr-col-h">${esc(label)}<span class="pr-col-cnt">${list.filter(t=>PR_DRAFT.has(Number(t.tank_id))).length}/${list.length}</span></div>
+        <div class="pr-col-list">${list.length?list.map(t=>{
+          const id=Number(t.tank_id), inl=PR_DRAFT.has(id);
+          return `<label class="pr-ed-row${inl?" in":""}${prIsOpt(t)?" opt":""}${prIsPrem(t)?" prem":""}"
+              title="${esc([prNrm(t.name),prStatut(t)].filter(Boolean).join(" — "))}">
+            <input type="checkbox" class="pr-cb" data-in="${id}"${inl?" checked":""} title="Faire figurer dans la liste">
+            <img class="pr-ic" src="${esc(prIcon(t))}" onerror="this.style.visibility='hidden'" loading="lazy">
+            <span class="pr-nm">${esc(prNrm(t.name))}</span>${prGem(t)}
+            <span class="pr-dot"></span></label>`;
+        }).join(""):'<div class="pr-col-empty">Aucun char</div>'}</div></div>`;
+    }).join("")}</div>
+    <div class="pr-ed-f">
+      <div class="pr-ed-l"><span id="prEdCount"></span>
+        <button class="pr-reset" id="prEdReset" title="Vide la liste. Rien n'est perdu tant que tu n'as pas enregistré.">↺ Réinitialiser</button></div>
+      <div class="pr-ed-act"><button id="prEdCancel">Annuler</button>
+        <button class="pr-save" id="prEdSave">✓ Enregistrer la liste</button></div>
+    </div></div>`;
+  prWireEditor(); prEdCount();
+}
+function prEdCount(){
+  const opt=prTanks().filter(t=>PR_DRAFT.has(Number(t.tank_id)) && prIsOpt(t)).length;
+  document.getElementById("prEdCount").textContent = PR_DRAFT.size
+    ? `${PR_DRAFT.size} char${PR_DRAFT.size>1?"s":""} dans la liste · ${opt} en violet` : "Liste vide";
+  document.getElementById("prEdReset").classList.toggle("hidden", !PR_DRAFT.size);
+}
+function prWireEditor(){
+  const q=document.getElementById("prEdQ");
+  q.oninput = e => { PR_Q=e.target.value; prRenderEditor();
+    const f=document.getElementById("prEdQ"); f.focus(); f.setSelectionRange(f.value.length,f.value.length); };
+  document.querySelectorAll("[data-in]").forEach(cb=>cb.onchange=()=>{
+    const id=Number(cb.dataset.in);
+    cb.checked ? PR_DRAFT.add(id) : PR_DRAFT.delete(id);
+    cb.closest(".pr-ed-row").classList.toggle("in", cb.checked);
+    prEdCount();
+  });
+  document.getElementById("prEdReset").onclick = ()=>{ PR_DRAFT.clear(); prRenderEditor(); };
+  document.getElementById("prEdX").onclick = prCloseEditor;
+  document.getElementById("prEdCancel").onclick = prCloseEditor;
+  document.getElementById("prEdSave").onclick = async ()=>{
+    const tanks=[...PR_DRAFT];
+    const r=await fnCall("loadouts",{session:localStorage.getItem(LS_SESSION),action:"prio_set",tanks});
+    if(!r.ok){ alert("Enregistrement impossible : "+((r.j&&r.j.error)||r.status)); return; }
+    PR_LIST=tanks; prCloseEditor(); prRenderAll();
+  };
+}
+document.getElementById("prEditBtn").onclick = prOpenEditor;
 function switchLoSub(sub){
   document.querySelectorAll(".lo-subtab").forEach(b=>b.classList.toggle("on",b.dataset.losub===sub));
-  const isTier=sub==="tier";
-  document.getElementById("loMain").classList.toggle("hidden",isTier);
-  document.getElementById("tlMain").classList.toggle("hidden",!isTier);
-  document.getElementById("loNewBtn").classList.toggle("hidden", isTier || !LO_CANEDIT);
-  document.getElementById("tlNewBtn").classList.toggle("hidden", !isTier || !TL_CANEDIT);
-  if(isTier && !TL_LOADED) loadTierlists();
+  document.getElementById("loMain").classList.toggle("hidden", sub!=="loadouts");
+  document.getElementById("tlMain").classList.toggle("hidden", sub!=="tier");
+  document.getElementById("prioMain").classList.toggle("hidden", sub!=="prio");
+  document.getElementById("loNewBtn").classList.toggle("hidden", sub!=="loadouts" || !LO_CANEDIT);
+  document.getElementById("tlNewBtn").classList.toggle("hidden", sub!=="tier" || !TL_CANEDIT);
+  if(sub==="tier" && !TL_LOADED) loadTierlists();
+  if(sub==="prio" && !PR_LOADED) loadPrio();
 }
 async function loadTierlists(){
   TL_LOADED=true;
