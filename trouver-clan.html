@@ -160,6 +160,36 @@
   .apply{display:flex;gap:10px;margin-top:22px;flex-wrap:wrap}
   .note{font-size:12px;color:var(--muted);margin-top:10px;line-height:1.5}
 
+  /* ---- Sélecteur Clans / Offres ---- */
+  .segwrap{text-align:center;margin-top:26px}
+  .segs{display:inline-flex;gap:4px;background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:4px}
+  .seg{appearance:none;cursor:pointer;font:inherit;font-size:13.5px;font-weight:700;color:var(--ink-2);background:transparent;border:0;border-radius:9px;padding:9px 16px;display:inline-flex;align-items:center;gap:7px}
+  .seg:hover{color:var(--ink)}
+  .seg.on{color:#1a1608;background:linear-gradient(180deg,var(--accent-2),var(--accent));box-shadow:var(--shadow-sm)}
+  .seg .cnt{font-size:11px;font-weight:800;background:color-mix(in srgb,var(--ink) 12%,transparent);color:var(--ink);border-radius:999px;padding:1px 7px}
+  .seg.on .cnt{background:rgba(26,22,8,.22);color:#1a1608}
+
+  /* ---- Carte d'offre de recrutement (pleine largeur, façon job board) ---- */
+  .offer{grid-column:1/-1;text-align:left;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+    padding:18px;display:flex;gap:18px;transition:border-color .16s ease,box-shadow .16s ease}
+  .offer:hover{border-color:var(--accent);box-shadow:var(--shadow)}
+  @media(max-width:680px){.offer{flex-direction:column;gap:14px}}
+  .offer-main{flex:1;min-width:0}
+  .offer-title{font-weight:800;font-size:16px;letter-spacing:-.2px;margin:0 0 7px}
+  .offer-pitch{color:var(--ink-2);font-size:13.5px;line-height:1.55;margin:0 0 12px;white-space:pre-wrap;word-break:break-word;
+    display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+  .tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:11px}
+  .tag{font-size:11.5px;font-weight:600;padding:4px 10px;border-radius:999px;border:1px solid var(--border);background:var(--surface-1);color:var(--ink-2)}
+  .tag-act{color:var(--accent);background:var(--accent-soft);border-color:transparent}
+  .reqs{display:flex;gap:8px 16px;flex-wrap:wrap;font-size:12.5px;color:var(--ink-2)}
+  .reqs b{color:var(--ink);font-weight:700}
+  .offer-side{flex:0 0 200px;display:flex;flex-direction:column;gap:9px}
+  @media(max-width:680px){.offer-side{flex-basis:auto}}
+  .offer-clan{display:flex;align-items:center;gap:11px;padding-bottom:4px}
+  .offer-clan .clan-emblem{width:42px;height:42px}
+  .offer-clan .clan-tag{font-size:14px}
+  .btn-block{width:100%}
+
   .foot{max-width:1160px;margin:40px auto 0;padding:24px 22px;border-top:1px solid var(--border);
     display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;color:var(--muted);font-size:12.5px}
   .foot a{color:var(--ink-2);text-decoration:none}
@@ -194,6 +224,10 @@
   </header>
 
   <main class="wrap">
+    <div class="segwrap"><div class="segs" id="segs">
+      <button class="seg on" data-mode="clans" type="button">Parcourir les clans</button>
+      <button class="seg" data-mode="offers" type="button">Offres de recrutement <span class="cnt" id="offCount">·</span></button>
+    </div></div>
     <div class="toolbar">
       <div class="toolbar-title" id="listTitle">Clans actifs
         <small id="listSub">Sélection de clans avec de l'activité récente</small>
@@ -229,6 +263,14 @@
 const APP="afd929f43761db6b5061b70d44b9f9b7";
 const API="https://api.worldoftanks.eu";
 const CLAN_MAX=100;
+// Supabase (offres de recrutement stockées côté Clan Plus)
+const SB_URL="https://hlvqofgtwkkmbjmstmuc.supabase.co";
+const SB_ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhsdnFvZmd0d2trbWJqbXN0bXVjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM5MzA5MDksImV4cCI6MjA5OTUwNjkwOX0.-zetkqR2LMffbCDfrDe4bz4MJVngUzbcxGdbazdWqEI";
+function fnCall(name,body){return fetch(SB_URL+"/functions/v1/"+name,{method:"POST",
+  headers:{"content-type":"application/json","apikey":SB_ANON,"Authorization":"Bearer "+SB_ANON},body:JSON.stringify(body)})
+  .then(async r=>{const j=await r.json().catch(()=>({error:"réponse invalide"}));return{ok:r.ok,status:r.status,j};});}
+const ACT_FR={cw:"Guerre de clans",skirmish:"Escarmouches",random:"Aléatoire",tournament:"Tournois",fun:"Détente"};
+const LANG_FR={fr:"🇫🇷 FR",en:"🇬🇧 EN",de:"🇩🇪 DE",es:"🇪🇸 ES",it:"🇮🇹 IT",pl:"🇵🇱 PL",ru:"RU",pt:"🇵🇹 PT",nl:"🇳🇱 NL",tr:"🇹🇷 TR",cs:"🇨🇿 CS",be:"🇧🇪 BE"};
 const $=s=>document.querySelector(s);
 const el=(t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e;};
 const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
@@ -442,9 +484,83 @@ $("#searchForm").addEventListener("submit",e=>{e.preventDefault();doSearch($("#q
 let qT;$("#q").addEventListener("input",e=>{clearTimeout(qT);const v=e.target.value;qT=setTimeout(()=>doSearch(v),350);});
 $("#filters").addEventListener("click",e=>{const b=e.target.closest(".chip");if(!b)return;
   const f=b.dataset.filter;if(filters.has(f)){filters.delete(f);b.setAttribute("aria-pressed","false");}else{filters.add(f);b.setAttribute("aria-pressed","true");}render();});
-$("#sort").addEventListener("change",()=>{ if(($("#q").value||"").trim().length>=2){attachRatings(current);} else {loadTop();} });
+$("#sort").addEventListener("change",()=>{ if(mode!=="clans")return; if(($("#q").value||"").trim().length>=2){attachRatings(current);} else {loadTop();} });
 
-loadTop();
+// ============ Mode : Clans / Offres de recrutement ============
+let mode="clans";
+function setToolbarFor(m){
+  const isOffers=m==="offers";
+  $("#filters").style.display=isOffers?"none":"";
+  $("#sort").parentElement.style.display=isOffers?"none":"";
+  $("#searchForm").style.display=isOffers?"none":"flex";
+  if(isOffers){ $("#listTitle").firstChild.textContent="Offres de recrutement ";
+    $("#listSub").textContent="Les clans qui recrutent en ce moment sur Clan Plus"; }
+}
+function offerCard(o){
+  const clan=o.clan||{};
+  const langs=(o.langs||[]).map(c=>`<span class="tag">${esc(LANG_FR[c]||String(c).toUpperCase())}</span>`).join("");
+  const acts=(o.activities||[]).map(a=>`<span class="tag tag-act">${esc(ACT_FR[a]||a)}</span>`).join("");
+  const reqs=[];
+  if(o.min_wn8)reqs.push(`WN8 <b>≥ ${fmt(o.min_wn8)}</b>`);
+  if(o.min_battles)reqs.push(`<b>${fmt(o.min_battles)}</b> batailles`);
+  if(o.min_tier)reqs.push(`chars <b>tier ${o.min_tier}+</b>`);
+  if(o.play_hours)reqs.push(`🕑 ${esc(o.play_hours)}`);
+  const contact=(o.contact||"").trim();
+  const isUrl=/^https?:\/\//i.test(contact)||/discord\.(gg|com)/i.test(contact);
+  const portal=`https://eu.wargaming.net/clans/wot/${o.clan_id}/`;
+  const contactHref=isUrl?(/^https?:/i.test(contact)?contact:"https://"+contact):portal;
+  const contactBtn=`<a class="btn btn-primary btn-block" href="${esc(contactHref)}" target="_blank" rel="noopener">${contact&&isUrl?"Contacter ↗":"Postuler ↗"}</a>`;
+  const contactTxt=(contact&&!isUrl)?`<span>Contact : <b>${esc(contact)}</b></span>`:"";
+  const e=el("div","offer"); e.dataset.clanId=o.clan_id;
+  e.innerHTML=`
+    <div class="offer-main">
+      ${langs?`<div class="tags">${langs}</div>`:""}
+      <div class="offer-title">${esc(o.title||("Recrutement — ["+(clan.tag||"")+"]"))}</div>
+      ${o.pitch?`<div class="offer-pitch">${esc(o.pitch)}</div>`:""}
+      ${acts?`<div class="tags">${acts}</div>`:""}
+      ${(reqs.length||contactTxt)?`<div class="reqs">${reqs.map(r=>`<span>${r}</span>`).join("")}${contactTxt}</div>`:""}
+    </div>
+    <div class="offer-side">
+      <div class="offer-clan">
+        <div class="clan-emblem" data-emb="${o.clan_id}">${esc((clan.tag||"?").slice(0,2))}</div>
+        <div style="min-width:0"><div class="clan-tag">[${esc(clan.tag||"—")}]</div><div class="clan-name" data-mem="${o.clan_id}">${esc(clan.name||"")}</div></div>
+      </div>
+      ${contactBtn}
+      <button class="btn btn-ghost btn-block seeClan" type="button">Voir le clan</button>
+    </div>`;
+  e.querySelector(".seeClan").onclick=()=>openClan({clan_id:o.clan_id,tag:clan.tag,name:clan.name});
+  return e;
+}
+async function enrichOffers(offers){
+  const ids=offers.map(o=>o.clan_id).slice(0,100).join(",");if(!ids)return;
+  try{const j=await wg("/wgn/clans/info/",{clan_id:ids,fields:"members_count,emblems"});const d=j.data||{};
+    offers.forEach(o=>{const x=d[o.clan_id];if(!x)return;const emb=emblemUrl(x.emblems);
+      const ce=document.querySelector(`.clan-emblem[data-emb="${o.clan_id}"]`);if(ce&&emb)ce.innerHTML=`<img src="${emb}" alt="">`;
+      const me=document.querySelector(`.clan-name[data-mem="${o.clan_id}"]`);if(me&&x.members_count!=null)me.textContent=(o.clan&&o.clan.name?o.clan.name+" · ":"")+x.members_count+"/"+CLAN_MAX;});
+  }catch(_){}
+}
+async function loadOffers(){
+  skeletons(4);
+  try{
+    const r=await fnCall("clan-offers",{action:"list"});
+    if(!r.ok)throw new Error(r.j.error||r.status);
+    const offers=r.j.offers||[]; $("#offCount").textContent=offers.length;
+    const g=$("#grid"); g.innerHTML="";
+    if(!offers.length){ g.appendChild(el("div","empty",`<svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg><div>Aucune offre de recrutement pour l'instant.</div><div style="font-size:12.5px;margin-top:6px">Les clans publient la leur depuis l'onglet « Recrutement » de Clan Plus.</div>`)); return; }
+    offers.forEach(o=>g.appendChild(offerCard(o)));
+    enrichOffers(offers);
+  }catch(e){ $("#grid").innerHTML=`<div class="empty">Impossible de charger les offres (${esc(e.message)}).<br><span style="font-size:12px">La fonction serveur « clan-offers » n'est peut-être pas encore déployée.</span></div>`; $("#offCount").textContent="0"; }
+}
+function setMode(m){
+  if(m===mode&&m==="offers")return;
+  mode=m; $("#segs").querySelectorAll(".seg").forEach(s=>s.classList.toggle("on",s.dataset.mode===m));
+  setToolbarFor(m);
+  if(m==="offers")loadOffers();
+  else { if(($("#q").value||"").trim().length>=2)doSearch($("#q").value); else loadTop(); }
+}
+$("#segs").addEventListener("click",e=>{const b=e.target.closest(".seg");if(b)setMode(b.dataset.mode);});
+// lien direct vers les offres : trouver-clan.html#offres
+if(location.hash==="#offres"){ setMode("offers"); } else { loadTop(); }
 </script>
 </body>
 </html>

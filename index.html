@@ -537,6 +537,29 @@
   .searchbar{display:flex;gap:10px;margin-bottom:6px}
   .searchbar input{flex:1}
   .searchbar .btn{background:var(--accent-soft);border-color:var(--accent);color:var(--ink)}
+  /* ---- Vue Recrutement (annonce de recrutement du clan) ---- */
+  #viewRecruit .rc-form{display:flex;flex-direction:column;gap:14px;margin-top:2px}
+  #viewRecruit label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700;color:var(--ink-2);letter-spacing:.2px}
+  #viewRecruit input[type=text],#viewRecruit input[type=number],#viewRecruit textarea{font:inherit;font-size:13.5px;font-weight:400;color:var(--ink);
+    background:var(--surface-2);border:1px solid var(--border);border-radius:9px;padding:10px 12px;width:100%}
+  #viewRecruit input:focus,#viewRecruit textarea:focus{outline:none;border-color:var(--accent);background:var(--card)}
+  #viewRecruit textarea{resize:vertical;min-height:100px;line-height:1.55}
+  #viewRecruit .rc-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  #viewRecruit .rc-grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  @media(max-width:620px){#viewRecruit .rc-grid,#viewRecruit .rc-grid3{grid-template-columns:1fr}}
+  #viewRecruit .rc-chips{display:flex;gap:6px;flex-wrap:wrap}
+  #viewRecruit .rc-chip{cursor:pointer;font-size:12px;font-weight:600;color:var(--ink-2);background:var(--surface-2);
+    border:1px solid var(--border);border-radius:999px;padding:6px 12px;user-select:none;transition:.12s}
+  #viewRecruit .rc-chip:hover{border-color:var(--accent);color:var(--ink)}
+  #viewRecruit .rc-chip.on{color:#1a1608;background:linear-gradient(180deg,var(--accent-2),var(--accent));border-color:transparent}
+  #viewRecruit .rc-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:2px;padding-top:14px;border-top:1px solid var(--border)}
+  #viewRecruit .rc-status{flex-direction:row;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--ink)}
+  #viewRecruit .rc-status input{width:17px;height:17px;accent-color:var(--accent);cursor:pointer}
+  #viewRecruit .rc-msg{font-size:13px;min-height:18px;font-weight:600}
+  #viewRecruit .rc-msg.ok{color:var(--good)} #viewRecruit .rc-msg.err{color:var(--bad)}
+  #viewRecruit .rc-notice{background:var(--accent-soft);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--ink-2);margin-bottom:14px}
+  #viewRecruit .rc-disabled{opacity:.55;pointer-events:none}
+  #viewRecruit .btn.primary{background:linear-gradient(180deg,var(--accent-2),var(--accent));border-color:transparent;color:#1a1608}
   .res-row{display:flex;align-items:center;gap:14px;padding:12px 10px;border-top:1px solid var(--grid);cursor:pointer;transition:.12s;border-radius:8px}
   .res-row:hover{background:var(--accent-soft)}
   .res-row .rt{font-weight:750;min-width:76px;color:var(--accent)}
@@ -1704,6 +1727,7 @@
         <a class="side-item" href="carte3d.html" title="Cartes 3D — relief réel du jeu" style="text-decoration:none"><span class="si-ic"><svg class="ic" viewBox="0 0 24 24"><path d="M3 18l6-12 5 8 3-4 4 8z"/><path d="M3 18h20" opacity=".5"/></svg></span><span class="si-lbl">Carte 3D</span><span class="si-new" style="margin-left:auto;font-size:9px;font-weight:800;letter-spacing:.5px;color:#12110d;background:#e5b95c;border-radius:5px;padding:2px 5px">NEW</span></a>
         <button class="tab side-item" data-v="ranking"><span class="si-ic"><svg class="ic"><use href="#i-trophy"/></svg></span><span class="si-lbl">Classements</span></button>
         <button class="tab side-item" data-v="search"><span class="si-ic"><svg class="ic"><use href="#i-search"/></svg></span><span class="si-lbl">Chercher un clan</span></button>
+        <button class="tab side-item" data-v="recruit"><span class="si-ic"><svg class="ic" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg></span><span class="si-lbl">Recrutement</span><span class="si-new" style="margin-left:auto;font-size:9px;font-weight:800;letter-spacing:.5px;color:#12110d;background:#e5b95c;border-radius:5px;padding:2px 5px">NEW</span></button>
         <a class="side-item" href="trouver-clan.html" title="Trouver un clan à rejoindre" style="text-decoration:none"><span class="si-ic"><svg class="ic" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span class="si-lbl">Trouver un clan</span><span class="si-new" style="margin-left:auto;font-size:9px;font-weight:800;letter-spacing:.5px;color:#12110d;background:#e5b95c;border-radius:5px;padding:2px 5px">NEW</span></a>
       </nav>
       <div class="side-user">
@@ -1926,6 +1950,10 @@
     <div id="searchedClan"></div>
   </div>
 
+  <div id="viewRecruit" class="hidden">
+    <div class="card" id="recruitCard"></div>
+  </div>
+
   <footer>Clan Plus • connexion Wargaming • données post-combat &nbsp;·&nbsp; <span id="footCount"></span></footer>
   </div><!-- /.wrap -->
   </div><!-- /.main -->
@@ -2041,7 +2069,7 @@ async function openApp(){
   document.getElementById("app").classList.remove("hidden");
   document.getElementById("loading").classList.remove("hidden");
   document.getElementById("subbar").classList.add("hidden");
-  ["viewClan","viewBattles","viewPlayer","viewLineups","viewLoadouts","viewStrats","viewRanking","viewSearch"].forEach(id=>document.getElementById(id).classList.add("hidden"));
+  ["viewClan","viewBattles","viewPlayer","viewLineups","viewLoadouts","viewStrats","viewRanking","viewSearch","viewRecruit"].forEach(id=>document.getElementById(id).classList.add("hidden"));
 
   const res = await fnCall("clan-data", { session: localStorage.getItem(LS_SESSION) });
   document.getElementById("loading").classList.add("hidden");
@@ -2665,6 +2693,7 @@ function switchView(v){
   document.getElementById("viewStrats").classList.toggle("hidden", v!=="strats");
   document.getElementById("viewRanking").classList.toggle("hidden", v!=="ranking");
   document.getElementById("viewSearch").classList.toggle("hidden", v!=="search");
+  document.getElementById("viewRecruit").classList.toggle("hidden", v!=="recruit");
   document.getElementById("playerPick").classList.toggle("hidden", v!=="player");
   document.getElementById("subbar").classList.toggle("hidden", v!=="clan"&&v!=="player"&&v!=="battles");
   const _s=document.getElementById("search"); if(_s) _s.style.visibility = (v==="clan") ? "visible" : "hidden";
@@ -2675,6 +2704,87 @@ function switchView(v){
   if(v==="loadouts") loadLoadouts();
   if(v==="strats") loadStrats();
   if(v==="ranking") loadRanking();
+  if(v==="recruit") loadRecruit();
+}
+
+/* ============================================================
+   VUE RECRUTEMENT  (annonce du clan, façon job board)
+   ============================================================ */
+const RC_LANGS=[["fr","🇫🇷 Français"],["en","🇬🇧 Anglais"],["de","🇩🇪 Allemand"],["es","🇪🇸 Espagnol"],["it","🇮🇹 Italien"],["pl","🇵🇱 Polonais"],["pt","🇵🇹 Portugais"],["nl","🇳🇱 Néerl."],["tr","🇹🇷 Turc"],["cs","🇨🇿 Tchèque"],["ru","Russe"]];
+const RC_ACTS=[["cw","Guerre de clans"],["skirmish","Escarmouches"],["random","Aléatoire"],["tournament","Tournois"],["fun","Détente"]];
+let RC_OFFER=null, RC_CANEDIT=false;
+async function loadRecruit(){
+  const card=document.getElementById("recruitCard");
+  card.innerHTML='<h2>Recrutement</h2><p class="sec-desc">Chargement…</p>';
+  const r=await fnCall("clan-offers",{session:localStorage.getItem(LS_SESSION),action:"mine"});
+  if(!r.ok){ card.innerHTML='<h2>Recrutement</h2><p class="sec-desc">Erreur : '+esc(r.j.error||r.status)+'. La fonction serveur « clan-offers » est-elle déployée&nbsp;?</p>'; return; }
+  RC_OFFER=r.j.offer||{}; RC_CANEDIT=!!r.j.canEdit;
+  renderRecruit();
+}
+function renderRecruit(){
+  const o=RC_OFFER||{}, card=document.getElementById("recruitCard");
+  const langsSel=new Set(o.langs||[]), actsSel=new Set(o.activities||[]);
+  const chip=(arr,sel,cls)=>arr.map(([v,lab])=>`<span class="rc-chip ${sel.has(v)?"on":""}" data-${cls}="${v}">${esc(lab)}</span>`).join("");
+  card.innerHTML=`
+    <h2>Recrutement <span class="hint">l'annonce de ton clan</span></h2>
+    <p class="sec-desc" style="margin:-6px 0 14px">Publie une annonce que les joueurs <b>sans clan</b> verront sur la page «&nbsp;Trouver un clan&nbsp;». Une annonce par clan. <a href="trouver-clan.html#offres" target="_blank" rel="noopener" style="color:var(--accent);font-weight:600">Voir la page ↗</a></p>
+    ${RC_CANEDIT?"":'<div class="rc-notice">Seuls les <b>officiers</b> du clan peuvent modifier l\'annonce. Tu peux la consulter ci-dessous.</div>'}
+    <div class="rc-form ${RC_CANEDIT?"":"rc-disabled"}">
+      <label>Titre / accroche
+        <input type="text" id="rcTitle" maxlength="90" placeholder="Ex : Clan FR convivial recrute pour le Bastion" value="${esc(o.title||"")}"></label>
+      <label>Présentation du clan
+        <textarea id="rcPitch" maxlength="1500" placeholder="Ambiance, ce que vous jouez, vos attentes, votre organisation…">${esc(o.pitch||"")}</textarea></label>
+      <div class="rc-grid">
+        <label>Langues parlées<div class="rc-chips" id="rcLangs">${chip(RC_LANGS,langsSel,"lang")}</div></label>
+        <label>Vous jouez surtout<div class="rc-chips" id="rcActs">${chip(RC_ACTS,actsSel,"act")}</div></label>
+      </div>
+      <div class="rc-grid3">
+        <label>WN8 minimum<input type="number" id="rcWn8" min="0" max="99999" placeholder="ex : 1500" value="${o.min_wn8||""}"></label>
+        <label>Batailles minimum<input type="number" id="rcBat" min="0" placeholder="ex : 5000" value="${o.min_battles||""}"></label>
+        <label>Tier de chars min<input type="number" id="rcTier" min="1" max="10" placeholder="ex : 8" value="${o.min_tier||""}"></label>
+      </div>
+      <div class="rc-grid">
+        <label>Créneaux de jeu<input type="text" id="rcHours" maxlength="80" placeholder="Ex : 20h-23h en semaine" value="${esc(o.play_hours||"")}"></label>
+        <label>Contact (Discord ou lien)<input type="text" id="rcContact" maxlength="200" placeholder="https://discord.gg/… ou pseudo" value="${esc(o.contact||"")}"></label>
+      </div>
+      <div class="rc-actions">
+        <label class="rc-status"><input type="checkbox" id="rcActive" ${o.status!=="paused"?"checked":""}> Annonce publiée (visible par les joueurs)</label>
+        <div style="margin-left:auto;display:flex;gap:8px">
+          ${(o.clan_id||o._saved)?'<button class="btn" id="rcDelete">Supprimer</button>':""}
+          <button class="btn primary" id="rcSave">Enregistrer</button>
+        </div>
+      </div>
+      <div class="rc-msg" id="rcMsg"></div>
+    </div>`;
+  card.querySelectorAll(".rc-chip").forEach(c=>c.onclick=()=>{ if(RC_CANEDIT) c.classList.toggle("on"); });
+  if(RC_CANEDIT){
+    document.getElementById("rcSave").onclick=saveRecruit;
+    const del=document.getElementById("rcDelete"); if(del) del.onclick=deleteRecruit;
+  }
+}
+function collectRecruit(){
+  const langs=[...document.querySelectorAll("#rcLangs .rc-chip.on")].map(c=>c.dataset.lang);
+  const activities=[...document.querySelectorAll("#rcActs .rc-chip.on")].map(c=>c.dataset.act);
+  const num=id=>{const v=parseInt(document.getElementById(id).value,10);return Number.isFinite(v)&&v>0?v:null;};
+  return { title:document.getElementById("rcTitle").value.trim(), pitch:document.getElementById("rcPitch").value.trim(),
+    langs, activities, play_hours:document.getElementById("rcHours").value.trim(),
+    min_wn8:num("rcWn8"), min_battles:num("rcBat"), min_tier:num("rcTier"),
+    contact:document.getElementById("rcContact").value.trim(),
+    status:document.getElementById("rcActive").checked?"active":"paused" };
+}
+async function saveRecruit(){
+  const msg=document.getElementById("rcMsg"); msg.className="rc-msg"; msg.textContent="Enregistrement…";
+  const offer=collectRecruit();
+  const r=await fnCall("clan-offers",{session:localStorage.getItem(LS_SESSION),action:"save",offer});
+  if(r.ok&&r.j.ok){ msg.className="rc-msg ok"; msg.textContent=offer.status==="paused"?"✓ Enregistrée (en pause — non visible).":"✓ Annonce publiée — visible sur « Trouver un clan »."; RC_OFFER=Object.assign({},RC_OFFER||{},offer,{_saved:true}); }
+  else { msg.className="rc-msg err"; msg.textContent="Erreur : "+esc(r.j.error||r.status); }
+}
+async function deleteRecruit(){
+  if(!confirm("Supprimer l'annonce de recrutement de ton clan ?"))return;
+  const msg=document.getElementById("rcMsg"); msg.className="rc-msg"; msg.textContent="Suppression…";
+  const r=await fnCall("clan-offers",{session:localStorage.getItem(LS_SESSION),action:"delete"});
+  if(r.ok&&r.j.ok){ RC_OFFER={}; renderRecruit(); }
+  else { msg.className="rc-msg err"; msg.textContent="Erreur : "+esc(r.j.error||r.status); }
 }
 
 /* ============================================================
