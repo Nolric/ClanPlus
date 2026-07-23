@@ -1704,6 +1704,7 @@
         <a class="side-item" href="carte3d.html" title="Cartes 3D — relief réel du jeu" style="text-decoration:none"><span class="si-ic"><svg class="ic" viewBox="0 0 24 24"><path d="M3 18l6-12 5 8 3-4 4 8z"/><path d="M3 18h20" opacity=".5"/></svg></span><span class="si-lbl">Carte 3D</span><span class="si-new" style="margin-left:auto;font-size:9px;font-weight:800;letter-spacing:.5px;color:#12110d;background:#e5b95c;border-radius:5px;padding:2px 5px">NEW</span></a>
         <button class="tab side-item" data-v="ranking"><span class="si-ic"><svg class="ic"><use href="#i-trophy"/></svg></span><span class="si-lbl">Classements</span></button>
         <button class="tab side-item" data-v="search"><span class="si-ic"><svg class="ic"><use href="#i-search"/></svg></span><span class="si-lbl">Chercher un clan</span></button>
+        <a class="side-item" href="trouver-clan.html" title="Trouver un clan à rejoindre" style="text-decoration:none"><span class="si-ic"><svg class="ic" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span class="si-lbl">Trouver un clan</span><span class="si-new" style="margin-left:auto;font-size:9px;font-weight:800;letter-spacing:.5px;color:#12110d;background:#e5b95c;border-radius:5px;padding:2px 5px">NEW</span></a>
       </nav>
       <div class="side-user">
         <div class="su-who" id="who"></div>
@@ -2012,11 +2013,11 @@ async function boot(){
     history.replaceState({}, "", redirectUri());
     if(res.ok && res.j.session){
       localStorage.setItem(LS_SESSION, res.j.session);
-      await openApp();
+      if(res.j.nickname) localStorage.setItem("cp_nick", res.j.nickname);
+      if(res.j.clan){ localStorage.setItem("cp_clan", String(res.j.clan.clan_id)); await openApp(); }
+      else { localStorage.setItem("cp_clan", ""); location.href = "trouver-clan.html"; } // sans clan → page Trouver un clan
     }else{
-      const msg = res.j.error==="no_clan"
-        ? "Ton compte n'appartient à aucun clan World of Tanks. Rejoins un clan en jeu, puis reconnecte-toi."
-        : (res.j.error==="invalid_token" ? "Session Wargaming expirée, réessaie." : ("Erreur : "+(res.j.error||res.status)));
+      const msg = res.j.error==="invalid_token" ? "Session Wargaming expirée, réessaie." : ("Erreur : "+(res.j.error||res.status));
       showLoginError(msg);
     }
     return;
@@ -2024,7 +2025,10 @@ async function boot(){
   if(p.get("status")==="error"){ showLoginError("Connexion Wargaming annulée."); return; }
 
   // 2) Session déjà présente ?
-  if(localStorage.getItem(LS_SESSION)){ await openApp(); return; }
+  if(localStorage.getItem(LS_SESSION)){
+    if(localStorage.getItem("cp_clan")===""){ location.href = "trouver-clan.html"; return; } // session sans clan → Trouver un clan
+    await openApp(); return;
+  }
 
   // 3) Sinon, page d'accueil publique
   wireLanding();

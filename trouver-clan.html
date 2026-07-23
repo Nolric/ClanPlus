@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trouver un clan — Clan Plus</title>
+<meta name="description" content="Sans clan sur World of Tanks ? Parcours les clans actifs, filtre par places libres, taille et niveau, et trouve celui qui te correspond.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20240%20240%22%3E%3Crect%20width%3D%22240%22%20height%3D%22240%22%20rx%3D%2254%22%20fill%3D%22%23141310%22%2F%3E%3Cg%20transform%3D%22translate%2830%2030%29%20scale%280.75%29%22%20fill%3D%22%23d8b566%22%3E%3Ccircle%20cx%3D%22120%22%20cy%3D%22120%22%20r%3D%22100%22%20fill%3D%22none%22%20stroke%3D%22%23d8b566%22%20stroke-width%3D%227%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
+<style>
+  :root{
+    --plane:#f3f2ee; --surface-1:#faf9f6; --surface-2:#f1f0ea; --card:#ffffff;
+    --ink:#16150f; --ink-2:#565349; --muted:#8b887e;
+    --grid:#e8e6de; --border:rgba(22,21,15,.10);
+    --good:#12a150; --bad:#d64545; --warn:#c58a1a;
+    --accent:#bf8f34; --accent-2:#e2ba63; --accent-soft:rgba(191,143,52,.12);
+    --shadow-sm:0 1px 2px rgba(20,18,10,.05);
+    --shadow:0 1px 2px rgba(20,18,10,.04), 0 12px 30px -16px rgba(20,18,10,.20);
+    --radius:14px; --radius-sm:9px; --ring:rgba(191,143,52,.40);
+    color-scheme:light;
+  }
+  :root[data-theme="dark"]{
+    --plane:#0c0c0b; --surface-1:#151412; --surface-2:#201f1b; --card:#1a1917;
+    --ink:#f6f5f1; --ink-2:#bdb9af; --muted:#87847b;
+    --grid:#2b2a26; --border:rgba(255,255,255,.09);
+    --good:#2ec26e; --bad:#ec6a6a; --warn:#e0ac4e;
+    --accent:#d8b566; --accent-2:#ecd190; --accent-soft:rgba(216,181,102,.14);
+    --shadow-sm:0 1px 2px rgba(0,0,0,.45);
+    --shadow:0 2px 10px rgba(0,0,0,.40);
+    --ring:rgba(216,181,102,.45);
+    color-scheme:dark;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --plane:#0c0c0b; --surface-1:#151412; --surface-2:#201f1b; --card:#1a1917;
+      --ink:#f6f5f1; --ink-2:#bdb9af; --muted:#87847b;
+      --grid:#2b2a26; --border:rgba(255,255,255,.09);
+      --good:#2ec26e; --bad:#ec6a6a; --warn:#e0ac4e;
+      --accent:#d8b566; --accent-2:#ecd190; --accent-soft:rgba(216,181,102,.14);
+      --shadow-sm:0 1px 2px rgba(0,0,0,.45); --shadow:0 2px 10px rgba(0,0,0,.40);
+      --ring:rgba(216,181,102,.45); color-scheme:dark;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  img,svg{max-width:100%}
+  body{background:var(--plane);color:var(--ink);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:14px;line-height:1.5;
+    -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  a{color:inherit}
+  :focus-visible{outline:2px solid var(--ring);outline-offset:2px}
+  .tnum{font-variant-numeric:tabular-nums}
+
+  /* ---- Barre de navigation ---- */
+  .nav{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 22px;position:sticky;top:0;z-index:30;
+    background:color-mix(in srgb,var(--plane) 88%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--border)}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:16px;letter-spacing:-.3px;text-decoration:none}
+  .brand-logo{width:30px;height:30px;border-radius:8px;background:#141310;display:grid;place-items:center;padding:4px;
+    box-shadow:inset 0 0 0 1px rgba(216,181,102,.3)}
+  .nav-r{display:flex;align-items:center;gap:8px}
+  .nav-link{color:var(--ink-2);text-decoration:none;font-size:13px;font-weight:600;padding:8px 12px;border-radius:8px}
+  .nav-link:hover{color:var(--ink);background:var(--surface-2)}
+  .icon-btn{appearance:none;border:1px solid var(--border);background:var(--card);color:var(--ink-2);cursor:pointer;
+    width:36px;height:36px;border-radius:9px;display:grid;place-items:center;font-size:15px}
+  .icon-btn:hover{color:var(--ink);border-color:var(--accent)}
+
+  .wrap{max-width:1160px;margin:0 auto;padding:0 22px 80px}
+
+  /* ---- Héros ---- */
+  .hero{position:relative;text-align:center;padding:54px 12px 30px;overflow:hidden}
+  .hero-glow{position:absolute;top:-60px;left:50%;transform:translateX(-50%);width:620px;height:320px;pointer-events:none;
+    background:radial-gradient(ellipse at center,var(--accent-soft),transparent 70%);filter:blur(8px)}
+  .eyebrow{position:relative;display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:700;letter-spacing:.6px;
+    text-transform:uppercase;color:var(--accent);background:var(--accent-soft);border:1px solid var(--border);
+    padding:5px 12px;border-radius:999px;margin-bottom:16px}
+  .hero h1{position:relative;font-size:clamp(30px,6vw,50px);letter-spacing:-1.4px;line-height:1.02;margin:0 0 14px}
+  .hero p{position:relative;max-width:580px;margin:0 auto;color:var(--ink-2);font-size:clamp(14px,2vw,17px)}
+
+  /* ---- Recherche ---- */
+  .search{position:relative;max-width:620px;margin:26px auto 0;display:flex;gap:10px}
+  .search-field{position:relative;flex:1}
+  .search-field svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:18px;height:18px;stroke:var(--muted);
+    fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+  .search input{width:100%;font:inherit;font-size:15px;color:var(--ink);background:var(--card);
+    border:1px solid var(--border);border-radius:12px;padding:14px 14px 14px 42px;box-shadow:var(--shadow-sm)}
+  .search input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--ring)}
+  .search input::placeholder{color:var(--muted)}
+
+  .btn{appearance:none;cursor:pointer;font:inherit;font-weight:700;font-size:14px;text-decoration:none;
+    border-radius:11px;padding:13px 20px;display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    border:1px solid transparent;white-space:nowrap;transition:transform .14s ease,filter .14s ease,border-color .14s ease}
+  .btn-primary{color:#1a1608;background:linear-gradient(180deg,var(--accent-2),var(--accent));box-shadow:var(--shadow-sm)}
+  .btn-primary:hover{filter:brightness(1.06);transform:translateY(-1px)}
+  .btn-ghost{color:var(--ink);background:var(--card);border-color:var(--border)}
+  .btn-ghost:hover{border-color:var(--accent)}
+
+  /* ---- Barre de filtres ---- */
+  .toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:30px 0 18px;padding-bottom:16px;border-bottom:1px solid var(--border)}
+  .toolbar-title{font-weight:800;font-size:17px;letter-spacing:-.3px;margin-right:auto}
+  .toolbar-title small{display:block;font-weight:500;font-size:12.5px;color:var(--muted);letter-spacing:0}
+  .chips{display:flex;gap:7px;flex-wrap:wrap}
+  .chip{appearance:none;cursor:pointer;font:inherit;font-size:12.5px;font-weight:600;color:var(--ink-2);
+    background:var(--card);border:1px solid var(--border);border-radius:999px;padding:7px 13px;display:inline-flex;align-items:center;gap:6px}
+  .chip:hover{border-color:var(--accent);color:var(--ink)}
+  .chip[aria-pressed="true"]{color:#1a1608;background:linear-gradient(180deg,var(--accent-2),var(--accent));border-color:transparent}
+  .select{position:relative}
+  .select select{appearance:none;font:inherit;font-size:12.5px;font-weight:600;color:var(--ink-2);cursor:pointer;
+    background:var(--card);border:1px solid var(--border);border-radius:999px;padding:7px 30px 7px 13px}
+  .select::after{content:"▾";position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none;font-size:11px}
+
+  /* ---- Grille de clans ---- */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+  .clan{position:relative;text-align:left;cursor:pointer;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+    padding:16px;display:flex;flex-direction:column;gap:12px;transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease;width:100%;font:inherit;color:inherit}
+  .clan:hover{transform:translateY(-3px);box-shadow:var(--shadow);border-color:var(--accent)}
+  .clan-top{display:flex;align-items:center;gap:12px}
+  .clan-emblem{flex:0 0 auto;width:46px;height:46px;border-radius:10px;background:var(--surface-2);border:1px solid var(--border);
+    display:grid;place-items:center;overflow:hidden;font-weight:800;font-size:15px;color:var(--accent)}
+  .clan-emblem img{width:100%;height:100%;object-fit:cover}
+  .clan-id{min-width:0}
+  .clan-tag{font-weight:800;font-size:15px;letter-spacing:-.2px;display:flex;align-items:center;gap:7px}
+  .clan-name{color:var(--ink-2);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:190px}
+  .clan-meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:auto}
+  .stat{flex:1;min-width:74px;background:var(--surface-1);border:1px solid var(--border);border-radius:9px;padding:8px 10px}
+  .stat b{display:block;font-size:15px;letter-spacing:-.3px}
+  .stat span{font-size:11px;color:var(--muted)}
+  .badge{font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px;border:1px solid transparent;white-space:nowrap}
+  .badge-room{color:var(--good);background:color-mix(in srgb,var(--good) 12%,transparent);border-color:color-mix(in srgb,var(--good) 30%,transparent)}
+  .badge-full{color:var(--muted);background:var(--surface-2)}
+  .badge-dot{width:7px;height:7px;border-radius:50%;display:inline-block}
+
+  .empty{text-align:center;color:var(--muted);padding:60px 20px}
+  .empty svg{width:40px;height:40px;stroke:var(--muted);fill:none;stroke-width:1.6;margin-bottom:12px}
+  .skeleton{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);height:150px;
+    position:relative;overflow:hidden}
+  .skeleton::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--ink) 5%,transparent),transparent);
+    transform:translateX(-100%);animation:shim 1.3s infinite}
+  @keyframes shim{100%{transform:translateX(100%)}}
+
+  /* ---- Panneau détail ---- */
+  .drawer-back{position:fixed;inset:0;background:rgba(10,9,7,.5);opacity:0;pointer-events:none;transition:opacity .2s ease;z-index:40}
+  .drawer-back.on{opacity:1;pointer-events:auto}
+  .drawer{position:fixed;top:0;right:0;height:100%;width:min(500px,100%);background:var(--surface-1);border-left:1px solid var(--border);
+    transform:translateX(100%);transition:transform .24s cubic-bezier(.4,0,.2,1);z-index:41;overflow-y:auto;box-shadow:-20px 0 60px -30px rgba(0,0,0,.5)}
+  .drawer.on{transform:translateX(0)}
+  .drawer-head{position:sticky;top:0;background:color-mix(in srgb,var(--surface-1) 90%,transparent);backdrop-filter:blur(6px);
+    padding:18px 20px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:13px;z-index:2}
+  .drawer-body{padding:20px}
+  .drawer h2{margin:0;font-size:19px;letter-spacing:-.4px;display:flex;align-items:center;gap:8px}
+  .drawer .sub{color:var(--ink-2);font-size:13px;margin-top:2px}
+  .kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin:16px 0}
+  .kv .stat b{font-size:16px}
+  .sect{margin-top:22px}
+  .sect h3{font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+  .desc{font-size:13.5px;color:var(--ink-2);line-height:1.6;white-space:pre-wrap;word-break:break-word;
+    background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;max-height:220px;overflow:auto}
+  .roster{display:flex;flex-direction:column;gap:2px}
+  .member{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 11px;border-radius:9px;font-size:13px}
+  .member:nth-child(odd){background:var(--card)}
+  .member .role{font-size:11.5px;color:var(--muted)}
+  .apply{display:flex;gap:10px;margin-top:22px;flex-wrap:wrap}
+  .note{font-size:12px;color:var(--muted);margin-top:10px;line-height:1.5}
+
+  .foot{max-width:1160px;margin:40px auto 0;padding:24px 22px;border-top:1px solid var(--border);
+    display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;color:var(--muted);font-size:12.5px}
+  .foot a{color:var(--ink-2);text-decoration:none}
+  .foot a:hover{color:var(--ink)}
+</style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="index.html">
+      <span class="brand-logo"><svg viewBox="0 0 240 240"><g fill="#d8b566"><circle cx="120" cy="120" r="100" fill="none" stroke="#d8b566" stroke-width="10"/><rect x="112" y="94" width="16" height="52" rx="5"/><rect x="94" y="112" width="52" height="16" rx="5"/></g></svg></span>
+      Clan Plus
+    </a>
+    <div class="nav-r">
+      <a class="nav-link" href="index.html">Clan Plus</a>
+      <a class="nav-link" id="authLink" href="index.html">Se connecter</a>
+      <button class="icon-btn" id="theme" title="Thème clair / sombre" aria-label="Basculer le thème">◐</button>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="hero-glow"></div>
+    <span class="eyebrow" id="eyebrow">● Sans clan ?</span>
+    <h1>Trouve le clan qui te correspond</h1>
+    <p>Parcours les clans World of Tanks EU actifs, repère ceux qui ont des <b>places libres</b>, compare leur niveau et rejoins celui qui te ressemble.</p>
+    <form class="search" id="searchForm" autocomplete="off">
+      <div class="search-field">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="q" type="search" placeholder="Chercher un clan par nom ou tag (ex. FAME)…" aria-label="Rechercher un clan">
+      </div>
+      <button class="btn btn-primary" type="submit">Rechercher</button>
+    </form>
+  </header>
+
+  <main class="wrap">
+    <div class="toolbar">
+      <div class="toolbar-title" id="listTitle">Clans actifs
+        <small id="listSub">Sélection de clans avec de l'activité récente</small>
+      </div>
+      <div class="chips" id="filters">
+        <button class="chip" data-filter="room" aria-pressed="false"><span class="badge-dot" style="background:var(--good)"></span>Places libres</button>
+        <button class="chip" data-filter="small" aria-pressed="false">Petit clan</button>
+        <button class="chip" data-filter="big" aria-pressed="false">Grand clan</button>
+      </div>
+      <div class="select">
+        <select id="sort" aria-label="Trier / mesurer">
+          <option value="gm_elo_rating">Niveau — Rég. générales</option>
+          <option value="fort_elo_rating">Niveau — Escarmouches (Bastion)</option>
+          <option value="global_rating_avg">Niveau — WN8 moyen</option>
+          <option value="battles_count_avg">Les plus actifs</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="grid" id="grid" aria-live="polite"></div>
+  </main>
+
+  <footer class="foot">
+    <span>Clan Plus · données Wargaming (EU) · non affilié à Wargaming</span>
+    <a href="index.html">Retour à Clan Plus →</a>
+  </footer>
+
+  <!-- Panneau détail -->
+  <div class="drawer-back" id="drawerBack"></div>
+  <aside class="drawer" id="drawer" aria-hidden="true"></aside>
+
+<script>
+const APP="afd929f43761db6b5061b70d44b9f9b7";
+const API="https://api.worldoftanks.eu";
+const CLAN_MAX=100;
+const $=s=>document.querySelector(s);
+const el=(t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e;};
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
+
+// ---- état de connexion (session Clan Plus / Wargaming) ----
+function lsGet(k){try{return localStorage.getItem(k);}catch(_){return null;}}
+(function auth(){
+  const sess=lsGet("cp_session"), nick=lsGet("cp_nick"), clan=lsGet("cp_clan");
+  const link=$("#authLink");
+  if(sess){
+    link.textContent="Déconnexion";
+    link.href="#";
+    link.onclick=e=>{e.preventDefault();["cp_session","cp_clan","cp_nick"].forEach(k=>{try{localStorage.removeItem(k);}catch(_){}});location.href="index.html";};
+    if(nick){
+      $("#eyebrow").innerHTML="● Salut "+esc(nick)+" 👋";
+      // message d'accueil selon la situation
+      if(clan===""){ $(".hero p").innerHTML="Tu n'as pas encore de clan — parcours ceux qui recrutent, compare leur niveau et rejoins celui qui te correspond."; }
+    }
+  }else{
+    link.textContent="Se connecter";
+    link.href="index.html";
+  }
+})();
+
+// ---- thème ----
+const root=document.documentElement;
+try{const t=localStorage.getItem("cp_theme");if(t)root.setAttribute("data-theme",t);}catch(_){}
+$("#theme").onclick=()=>{const cur=root.getAttribute("data-theme")||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light");
+  const nx=cur==="dark"?"light":"dark";root.setAttribute("data-theme",nx);try{localStorage.setItem("cp_theme",nx);}catch(_){}};
+
+// ---- API helpers ----
+async function wg(path,params){const u=new URL(API+path);u.searchParams.set("application_id",APP);
+  for(const k in params)if(params[k]!=null)u.searchParams.set(k,params[k]);
+  const r=await fetch(u);const j=await r.json();if(j.status!=="ok")throw new Error(j.error?.message||"Erreur API");return j;}
+const emblemUrl=e=>e&&(e.x64?.wot||e.x64?.portal||e.x32?.portal||e.x32?.wot)||null;
+function fmt(n){return n==null?"—":Number(n).toLocaleString("fr-FR");}
+
+// ---- rendu carte ----
+let current=[]; // clans affichés (avant filtre)
+const filters=new Set();
+
+function roomInfo(m){const free=CLAN_MAX-(m||0);
+  if(m==null)return{txt:"",cls:""};
+  return free>0?{txt:free+" place"+(free>1?"s":"")+" libre"+(free>1?"s":""),cls:"badge-room"}:{txt:"Complet",cls:"badge-full"};}
+
+function card(c){
+  const b=el("button","clan");b.type="button";
+  const emb=emblemUrl(c.emblems);
+  const room=roomInfo(c.members_count);
+  const metricLabel=$("#sort").selectedOptions[0].textContent.replace(/^.*—\s*/,"");
+  b.innerHTML=`
+    <div class="clan-top">
+      <div class="clan-emblem">${emb?`<img src="${emb}" alt="" loading="lazy">`:esc((c.tag||"?").slice(0,2))}</div>
+      <div class="clan-id">
+        <div class="clan-tag">[${esc(c.tag||"—")}] ${room.txt?`<span class="badge ${room.cls}">${room.txt}</span>`:""}</div>
+        <div class="clan-name">${esc(c.name||"")}</div>
+      </div>
+    </div>
+    <div class="clan-meta">
+      <div class="stat"><b class="tnum">${c.members_count!=null?c.members_count+"/"+CLAN_MAX:"—"}</b><span>membres</span></div>
+      <div class="stat"><b class="tnum">${c._metric!=null?fmt(Math.round(c._metric)):"—"}</b><span>${esc(metricLabel)}</span></div>
+    </div>`;
+  b.onclick=()=>openClan(c);
+  return b;
+}
+
+function applyFilters(list){
+  return list.filter(c=>{
+    if(filters.has("room")&&!(c.members_count!=null&&c.members_count<CLAN_MAX))return false;
+    if(filters.has("small")&&!(c.members_count!=null&&c.members_count<=30))return false;
+    if(filters.has("big")&&!(c.members_count!=null&&c.members_count>=60))return false;
+    return true;
+  });
+}
+function render(){
+  const g=$("#grid");g.innerHTML="";
+  const list=applyFilters(current);
+  if(!list.length){g.appendChild(el("div","empty",`<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><div>Aucun clan ne correspond.</div>`));return;}
+  list.forEach(c=>g.appendChild(card(c)));
+}
+function skeletons(n=8){const g=$("#grid");g.innerHTML="";for(let i=0;i<n;i++)g.appendChild(el("div","skeleton"));}
+
+// batch : complète members_count + emblems pour une liste de clan_id
+async function enrich(clans){
+  const ids=clans.map(c=>c.clan_id).slice(0,100).join(",");
+  if(!ids)return clans;
+  try{const j=await wg("/wgn/clans/info/",{clan_id:ids,fields:"members_count,emblems,tag,name"});
+    const d=j.data||{};clans.forEach(c=>{const x=d[c.clan_id];if(x){c.members_count=x.members_count;c.emblems=x.emblems;c.tag=c.tag||x.tag;c.name=c.name||x.name;}});
+  }catch(_){}
+  return clans;
+}
+
+// ---- vue par défaut : clans classés selon la mesure choisie ----
+async function loadTop(){
+  skeletons();
+  const metric=$("#sort").value;
+  $("#listTitle").firstChild.textContent = metric==="battles_count_avg"?"Clans les plus actifs ":"Clans actifs ";
+  try{
+    const j=await wg("/wot/clanratings/top/",{rank_field:metric,limit:60});
+    const rows=(j.data||[]).map(c=>({clan_id:c.clan_id,tag:c.clan_tag,name:c.clan_name,_metric:(c[metric]?.value)}))
+      .filter(c=>c._metric!=null);
+    current=await enrich(rows);
+    render();
+  }catch(e){ $("#grid").innerHTML=`<div class="empty">Impossible de charger les clans (${esc(e.message)}).</div>`; }
+}
+
+// ---- recherche ----
+let searchAbort;
+async function doSearch(query){
+  const qy=query.trim();
+  if(qy.length<2){loadTop();$("#listSub").textContent="Sélection de clans avec de l'activité récente";return;}
+  skeletons();
+  $("#listTitle").firstChild.textContent=`Résultats pour « ${qy} » `;
+  $("#listSub").textContent="Clique un clan pour voir sa fiche complète";
+  try{
+    const j=await wg("/wgn/clans/list/",{search:qy,fields:"clan_id,tag,name,members_count,emblems",limit:30});
+    const rows=(j.data||[]).map(c=>({clan_id:c.clan_id,tag:c.tag,name:c.name,members_count:c.members_count,emblems:c.emblems,_metric:null}));
+    // cote de la mesure courante pour ces clans (best-effort, une requête)
+    current=rows;
+    render();
+    attachRatings(rows);
+  }catch(e){ $("#grid").innerHTML=`<div class="empty">Recherche impossible (${esc(e.message)}).</div>`; }
+}
+// ajoute la mesure aux résultats de recherche
+async function attachRatings(rows){
+  const ids=rows.map(c=>c.clan_id).slice(0,100).join(",");if(!ids)return;
+  try{const metric=$("#sort").value;
+    const j=await wg("/wot/clanratings/clans/",{clan_id:ids});
+    const d=j.data||{};rows.forEach(c=>{const x=d[c.clan_id];if(x&&x[metric])c._metric=x[metric].value;});
+    render();
+  }catch(_){}
+}
+
+// ---- fiche détaillée ----
+const ROLE_FR={commander:"Commandant",executive_officer:"Adjudant",personnel_officer:"Officier du personnel",
+  combat_officer:"Officier de combat",intelligence_officer:"Officier de recon",quartermaster:"Intendant",
+  recruitment_officer:"Recruteur",junior_officer:"Sous-officier",private:"Soldat",recruit:"Recrue",reservist:"Réserviste"};
+function metricRows(r){
+  if(!r)return"";
+  const M=[["fort_elo_rating","Escarmouches (Bastion)"],["gm_elo_rating","Rég. générales"],
+    ["global_rating_avg","WN8 moyen"],["wins_ratio_avg","% victoires moyen"],["battles_count_avg","Batailles / joueur"]];
+  return M.map(([k,lab])=>{const v=r[k]?.value;if(v==null)return"";
+    const val=k==="wins_ratio_avg"?(v.toFixed(1)+" %"):fmt(Math.round(v));
+    const rk=r[k]?.rank?` <span style="color:var(--muted);font-size:11px">#${fmt(r[k].rank)}</span>`:"";
+    return `<div class="stat"><b class="tnum">${val}${rk}</b><span>${lab}</span></div>`;}).join("");
+}
+function closeDrawer(){$("#drawer").classList.remove("on");$("#drawerBack").classList.remove("on");$("#drawer").setAttribute("aria-hidden","true");}
+$("#drawerBack").onclick=closeDrawer;
+addEventListener("keydown",e=>{if(e.key==="Escape")closeDrawer();});
+
+async function openClan(c){
+  const d=$("#drawer");d.classList.add("on");$("#drawerBack").classList.add("on");d.setAttribute("aria-hidden","false");d.scrollTop=0;
+  const emb=emblemUrl(c.emblems);
+  d.innerHTML=`
+    <div class="drawer-head">
+      <div class="clan-emblem" style="width:52px;height:52px">${emb?`<img src="${emb}" alt="">`:esc((c.tag||"?").slice(0,2))}</div>
+      <div style="min-width:0;flex:1">
+        <h2>[${esc(c.tag||"—")}]</h2>
+        <div class="sub">${esc(c.name||"")}</div>
+      </div>
+      <button class="icon-btn" onclick="(${closeDrawer.toString()})()" aria-label="Fermer">✕</button>
+    </div>
+    <div class="drawer-body"><div class="grid" style="grid-template-columns:1fr"><div class="skeleton" style="height:120px"></div></div></div>`;
+  try{
+    const [infoJ,ratingsJ]=await Promise.all([
+      wg("/wgn/clans/info/",{clan_id:c.clan_id,fields:"name,tag,members_count,created_at,leader_name,motto,description,color,emblems,members.account_name,members.role_i18n,members.role"}),
+      wg("/wot/clanratings/clans/",{clan_id:c.clan_id}).catch(()=>({data:{}}))
+    ]);
+    const info=infoJ.data?.[c.clan_id]||{};
+    const ratings=ratingsJ.data?.[c.clan_id]||null;
+    const members=Array.isArray(info.members)?info.members:[];
+    const room=roomInfo(info.members_count);
+    const created=info.created_at?new Date(info.created_at*1000).toLocaleDateString("fr-FR",{year:"numeric",month:"long"}):"—";
+    const embU=emblemUrl(info.emblems)||emb;
+    const desc=(info.description||info.motto||"").trim();
+    const portal=`https://eu.wargaming.net/clans/wot/${c.clan_id}/`;
+    d.innerHTML=`
+      <div class="drawer-head">
+        <div class="clan-emblem" style="width:52px;height:52px">${embU?`<img src="${embU}" alt="">`:esc((info.tag||c.tag||"?").slice(0,2))}</div>
+        <div style="min-width:0;flex:1">
+          <h2>[${esc(info.tag||c.tag||"—")}] ${room.txt?`<span class="badge ${room.cls}">${room.txt}</span>`:""}</h2>
+          <div class="sub">${esc(info.name||c.name||"")}</div>
+        </div>
+        <button class="icon-btn" id="dClose" aria-label="Fermer">✕</button>
+      </div>
+      <div class="drawer-body">
+        <div class="kv">
+          <div class="stat"><b class="tnum">${info.members_count!=null?info.members_count+"/"+CLAN_MAX:"—"}</b><span>membres</span></div>
+          <div class="stat"><b>${esc(created)}</b><span>créé en</span></div>
+          <div class="stat"><b>${esc(info.leader_name||"—")}</b><span>commandant</span></div>
+        </div>
+        ${ratings?`<div class="sect"><h3>Niveau du clan (cotes officielles WG)</h3><div class="kv">${metricRows(ratings)}</div></div>`:""}
+        ${desc?`<div class="sect"><h3>Présentation</h3><div class="desc">${esc(desc)}</div></div>`:""}
+        <div class="sect"><h3>Membres (${members.length})</h3><div class="roster">${
+          members.slice(0,40).map(m=>`<div class="member"><span>${esc(m.account_name)}</span><span class="role">${esc(m.role_i18n||ROLE_FR[m.role]||"")}</span></div>`).join("")||'<div class="note">Roster non disponible.</div>'
+        }</div></div>
+        <div class="apply">
+          <a class="btn btn-primary" href="${portal}" target="_blank" rel="noopener">Voir & postuler sur Wargaming ↗</a>
+          <a class="btn btn-ghost" href="index.html" >Ouvrir dans Clan Plus</a>
+        </div>
+        <p class="note">Le recrutement se fait sur la page officielle du clan (Wargaming). Clan Plus t'aide à le trouver ; la candidature se fait côté jeu.</p>
+      </div>`;
+    $("#dClose").onclick=closeDrawer;
+  }catch(e){
+    d.querySelector(".drawer-body").innerHTML=`<div class="empty">Impossible de charger la fiche (${esc(e.message)}).</div>`;
+  }
+}
+
+// ---- événements ----
+$("#searchForm").addEventListener("submit",e=>{e.preventDefault();doSearch($("#q").value);});
+let qT;$("#q").addEventListener("input",e=>{clearTimeout(qT);const v=e.target.value;qT=setTimeout(()=>doSearch(v),350);});
+$("#filters").addEventListener("click",e=>{const b=e.target.closest(".chip");if(!b)return;
+  const f=b.dataset.filter;if(filters.has(f)){filters.delete(f);b.setAttribute("aria-pressed","false");}else{filters.add(f);b.setAttribute("aria-pressed","true");}render();});
+$("#sort").addEventListener("change",()=>{ if(($("#q").value||"").trim().length>=2){attachRatings(current);} else {loadTop();} });
+
+loadTop();
+</script>
+</body>
+</html>
