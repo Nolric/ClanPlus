@@ -736,8 +736,8 @@
   .bl-scorebox .sc{font-size:27px;font-weight:800;letter-spacing:2px;line-height:1;font-variant-numeric:tabular-nums}
   .bl-scorebox .rz{display:inline-block;font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;margin-top:5px;padding:2px 8px;border-radius:20px;color:var(--muted);background:var(--surface-2)}
   .bl-win .sc .a{color:var(--good)} .bl-loss .sc .a{color:var(--bad)}
-  .bl-win .rz{color:var(--good);background:rgba(46,194,110,.13)}
-  .bl-loss .rz{color:var(--bad);background:rgba(236,106,106,.12)}
+  .bl-win .rz{color:var(--good);background:color-mix(in srgb,var(--good) 14%,transparent)}
+  .bl-loss .rz{color:var(--bad);background:color-mix(in srgb,var(--bad) 14%,transparent)}
   .bl-sep{color:var(--muted);font-weight:400}
   /* zone 3 : SR + meta */
   .bl-right{display:flex;align-items:center;gap:16px;flex:0 0 auto}
@@ -795,7 +795,7 @@
   .rp-main.no-side{grid-template-columns:minmax(0,1fr)}
   .rp-main.no-side>div:first-child{max-width:820px;width:100%;margin:0 auto}
   .rp-stage:hover{cursor:crosshair}
-  .rp-tip{position:absolute;pointer-events:none;z-index:3;background:rgba(12,12,11,.92);border:1px solid var(--border);
+  .rp-tip{position:absolute;pointer-events:none;z-index:3;background:color-mix(in srgb,var(--plane) 92%,transparent);border:1px solid var(--border);
     border-radius:7px;padding:5px 8px;font-size:11.5px;color:var(--ink);white-space:nowrap;transform:translate(-50%,-140%);
     box-shadow:0 4px 14px rgba(0,0,0,.5);opacity:0;transition:opacity .12s}
   .rp-tip.on{opacity:1}
@@ -824,7 +824,7 @@
   .rp-legend.rp-cls span{display:inline-flex;align-items:center;gap:4px}
   .rp-legend.rp-cls img{width:14px;height:14px;opacity:.85}
   .rp-legend img.rp-bl{width:16px;height:16px;vertical-align:-3px;margin-right:3px}
-  .rp-stage{position:relative;width:100%;aspect-ratio:1/1;border-radius:10px;overflow:hidden;border:1px solid var(--border);background:#0c0c0b}
+  .rp-stage{position:relative;width:100%;aspect-ratio:1/1;border-radius:10px;overflow:hidden;border:1px solid var(--border);background:var(--plane)}
   .rp-stage img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
   .rp-stage canvas{position:absolute;inset:0;width:100%;height:100%}
   .rp-ctrl{display:flex;align-items:center;gap:11px;margin-top:9px}
@@ -3294,6 +3294,7 @@ function convertReplay(raw){
     team:(Number(bs[0])===0 ? "neutral" : (bs[0]===my ? "ally" : "enemy")),
     x:bs[1], z:bs[2], r:70 }));
   return { bounds:{minX:b[0],minZ:b[1],maxX:b[2],maxZ:b[3]}, duration:raw.duration||0,
+           interval: Number(raw.interval)||2,
            bases, vehicles, byId, shots, kills, damage, dmgBy };
 }
 /* Bascule Résultat / Replay dans une carte de bataille dépliée.
@@ -3360,7 +3361,12 @@ function mockReplay(g){
 function renderReplay(host, rep, mkey, demo){
   const B=rep.bounds, W=1000, K=W/700, spanX=(B.maxX-B.minX)||1, spanZ=(B.maxZ-B.minZ)||1;
   const wx=x=>(x-B.minX)/spanX*W, wy=z=>(B.maxZ-z)/spanZ*W;
-  const ALLY="#2ec26e", ENEMY="#ec6a6a", GOLD="#d8b566";
+  // Couleurs lues sur le système de design du site (elles suivent le thème)
+  const _cssv=getComputedStyle(document.documentElement);
+  const tok=(n,d)=>((_cssv.getPropertyValue(n)||"").trim()||d);
+  const ALLY=tok("--good","#2ec26e"), ENEMY=tok("--bad","#ec6a6a"), GOLD=tok("--accent","#d8b566");
+  const SHOT=tok("--accent-2","#ecd190"), INK=tok("--ink","#f6f5f1"), PLANE=tok("--plane","#0c0c0b");
+  const DMG="#ffb060";   // trait de dégâts : orange chaud, distinct des couleurs d'équipe
   const esc2=s=>esc(String(s==null?"":s));
   const fmtT=s=>{ s=Math.max(0,Math.floor(s)); return Math.floor(s/60)+":"+String(s%60).padStart(2,"0"); };
   const kills=rep.kills||[], dmgEvents=rep.damage||[], shots=rep.shots||[];
@@ -3384,7 +3390,7 @@ function renderReplay(host, rep, mkey, demo){
           <select class="rp-speed" aria-label="Vitesse"><option value="1">×1</option><option value="2" selected>×2</option><option value="4">×4</option><option value="8">×8</option></select>
           <span class="rp-time">0:00 / ${durFR(rep.duration)}</span>
         </div>
-        <div class="rp-legend"><span><i style="color:${ALLY}">●</i> Nous</span><span><i style="color:${ENEMY}">●</i> Adversaire</span><span><i style="color:${GOLD}">◎</i> Membre</span>${shots.length?`<span><i style="color:#ecd190">✦</i> Tir</span>`:""}${dmgEvents.length?`<span><i style="color:#ffb060">╱</i> Dégâts</span>`:""}<span><img class="rp-bl" src="bases/green.png" alt="">Notre base</span><span><img class="rp-bl" src="bases/red.png" alt="">Base adverse</span>${
+        <div class="rp-legend"><span><i style="color:${ALLY}">●</i> Nous</span><span><i style="color:${ENEMY}">●</i> Adversaire</span><span><i style="color:${GOLD}">◎</i> Membre</span>${shots.length?`<span><i style="color:${SHOT}">✦</i> Tir</span>`:""}${dmgEvents.length?`<span><i style="color:${DMG}">╱</i> Dégâts</span>`:""}<span style="opacity:.45"><i style="color:${ENEMY}">◌</i> Hors repérage</span><span><img class="rp-bl" src="bases/green.png" alt="">Notre base</span><span><img class="rp-bl" src="bases/red.png" alt="">Base adverse</span>${
           rep.bases.some(b=>b.team==="neutral")?`<span><img class="rp-bl" src="bases/neutral.png" alt="">Base neutre</span>`:""
         }<span>✕ détruit</span></div>
         ${rep.vehicles.some(v=>v.cls)?`<div class="rp-legend rp-cls">${
@@ -3407,19 +3413,29 @@ function renderReplay(host, rep, mkey, demo){
   const speedSel=host.querySelector(".rp-speed"), tip=host.querySelector(".rp-tip"), feed=host.querySelector(".rp-feed");
   let t=0, playing=true, last=performance.now(), speed=2, hover=null, mouse=null;
 
+  /* Un char n'est enregistré que lorsque le jeu transmet sa position, c'est-à-dire
+     quand il est REPÉRÉ (les alliés le sont en permanence). Les trous dans la trace
+     = moments sans repérage. On renvoie donc aussi l'état de repérage :
+       null            -> jamais repéré jusqu'ici (ne rien dessiner)
+       spotted:true    -> repéré en ce moment
+       spotted:false   -> plus repéré : dernière position connue, `age` en secondes */
+  const GAP=Math.max(2, (rep.interval||2)*1.6);
   function posAt(v,time){
     const tr=v.track; if(!tr||!tr.length) return null;
-    const dead=(v.deathT!=null && time>=v.deathT);
-    if(dead){ // dernière position connue AVANT la mort
+    if(v.deathT!=null && time>=v.deathT){        // détruit : dernière position avant la mort
       let p=tr[0];
       for(let i=0;i<tr.length;i++){ if(tr[i][0]<=v.deathT) p=tr[i]; else break; }
-      return {x:p[1],z:p[2],dead:true};
+      return {x:p[1],z:p[2],dead:true,spotted:true,age:0};
     }
-    let lo=tr[0];
-    for(let i=0;i<tr.length;i++){ if(tr[i][0]<=time) lo=tr[i];
-      else { const hi=tr[i], f=(time-lo[0])/((hi[0]-lo[0])||1);
-             return {x:lo[1]+(hi[1]-lo[1])*f, z:lo[2]+(hi[2]-lo[2])*f, dead:false}; } }
-    return {x:lo[1], z:lo[2], dead:false};
+    if(time < tr[0][0]) return null;             // pas encore repéré une seule fois
+    let lo=null, hi=null;
+    for(let i=0;i<tr.length;i++){ if(tr[i][0]<=time) lo=tr[i]; else { hi=tr[i]; break; } }
+    if(!lo) return null;
+    const cont = hi && (hi[0]-lo[0])<=GAP;       // point suivant assez proche = suivi continu
+    if(cont){ const f=(time-lo[0])/((hi[0]-lo[0])||1);
+      return {x:lo[1]+(hi[1]-lo[1])*f, z:lo[2]+(hi[2]-lo[2])*f, dead:false, spotted:true, age:0}; }
+    const age=time-lo[0];
+    return {x:lo[1], z:lo[2], dead:false, spotted:(age<=GAP), age:Math.max(0,age-GAP)};
   }
 
   // Quadrillage de la minimap du jeu : 10x10, colonnes A..J, lignes 1..10.
@@ -3459,7 +3475,7 @@ function renderReplay(host, rep, mkey, demo){
       // le sprite neutre a une source plus petite (32px) : on le grossit pour
       // que les trois drapeaux aient la même taille visible
       if(im){ const S=52*K*(kind==="neutral"?1.35:1); ctx.drawImage(im, px-S/2, py-S/2, S, S); }
-      else { const col=b.team==="ally"?ALLY:(b.team==="enemy"?ENEMY:"#d7d7d2");
+      else { const col=b.team==="ally"?ALLY:(b.team==="enemy"?ENEMY:INK);
         ctx.beginPath(); ctx.arc(px,py,9*K,0,7); ctx.fillStyle=col; ctx.globalAlpha=.9; ctx.fill(); ctx.globalAlpha=1; }
     });
     // --- traces récentes (20 dernières secondes) ---
@@ -3468,8 +3484,13 @@ function renderReplay(host, rep, mkey, demo){
       const end=(v.deathT!=null)? Math.min(t,v.deathT) : t;
       const pts=tr.filter(p=>p[0]<=end && p[0]>=end-20);
       if(pts.length<2) return;
+      // la trace est COUPÉE pendant les périodes sans repérage (pas de trait qui
+      // traverse la carte entre deux apparitions)
       ctx.beginPath(); ctx.moveTo(wx(pts[0][1]),wy(pts[0][2]));
-      for(let i=1;i<pts.length;i++) ctx.lineTo(wx(pts[i][1]),wy(pts[i][2]));
+      for(let i=1;i<pts.length;i++){
+        if(pts[i][0]-pts[i-1][0] > GAP) ctx.moveTo(wx(pts[i][1]),wy(pts[i][2]));
+        else ctx.lineTo(wx(pts[i][1]),wy(pts[i][2]));
+      }
       ctx.strokeStyle=v.ally?ALLY:ENEMY; ctx.globalAlpha=(hover&&hover!==v)?.10:.28;
       ctx.lineWidth=((hover===v)?2.5:1.5)*K; ctx.stroke(); ctx.globalAlpha=1;
     });
@@ -3480,12 +3501,12 @@ function renderReplay(host, rep, mkey, demo){
       if(!a||!vv) return;
       const pa=posAt(a,d.t), pv=posAt(vv,d.t); if(!pa||!pv) return;
       ctx.beginPath(); ctx.moveTo(wx(pa.x),wy(pa.z)); ctx.lineTo(wx(pv.x),wy(pv.z));
-      ctx.strokeStyle="#ffb060"; ctx.globalAlpha=(1-age)*.55; ctx.lineWidth=1.5*K; ctx.stroke(); ctx.globalAlpha=1;
+      ctx.strokeStyle=DMG; ctx.globalAlpha=(1-age)*.55; ctx.lineWidth=1.5*K; ctx.stroke(); ctx.globalAlpha=1;
     });
     // --- tirs : flash court ---
     shots.forEach(s=>{ const age=t-s.t;
       if(age>=0 && age<1.0){ const px=wx(s.x), py=wy(s.z), k=age;
-        ctx.beginPath(); ctx.arc(px,py,(3+k*9)*K,0,7); ctx.strokeStyle="#ecd190"; ctx.globalAlpha=(1-k)*.85; ctx.lineWidth=2*K; ctx.stroke();
+        ctx.beginPath(); ctx.arc(px,py,(3+k*9)*K,0,7); ctx.strokeStyle=SHOT; ctx.globalAlpha=(1-k)*.85; ctx.lineWidth=2*K; ctx.stroke();
         ctx.globalAlpha=1; }
     });
     // --- chars ---
@@ -3499,25 +3520,35 @@ function renderReplay(host, rep, mkey, demo){
         ctx.beginPath(); ctx.moveTo(px-6*K,py-6*K); ctx.lineTo(px+6*K,py+6*K); ctx.moveTo(px+6*K,py-6*K); ctx.lineTo(px-6*K,py+6*K);
         ctx.stroke(); ctx.globalAlpha=1; return;
       }
+      // Plus repéré -> l'icône s'estompe (position = dernier point connu) et
+      // s'efface progressivement. Repéré -> pleine opacité.
+      const fade = p.spotted ? 1 : Math.max(.26, .62 - p.age*0.035);
+      ctx.globalAlpha = fade;
       // pastille de l'équipe + glyphe de la classe du char (lourd / moyen / léger / TD / arto)
       const R=(v.cls?9:7)*K;
       ctx.beginPath(); ctx.arc(px,py,R,0,7); ctx.fillStyle=col; ctx.fill();
       ctx.lineWidth=1.5*K; ctx.strokeStyle="rgba(0,0,0,.55)"; ctx.stroke();
       if(v.cls){
-        const S=Math.round(16*K), g=rpTinted(v.cls,"#0d0d0c",S);
+        const S=Math.round(16*K), g=rpTinted(v.cls,PLANE,S);
         if(g) ctx.drawImage(g, px-S/2, py-S/2, S, S);
       }
+      if(!p.spotted){   // liseré pointillé = dernière position connue
+        ctx.beginPath(); ctx.arc(px,py,R+3*K,0,7); ctx.strokeStyle=col; ctx.lineWidth=1.2*K;
+        ctx.setLineDash([3*K,3*K]); ctx.stroke(); ctx.setLineDash([]);
+      }
       if(v.member){ ctx.beginPath(); ctx.arc(px,py,R+4.5*K,0,7); ctx.strokeStyle=GOLD; ctx.lineWidth=2*K; ctx.stroke(); }
+      ctx.globalAlpha = 1;
     });
     // --- infobulle du char survolé ---
     if(hover){
       const p=posAt(hover,t);
       if(p){ const px=wx(p.x), py=wy(p.z);
-        ctx.beginPath(); ctx.arc(px,py,15*K,0,7); ctx.strokeStyle="#fff"; ctx.globalAlpha=.85; ctx.lineWidth=1.5*K; ctx.stroke(); ctx.globalAlpha=1;
+        ctx.beginPath(); ctx.arc(px,py,15*K,0,7); ctx.strokeStyle=INK; ctx.globalAlpha=.85; ctx.lineWidth=1.5*K; ctx.stroke(); ctx.globalAlpha=1;
         const d=(rep.dmgBy||{})[hover.id]||0;
         tip.innerHTML="<b>"+esc2(hover.name||"?")+"</b>"
           +(hover.tank?' <span style="color:var(--ink-2)">'+esc2(hover.tank)+"</span>":"")
-          +(d?" — "+fmt(d)+" dég.":"");
+          +(d?" — "+fmt(d)+" dég.":"")
+          +(p.spotted||p.dead?"":' <span style="color:var(--muted)">· hors repérage</span>');
         tip.style.left=(px/W*100)+"%"; tip.style.top=(py/W*100)+"%"; tip.classList.add("on");
       }
     } else tip.classList.remove("on");
