@@ -1,0 +1,11 @@
+# Clan Plus — https://clanplus.eu
+# Tous les robots sont les bienvenus sur les pages publiques.
+User-agent: *
+Allow: /
+
+# Pas d'intérêt pour la recherche (données lourdes du visualiseur 3D)
+Disallow: /maps3d/
+Disallow: /fieldmods/
+Disallow: /download/
+
+Sitemap: https://clanplus.eu/sitemap.xml
