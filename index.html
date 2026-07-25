@@ -819,21 +819,25 @@
   .rp-side{display:flex;flex-direction:column;gap:10px;min-width:0}
   .rp-card{background:var(--surface-1);border:1px solid var(--border);border-radius:10px;padding:10px}
   .rp-card h4{margin:0 0 7px;font-size:10px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:var(--muted)}
-  .rp-feed{display:flex;flex-direction:column;gap:4px;max-height:150px;overflow:auto;font-size:11.5px}
-  .rp-feed div{display:flex;gap:5px;align-items:baseline;color:var(--ink-2)}
-  .rp-feed .k-t{color:var(--muted);font-variant-numeric:tabular-nums;flex:0 0 auto}
-  .rp-feed .k-a{color:var(--good)} .rp-feed .k-e{color:var(--bad)}
-  .rp-feed div.past{opacity:.42}
-  .rp-dmg{display:flex;flex-direction:column;gap:3px;font-size:11.5px;max-height:190px;overflow:auto}
-  .rp-dmg .row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:center}
-  .rp-dmg .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .rp-dmg .vv{font-variant-numeric:tabular-nums;font-weight:700;color:var(--ink)}
-  .rp-dmg .bar{grid-column:1/-1;height:3px;border-radius:3px;background:var(--surface-2);overflow:hidden}
-  .rp-dmg .bar i{display:block;height:100%;border-radius:3px}
-  .rp-legend.rp-cls{margin-top:5px;gap:12px;color:var(--muted)}
-  .rp-legend.rp-cls span{display:inline-flex;align-items:center;gap:4px}
-  .rp-legend.rp-cls img{width:14px;height:14px;opacity:.85}
-  .rp-legend img.rp-bl{width:16px;height:16px;vertical-align:-3px;margin-right:3px}
+  /* Journal : les événements de la bataille défilent au fil de la lecture */
+  .rp-jcard{display:flex;flex-direction:column;min-height:0}
+  .rp-jcard h4{display:flex;align-items:center;justify-content:space-between}
+  .rp-jn{font-weight:700;color:var(--ink-2);letter-spacing:0;text-transform:none;font-size:10.5px}
+  .rp-log{display:flex;flex-direction:column;gap:1px;overflow-y:auto;scroll-behavior:smooth;
+    height:clamp(320px,52vh,620px);font-size:11.5px;padding-right:2px}
+  .rp-log>div{display:none;gap:7px;align-items:baseline;padding:4px 6px;border-radius:6px}
+  .rp-log>div.on{display:flex}
+  .rp-log>div:nth-child(odd).on{background:color-mix(in srgb,var(--ink) 4%,transparent)}
+  .rp-log>div.last{background:var(--accent-soft)}
+  .rp-log .jt{color:var(--muted);font-variant-numeric:tabular-nums;flex:0 0 auto;font-size:10.5px}
+  .rp-log .ji{flex:0 0 auto;width:11px;text-align:center}
+  .rp-log .jm{min-width:0;color:var(--ink-2);line-height:1.35}
+  .rp-log .jm b{font-weight:700}
+  .rp-log .A{color:var(--good)} .rp-log .E{color:var(--bad)}
+  .rp-log .jv{font-variant-numeric:tabular-nums;font-weight:700;color:var(--ink);font-style:normal}
+  .rp-log .k .ji{color:var(--bad)}
+  .rp-log .d .ji{color:var(--muted)}
+  .rp-log .empty{display:flex;color:var(--muted);padding:10px 4px}
   .rp-stage{position:relative;width:100%;aspect-ratio:1/1;border-radius:10px;overflow:hidden;border:1px solid var(--border);background:var(--plane)}
   .rp-stage img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
   .rp-stage canvas{position:absolute;inset:0;width:100%;height:100%}
@@ -3299,6 +3303,11 @@ function convertReplay(raw){
     }
   });
   kills.sort((a,b)=>a.t-b.t);
+  damage.sort((a,b)=>a.t-b.t);
+  // Points de vie au fil du temps : PV max moins les dégâts encaissés jusqu'à t.
+  vehicles.forEach(v=>{ v.hits=[]; });
+  damage.forEach(d=>{ const v=byId[d.victim]; if(v) v.hits.push([d.t, d.dmg]); });
+  vehicles.forEach(v=>v.hits.sort((a,b)=>a[0]-b[0]));
   // équipe 0 = base NEUTRE (blanche, 7v7 / Rencontre)
   const bases=(raw.bases||[]).map(bs=>({
     team:(Number(bs[0])===0 ? "neutral" : (bs[0]===my ? "ally" : "enemy")),
@@ -3380,14 +3389,26 @@ function renderReplay(host, rep, mkey, demo){
   const esc2=s=>esc(String(s==null?"":s));
   const fmtT=s=>{ s=Math.max(0,Math.floor(s)); return Math.floor(s/60)+":"+String(s%60).padStart(2,"0"); };
   const kills=rep.kills||[], dmgEvents=rep.damage||[], shots=rep.shots||[];
-  // Classement des dégâts (uniquement si le mod a envoyé des événements)
-  const dmgRows=Object.keys(rep.dmgBy||{}).map(id=>{
-    const v=rep.byId? rep.byId[id] : null;
-    return { name: v? (v.name||"?") : "?", ally: v? v.ally : false, dmg: rep.dmgBy[id] };
-  }).sort((a,b)=>b.dmg-a.dmg).slice(0,12);
-  const dmgMax=dmgRows.length? dmgRows[0].dmg : 0;
 
-  const hasSide=(kills.length>0 || dmgRows.length>0);
+  // ---- Journal : tous les événements de la bataille, dans l'ordre ----
+  const nameOf=id=>{ const v=rep.byId[id]; return v ? (v.name||"?") : "?"; };
+  const sideOf=id=>{ const v=rep.byId[id]; return v && v.ally ? "A" : "E"; };
+  const journal=[];
+  kills.forEach(k=>journal.push({t:k.t, cls:"k", ic:"✕",
+    html:`<b class="${k.killer?sideOf(k.killer):"E"}">${esc2(k.killerName||"?")}</b> détruit <b class="${sideOf(k.victim)}">${esc2(k.victimName)}</b>`}));
+  dmgEvents.forEach(d=>journal.push({t:d.t, cls:"d", ic:"•",
+    html:`<b class="${d.attacker?sideOf(d.attacker):"E"}">${esc2(nameOf(d.attacker))}</b> → <b class="${sideOf(d.victim)}">${esc2(nameOf(d.victim))}</b> <i class="jv">${fmt(d.dmg)}</i>`}));
+  journal.sort((a,b)=>a.t-b.t);
+  const hasSide=journal.length>0;
+
+  // Points de vie restants à l'instant t (PV max moins les dégâts encaissés)
+  function hpAt(v,time){
+    if(!v.maxHp) return null;          // PV max inconnus (ancien replay) -> pas d'anneau
+    let lost=0;
+    const h=v.hits||[];
+    for(let i=0;i<h.length;i++){ if(h[i][0]<=time) lost+=h[i][1]; else break; }
+    return Math.max(0, v.maxHp-lost);  // char intact -> anneau plein
+  }
   host.innerHTML=`<div class="rp-wrap">
     <div class="rp-main${hasSide?"":" no-side"}">
       <div>
@@ -3400,27 +3421,22 @@ function renderReplay(host, rep, mkey, demo){
           <select class="rp-speed" aria-label="Vitesse"><option value="1">×1</option><option value="2" selected>×2</option><option value="4">×4</option><option value="8">×8</option></select>
           <span class="rp-time">0:00 / ${durFR(rep.duration)}</span>
         </div>
-        <div class="rp-legend"><span><i style="color:${ALLY}">●</i> Nous</span><span><i style="color:${ENEMY}">●</i> Adversaire</span><span><i style="color:${GOLD}">◎</i> Membre</span>${shots.length?`<span><i style="color:${SHOT}">✦</i> Tir</span>`:""}${dmgEvents.length?`<span><i style="color:${DMG}">╱</i> Dégâts</span>`:""}<span style="opacity:.45"><i style="color:${ENEMY}">◌</i> Hors repérage</span><span><img class="rp-bl" src="bases/green.png" alt="">Notre base</span><span><img class="rp-bl" src="bases/red.png" alt="">Base adverse</span>${
-          rep.bases.some(b=>b.team==="neutral")?`<span><img class="rp-bl" src="bases/neutral.png" alt="">Base neutre</span>`:""
-        }<span>✕ détruit</span></div>
-        ${rep.vehicles.some(v=>v.cls)?`<div class="rp-legend rp-cls">${
-          [["heavyTank","Lourd"],["mediumTank","Moyen"],["lightTank","Léger"],["AT-SPG","Chasseur"],["SPG","Arto"]]
-          .map(([c,lab])=>`<span><img src="classes/${encodeURIComponent(c)}.png" alt="">${lab}</span>`).join("")
-        }</div>`:""}
-        <div class="rp-note">${demo ? "Démo — positions simulées (le mod enverra bientôt les vraies)." : "Replay réel — enregistré par le mod. Survole un char pour son nom."}</div>
+        ${demo?`<div class="rp-note">Démo — positions simulées (le mod enverra bientôt les vraies).</div>`:""}
       </div>
       ${hasSide?`<div class="rp-side">
-        ${kills.length?`<div class="rp-card"><h4>Éliminations (${kills.length})</h4><div class="rp-feed"></div></div>`:""}
-        ${dmgRows.length?`<div class="rp-card"><h4>Dégâts infligés</h4><div class="rp-dmg">${
-          dmgRows.map(r=>`<div class="row"><span class="nm" style="color:${r.ally?ALLY:ENEMY}">${esc2(r.name)}</span><span class="vv">${fmt(r.dmg)}</span>
-            <span class="bar"><i style="width:${dmgMax?Math.round(r.dmg/dmgMax*100):0}%;background:${r.ally?ALLY:ENEMY}"></i></span></div>`).join("")
-        }</div></div>`:""}
+        <div class="rp-card rp-jcard">
+          <h4>Journal <span class="rp-jn"></span></h4>
+          <div class="rp-log"></div>
+        </div>
       </div>`:""}
     </div></div>`;
 
   const cv=host.querySelector("canvas"), ctx=cv.getContext("2d");
   const scrub=host.querySelector(".rp-scrub"), playBtn=host.querySelector(".rp-play"), timeEl=host.querySelector(".rp-time");
-  const speedSel=host.querySelector(".rp-speed"), tip=host.querySelector(".rp-tip"), feed=host.querySelector(".rp-feed");
+  const speedSel=host.querySelector(".rp-speed"), tip=host.querySelector(".rp-tip");
+  const logEl=host.querySelector(".rp-log"), jnEl=host.querySelector(".rp-jn");
+  if(logEl) logEl.innerHTML=journal.map(e=>
+    `<div class="${e.cls}"><span class="jt">${fmtT(e.t)}</span><span class="ji">${e.ic}</span><span class="jm">${e.html}</span></div>`).join("");
   let t=0, playing=true, last=performance.now(), speed=2, hover=null, mouse=null;
 
   /* Un char n'est enregistré que lorsque le jeu transmet sa position, c'est-à-dire
@@ -3534,19 +3550,33 @@ function renderReplay(host, rep, mkey, demo){
       // s'efface progressivement. Repéré -> pleine opacité.
       const fade = p.spotted ? 1 : Math.max(.26, .62 - p.age*0.035);
       ctx.globalAlpha = fade;
-      // pastille de l'équipe + glyphe de la classe du char (lourd / moyen / léger / TD / arto)
-      const R=(v.cls?9:7)*K;
-      ctx.beginPath(); ctx.arc(px,py,R,0,7); ctx.fillStyle=col; ctx.fill();
-      ctx.lineWidth=1.5*K; ctx.strokeStyle="rgba(0,0,0,.55)"; ctx.stroke();
+      // --- le glyphe de classe SEUL, aux couleurs de son équipe ---
+      const S=Math.round(20*K), SH=Math.round(S+5*K);
       if(v.cls){
-        const S=Math.round(16*K), g=rpTinted(v.cls,PLANE,S);
+        const halo=rpTinted(v.cls,"#080807",SH);            // contour sombre = lisible sur carte claire
+        if(halo) ctx.drawImage(halo, px-SH/2, py-SH/2, SH, SH);
+        const g=rpTinted(v.cls,col,S);
         if(g) ctx.drawImage(g, px-S/2, py-S/2, S, S);
+      } else {
+        ctx.beginPath(); ctx.arc(px,py,5.5*K,0,7); ctx.fillStyle=col; ctx.fill();
+        ctx.lineWidth=1.5*K; ctx.strokeStyle="rgba(0,0,0,.6)"; ctx.stroke();
+      }
+      // --- anneau de points de vie : la part perdue devient grise ---
+      const hp=hpAt(v,t);
+      if(hp!=null){
+        const frac=Math.max(0,Math.min(1,hp/v.maxHp)), rr=S*0.80;
+        ctx.lineWidth=2.6*K; ctx.lineCap="butt";
+        ctx.beginPath(); ctx.arc(px,py,rr,0,Math.PI*2);
+        ctx.strokeStyle="rgba(255,255,255,.17)"; ctx.stroke();     // fond = PV perdus
+        if(frac>0){
+          ctx.beginPath(); ctx.arc(px,py,rr,-Math.PI/2,-Math.PI/2+Math.PI*2*frac);
+          ctx.strokeStyle=col; ctx.stroke();                        // restant = couleur d'équipe
+        }
       }
       if(!p.spotted){   // liseré pointillé = dernière position connue
-        ctx.beginPath(); ctx.arc(px,py,R+3*K,0,7); ctx.strokeStyle=col; ctx.lineWidth=1.2*K;
+        ctx.beginPath(); ctx.arc(px,py,S*0.80+3.5*K,0,7); ctx.strokeStyle=col; ctx.lineWidth=1.2*K;
         ctx.setLineDash([3*K,3*K]); ctx.stroke(); ctx.setLineDash([]);
       }
-      if(v.member){ ctx.beginPath(); ctx.arc(px,py,R+4.5*K,0,7); ctx.strokeStyle=GOLD; ctx.lineWidth=2*K; ctx.stroke(); }
       ctx.globalAlpha = 1;
     });
     // --- infobulle du char survolé ---
@@ -3563,13 +3593,24 @@ function renderReplay(host, rep, mkey, demo){
       }
     } else tip.classList.remove("on");
   }
-  function renderFeed(){
-    if(!feed) return;
-    feed.innerHTML=kills.map(k=>
-      `<div class="${k.t<=t?"":"past"}"><span class="k-t">${fmtT(k.t)}</span>
-        <span class="${k.victimAlly?"k-e":"k-a"}">${k.killerName?esc2(k.killerName):"?"}</span>
-        <span style="color:var(--muted)">✕</span>
-        <span class="${k.victimAlly?"k-a":"k-e"}">${esc2(k.victimName)}</span></div>`).join("");
+  /* Journal en temps réel : on ne révèle que les événements déjà survenus,
+     et on suit automatiquement le dernier. */
+  let logShown=-1;
+  function renderFeed(force){
+    if(!logEl) return;
+    let n=0; while(n<journal.length && journal[n].t<=t) n++;
+    if(!force && n===logShown) return;
+    const kids=logEl.children;
+    if(logShown<0){ for(let i=0;i<kids.length;i++) kids[i].classList.remove("on","last"); logShown=0; }
+    if(n>logShown){ for(let i=logShown;i<n;i++) kids[i].classList.add("on"); }
+    else if(n<logShown){ for(let i=n;i<logShown;i++) kids[i].classList.remove("on"); }
+    if(logShown>0 && kids[logShown-1]) kids[logShown-1].classList.remove("last");
+    if(n>0 && kids[n-1]){ kids[n-1].classList.add("last");
+      const el=kids[n-1];
+      logEl.scrollTop=Math.max(0, el.offsetTop-logEl.clientHeight+el.offsetHeight+6);
+    }
+    logShown=n;
+    if(jnEl) jnEl.textContent=n+" / "+journal.length;
   }
   function frame(now){
     if(!document.body.contains(cv)) return;
