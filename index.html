@@ -560,6 +560,110 @@
   #viewRecruit .rc-notice{background:var(--accent-soft);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--ink-2);margin-bottom:14px}
   #viewRecruit .rc-disabled{opacity:.55;pointer-events:none}
   #viewRecruit .btn.primary{background:linear-gradient(180deg,var(--accent-2),var(--accent));border-color:transparent;color:#1a1608}
+  /* ---- Classement des clans (module, thème sombre via tokens) ---- */
+  #clanRanking{ --cr-panel:var(--card); --cr-panel-2:var(--surface-2); --cr-line:var(--border);
+    --cr-line-gold:color-mix(in srgb,var(--accent) 45%,transparent); --cr-text:var(--ink); --cr-text-2:var(--ink-2);
+    --cr-muted:var(--muted); --cr-gold:var(--accent); --cr-gold-2:var(--accent-2); --cr-good:var(--good); --cr-bad:var(--bad);
+    --cr-font:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; --cr-title:"Bahnschrift","Segoe UI Semibold",system-ui,sans-serif; }
+  .cr-page{box-sizing:border-box;max-width:1220px;margin:0 auto;color:var(--cr-text);font-family:var(--cr-font)}
+  .cr-page *,.cr-page *::before,.cr-page *::after{box-sizing:border-box}
+  .cr-header{display:flex;align-items:end;justify-content:space-between;gap:18px;margin-bottom:16px}
+  .cr-header h2{margin:5px 0 3px;font:800 26px/1.15 var(--cr-title)}
+  .cr-header p{margin:0;color:var(--cr-text-2);font-size:12px}
+  .cr-eyebrow{color:var(--cr-gold);font-size:10px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase}
+  .cr-status{color:var(--cr-text-2);font-size:11px;white-space:nowrap}
+  .cr-status::before{content:"";display:inline-block;width:7px;height:7px;margin-right:7px;border-radius:50%;background:var(--cr-good);box-shadow:0 0 8px rgba(76,192,119,.7)}
+  .cr-toolbar{display:flex;align-items:end;gap:10px;padding:11px 12px;margin-bottom:14px;border:1px solid var(--cr-line);border-radius:12px;background:var(--cr-panel);flex-wrap:wrap}
+  .cr-toolbar label{display:flex;flex-direction:column;gap:5px}
+  .cr-toolbar label>span{color:var(--cr-muted);font-size:9px;font-weight:800;letter-spacing:.7px;text-transform:uppercase}
+  .cr-toolbar select,.cr-toolbar input{height:36px;border:1px solid var(--cr-line);border-radius:8px;background:var(--cr-panel-2);color:var(--cr-text);padding:0 11px;outline:0;font:inherit;font-size:13px}
+  .cr-toolbar select{min-width:220px}
+  .cr-toolbar input{width:215px;margin-left:auto}
+  .cr-toolbar select:focus,.cr-toolbar input:focus{border-color:var(--cr-line-gold);box-shadow:0 0 0 3px rgba(229,185,92,.08)}
+  .cr-quick{display:flex;height:36px;overflow:hidden;border:1px solid var(--cr-line);border-radius:8px}
+  .cr-quick button{padding:0 13px;border:0;border-right:1px solid var(--cr-line);background:transparent;color:var(--cr-text-2);cursor:pointer;font:inherit}
+  .cr-quick button:last-child{border-right:0}
+  .cr-quick button.active{color:var(--cr-gold-2);background:rgba(229,185,92,.12)}
+  .cr-my-clan{height:36px;padding:0 14px;border:1px solid var(--cr-line-gold);border-radius:8px;background:rgba(229,185,92,.11);color:var(--cr-gold-2);font-weight:800;cursor:pointer;font:inherit}
+  .cr-my-clan:disabled{opacity:.4;cursor:not-allowed}
+  .cr-overview{display:grid;grid-template-columns:.9fr 1.55fr;gap:12px;margin-bottom:12px}
+  .cr-own,.cr-podium{min-height:190px;border-radius:13px;background:var(--cr-panel)}
+  .cr-own{position:relative;overflow:hidden;padding:18px;border:1px solid var(--cr-line-gold);background:linear-gradient(145deg,rgba(229,185,92,.13),rgba(20,23,27,.55) 58%),var(--cr-panel)}
+  .cr-card-label{color:var(--cr-gold);font-size:9px;font-weight:800;letter-spacing:.9px;text-transform:uppercase}
+  .cr-own-main{display:flex;align-items:center;gap:14px;margin-top:15px}
+  .cr-mark{width:52px;height:52px;display:grid;place-items:center;flex:0 0 auto;border:1px solid var(--cr-line-gold);border-radius:12px;background:rgba(0,0,0,.28);color:var(--cr-gold-2);font:700 15px var(--cr-title)}
+  .cr-rank{color:var(--cr-text);font:800 38px/1 var(--cr-title)}
+  .cr-clan-name{margin-top:6px;color:var(--cr-text-2);font-size:13px}
+  .cr-delta{display:inline-block;margin-top:6px;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:800}
+  .cr-delta.up{color:var(--cr-good);background:rgba(76,192,119,.12)}
+  .cr-delta.down{color:var(--cr-bad);background:rgba(239,90,104,.12)}
+  .cr-own-foot{display:flex;justify-content:space-between;gap:12px;margin-top:17px;padding-top:12px;border-top:1px solid var(--cr-line)}
+  .cr-own-foot span{color:var(--cr-muted);font-size:10px}
+  .cr-own-foot b{display:block;margin-top:3px;color:var(--cr-text);font:700 15px var(--cr-title)}
+  .cr-podium{padding:15px 16px;border:1px solid var(--cr-line);background:linear-gradient(180deg,var(--cr-panel),var(--cr-panel-2))}
+  .cr-podium>header{display:flex;justify-content:space-between;margin-bottom:12px}
+  .cr-podium>header b{font:700 13px var(--cr-title)}
+  .cr-podium>header span{color:var(--cr-muted);font-size:10px}
+  .cr-podium-grid{display:grid;grid-template-columns:1fr 1.08fr 1fr;align-items:end;gap:8px}
+  .cr-podium-card{min-width:0;padding:13px 8px 11px;border:1px solid var(--cr-line);border-radius:10px;background:var(--cr-panel-2);text-align:center}
+  .cr-podium-card.first{padding-top:20px;border-color:var(--cr-line-gold);background:linear-gradient(180deg,rgba(229,185,92,.13),var(--cr-panel-2))}
+  .cr-medal{width:25px;height:25px;display:grid;place-items:center;margin:0 auto 7px;border-radius:7px;background:var(--cr-panel-2);border:1px solid var(--cr-line);color:var(--cr-text-2)}
+  .cr-podium-card.first .cr-medal{color:#18150e;background:linear-gradient(#f0d17c,#c89538);border-color:transparent}
+  .cr-podium-card strong,.cr-podium-card small,.cr-podium-card em{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .cr-podium-card strong{font-size:13px}
+  .cr-podium-card small{margin:3px 0 8px;color:var(--cr-muted);font-size:10px}
+  .cr-podium-card em{color:var(--cr-gold-2);font:800 18px var(--cr-title);font-style:normal}
+  .cr-layout{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:12px}
+  .cr-table-card,.cr-side-card{border:1px solid var(--cr-line);border-radius:13px;background:var(--cr-panel)}
+  .cr-table-card{overflow:hidden}
+  .cr-table-card>header{display:flex;justify-content:space-between;padding:13px 15px;border-bottom:1px solid var(--cr-line)}
+  .cr-table-card>header b{font:700 13px var(--cr-title)}
+  .cr-table-card>header span{color:var(--cr-muted);font-size:10px}
+  .cr-table-scroll{overflow-x:auto}
+  .cr-table{width:100%;min-width:760px;border-collapse:collapse;table-layout:fixed}
+  .cr-table th,.cr-table td{padding:9px 12px;border-bottom:1px solid var(--cr-line);text-align:left}
+  .cr-table th{color:var(--cr-muted);font-size:9px;letter-spacing:.7px;text-transform:uppercase}
+  .cr-table td{color:var(--cr-text-2);font-size:12px}
+  .cr-table th:nth-child(1),.cr-table td:nth-child(1){width:70px;text-align:center}
+  .cr-table th:nth-child(3),.cr-table td:nth-child(3){width:128px}
+  .cr-table th:nth-child(4),.cr-table td:nth-child(4){width:112px}
+  .cr-table th:nth-child(5),.cr-table td:nth-child(5){width:92px;text-align:right}
+  .cr-table th:nth-child(6),.cr-table td:nth-child(6){width:96px;text-align:right}
+  .cr-table th button{display:inline-flex;align-items:center;gap:5px;width:100%;padding:0;border:0;background:none;color:inherit;font:inherit;text-transform:inherit;cursor:pointer}
+  .cr-table th:nth-child(5) button,.cr-table th:nth-child(6) button{justify-content:end}
+  .cr-table th button.active,.cr-table th button:hover{color:var(--cr-gold-2)}
+  .cr-table th button i{color:var(--cr-gold-2);font-style:normal}
+  .cr-table tr.mine td{background:linear-gradient(90deg,rgba(229,185,92,.14),rgba(229,185,92,.035));border-color:var(--cr-line-gold)}
+  .cr-clan{display:grid;grid-template-columns:30px minmax(0,1fr);align-items:center;gap:9px}
+  .cr-emblem{width:30px;height:30px;display:grid;place-items:center;border:1px solid var(--cr-line);border-radius:8px;color:var(--cr-gold);background:var(--cr-panel-2);font-size:9px;font-weight:800}
+  .cr-emblem img{display:block;width:26px;height:26px;object-fit:contain}
+  .cr-clan b,.cr-clan small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .cr-clan b{color:var(--cr-text)}
+  .cr-clan small{margin-top:2px;color:var(--cr-muted);font-size:10px}
+  .cr-country{display:flex;align-items:center;gap:6px;min-width:0;font-size:10px}
+  .cr-country span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .cr-country.unknown{color:var(--cr-muted)}
+  .cr-score{color:var(--cr-text) !important;font:800 14px var(--cr-title)}
+  .cr-positive{color:var(--cr-good) !important}
+  .cr-negative{color:var(--cr-bad) !important}
+  @keyframes crFocus{0%,100%{box-shadow:inset 0 0 0 1px rgba(229,185,92,.45)}45%{box-shadow:inset 0 0 0 2px #f0c75e,0 0 18px rgba(229,185,92,.28)}}
+  .cr-table tr.focus td{background:rgba(229,185,92,.22) !important;animation:crFocus 1.1s ease-in-out 2}
+  .cr-pagination{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px;padding:14px}
+  .cr-pagination button{min-width:34px;height:34px;padding:0 10px;border:1px solid var(--cr-line);border-radius:8px;color:var(--cr-text-2);background:var(--cr-panel-2);cursor:pointer;font:inherit}
+  .cr-pagination button.active{color:var(--cr-gold-2);border-color:var(--cr-line-gold);background:rgba(229,185,92,.11)}
+  .cr-pagination button:disabled{opacity:.4;cursor:default}
+  .cr-pagination span{color:var(--cr-muted);font-size:12px}
+  .cr-side{display:flex;flex-direction:column;gap:12px}
+  .cr-side-card{padding:14px}
+  .cr-side-card h3{margin:0 0 12px;font:700 12px var(--cr-title)}
+  .cr-side-card p{margin:0;color:var(--cr-text-2);font-size:11px;line-height:1.55}
+  .cr-best{margin:16px 0 6px;color:var(--cr-text);font:800 38px/1 var(--cr-title)}
+  .cr-tier{display:grid;grid-template-columns:55px 1fr 42px;align-items:center;gap:8px;margin:10px 0;color:var(--cr-text-2);font-size:11px}
+  .cr-track{height:5px;overflow:hidden;border-radius:10px;background:color-mix(in srgb,var(--cr-text) 10%,transparent)}
+  .cr-fill{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#bf8d36,var(--cr-gold-2))}
+  .cr-empty{padding:32px;color:var(--cr-muted);text-align:center}
+  @media (max-width:920px){.cr-toolbar{flex-wrap:wrap}.cr-toolbar input{width:100%;margin-left:0}.cr-overview,.cr-layout{grid-template-columns:1fr}}
+  @media (max-width:600px){.cr-header{align-items:start;flex-direction:column}.cr-toolbar select{min-width:0;width:100%}.cr-quick{width:100%}.cr-quick button{flex:1}.cr-own-foot{flex-wrap:wrap}}
   .res-row{display:flex;align-items:center;gap:14px;padding:12px 10px;border-top:1px solid var(--grid);cursor:pointer;transition:.12s;border-radius:8px}
   .res-row:hover{background:var(--accent-soft)}
   .res-row .rt{font-weight:750;min-width:76px;color:var(--accent)}
@@ -1927,14 +2031,48 @@
   </div>
 
   <div id="viewRanking" class="hidden">
-    <div class="sec-h">Classement des clans</div>
-    <p class="sec-desc">Le classement de <b>tous les clans EU</b> selon la mesure choisie. ⚠️ Wargaming ne fournit <b>pas la nationalité</b> des clans : le classement est donc <b>mondial (serveur EU)</b>, filtrable par <b>mesure</b> et par <b>tier</b>.</p>
-    <div class="filters">
-      <span class="fld"><label>Classer par</label><select id="rkMetric"></select></span>
-      <span class="spacer"></span>
-      <span id="rkMine" class="rk-mine"></span>
+   <section id="clanRanking" class="cr-page">
+    <header class="cr-header">
+      <div>
+        <span class="cr-eyebrow">Compétition européenne</span>
+        <h2>Classement des clans</h2>
+        <p>Classements officiels World of Tanks du serveur EU.</p>
+      </div>
+      <span class="cr-status" id="crStatus">Connexion à Wargaming…</span>
+    </header>
+    <div class="cr-toolbar">
+      <label><span>Classer par</span><select id="crMetric"></select></label>
+      <div class="cr-quick" aria-label="Accès rapide">
+        <button type="button" data-cr-metric="fort_elo_rating_10">Tier X</button>
+        <button type="button" data-cr-metric="fort_elo_rating_8">Tier VIII</button>
+        <button type="button" data-cr-metric="fort_elo_rating_6">Tier VI</button>
+      </div>
+      <button type="button" class="cr-my-clan" id="crMyClan" disabled>◎ Voir mon clan</button>
+      <input id="crSearch" type="search" placeholder="Tag ou nom du clan…">
     </div>
-    <div class="tablecard"><div id="rkList"></div></div>
+    <div class="cr-overview">
+      <section class="cr-own" id="crOwn"></section>
+      <section class="cr-podium" id="crPodium"></section>
+    </div>
+    <div class="cr-layout">
+      <section class="cr-table-card">
+        <header><b>Classement général</b><span id="crCount">—</span></header>
+        <div class="cr-table-scroll">
+          <table class="cr-table">
+            <thead><tr>
+              <th>Rang</th><th>Clan</th><th>Pays déclaré</th>
+              <th><button type="button" data-cr-sort="activity">Activité / jour <i>↕</i></button></th>
+              <th><button type="button" data-cr-sort="evolution">Évolution <i>↕</i></button></th>
+              <th><button type="button" data-cr-sort="score">Score <i>↕</i></button></th>
+            </tr></thead>
+            <tbody id="crRows"></tbody>
+          </table>
+        </div>
+        <nav class="cr-pagination" id="crPagination" aria-label="Pages du classement"></nav>
+      </section>
+      <aside class="cr-side" id="crSide"></aside>
+    </div>
+   </section>
   </div>
 
   <div id="viewSearch" class="hidden">
@@ -2015,9 +2153,7 @@ const ROLE_FR = {commander:"Commandant",deputy_commander:"Commandant adjoint",ex
    ============================================================ */
 let DEV=false;   // mode test : débloque l'interface officier/commandant (côté client)
 async function boot(){
-  const savedTheme = localStorage.getItem("clanplus_theme")
-    || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark":"light");
-  document.documentElement.setAttribute("data-theme", savedTheme);
+  document.documentElement.setAttribute("data-theme", "dark");   // thème SOMBRE uniquement
   if(localStorage.getItem("cp_sidebar")==="1") document.getElementById("sidebar").classList.add("collapsed");
 
   // Mode test : ?dev l'active (persiste), ?dev=0 le coupe.
@@ -3548,15 +3684,8 @@ function wireUI(){
   document.getElementById("stNewBtn").onclick=()=>openStratEditor(null);
   document.querySelectorAll(".lo-subtab").forEach(b=>b.onclick=()=>switchLoSub(b.dataset.losub));
   document.getElementById("sideToggle").onclick=toggleSidebar;
-  const rkSel=document.getElementById("rkMetric");
-  rkSel.innerHTML=RK_METRICS.map(([k,l])=>`<option value="${k}">${esc(l)}</option>`).join("");
-  rkSel.onchange=loadRanking;
-  document.getElementById("themeBtn").onclick=()=>{
-    const cur=document.documentElement.getAttribute("data-theme");
-    const next=cur==="dark"?"light":"dark";
-    document.documentElement.setAttribute("data-theme",next);
-    localStorage.setItem("clanplus_theme",next); rerender();
-  };
+  // (classement : le module #clanRanking construit son propre sélecteur)
+  { const _tb=document.getElementById("themeBtn"); if(_tb) _tb.style.display="none"; }  // thème sombre uniquement
   document.getElementById("logoutBtn").onclick=()=>{ localStorage.removeItem(LS_SESSION); location.href=redirectUri(); };
   window.addEventListener("resize",()=>{ if(document.getElementById("app").classList.contains("hidden"))return;
     if(playerActive()) renderPlayerView(); else renderTrend(applyFilters().filter(r=>r.isMember)); });
@@ -5743,30 +5872,198 @@ const RK_MINE_FIELD={fort_elo_rating:"fb_elo_rating",fort_elo_rating_10:"fb_elo_
   fort_elo_rating_8:"fb_elo_rating_8",fort_elo_rating_6:"fb_elo_rating_6",gm_elo_rating:"gm_elo_rating",
   efficiency:"efficiency",wins_ratio_avg:"wins_ratio_avg",global_rating_avg:"global_rating_avg"};
 function rkFmt(metric,v){ return metric==="wins_ratio_avg" ? fmt(v,2)+" %" : fmt(v); }
-async function loadRanking(){
-  RK_METRIC=document.getElementById("rkMetric").value||RK_METRIC;
-  const list=document.getElementById("rkList");
-  list.innerHTML=cpLoader('Chargement du classement…');
-  // situe NOTRE clan (données déjà en mémoire)
-  const mf=RK_MINE_FIELD[RK_METRIC], mineObj=(CLANRATINGS&&mf)?CLANRATINGS[mf]:null;
-  document.getElementById("rkMine").innerHTML = (mineObj&&mineObj.rank!=null)
-    ? `Ton clan <b>[${esc(CLANTAG)}]</b> : <b>rang ${fmt(mineObj.rank)}</b> · ${rkFmt(RK_METRIC,mineObj.value)}` : "";
-  const r=await fnCall("clan-ranking",{session:localStorage.getItem(LS_SESSION),metric:RK_METRIC});
-  if(!r.ok){ list.innerHTML='<div class="empty">Erreur : '+esc(r.j.error||String(r.status))+'</div>'; return; }
-  renderRanking(r.j.clans||[]);
+/* Classement des clans — module complet (chargement de tout le classement,
+   podium, carte "ton clan", tri/recherche/pagination). Encapsulé pour ne
+   pas entrer en collision avec les variables globales de l'app. */
+let CR_INITED=false;
+function loadRanking(){
+  const clanId = Number(localStorage.getItem("cp_clan")) || (CLANINFO&&CLANINFO.clan_id) || 0;
+  const clanTag = (typeof CLANTAG!=="undefined"&&CLANTAG) ? CLANTAG : ((CLANINFO&&CLANINFO.tag)||"");
+  initClanRanking(clanId, clanTag);
 }
-function renderRanking(clans){
-  const el=document.getElementById("rkList");
-  if(!clans.length){ el.innerHTML='<div class="empty">Aucun clan à afficher.</div>'; return; }
-  let h=`<table class="rk-table"><thead><tr><th class="rk-num">Rang</th><th>Clan</th><th>Nom</th><th class="rk-num">Valeur</th><th class="rk-num">Évol.</th></tr></thead><tbody>`;
-  clans.forEach(c=>{
-    const me=(CLANTAG&&String(c.tag||"").toUpperCase()===CLANTAG.toUpperCase())?"rk-me":"";
-    let d="—";
-    if(c.rank_delta){ const up=c.rank_delta>0; d=`<span class="${up?'pos':'neg'}">${up?'▲':'▼'}${Math.abs(c.rank_delta)}</span>`; }
-    h+=`<tr class="${me}"><td class="rk-num">${fmt(c.rank)}</td><td><b>[${esc(c.tag||"")}]</b></td><td>${esc(c.name||"")}</td><td class="rk-num">${rkFmt(RK_METRIC,c.value)}</td><td class="rk-num">${d}</td></tr>`;
-  });
-  h+="</tbody></table>";
-  el.innerHTML=h;
+function initClanRanking(clanIdIn, clanTagIn){
+  const root = document.getElementById("clanRanking");
+  if(!root || CR_INITED) return;
+  CR_INITED = true;
+
+  const ownCountries = (typeof CLANPROFILE!=="undefined" && CLANPROFILE && Array.isArray(CLANPROFILE.langs) && CLANPROFILE.langs.length && clanIdIn)
+    ? { [String(clanIdIn)]: CLANPROFILE.langs } : {};
+  const CONFIG = { api:"https://api.worldoftanks.eu", applicationId: WG_APP_ID,
+    clanId: Number(clanIdIn)||0, clanTag: clanTagIn||"", pageSize:20, declaredCountries: ownCountries };
+
+  const METRICS = [
+    ["fort_elo_rating_10","Bastion — tier 10"],["fort_elo_rating_8","Bastion — tier 8"],
+    ["fort_elo_rating_6","Bastion — tier 6"],["fort_elo_rating","Niveau Bastion global"],
+    ["gm_elo_rating","Carte Globale"],["efficiency","Efficacité"],
+    ["wins_ratio_avg","% de victoires"],["global_rating_avg","Niveau moyen des joueurs"]
+  ];
+  const RESPONSE_FIELD = { fort_elo_rating:"fb_elo_rating", fort_elo_rating_10:"fb_elo_rating_10",
+    fort_elo_rating_8:"fb_elo_rating_8", fort_elo_rating_6:"fb_elo_rating_6", gm_elo_rating:"gm_elo_rating",
+    efficiency:"efficiency", wins_ratio_avg:"wins_ratio_avg", global_rating_avg:"global_rating_avg" };
+  const COUNTRIES = { fr:["🇫🇷","France"],be:["🇧🇪","Belgique"],ch:["🇨🇭","Suisse"],ca:["🇨🇦","Canada"],
+    lu:["🇱🇺","Luxembourg"],de:["🇩🇪","Allemagne"],gb:["🇬🇧","Royaume-Uni"],es:["🇪🇸","Espagne"],
+    it:["🇮🇹","Italie"],pt:["🇵🇹","Portugal"],nl:["🇳🇱","Pays-Bas"],pl:["🇵🇱","Pologne"],cz:["🇨🇿","Tchéquie"],
+    sk:["🇸🇰","Slovaquie"],hu:["🇭🇺","Hongrie"],ro:["🇷🇴","Roumanie"],gr:["🇬🇷","Grèce"],se:["🇸🇪","Suède"],
+    no:["🇳🇴","Norvège"],fi:["🇫🇮","Finlande"],dk:["🇩🇰","Danemark"],ua:["🇺🇦","Ukraine"],tr:["🇹🇷","Turquie"],
+    ma:["🇲🇦","Maroc"],dz:["🇩🇿","Algérie"],tn:["🇹🇳","Tunisie"] };
+
+  const state = { metric:"fort_elo_rating_10", page:1, query:"", sortKey:"rank", sortDir:"asc",
+    rows:[], ratings:null, focusMine:false, cache:new Map(), emblems:new Map() };
+  const ui = { metric:root.querySelector("#crMetric"), search:root.querySelector("#crSearch"),
+    status:root.querySelector("#crStatus"), own:root.querySelector("#crOwn"), podium:root.querySelector("#crPodium"),
+    rows:root.querySelector("#crRows"), count:root.querySelector("#crCount"), pager:root.querySelector("#crPagination"),
+    side:root.querySelector("#crSide"), mine:root.querySelector("#crMyClan") };
+
+  const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const fmt = (v,d=0) => { const n=Number(v); return Number.isFinite(n) ? n.toLocaleString("fr-FR",{minimumFractionDigits:d,maximumFractionDigits:d}) : "—"; };
+  const metricLabel = () => METRICS.find(([k])=>k===state.metric)?.[1] || "Classement";
+  const score = v => state.metric==="wins_ratio_avg" ? `${fmt(v,2)} %` : fmt(v);
+
+  async function api(path, params){
+    const query = new URLSearchParams({ application_id:CONFIG.applicationId, language:"fr", ...params });
+    const response = await fetch(`${CONFIG.api}${path}?${query}`);
+    const json = await response.json();
+    if(!response.ok || json.status!=="ok") throw new Error(json.error?.message || "API Wargaming indisponible");
+    return json;
+  }
+  function normalizeRows(rows, field){
+    return (Array.isArray(rows)?rows:[]).map(clan=>{ const stat=clan?.[field]||{};
+      return { clanId:Number(clan.clan_id), tag:clan.clan_tag||"", name:clan.clan_name||"", rank:stat.rank,
+        value:stat.value, rankDelta:stat.rank_delta, activity:clan.battles_count_avg_daily?.value,
+        countries:CONFIG.declaredCountries[String(clan.clan_id)]||[] };
+    }).filter(clan=>clan.rank!=null && clan.value!=null);
+  }
+  async function fetchAllRanking(){
+    if(state.cache.has(state.metric)) return state.cache.get(state.metric);
+    const field = RESPONSE_FIELD[state.metric];
+    const fields = ["clan_id","clan_tag","clan_name",field,"battles_count_avg_daily"].join(",");
+    const all=[];
+    for(let page=1; page<=50; page+=1){
+      const json = await api("/wot/clanratings/top/", { rank_field:state.metric, limit:1000, page_no:page, fields });
+      all.push(...normalizeRows(json.data, field));
+      if(!Array.isArray(json.data) || json.data.length<1000) break;
+    }
+    state.cache.set(state.metric, all);
+    return all;
+  }
+  async function fetchOwnRatings(){
+    if(!CONFIG.clanId){ state.ratings=null; return; }
+    const json = await api("/wot/clanratings/clans/", { clan_id:CONFIG.clanId });
+    state.ratings = json.data?.[String(CONFIG.clanId)] || null;
+  }
+  async function fetchVisibleEmblems(rows){
+    const missing = [...new Set(rows.map(r=>String(r.clanId)).filter(id=>id && !state.emblems.has(id)))];
+    if(!missing.length) return false;
+    missing.forEach(id=>state.emblems.set(id,null));
+    const json = await api("/wgn/clans/info/", { clan_id:missing.join(","), fields:"clan_id,tag,emblems" });
+    Object.entries(json.data||{}).forEach(([id,clan])=>{ const e=clan?.emblems||{};
+      state.emblems.set(id, e.x32?.portal || e.x64?.portal || e.x64?.wot || null); });
+    return true;
+  }
+  function getSortValue(row){ if(state.sortKey==="activity")return row.activity; if(state.sortKey==="evolution")return row.rankDelta; if(state.sortKey==="score")return row.value; return row.rank; }
+  function sortedRows(){
+    const query = state.query.trim().toLowerCase();
+    return state.rows.filter(row=>!query || row.tag.toLowerCase().includes(query) || row.name.toLowerCase().includes(query)).slice()
+      .sort((a,b)=>{ const av=Number(getSortValue(a)), bv=Number(getSortValue(b));
+        if(!Number.isFinite(av)&&!Number.isFinite(bv))return 0; if(!Number.isFinite(av))return 1; if(!Number.isFinite(bv))return -1;
+        return state.sortDir==="asc" ? av-bv : bv-av; });
+  }
+  function countryHTML(row){
+    const countries = row.countries.map(c=>COUNTRIES[c]).filter(Boolean);
+    if(!countries.length) return '<span class="cr-country unknown"><span>🌐</span><span>Non renseigné</span></span>';
+    return `<span class="cr-country" title="Pays déclaré par le staff"><span>${countries.map(i=>i[0]).join(" ")}</span><span>${esc(countries.map(i=>i[1]).join(", "))}</span></span>`;
+  }
+  function emblemHTML(row){ const url=state.emblems.get(String(row.clanId)); return url ? `<img src="${esc(url)}" alt="Emblème ${esc(row.tag)}">` : esc(row.tag.slice(0,3)||"?"); }
+  function renderOwn(){
+    const field=RESPONSE_FIELD[state.metric], stat=state.ratings?.[field], activity=state.ratings?.battles_count_avg_daily?.value;
+    const delta=Number(stat?.rank_delta||0), up=delta>=0;
+    ui.mine.disabled = stat?.rank==null;
+    ui.own.innerHTML = `
+      <div class="cr-card-label">Position de ton clan · ${esc(metricLabel())}</div>
+      <div class="cr-own-main"><span class="cr-mark">${esc(CONFIG.clanTag||"—")}</span><div>
+        <div class="cr-rank">#${stat?.rank!=null?fmt(stat.rank):"—"}</div>
+        <div class="cr-clan-name"><b>[${esc(CONFIG.clanTag||"—")}]</b> ${esc(state.ratings?.clan_name||"Votre clan")}</div>
+        ${delta?`<span class="cr-delta ${up?"up":"down"}">${up?"▲":"▼"} ${Math.abs(delta)} place${Math.abs(delta)>1?"s":""}</span>`:""}
+      </div></div>
+      <div class="cr-own-foot">
+        <span>Score actuel<b>${stat?.value!=null?score(stat.value):"—"}</b></span>
+        <span>Variation officielle<b>${delta?`${up?"+":"−"}${Math.abs(delta)} place${Math.abs(delta)>1?"s":""}`:"Stable"}</b></span>
+        <span>Activité / jour<b>${activity!=null?fmt(activity,2):"—"}</b></span>
+      </div>`;
+  }
+  function renderPodium(){
+    const podium = state.rows.slice().sort((a,b)=>a.rank-b.rank).slice(0,3);
+    const byRank = r => podium.find(row=>row.rank===r) || {};
+    const card = (row,rank) => `<div class="cr-podium-card ${rank===1?"first":""}"><span class="cr-medal">${rank}</span><strong>[${esc(row.tag||"—")}]</strong><small>${esc(row.name||"Aucun clan")}</small><em>${row.value!=null?score(row.value):"—"}</em></div>`;
+    ui.podium.innerHTML = `<header><b>Podium européen</b><span>${esc(metricLabel())}</span></header><div class="cr-podium-grid">${card(byRank(2),2)}${card(byRank(1),1)}${card(byRank(3),3)}</div>`;
+  }
+  function renderSide(){
+    const best = state.rows.slice().sort((a,b)=>a.rank-b.rank)[0];
+    const rating = k => state.ratings?.[k];
+    const tier = (label,stat) => { const width=stat?.value?Math.max(8,Math.min(100,Number(stat.value)/1300*100)):0;
+      return `<div class="cr-tier"><span>${label}</span><span class="cr-track"><i class="cr-fill" style="width:${width}%"></i></span><b>${stat?.value!=null?fmt(stat.value):"—"}</b></div>`; };
+    ui.side.innerHTML = `
+      <section class="cr-side-card"><h3>Meilleur score</h3><p>Meilleure cote actuelle pour ${esc(metricLabel())}.</p>
+        <div class="cr-best">${best?score(best.value):"—"}</div><p>${best?`Détenue par <b>[${esc(best.tag)}]</b> ${esc(best.name)}.`:"Donnée indisponible."}</p></section>
+      <section class="cr-side-card"><h3>Cotes Bastion officielles</h3>
+        ${tier("Tier X",rating("fb_elo_rating_10"))}${tier("Tier VIII",rating("fb_elo_rating_8"))}${tier("Tier VI",rating("fb_elo_rating_6"))}</section>`;
+  }
+  function renderPagination(total){
+    const totalPages = Math.max(1, Math.ceil(total/CONFIG.pageSize));
+    if(state.page>totalPages) state.page=totalPages;
+    const pages=[];
+    if(state.page>3) pages.push(1,"…");
+    for(let page=Math.max(1,state.page-2); page<=Math.min(totalPages,state.page+2); page+=1) pages.push(page);
+    if(totalPages>state.page+2) pages.push("…",totalPages);
+    const buttons=[...new Set(pages)].map(page=>page==="…"?"<span>…</span>":`<button type="button" data-page="${page}" class="${page===state.page?"active":""}">${page}</button>`).join("");
+    ui.pager.innerHTML = `<button type="button" data-page="${state.page-1}" ${state.page===1?"disabled":""}>‹ Précédent</button>${buttons}<button type="button" data-page="${state.page+1}" ${state.page===totalPages?"disabled":""}>Suivant ›</button><span>${fmt(total)} clans · ${CONFIG.pageSize} par page</span>`;
+    ui.pager.querySelectorAll("button[data-page]").forEach(button=>{
+      button.addEventListener("click",()=>{ const page=Number(button.dataset.page); if(!page||page===state.page)return;
+        state.page=page; renderTable(); root.querySelector(".cr-table-card").scrollIntoView({behavior:"smooth",block:"start"}); });
+    });
+  }
+  function renderTable(){
+    const all=sortedRows(), start=(state.page-1)*CONFIG.pageSize, visible=all.slice(start,start+CONFIG.pageSize);
+    ui.count.textContent = `Page ${state.page} · ${fmt(all.length)} clan${all.length>1?"s":""}`;
+    ui.rows.innerHTML = visible.length ? visible.map(row=>{ const mine=row.clanId===CONFIG.clanId, delta=Number(row.rankDelta||0);
+      return `<tr class="${mine?"mine":""}" data-clan-id="${row.clanId}"><td>#${fmt(row.rank)}</td>
+        <td><div class="cr-clan"><span class="cr-emblem">${emblemHTML(row)}</span><span><b>[${esc(row.tag)}]</b><small>${esc(row.name)}</small></span></div></td>
+        <td>${countryHTML(row)}</td><td>${row.activity!=null?fmt(row.activity,2):"—"}</td>
+        <td class="${delta>0?"cr-positive":delta<0?"cr-negative":""}">${delta?`${delta>0?"▲":"▼"}${Math.abs(delta)}`:"—"}</td>
+        <td class="cr-score">${score(row.value)}</td></tr>`; }).join("")
+      : '<tr><td colspan="6" class="cr-empty">Aucun clan ne correspond à cette recherche.</td></tr>';
+    root.querySelectorAll("[data-cr-sort]").forEach(button=>{ const active=button.dataset.crSort===state.sortKey;
+      button.classList.toggle("active",active); button.querySelector("i").textContent = active?(state.sortDir==="asc"?"▲":"▼"):"↕"; });
+    renderPagination(all.length);
+    if(state.focusMine){ const row=ui.rows.querySelector(`[data-clan-id="${CONFIG.clanId}"]`);
+      if(row){ row.classList.add("focus"); requestAnimationFrame(()=>row.scrollIntoView({behavior:"smooth",block:"center"})); setTimeout(()=>row.classList.remove("focus"),2400); }
+      state.focusMine=false; }
+    fetchVisibleEmblems(visible).then(changed=>{ if(changed) renderTable(); }).catch(()=>{});
+  }
+  function render(){ root.querySelectorAll("[data-cr-metric]").forEach(b=>b.classList.toggle("active",b.dataset.crMetric===state.metric)); renderOwn(); renderPodium(); renderSide(); renderTable(); }
+  async function loadMetric(){
+    ui.status.textContent="Chargement des données officielles…";
+    ui.rows.innerHTML='<tr><td colspan="6" class="cr-empty">Chargement du classement…</td></tr>';
+    try{ const [rows]=await Promise.all([fetchAllRanking(), fetchOwnRatings()]); state.rows=rows;
+      ui.status.textContent="Données officielles Wargaming · actualisées"; render();
+    }catch(error){ ui.status.textContent="Données officielles indisponibles"; ui.rows.innerHTML=`<tr><td colspan="6" class="cr-empty">${esc(error.message)}</td></tr>`; }
+  }
+  function focusMyClan(){
+    const mineIndex = state.rows.slice().sort((a,b)=>a.rank-b.rank).findIndex(row=>row.clanId===CONFIG.clanId);
+    if(mineIndex<0) return;
+    state.query=""; state.sortKey="rank"; state.sortDir="asc"; state.page=Math.floor(mineIndex/CONFIG.pageSize)+1; state.focusMine=true; ui.search.value=""; renderTable();
+  }
+
+  ui.metric.innerHTML = METRICS.map(([k,l])=>`<option value="${k}">${esc(l)}</option>`).join("");
+  ui.metric.value = state.metric;
+  ui.metric.addEventListener("change",()=>{ state.metric=ui.metric.value; state.page=1; state.query=""; state.sortKey="rank"; state.sortDir="asc"; ui.search.value=""; loadMetric(); });
+  root.querySelectorAll("[data-cr-metric]").forEach(button=>{ button.addEventListener("click",()=>{ state.metric=button.dataset.crMetric; ui.metric.value=state.metric; state.page=1; state.query=""; state.sortKey="rank"; state.sortDir="asc"; ui.search.value=""; loadMetric(); }); });
+  ui.search.addEventListener("input",()=>{ state.query=ui.search.value; state.page=1; renderTable(); });
+  root.querySelectorAll("[data-cr-sort]").forEach(button=>{ button.addEventListener("click",()=>{ const key=button.dataset.crSort;
+    if(state.sortKey===key) state.sortDir=state.sortDir==="asc"?"desc":"asc"; else { state.sortKey=key; state.sortDir="desc"; }
+    state.page=1; renderTable(); }); });
+  ui.mine.addEventListener("click", focusMyClan);
+  loadMetric();
 }
 
 boot();

@@ -295,11 +295,10 @@ function lsGet(k){try{return localStorage.getItem(k);}catch(_){return null;}}
   }
 })();
 
-// ---- thème ----
+// ---- thème SOMBRE uniquement ----
 const root=document.documentElement;
-try{const t=localStorage.getItem("cp_theme");if(t)root.setAttribute("data-theme",t);}catch(_){}
-$("#theme").onclick=()=>{const cur=root.getAttribute("data-theme")||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light");
-  const nx=cur==="dark"?"light":"dark";root.setAttribute("data-theme",nx);try{localStorage.setItem("cp_theme",nx);}catch(_){}};
+root.setAttribute("data-theme","dark");
+{ const tb=$("#theme"); if(tb) tb.style.display="none"; }
 
 // ---- API helpers ----
 async function wg(path,params){const u=new URL(API+path);u.searchParams.set("application_id",APP);
