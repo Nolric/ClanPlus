@@ -803,6 +803,7 @@
   .rp-legend.rp-cls{margin-top:5px;gap:12px;color:var(--muted)}
   .rp-legend.rp-cls span{display:inline-flex;align-items:center;gap:4px}
   .rp-legend.rp-cls img{width:14px;height:14px;opacity:.85}
+  .rp-legend img.rp-bl{width:16px;height:16px;vertical-align:-3px;margin-right:3px}
   .rp-stage{position:relative;width:100%;aspect-ratio:1/1;border-radius:10px;overflow:hidden;border:1px solid var(--border);background:#0c0c0b}
   .rp-stage img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
   .rp-stage canvas{position:absolute;inset:0;width:100%;height:100%}
@@ -3168,15 +3169,26 @@ let BL_BY_ID={};
    colorées par équipe et mises en cache pour le dessin sur la carte --- */
 const RP_CLASSES=["heavyTank","mediumTank","lightTank","AT-SPG","SPG"];
 const RP_ICON={}, RP_TINT={};
+/* Drapeaux de base : sprites d'origine du jeu (extraits de battleAtlas)
+   — vert = notre base, rouge = base adverse, neutre = base blanche (7v7). */
+const RP_BASES=["green","red","neutral"];
+const RP_BASE_IMG={};
 let RP_ICONS_READY=false;
 function rpLoadIcons(onReady){
   if(RP_ICONS_READY) return;
-  let left=RP_CLASSES.length;
+  let left=RP_CLASSES.length+RP_BASES.length;
+  const done=()=>{ if(--left<=0){ RP_ICONS_READY=true; onReady&&onReady(); } };
   RP_CLASSES.forEach(c=>{
     const im=new Image();
-    im.onload=()=>{ RP_ICON[c]=im; if(--left<=0){ RP_ICONS_READY=true; onReady&&onReady(); } };
-    im.onerror=()=>{ if(--left<=0){ RP_ICONS_READY=true; onReady&&onReady(); } };
+    im.onload=()=>{ RP_ICON[c]=im; done(); };
+    im.onerror=done;
     im.src="classes/"+encodeURIComponent(c)+".png";
+  });
+  RP_BASES.forEach(b=>{
+    const im=new Image();
+    im.onload=()=>{ RP_BASE_IMG[b]=im; done(); };
+    im.onerror=done;
+    im.src="bases/"+b+".png";
   });
 }
 /* Boîte utile de l'icône (les PNG ont de larges marges et des tailles de glyphe
@@ -3254,7 +3266,10 @@ function convertReplay(raw){
     }
   });
   kills.sort((a,b)=>a.t-b.t);
-  const bases=(raw.bases||[]).map(bs=>({ team:(bs[0]===my?"ally":"enemy"), x:bs[1], z:bs[2], r:70 }));
+  // équipe 0 = base NEUTRE (blanche, 7v7 / Rencontre)
+  const bases=(raw.bases||[]).map(bs=>({
+    team:(Number(bs[0])===0 ? "neutral" : (bs[0]===my ? "ally" : "enemy")),
+    x:bs[1], z:bs[2], r:70 }));
   return { bounds:{minX:b[0],minZ:b[1],maxX:b[2],maxZ:b[3]}, duration:raw.duration||0,
            bases, vehicles, byId, shots, kills, damage, dmgBy };
 }
@@ -3336,7 +3351,9 @@ function renderReplay(host, rep, mkey, demo){
           <select class="rp-speed" aria-label="Vitesse"><option value="1">×1</option><option value="2" selected>×2</option><option value="4">×4</option><option value="8">×8</option></select>
           <span class="rp-time">0:00 / ${durFR(rep.duration)}</span>
         </div>
-        <div class="rp-legend"><span><i style="color:${ALLY}">●</i> Nous</span><span><i style="color:${ENEMY}">●</i> Adversaire</span><span><i style="color:${GOLD}">◎</i> Membre</span>${shots.length?`<span><i style="color:#ecd190">✦</i> Tir</span>`:""}${dmgEvents.length?`<span><i style="color:#ffb060">╱</i> Dégâts</span>`:""}<span><i style="color:var(--muted)">◯</i> Base</span><span>✕ détruit</span></div>
+        <div class="rp-legend"><span><i style="color:${ALLY}">●</i> Nous</span><span><i style="color:${ENEMY}">●</i> Adversaire</span><span><i style="color:${GOLD}">◎</i> Membre</span>${shots.length?`<span><i style="color:#ecd190">✦</i> Tir</span>`:""}${dmgEvents.length?`<span><i style="color:#ffb060">╱</i> Dégâts</span>`:""}<span><img class="rp-bl" src="bases/green.png" alt="">Notre base</span><span><img class="rp-bl" src="bases/red.png" alt="">Base adverse</span>${
+          rep.bases.some(b=>b.team==="neutral")?`<span><img class="rp-bl" src="bases/neutral.png" alt="">Base neutre</span>`:""
+        }<span>✕ détruit</span></div>
         ${rep.vehicles.some(v=>v.cls)?`<div class="rp-legend rp-cls">${
           [["heavyTank","Lourd"],["mediumTank","Moyen"],["lightTank","Léger"],["AT-SPG","Chasseur"],["SPG","Arto"]]
           .map(([c,lab])=>`<span><img src="classes/${encodeURIComponent(c)}.png" alt="">${lab}</span>`).join("")
@@ -3375,12 +3392,16 @@ function renderReplay(host, rep, mkey, demo){
 
   function draw(){
     ctx.clearRect(0,0,W,W);
-    // --- bases de capture ---
+    // --- bases de capture : zone + drapeau d'origine du jeu ---
     (rep.bases||[]).forEach(b=>{
-      const px=wx(b.x), py=wy(b.z), pr=Math.max(10,wr(b.r||70)), col=b.team==="ally"?ALLY:ENEMY;
+      const px=wx(b.x), py=wy(b.z), pr=Math.max(10,wr(b.r||70));
+      const col = b.team==="ally"?ALLY : (b.team==="enemy"?ENEMY : "#d7d7d2");
       ctx.beginPath(); ctx.arc(px,py,pr,0,7); ctx.globalAlpha=.10; ctx.fillStyle=col; ctx.fill();
-      ctx.globalAlpha=.75; ctx.strokeStyle=col; ctx.lineWidth=2; ctx.setLineDash([6,5]); ctx.stroke();
+      ctx.globalAlpha=.7; ctx.strokeStyle=col; ctx.lineWidth=2; ctx.setLineDash([6,5]); ctx.stroke();
       ctx.setLineDash([]); ctx.globalAlpha=1;
+      const im=RP_BASE_IMG[b.team==="ally"?"green":(b.team==="enemy"?"red":"neutral")];
+      if(im){ const S=26; ctx.drawImage(im, px-S/2, py-S/2, S, S); }
+      else { ctx.beginPath(); ctx.arc(px,py,6,0,7); ctx.fillStyle=col; ctx.globalAlpha=.9; ctx.fill(); ctx.globalAlpha=1; }
     });
     // --- traces récentes (20 dernières secondes) ---
     rep.vehicles.forEach(v=>{
