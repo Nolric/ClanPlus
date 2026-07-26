@@ -2683,9 +2683,19 @@ function dashFilterRows(days,shift){
 function dashStats(rows){
   const bres={}; rows.forEach(r=>{ if(!(r.battleId in bres)) bres[r.battleId]=r.result; });
   let wins=0,tot=0; Object.values(bres).forEach(res=>{ if(res===1)wins++; if(res!==-1&&res!=null)tot++; });
-  const sr=rows.length? rows.reduce((s,r)=>s+ceForRow(r,CE_REF),0)/rows.length : 0;
+  // SR moyen du clan : moyenne des SR PAR BATAILLE du nouveau modèle (repli sur
+  // l'ancien calcul si le modèle figé n'est pas encore disponible).
+  let sr;
+  if(srOk()){
+    const ids=new Set(rows.map(r=>r.battleId));
+    const v=srRows().filter(r=>ids.has(r.battleId)).map(r=>r.sr);
+    sr = v.length ? v.reduce((a,b)=>a+b,0)/v.length : null;
+  } else {
+    sr = srAvg(rows);
+  }
   const dmg=rows.length? rows.reduce((s,r)=>s+(r.dmg||0),0)/rows.length : 0;
-  return {battles:Object.keys(bres).length, wins, tot, winrate:tot?wins/tot:0, sr:Math.round(sr), dmg:Math.round(dmg)};
+  return {battles:Object.keys(bres).length, wins, tot, winrate:tot?wins/tot:0,
+          sr: sr==null?null:Math.round(sr), dmg:Math.round(dmg)};
 }
 function trendTag(cur,prev,pctMode){
   const d=cur-prev;
@@ -2771,7 +2781,7 @@ function renderDashSpot(){
   const now=Date.now()/1000;
   const week=RAW.filter(r=>r.isMember&&r.ts&&(now-r.ts)<=7*86400);
   const per={};
-  week.forEach(r=>{ const p=per[r.accId]=per[r.accId]||{name:r.name,n:0,s:0}; p.n++; p.s+=ceForRow(r,CE_REF); });
+  week.forEach(r=>{ const p=per[r.accId]=per[r.accId]||{name:r.name,n:0,s:0}; const _v=srBattle(r); if(_v!=null){ p.n++; p.s+=_v; } });
   const mvp=Object.values(per).filter(p=>p.n>=2)
     .map(p=>({name:p.name,ce:Math.round(p.s/p.n),n:p.n})).sort((a,b)=>b.ce-a.ce)[0];
   const bat={};
@@ -2830,7 +2840,7 @@ function renderLast(){
   const last=dashBattleList()[0];
   const now=Date.now()/1000;
   const week=RAW.filter(r=>r.isMember&&r.ts&&(now-r.ts)<=7*86400);
-  const per={}; week.forEach(r=>{ const p=per[r.accId]=per[r.accId]||{name:r.name,n:0,s:0}; p.n++; p.s+=ceForRow(r,CE_REF); });
+  const per={}; week.forEach(r=>{ const p=per[r.accId]=per[r.accId]||{name:r.name,n:0,s:0}; const _v=srBattle(r); if(_v!=null){ p.n++; p.s+=_v; } });
   const mvp=Object.values(per).filter(p=>p.n>=2).map(p=>({name:p.name,ce:Math.round(p.s/p.n),n:p.n})).sort((a,b)=>b.ce-a.ce)[0];
   let lb, bg="";
   if(last){
@@ -3088,7 +3098,7 @@ function mapInfoHTML(name,mode){
   return `<div class="bl-mapinfo"><div class="nm">${esc(cleanMap(name))}</div><div class="md">${esc(modeFR(mode))}</div></div>`;
 }
 function srPill(v){ const t=ceTier(v);
-  return `<div class="bl-sr" style="border-color:${t.c};color:${t.c}" title="Synergy Rating — ${esc(t.l)}"><span class="lbl">SR</span><span class="val">${fmt(v)}</span></div>`; }
+  return `<div class="bl-sr" style="border-color:${t.c};color:${t.c}" title="Synergy Rating — ${esc(t.l)}"><span class="lbl">SR</span><span class="val">${v==null?"—":fmt(v)}</span></div>`; }
 function agoFR(ts){
   if(!ts) return "";
   const s=Math.max(1,Math.floor(Date.now()/1000-ts));
@@ -3129,7 +3139,7 @@ function groupBattles(){
     g.mvp=mvp;
     // CÉ de la bataille = moyenne des CÉ des membres présents
     const mem=g.our.filter(mine);
-    g.ce = mem.length ? Math.round(mem.reduce((s,r)=>s+ceForRow(r,CE_REF),0)/mem.length) : null;
+    g.ce = srAvg(mem);
     g.win = g.result===1; g.draw = g.result===-1;
     g.dur = g.rows.reduce((mx,r)=>Math.max(mx,r.life||0),0);
     return g;
@@ -3145,7 +3155,7 @@ function blTeam(rows, ours, tag, url){
   const ceH = ours?`<th class="c">SR</th>`:``;
   const body=sorted.map(r=>{
     let ceCell="";
-    if(ours) ceCell = r.isMember ? `<td class="c">${ceBadge(Math.round(ceForRow(r,CE_REF)))}</td>` : `<td class="c" style="color:var(--muted)">—</td>`;
+    if(ours) ceCell = r.isMember ? `<td class="c">${ceBadge(Math.round(srBattle(r)))}</td>` : `<td class="c" style="color:var(--muted)">—</td>`;
     return `<tr class="${r.isMember?'me':''}">
       <td>${esc(r.tank||'?')}</td><td>${esc(shortName(r.name))}</td>
       <td>${fmt(r.dmg)}</td><td>${r.kills}</td><td>${fmt(r.assist)}</td><td>${fmt(r.block)}</td>
@@ -3740,7 +3750,7 @@ function renderMembers(){
   const stat={};
   RAW.forEach(r=>{ if(!r.isMember||r.accId==null) return;
     const s=stat[r.accId]=stat[r.accId]||{s:0,n:0,ts:0,bset:new Set()};
-    s.s+=ceForRow(r,CE_REF); s.n++; s.bset.add(r.battleId); if(r.ts>s.ts)s.ts=r.ts; });
+    const _v=srBattle(r); if(_v!=null){ s.s+=_v; s.n++; } s.bset.add(r.battleId); if(r.ts>s.ts)s.ts=r.ts; });
   const list=(MEMBERS||[]).map(m=>{
     const st=stat[Number(m.account_id)];
     const ord=ROLE_ORDER[normRole(m.wg_role)]!=null?ROLE_ORDER[normRole(m.wg_role)]:9;
@@ -3962,7 +3972,7 @@ function ceForRow(r,C){
    ============================================================ */
 // Marqueur de version : `srVersion()` dans la console dit si le fichier servi
 // est bien le dernier. Évite de confondre « pas déployé » et « ne marche pas ».
-const SR_SITE_VERSION="sr-1.3-sans-lissage";
+const SR_SITE_VERSION="sr-2.0-ancien-supprime";
 function srVersion(){ return SR_SITE_VERSION; }
 let SR_MODEL=null, SR_SKILL=null, SR_ELO_TAG=null, SR_ELO_ID=null, SR_ROWS=null;
 const SR_CLS={heavyTank:"heavy",mediumTank:"medium",lightTank:"light","AT-SPG":"td",SPG:"spg"};
@@ -3977,7 +3987,7 @@ function srInit(data){
     SR_ELO_ID.set(Number(c.clan_id),o);
     if(c.tag) SR_ELO_TAG.set(String(c.tag).toUpperCase(),o);
   });
-  SR_ROWS=null;   // recalculé à la demande
+  SR_ROWS=null; SR_IDX=null;   // recalculés à la demande
 }
 const srOk=()=>!!(SR_MODEL&&SR_MODEL["7v7"]);
 
@@ -4054,6 +4064,18 @@ function srBuild(){
   return out;
 }
 function srRows(){ if(!SR_ROWS) SR_ROWS=srBuild(); return SR_ROWS; }
+/* SR d'UNE bataille pour un joueur (repli sur l'ancien calcul si le modèle figé
+   n'est pas disponible). Sert au MVP et aux cartes de bataille. */
+let SR_IDX=null;
+function srBattle(r){
+  if(!srOk()) return null;   // plus aucun repli : pas de modele = pas de SR
+  if(!SR_IDX){ SR_IDX=new Map(); srRows().forEach(x=>SR_IDX.set(x.battleId+"|"+x.accId,x.sr)); }
+  return SR_IDX.get(r.battleId+"|"+r.accId) ?? null;
+}
+/* Moyenne des SR par bataille : ignore les lignes sans SR et renvoie null
+   si aucune n est exploitable. Aucun repli sur l ancien calcul. */
+function srAvg(rows){ const v=(rows||[]).map(srBattle).filter(x=>x!=null);
+  return v.length ? Math.round(v.reduce((a,b)=>a+b,0)/v.length) : null; }
 /* Agrégat par joueur, avec lissage bayésien et RÈGLES D'AFFICHAGE :
    en dessous de 10 batailles on n'affiche rien — l'erreur type dépasse alors
    l'écart réel entre joueurs, le chiffre ne voudrait rien dire. */
@@ -4118,7 +4140,7 @@ function aggregate(rows){
     if((r.ts||0)>a._lts){ a._lts=r.ts||0; a.name=r.name; }   // conserve le pseudo le plus récent
     a.battles.add(r.battleId); if(r.result===1) a.wins.add(r.battleId);
     a.dmg+=r.dmg;a.kills+=r.kills;a.assist+=r.assist;a.spot+=r.spot;a.xp+=r.xp;a.surv+=(r.surv?1:0);
-    a.block+=r.block;a.dmgr+=r.dmgr;a.obj+=(r.cap||0)+(r.decap||0);a.ce+=ceForRow(r,CE_REF);a.n++;
+    a.block+=r.block;a.dmgr+=r.dmgr;a.obj+=(r.cap||0)+(r.decap||0);a.n++;
   }
   return Object.values(m).map(a=>({
     accId:a.accId,
@@ -4133,14 +4155,20 @@ function aggregate(rows){
     // (insuffisant / provisoire / ok) : c'est ce qui pilotera l'affichage.
     ...(function(){
       const s = srOk() ? srByPlayer().get(a.accId) : null;
-      if(!s) return { ce: a.n?Math.round(a.ce/a.n):0, srEtat:"ancien" };
-      return { ce: Math.round(s.sr), srBrut: Math.round(s.brut), srNb: s.n,
+      if(!s) return { ce:null, srEtat:"indisponible" };   // pas de modele = pas de SR
+      // Pas assez de batailles -> AUCUN SR. `ce` vaut null et tous les affichages
+      // montrent « — » : mieux vaut ne rien dire que d'annoncer un chiffre dont la
+      // marge d'erreur dépasse les écarts qu'on cherche à mesurer.
+      return { ce: s.etat==="insuffisant" ? null : Math.round(s.sr),
+               srBrut: Math.round(s.brut), srNb: s.n,
                srMarge: s.marge, srEtat: s.etat,
                srC: Math.round(s.pC), srS: Math.round(s.pS), srN: Math.round(s.pN) };
     })(),
   }));
 }
 function ceTier(v){
+  // v === null : le joueur n'a pas encore assez de batailles pour un SR fiable.
+  if(v==null) return {c:"var(--muted)",l:"Pas encore assez de batailles"};
   if(v>=2500) return {c:"#a970ff",l:"Pilier d'équipe"};
   if(v>=2000) return {c:"var(--good)",l:"Très bon coéquipier"};
   if(v>=1650) return {c:"#4f97ee",l:"Bon coéquipier"};
@@ -4148,7 +4176,9 @@ function ceTier(v){
   if(v>=1000) return {c:"var(--accent)",l:"En retrait"};
   return {c:"var(--bad)",l:"À renforcer"};
 }
-function ceBadge(v){ const t=ceTier(v); return `<span class="ce-badge" style="color:${t.c}" title="${esc(t.l)}">${fmt(v)}</span>`; }
+function ceBadge(v){ const t=ceTier(v);
+  if(v==null) return `<span class="ce-badge" style="color:${t.c}" title="${esc(t.l)}">—</span>`;
+  return `<span class="ce-badge" style="color:${t.c}" title="${esc(t.l)}">${fmt(v)}</span>`; }
 function fmt(n,d=0){ return (n||0).toLocaleString("fr-FR",{maximumFractionDigits:d,minimumFractionDigits:d}); }
 function pct(x){ return Math.round((x||0)*100)+"%"; }
 function esc(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
@@ -4297,7 +4327,7 @@ function battlesWinrate(rows){ const seen={}; let w=0,t=0;
   return {w,t,wr:t?w/t:0,battles:Object.keys(seen).length}; }
 function avgOf(rows,k){ return rows.length?rows.reduce((s,r)=>s+r[k],0)/rows.length:0; }
 
-function playerCE(rows){ return rows.length? Math.round(rows.reduce((s,r)=>s+ceForRow(r,CE_REF),0)/rows.length) : 0; }
+function playerCE(rows){ return srAvg(rows); }
 function pStreak(rows){
   const b={}; rows.forEach(r=>{ if(!(r.battleId in b)) b[r.battleId]={ts:r.ts,res:r.result}; });
   const arr=Object.values(b).sort((a,c)=>c.ts-a.ts);
@@ -4308,7 +4338,7 @@ function pStreak(rows){
 function pSRTrend(rows){
   const s=rows.slice().filter(r=>r.ts).sort((a,c)=>a.ts-c.ts);
   if(s.length<6) return null;
-  const h=Math.floor(s.length/2), ce=rs=>rs.reduce((x,r)=>x+ceForRow(r,CE_REF),0)/rs.length;
+  const h=Math.floor(s.length/2), ce=rs=>srAvg(rs);
   const older=Math.round(ce(s.slice(0,h))), recent=Math.round(ce(s.slice(h)));
   return {older,recent,delta:recent-older};
 }
