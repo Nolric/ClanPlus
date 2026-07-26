@@ -5756,10 +5756,20 @@ function openStratEditor(s, keepReplay){
   // sauf si on vient justement de l'ouvrir via « Débriefer dans l'éditeur ».
   if(!keepReplay){ stRpStop(); ST_RP=null; }
   stChatStop(); stLeaveRoom();
-  ST_EDIT={ id:(s&&s.id)||null, name:(s&&s.name)||"Nouvelle stratégie", map:(s&&s.map)||"", mode:(s&&s.mode)||"ctf", steps:stStepsOf(s), editors:(s&&Array.isArray(s.editors))?s.editors.map(Number):[] };
+  ST_EDIT={ id:(s&&s.id)||null, name:(s&&s.name)||"Nouvelle stratégie", map:(s&&s.map)||"", mode:(s&&s.mode)||"ctf", steps:stStepsOf(s), editors:(s&&Array.isArray(s.editors))?s.editors.map(Number):[],
+            // bataille d'origine : c'est ce qui permet de RETROUVER le replay plus tard
+            battleId:(s&&s.battle_id!=null)?String(s.battle_id):((keepReplay&&ST_RP)?String(ST_RP.battleId):null) };
   ST_STEP=0; ST_EDIT.els=ST_EDIT.steps[0].els;
   stSelClear(); ST_UNDO=[]; ST_REDO=[];
   if(!ST_EDIT.map) renderMapPicker(); else renderStratEditor();
+  // Débrief enregistré rouvert depuis la liste : le replay n'est plus en mémoire,
+  // on le recharge depuis la bataille puis on redessine.
+  if(ST_EDIT.map && ST_EDIT.battleId && (!ST_RP || String(ST_RP.battleId)!==String(ST_EDIT.battleId))){
+    const bid=ST_EDIT.battleId;
+    stRpLoad(bid, ST_EDIT.map, ST_EDIT.name).then(ok=>{
+      if(ok && ST_EDIT && String(ST_EDIT.battleId)===bid) renderStratEditor();
+    });
+  }
   if(ST_EDIT.id&&ST_EDIT.map) stJoinRoom(ST_EDIT.id,'edit');
   document.getElementById("stEditor").scrollIntoView({behavior:"smooth",block:"start"});
 }
@@ -6159,20 +6169,28 @@ function stRpMount(){
   stRpDraw(); stRpSync();
 }
 /* Point d'entrée : ouvre le replay d'une bataille dans l'éditeur */
-async function stOpenReplay(battleId, btn){
-  const g=BL_BY_ID[battleId]; if(!g) return;
-  if(btn){ btn.disabled=true; btn.textContent="Chargement…"; }
+/* Charge le replay d'une bataille dans ST_RP. Utilisé par le bouton « Débriefer »
+   ET à la réouverture d'un débrief enregistré (où l'onglet Batailles n'a pas
+   forcément été chargé : on ne peut donc PAS dépendre de BL_BY_ID). */
+async function stRpLoad(battleId, mapK, label){
   let rep=null;
   try{
-    const r=await fnCall("replay",{session:localStorage.getItem(LS_SESSION), battle_id:g.id});
+    const r=await fnCall("replay",{session:localStorage.getItem(LS_SESSION), battle_id:battleId});
     if(r.ok && r.j && r.j.replay && (r.j.replay.vehicles||[]).length) rep=convertReplay(r.j.replay);
   }catch(e){}
-  if(btn){ btn.disabled=false; btn.innerHTML='✎ Débriefer dans l\'éditeur'; }
-  if(!rep){ alert("Aucun replay enregistré pour cette bataille."); return; }
-  ST_RP={ battleId:String(g.id), name:pretty2(g.mapName)+" · "+agoFR(g.ts), map:mapKey(g.mapName),
+  if(!rep) return false;
+  ST_RP={ battleId:String(battleId), name:label||"", map:mapK,
           dur:rep.duration||0, interval:rep.interval||2, bounds:rep.bounds, vehicles:rep.vehicles,
           bases:rep.bases||[],
           t:0, playing:false, speed:2, raf:null, last:0 };
+  return true;
+}
+async function stOpenReplay(battleId, btn){
+  const g=BL_BY_ID[battleId]; if(!g) return;
+  if(btn){ btn.disabled=true; btn.textContent="Chargement…"; }
+  const ok=await stRpLoad(g.id, mapKey(g.mapName), pretty2(g.mapName)+" · "+agoFR(g.ts));
+  if(btn){ btn.disabled=false; btn.innerHTML='✎ Débriefer dans l\'éditeur'; }
+  if(!ok){ alert("Aucun replay enregistré pour cette bataille."); return; }
   // L'éditeur vit DANS l'onglet Stratégie : il faut y basculer, sinon il s'ouvre
   // dans un conteneur masqué (la vue Batailles semblait alors se figer).
   try{ switchView("strats"); }catch(e){}
@@ -6494,7 +6512,8 @@ function stWireEditor(){
 async function saveStrat(){
   if(!ST_EDIT.map){ alert("Choisis une carte."); return; }
   const steps=ST_EDIT.steps.map(st=>({els:st.els, note:st.note||'', t:(st.t!=null?st.t:null)}));
-  const payload={ id:ST_EDIT.id||null, name:(ST_EDIT.name||"Stratégie").trim()||"Stratégie", map:ST_EDIT.map, mode:ST_EDIT.mode||"ctf", steps, elements:steps[0].els, editors:ST_EDIT.editors||[] };
+  const payload={ id:ST_EDIT.id||null, name:(ST_EDIT.name||"Stratégie").trim()||"Stratégie", map:ST_EDIT.map, mode:ST_EDIT.mode||"ctf", steps, elements:steps[0].els, editors:ST_EDIT.editors||[],
+                  battle_id:ST_EDIT.battleId||null };   // pour retrouver le replay à la réouverture
   const btn=document.getElementById("stSave"); if(btn){btn.disabled=true;btn.textContent="Enregistrement…";}
   const r=await fnCall("strategies",{session:localStorage.getItem(LS_SESSION),action:"save",strategy:payload});
   if(!r.ok){
@@ -6518,6 +6537,11 @@ async function deleteStrat(id){
 function openStratView(s){
   if(!s) return;
   stChatStop(); stLeaveRoom();
+  // Débrief consulté en lecture seule : on recharge son replay en tâche de fond
+  // pour que le bouton « Présenter » le déroule (sinon on n'aurait que les diapos).
+  if(s.battle_id!=null && (!ST_RP || String(ST_RP.battleId)!==String(s.battle_id))){
+    stRpLoad(String(s.battle_id), s.map, s.name||"");
+  } else if(s.battle_id==null && ST_RP){ stRpStop(); ST_RP=null; }
   const ed=document.getElementById("stEditor"); ed.classList.remove("hidden");
   const steps=stStepsOf(s); let idx=0;
   const nav=steps.length>1?`<div class="st-viewnav"><button class="btn st-navbtn" id="stvPrev">‹</button><span class="st-viewind" id="stvInd"></span><button class="btn st-navbtn" id="stvNext">›</button></div>`:'';
