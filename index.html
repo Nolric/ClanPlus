@@ -5533,7 +5533,12 @@ function openTierlistView(tl){
    ============================================================ */
 let STRATS=[], STRAT_CANEDIT=false, STRAT_LOADED=false, STRAT_ME=null;
 // peut éditer CETTE stratégie : officier/manager, OU collaborateur listé dans editors
-function stCanEdit(s){ return STRAT_CANEDIT || (s && Array.isArray(s.editors) && s.editors.map(Number).includes(Number(STRAT_ME))); }
+// ⚠️ STRAT_CANEDIT n'est renseigné qu'après le chargement de l'onglet Stratégie.
+// En arrivant d'ailleurs (bouton « Débriefer » des batailles) il vaut encore false :
+// on retombe donc sur le calcul local (grade réel / admin). Le serveur reste juge
+// à l'enregistrement.
+function stCanEditNow(){ return STRAT_CANEDIT || isAppAdmin() || meIsManager(); }
+function stCanEdit(s){ return stCanEditNow() || (s && Array.isArray(s.editors) && s.editors.map(Number).includes(Number(STRAT_ME))); }
 // ===== Temps réel : présence + édition simultanée (Supabase Realtime) =====
 let SB_CLIENT=null, ST_ROOM=null, ST_BC_LOOP=null, ST_BC_LAST='';
 function stRtClient(){ if(SB_CLIENT) return SB_CLIENT; if(!(window.supabase&&window.supabase.createClient)) return null;
@@ -5718,8 +5723,11 @@ function renderStrats(){
   el.querySelectorAll("[data-stedit]").forEach(b=>b.onclick=e=>{e.stopPropagation();openStratEditor(STRATS.find(x=>String(x.id)===b.dataset.stedit));});
   el.querySelectorAll("[data-stdel]").forEach(b=>b.onclick=e=>{e.stopPropagation();deleteStrat(b.dataset.stdel);});
 }
-function openStratEditor(s){
-  if(!(s?stCanEdit(s):STRAT_CANEDIT)){ alert("Réservé aux officiers de combat et aux collaborateurs de cette stratégie."); return; }
+function openStratEditor(s, keepReplay){
+  if(!stCanEdit(s)){ alert("Réservé aux officiers de combat et aux collaborateurs de cette stratégie."); return; }
+  // Le REPLAY est une fonctionnalité à part (débriefing) : on le retire de l'éditeur
+  // sauf si on vient justement de l'ouvrir via « Débriefer dans l'éditeur ».
+  if(!keepReplay){ stRpStop(); ST_RP=null; }
   stChatStop(); stLeaveRoom();
   ST_EDIT={ id:(s&&s.id)||null, name:(s&&s.name)||"Nouvelle stratégie", map:(s&&s.map)||"", mode:(s&&s.mode)||"ctf", steps:stStepsOf(s), editors:(s&&Array.isArray(s.editors))?s.editors.map(Number):[] };
   ST_STEP=0; ST_EDIT.els=ST_EDIT.steps[0].els;
@@ -6036,7 +6044,7 @@ async function stOpenReplay(battleId, btn){
   ST_RP={ battleId:String(g.id), name:pretty2(g.mapName)+" · "+agoFR(g.ts), dur:rep.duration||0,
           interval:rep.interval||2, bounds:rep.bounds, vehicles:rep.vehicles,
           t:0, playing:false, speed:2, raf:null, last:0 };
-  openStratEditor({ name:"Débrief — "+ST_RP.name, map:mapKey(g.mapName), mode:"ctf" });
+  openStratEditor({ name:"Débrief — "+ST_RP.name, map:mapKey(g.mapName), mode:"ctf" }, true);
 }
 function pretty2(s){ try{ return pretty(mapKey(s)); }catch(e){ return String(s||""); } }
 
@@ -6103,8 +6111,9 @@ function stRename(eid){ const el=ST_EDIT.els[eid]; if(!el) return;
 function stWireEditor(){
   const ed=document.getElementById("stEditor"), svg=document.getElementById("stSvg");
   ed.querySelector("#stName").oninput=e=>ST_EDIT.name=e.target.value;
-  ed.querySelector("#stChangeMap").onclick=()=>renderMapPicker();
-  ed.querySelector("#stCancel").onclick=()=>{ stLeaveRoom(); document.body.classList.remove("st-noscroll"); ed.classList.add("hidden"); ed.innerHTML=""; ST_EDIT=null; };
+  // changer de carte invalide le replay (il appartient à une bataille précise)
+  ed.querySelector("#stChangeMap").onclick=()=>{ stRpStop(); ST_RP=null; renderMapPicker(); };
+  ed.querySelector("#stCancel").onclick=()=>{ stRpStop(); ST_RP=null; stLeaveRoom(); document.body.classList.remove("st-noscroll"); ed.classList.add("hidden"); ed.innerHTML=""; ST_EDIT=null; };
   ed.querySelector("#stSave").onclick=saveStrat;
   ed.querySelector("#stClear").onclick=()=>{ if(!ST_EDIT.els.length) return; if(confirm("Effacer tous les éléments de cette étape ?")){ stSnapshot(); stSetEls([]); stSelClear(); stRedraw(); stUpdCount(); } };
   ed.querySelector("#stStepDel").onclick=stDelStep;
