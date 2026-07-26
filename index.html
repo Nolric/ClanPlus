@@ -5959,6 +5959,17 @@ const ST_RP_CLS={heavyTank:"heavy", mediumTank:"medium", lightTank:"light", "AT-
 const ST_RP_ICON=42;       // taille du char sur la carte (repère 0-1000)
 
 function stRpFmt(s){ s=Math.max(0,Math.floor(s)); return Math.floor(s/60)+":"+String(s%60).padStart(2,"0"); }
+/* Étiquette d'un char sur la carte : le NOM DU CHAR (raccourci), pas le pseudo.
+   Ex. « 60TP Lewandowskiego » -> « 60TP ». Repli sur le pseudo si le mod n'a pas
+   envoyé le char (anciens replays). */
+function stRpLabel(v){
+  let s=String(v.tank||"").trim();
+  if(!s) return String(v.name||"");
+  s=s.split(/[(\[]/)[0].trim();                 // retire « (P) », « [autre] »…
+  const w=s.split(/\s+/);
+  if(w.length>1 && w[0].length>=3) s=w[0];      // « 60TP Lewandowskiego » -> « 60TP »
+  return s.length>12 ? s.slice(0,12)+"…" : s;
+}
 /* monde -> repère 0-1000 de l'éditeur (les bornes du replay font autorité) */
 function stRpXY(x,z){ const b=ST_RP.bounds;
   return [ (x-b.minX)/((b.maxX-b.minX)||1)*1000, (b.maxZ-z)/((b.maxZ-b.minZ)||1)*1000 ]; }
@@ -5980,19 +5991,23 @@ function stRpPos(v,time){
   return {x:lo[1], z:lo[2], dead:false, spotted:((time-lo[0])<=GAP), yaw};
 }
 /* dessine la couche replay dans le SVG de l'éditeur */
-function stRpDraw(){
-  const g=document.getElementById("stReplay"); if(!g) return;
+function stRpDraw(gid){
+  const g=document.getElementById(gid||"stReplay"); if(!g) return;
   if(!ST_RP){ g.innerHTML=""; return; }
   const t=ST_RP.t, R=ST_RP_ICON, h=R/2, out=[];
   // Filtres de teinte : la silhouette de l'icône est repeinte aux couleurs de
   // l'équipe (feFlood + feComposite sur l'alpha), avec une ombre pour rester
   // lisible sur les cartes claires.
-  out.push(`<defs>${[["rpTintA","#2ec26e"],["rpTintE","#ec6a6a"]].map(([id,c])=>
+  // id préfixé par le calque : l'éditeur et la présentation coexistent dans le DOM
+  // et des ids dupliqués feraient résoudre url(#…) sur le mauvais filtre.
+  const FID=(gid||"stReplay")+"_";
+  out.push(`<defs>${[[FID+"rpTintA","#2ec26e"],[FID+"rpTintE","#ec6a6a"]].map(([id,c])=>
     `<filter id="${id}" x="-40%" y="-40%" width="180%" height="180%">
        <feFlood flood-color="${c}"/><feComposite in2="SourceAlpha" operator="in"/>
        <feDropShadow dx="0" dy="0" stdDeviation="1.1" flood-color="#000" flood-opacity="1"/>
      </filter>`).join("")}</defs>`);
-  const pick=!!ST_RP.propose;   // mode « proposer une position » : chars cliquables
+  // mode « proposer » : uniquement dans l'éditeur, jamais en présentation
+  const pick=!!ST_RP.propose && (!gid || gid==="stReplay");
   ST_RP.vehicles.forEach((v,vi)=>{
     const p=stRpPos(v,t); if(!p) return;
     const xy=stRpXY(p.x,p.z), x=xy[0], y=xy[1];
@@ -6011,10 +6026,10 @@ function stRpDraw(){
       s+=`<path d="M${x.toFixed(1)} ${y.toFixed(1)} L${x1.toFixed(1)} ${y1.toFixed(1)} A${L} ${L} 0 0 1 ${x2.toFixed(1)} ${y2.toFixed(1)} Z" fill="${col}" opacity=".16"/>`;
     }
     const ic=ST_RP_CLS[v.cls];
-    if(ic) s+=`<image href="strat/class_${ic}.png" x="${(x-h).toFixed(1)}" y="${(y-h).toFixed(1)}" width="${R}" height="${R}" filter="url(#${v.ally?'rpTintA':'rpTintE'})"/>`
+    if(ic) s+=`<image href="strat/class_${ic}.png" x="${(x-h).toFixed(1)}" y="${(y-h).toFixed(1)}" width="${R}" height="${R}" filter="url(#${FID}${v.ally?'rpTintA':'rpTintE'})"/>`
              +`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(h*0.86).toFixed(1)}" fill="none" stroke="${col}" stroke-width="2" opacity=".55"/>`;
     else s+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="10" fill="${col}" stroke="#000" stroke-width="2"/>`;
-    s+=`<text x="${x.toFixed(1)}" y="${(y+h+13).toFixed(1)}" text-anchor="middle" font-size="15" font-weight="700" fill="#fff" stroke="#000" stroke-width="3" paint-order="stroke" style="pointer-events:none">${esc(v.name||"")}</text>`;
+    s+=`<text x="${x.toFixed(1)}" y="${(y+h+13).toFixed(1)}" text-anchor="middle" font-size="15" font-weight="700" fill="#fff" stroke="#000" stroke-width="3" paint-order="stroke" style="pointer-events:none">${esc(stRpLabel(v))}</text>`;
     out.push(s+`</g>`);
   });
   g.innerHTML=out.join("");
@@ -6034,7 +6049,7 @@ function stRpPick(ev){
   if(typeof stSnapshot==='function') stSnapshot();
   ST_EDIT.els.push({ type:'ghost', x0:Math.round(xy[0]), y0:Math.round(xy[1]),
     x:Math.round(xy[0])+80, y:Math.round(xy[1]), cls:(ST_RP_CLS[v.cls]||'medium'),
-    color:'#d8b566', name:String(v.name||'').slice(0,18), size:0.72 });
+    color:'#d8b566', name:stRpLabel(v).slice(0,18), size:0.72 });
   stRedraw(); if(typeof stUpdCount==='function') stUpdCount();
 }
 function stRpSync(){
@@ -6128,8 +6143,8 @@ async function stOpenReplay(battleId, btn){
   }catch(e){}
   if(btn){ btn.disabled=false; btn.innerHTML='✎ Débriefer dans l\'éditeur'; }
   if(!rep){ alert("Aucun replay enregistré pour cette bataille."); return; }
-  ST_RP={ battleId:String(g.id), name:pretty2(g.mapName)+" · "+agoFR(g.ts), dur:rep.duration||0,
-          interval:rep.interval||2, bounds:rep.bounds, vehicles:rep.vehicles,
+  ST_RP={ battleId:String(g.id), name:pretty2(g.mapName)+" · "+agoFR(g.ts), map:mapKey(g.mapName),
+          dur:rep.duration||0, interval:rep.interval||2, bounds:rep.bounds, vehicles:rep.vehicles,
           t:0, playing:false, speed:2, raf:null, last:0 };
   // L'éditeur vit DANS l'onglet Stratégie : il faut y basculer, sinon il s'ouvre
   // dans un conteneur masqué (la vue Batailles semblait alors se figer).
@@ -6453,12 +6468,17 @@ function stLerpEl(a,b,t){ if(!a||!b||a.type!==b.type) return b; const c=JSON.par
 let ST_PRES_ANIM=(typeof localStorage==='undefined')||localStorage.getItem('cp_stanim')!=='0';
 function stPresent(steps,map,mode,name,start){
   if(!steps||!steps.length) return; let idx=Math.max(0,Math.min(steps.length-1,start||0)); let animRAF=0;
+  // MODE DÉBRIEF : le replay tourne en fond et fait apparaître les diapos épinglées
+  // à leur instant. Actif seulement si un replay est chargé ET qu'au moins une
+  // diapo est épinglée — sinon c'est une présentation de stratégie classique.
+  const RP=(ST_RP && ST_RP.dur>0 && ST_RP.map===map && steps.some(s=>s.t!=null)) ? ST_RP : null;
   const ov=document.createElement("div"); ov.className="st-present-ov dashx"; ov.id="stPresentOv";
   ov.innerHTML=`<div class="st-present-top"><b>${esc(name||"Stratégie")}</b><span class="st-present-map">${esc(ST_MAPNAME[map]||prettyMap(map))}</span><button class="st-present-x" id="stpAnimBtn" title="Animer les transitions entre étapes" style="margin-left:auto;width:auto;padding:0 12px">✨</button><button class="st-present-x" id="stpLaserBtn" title="Pointeur laser (L)" style="width:auto;padding:0 12px">🔴</button><button class="st-present-x" id="stpGridBtn" title="Grille A-K / 1-0" style="width:auto;padding:0 12px">▦</button><button class="st-present-x" id="stpX" title="Quitter (Échap)">✕</button></div>
     <div class="st-present-stage" id="stpStage"><svg viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg">
       <defs><marker id="st-ah" markerWidth="4.5" markerHeight="4.5" refX="3" refY="2.25" orient="auto"><path d="M0,0 L4.5,2.25 L0,4.5 z" fill="context-stroke"/></marker></defs>
       <image href="maps/top/${esc(map||'')}.jpg" x="0" y="0" width="1000" height="1000" preserveAspectRatio="none"/>
-      <g style="pointer-events:none">${stBasesSvg(map,mode||'ctf')}</g><g id="stpGrid" style="pointer-events:none">${ST_GRID?stGridInner():''}</g><g id="stpEls"></g><g id="stpLaser" style="pointer-events:none"></g></svg><div class="st-present-note" id="stpNote"></div></div>
+      <g style="pointer-events:none">${stBasesSvg(map,mode||'ctf')}</g><g id="stpGrid" style="pointer-events:none">${ST_GRID?stGridInner():''}</g><g id="stpReplay" style="pointer-events:none"></g><g id="stpEls"></g><g id="stpLaser" style="pointer-events:none"></g></svg><div class="st-present-note" id="stpNote"></div></div>
+    ${RP?`<div class="st-present-nav" style="gap:10px"><button class="st-pbtn" id="stpRpPlay" style="min-width:44px">▶</button><span id="stpRpTime" style="font-variant-numeric:tabular-nums;font-size:13px;opacity:.85;min-width:86px;text-align:center">0:00 / 0:00</span><input type="range" id="stpRpScrub" min="0" max="${RP.dur}" step="0.1" value="0" style="flex:1;max-width:640px;accent-color:var(--accent)"><button class="st-pbtn" id="stpRpSpeed" title="Vitesse de lecture" style="min-width:52px">×2</button></div>`:''}
     <div class="st-present-nav"><button class="st-pbtn" id="stpPrev">‹ Précédent</button><span class="st-present-ind" id="stpInd"></span><button class="st-pbtn" id="stpNext">Suivant ›</button></div>`;
   document.body.appendChild(ov);
   const elsG=ov.querySelector("#stpEls"), noteEl=ov.querySelector("#stpNote");
@@ -6473,9 +6493,39 @@ function stPresent(steps,map,mode,name,start){
     } else paint(to);
     ov.querySelector("#stpInd").textContent=`Étape ${idx+1} / ${steps.length}`; setNote();
     ov.querySelector("#stpPrev").disabled=idx===0; ov.querySelector("#stpNext").disabled=idx===steps.length-1; }
-  function go(d){ const prev=idx; idx=Math.max(0,Math.min(steps.length-1,idx+d)); draw(prev); }
-  function close(){ document.removeEventListener("keydown",key); cancelAnimationFrame(animRAF); if(document.fullscreenElement) document.exitFullscreen().catch(()=>{}); ov.remove(); }
-  function key(e){ const k=(e.key||'').toLowerCase(); if(e.key==="ArrowRight"||e.key===" "){ e.preventDefault(); go(1); } else if(e.key==="ArrowLeft"){ e.preventDefault(); go(-1); } else if(k==="l"){ toggleLaser(); } else if(e.key==="Escape"){ close(); } }
+  function go(d){ const prev=pBlank?null:idx; idx=Math.max(0,Math.min(steps.length-1,idx+d)); pBlank=false; draw(prev);
+    // en débrief, avancer d'une diapo à la main = mettre en pause et se caler sur son instant
+    if(RP){ pPause(); const st=steps[idx]; if(st.t!=null){ RP.t=Math.max(0,Math.min(RP.dur,st.t)); pPaint(); } } }
+  function close(){ document.removeEventListener("keydown",key); cancelAnimationFrame(animRAF); pPause();
+    if(document.fullscreenElement) document.exitFullscreen().catch(()=>{}); ov.remove();
+    if(RP){ try{ stRpDraw(); stRpSync(); }catch(_){} }   // l'éditeur reprend là où le débrief s'est arrêté
+  }
+  function key(e){ const k=(e.key||'').toLowerCase();
+    if(e.key===" " && RP){ e.preventDefault(); pToggle(); }
+    else if(e.key==="ArrowRight"||e.key===" "){ e.preventDefault(); go(1); } else if(e.key==="ArrowLeft"){ e.preventDefault(); go(-1); } else if(k==="l"){ toggleLaser(); } else if(e.key==="Escape"){ close(); } }
+  /* ---------- lecture du replay pendant la présentation ---------- */
+  let pRAF=0, pBlank=false;
+  function pPaint(){ if(!RP) return; stRpDraw("stpReplay");
+    const sc=ov.querySelector("#stpRpScrub"), tm=ov.querySelector("#stpRpTime");
+    if(sc) sc.value=RP.t; if(tm) tm.textContent=stRpFmt(RP.t)+" / "+stRpFmt(RP.dur); }
+  function pPause(){ if(pRAF){ cancelAnimationFrame(pRAF); pRAF=0; } const b=ov.querySelector("#stpRpPlay"); if(b) b.textContent="▶"; }
+  function pPlay(){ if(!RP||pRAF) return; if(RP.t>=RP.dur){ RP.t=0; pBlank=false; }
+    RP.last=performance.now(); const b=ov.querySelector("#stpRpPlay"); if(b) b.textContent="⏸";
+    pRAF=requestAnimationFrame(pFrame); }
+  function pToggle(){ if(pRAF) pPause(); else pPlay(); }
+  function pFrame(now){ pRAF=0; if(!RP) return;
+    const dt=(now-RP.last)/1000; RP.last=now;
+    RP.t=Math.min(RP.dur, RP.t+dt*(RP.speed||2));
+    pPaint(); pFollow();
+    if(RP.t>=RP.dur){ pPause(); return; }
+    pRAF=requestAnimationFrame(pFrame); }
+  // Fait apparaître la diapo épinglée dont l'instant vient d'être atteint.
+  // Avant la toute première : tableau blanc, on ne voit que le replay.
+  function pFollow(){ if(!RP) return;
+    let want=-1; steps.forEach((s,i)=>{ if(s.t!=null && s.t<=RP.t+0.001) want=i; });
+    if(want<0){ if(!pBlank){ pBlank=true; cancelAnimationFrame(animRAF); elsG.innerHTML=""; noteEl.style.display="none";
+        ov.querySelector("#stpInd").textContent="Avant la 1re diapo"; ov.querySelector("#stpPrev").disabled=true; ov.querySelector("#stpNext").disabled=false; } return; }
+    if(pBlank || want!==idx){ const prev=pBlank?null:idx; pBlank=false; idx=want; draw(prev); } }
   // --- pointeur laser ---
   const svg=ov.querySelector("svg"), laserG=ov.querySelector("#stpLaser"); let laserOn=false;
   function laserPt(ev){ const r=svg.getBoundingClientRect(); return [ (ev.clientX-r.left)/r.width*1000, (ev.clientY-r.top)/r.height*1000 ]; }
@@ -6489,6 +6539,18 @@ function stPresent(steps,map,mode,name,start){
   ov.querySelector("#stpAnimBtn").onclick=e=>{ ST_PRES_ANIM=!ST_PRES_ANIM; try{localStorage.setItem('cp_stanim',ST_PRES_ANIM?'1':'0');}catch(_){}  e.currentTarget.classList.toggle("on",ST_PRES_ANIM); };
   ov.querySelector("#stpGridBtn").onclick=()=>{ ST_GRID=!ST_GRID; try{localStorage.setItem('cp_stgrid',ST_GRID?'1':'0');}catch(_){}  ov.querySelector("#stpGrid").innerHTML=ST_GRID?stGridInner():''; };
   document.addEventListener("keydown",key); draw();
+  if(RP){
+    stRpStop();                                   // l'éditeur ne doit pas tourner en parallèle
+    const sp=ov.querySelector("#stpRpSpeed"); sp.textContent="×"+(RP.speed||2);
+    sp.onclick=()=>{ RP.speed=({1:2,2:4,4:1})[RP.speed||2]||2; sp.textContent="×"+RP.speed; };
+    ov.querySelector("#stpRpPlay").onclick=pToggle;
+    const sc=ov.querySelector("#stpRpScrub");
+    sc.oninput=e=>{ const v=Number(e.target.value)||0; pPause(); RP.t=Math.max(0,Math.min(RP.dur,v)); pPaint(); pFollow(); };
+    // Présenter depuis la 1re diapo = partir du début de la bataille (tableau blanc,
+    // les diapos arrivent d'elles-mêmes). Depuis une diapo précise = partir de son instant.
+    RP.t=(idx>0 && steps[idx] && steps[idx].t!=null) ? steps[idx].t : 0;
+    pPaint(); pFollow();
+  }
   if(ov.requestFullscreen) ov.requestFullscreen().catch(()=>{});
 }
 
