@@ -1384,6 +1384,19 @@
   .st-present-x.on{border-color:var(--gold);color:var(--gold);background:var(--gold-soft)}
   .st-present-stage{flex:1;min-height:0;display:flex;justify-content:center;align-items:center;width:100%;position:relative}
   .st-present-stage svg{height:100%;max-height:100%;max-width:100%;aspect-ratio:1;border-radius:10px;background:#000;border:1px solid #2b2d31}
+  /* Décomposition du SR : trois barres signées + marge d'erreur */
+  .sr-decomp{margin:14px 0 4px;padding:12px 14px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm)}
+  .srd-head{display:flex;align-items:center;gap:8px;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:10px}
+  .srd-tag{font-size:10.5px;background:var(--accent-soft);color:var(--accent);border-radius:6px;padding:1px 7px;text-transform:none;letter-spacing:0}
+  .srd-marge{margin-left:auto;text-transform:none;letter-spacing:0;font-weight:600}
+  .srd-row{display:grid;grid-template-columns:96px 1fr 54px;align-items:center;gap:10px;margin:5px 0}
+  .srd-lab{font-size:13px;color:var(--ink-2)}
+  .srd-track{height:8px;background:var(--plane);border-radius:5px;overflow:hidden}
+  .srd-fill{height:100%;background:var(--good);border-radius:5px}
+  .srd-fill.neg{background:var(--bad)}
+  .srd-val{font-size:13px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
+  .sr-note{margin:12px 0 2px;padding:11px 13px;background:var(--surface-2);border:1px solid var(--border);
+    border-left:3px solid var(--accent);border-radius:0 var(--radius-sm) var(--radius-sm) 0;font-size:13.5px;color:var(--ink-2)}
   .st-present-stage.st-laser-on svg{cursor:none}
   .st-svg.st-laser-on{cursor:none}
   .st-present-note{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);max-width:82%;background:rgba(12,13,15,.9);border:1px solid var(--gold-line,#4a3f22);border-left:3px solid var(--gold);border-radius:8px;padding:9px 15px;color:#ece6d6;font-size:15px;font-weight:500;line-height:1.4;box-shadow:0 8px 26px rgba(0,0,0,.5);display:none}
@@ -3972,7 +3985,7 @@ function ceForRow(r,C){
    ============================================================ */
 // Marqueur de version : `srVersion()` dans la console dit si le fichier servi
 // est bien le dernier. Évite de confondre « pas déployé » et « ne marche pas ».
-const SR_SITE_VERSION="sr-2.0-ancien-supprime";
+const SR_SITE_VERSION="sr-2.1-decomposition";
 function srVersion(){ return SR_SITE_VERSION; }
 let SR_MODEL=null, SR_SKILL=null, SR_ELO_TAG=null, SR_ELO_ID=null, SR_ROWS=null;
 const SR_CLS={heavyTank:"heavy",mediumTank:"medium",lightTank:"light","AT-SPG":"td",SPG:"spg"};
@@ -4074,6 +4087,37 @@ function srBattle(r){
 }
 /* Moyenne des SR par bataille : ignore les lignes sans SR et renvoie null
    si aucune n est exploitable. Aucun repli sur l ancien calcul. */
+/* Texte sous le SR : rappelle que la note dépend du clan et de la saison. */
+function srHint(){
+  const M=SR_MODEL&&SR_MODEL["7v7"];
+  return M ? "SR — saison 1 · calculé sur les batailles de ce clan"
+           : "SR indisponible : modèle de saison non chargé";
+}
+/* Décomposition : d'où viennent les points, et avec quelle certitude.
+   C'est ce qui rend la note actionnable — « ma vision est faible » se travaille,
+   « j'ai 1870 » ne se travaille pas. */
+function srDecomp(accId){
+  const s = (accId!=null && srOk()) ? srByPlayer().get(Number(accId)) : null;
+  if(!s) return "";
+  if(s.etat==="insuffisant")
+    return `<div class="sr-note">Pas encore de SR : <b>${s.n}</b> bataille${s.n>1?"s":""} sur les 10 nécessaires.
+      En dessous, la marge d'erreur dépasse les écarts qu'on cherche à mesurer.</div>`;
+  const L=[["Contribution",s.pC,"ce que tu fais dans ton équipe"],
+           ["Surprise",s.pS,"le résultat comparé à ce qui était prévu"],
+           ["Niveau",s.pN,"la hauteur à laquelle ton clan joue"]];
+  const mx=Math.max(120,...L.map(x=>Math.abs(x[1])));
+  const bars=L.map(([nom,v,expl])=>{
+    const w=Math.min(100,Math.abs(v)/mx*100), pos=v>=0;
+    return `<div class="srd-row" title="${esc(expl)}">
+      <div class="srd-lab">${nom}</div>
+      <div class="srd-track"><div class="srd-fill${pos?"":" neg"}" style="width:${w.toFixed(0)}%"></div></div>
+      <div class="srd-val" style="color:${pos?"var(--good)":"var(--bad)"}">${pos?"+":""}${Math.round(v)}</div></div>`;
+  }).join("");
+  const prov = s.etat==="provisoire"
+    ? `<span class="srd-tag">provisoire — ${s.n} batailles</span>` : "";
+  return `<div class="sr-decomp"><div class="srd-head">D'où viennent les points ${prov}
+    <span class="srd-marge">marge ±${s.marge}</span></div>${bars}</div>`;
+}
 function srAvg(rows){ const v=(rows||[]).map(srBattle).filter(x=>x!=null);
   return v.length ? Math.round(v.reduce((a,b)=>a+b,0)/v.length) : null; }
 /* Agrégat par joueur, avec lissage bayésien et RÈGLES D'AFFICHAGE :
@@ -4398,7 +4442,8 @@ function renderPlayerView(){
   document.getElementById("pSR").innerHTML=`<div class="card sr-hero">
     <div class="sr-main"><div class="sr-big" style="color:${tier.c}">${fmt(myCE)}</div>
       <div class="sr-lab"><div class="sr-name" style="color:${tier.c}">${esc(tier.l)}</div>
-      <div class="hint">SR — Synergy Rating · niveau global ≈ 1500</div>${trendHtml}${stkHtml}</div></div>
+      <div class="hint">${srHint()}</div>${trendHtml}${stkHtml}</div></div>
+    ${srDecomp(my[0]&&my[0].accId)}
     <div class="sr-break">${bars}</div></div>`;
 
   // --- details de combat (collecte complete) ---
