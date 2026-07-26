@@ -2212,12 +2212,15 @@ const ROLE_ORDER = {commander:0,deputy_commander:1,executive_officer:1,combat_of
 // Doit rester aligné avec ADMIN_IDS des fonctions Supabase (qui, elles, font foi
 // pour les enregistrements). Sans ça le site recalculait les droits dans son coin
 // et bloquait l'admin alors que le serveur l'autorisait.
+// ⚠️ Les pouvoirs d'admin ne s'appliquent QU'EN MODE TEST (?dev=1). Hors mode test,
+// on retrouve son VRAI grade dans le clan -> permet de vérifier l'expérience d'un
+// simple membre. (Le serveur, lui, garde ADMIN_IDS en permanence.)
 const APP_ADMINS = [539467185];
-function isAppAdmin(){ return ME_ID!=null && APP_ADMINS.includes(Number(ME_ID)); }
+function isAppAdmin(){ return DEV && ME_ID!=null && APP_ADMINS.includes(Number(ME_ID)); }
 // Droits d'édition CÔTÉ CLIENT : basés sur le VRAI grade WG du joueur, sauf en mode DEV
 // ou pour un administrateur (qui débloquent tout comme un commandant).
 function meIsManager(){
-  if(DEV || isAppAdmin()) return true;
+  if(DEV) return true;                 // mode test : accès complet
   const m=(MEMBERS||[]).find(x=>Number(x.account_id)===Number(ME_ID));
   return !!m && (ROLE_ORDER[normRole(m.wg_role)] ?? 9) <= 2;
 }
@@ -6044,6 +6047,9 @@ async function stOpenReplay(battleId, btn){
   ST_RP={ battleId:String(g.id), name:pretty2(g.mapName)+" · "+agoFR(g.ts), dur:rep.duration||0,
           interval:rep.interval||2, bounds:rep.bounds, vehicles:rep.vehicles,
           t:0, playing:false, speed:2, raf:null, last:0 };
+  // L'éditeur vit DANS l'onglet Stratégie : il faut y basculer, sinon il s'ouvre
+  // dans un conteneur masqué (la vue Batailles semblait alors se figer).
+  try{ switchView("strats"); }catch(e){}
   openStratEditor({ name:"Débrief — "+ST_RP.name, map:mapKey(g.mapName), mode:"ctf" }, true);
 }
 function pretty2(s){ try{ return pretty(mapKey(s)); }catch(e){ return String(s||""); } }
@@ -6257,7 +6263,14 @@ async function saveStrat(){
   const payload={ id:ST_EDIT.id||null, name:(ST_EDIT.name||"Stratégie").trim()||"Stratégie", map:ST_EDIT.map, mode:ST_EDIT.mode||"ctf", steps, elements:steps[0].els, editors:ST_EDIT.editors||[] };
   const btn=document.getElementById("stSave"); if(btn){btn.disabled=true;btn.textContent="Enregistrement…";}
   const r=await fnCall("strategies",{session:localStorage.getItem(LS_SESSION),action:"save",strategy:payload});
-  if(!r.ok){ if(btn){btn.disabled=false;btn.textContent="✓ Enregistrer";} alert("Erreur : "+(r.j.error||r.status)); return; }
+  if(!r.ok){
+    if(btn){btn.disabled=false;btn.textContent="✓ Enregistrer";}
+    const e=r.j&&r.j.error;
+    alert(e==="no_clan" ? "Impossible d'enregistrer : ton compte n'est rattaché à aucun clan. Une stratégie appartient toujours à un clan."
+        : e==="forbidden" ? "Enregistrement refusé : il faut être officier de combat (ou collaborateur de cette stratégie)."
+        : "Erreur : "+(e||r.status)+((r.j&&r.j.detail)?("\n"+r.j.detail):""));
+    return;
+  }
   stLeaveRoom(); document.body.classList.remove("st-noscroll");
   const ed=document.getElementById("stEditor"); ed.classList.add("hidden"); ed.innerHTML=""; ST_EDIT=null;
   loadStrats();
