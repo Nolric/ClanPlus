@@ -4055,16 +4055,38 @@ function srRows(){ if(!SR_ROWS) SR_ROWS=srBuild(); return SR_ROWS; }
    l'écart réel entre joueurs, le chiffre ne voudrait rien dire. */
 function srByPlayer(){
   const M=SR_MODEL&&SR_MODEL["7v7"]; if(!M) return new Map();
-  const m=M.lissage_m||3, S=M.seuils||{aucun:10,provisoire:20}, sig=M.sigma||500;
+  const S=M.seuils||{aucun:10,provisoire:20};
   const g=new Map();
   srRows().forEach(r=>{ const a=g.get(r.accId); if(a) a.push(r); else g.set(r.accId,[r]); });
+  /* ⭐ LISSAGE SUR LA SEULE PART ATTRIBUABLE AU JOUEUR (contribution + surprise).
+     Le terme de niveau décrit le CONTEXTE dans lequel il joue, pas sa performance :
+     le ramener vers la moyenne n'aurait aucun sens.
+     Le m fourni par le modèle (1,6) est calculé sur un τ global gonflé par les
+     écarts ENTRE CLANS ; à l'intérieur d'un clan le niveau est presque constant,
+     donc l'écart réel entre coéquipiers est bien plus faible et le lissage doit
+     être bien plus fort. On le recalcule ici sur la bonne quantité. */
+  const perso=r=>r.pC+r.pS;
+  let ss=0, ddl=0; const moyennes=[];
+  g.forEach(rs=>{
+    const mu=rs.reduce((a,r)=>a+perso(r),0)/rs.length;
+    moyennes.push({mu,n:rs.length});
+    if(rs.length>1){ rs.forEach(r=>{ ss+=Math.pow(perso(r)-mu,2); }); ddl+=rs.length-1; }
+  });
+  const sig=Math.sqrt(ddl>0?ss/ddl:Math.pow(M.sigma||500,2));
+  const assez=moyennes.filter(x=>x.n>=5);
+  const mm=assez.length?assez.reduce((a,x)=>a+x.mu,0)/assez.length:0;
+  const varObs=assez.length>1?assez.reduce((a,x)=>a+Math.pow(x.mu-mm,2),0)/(assez.length-1):0;
+  const varBruit=assez.length?assez.reduce((a,x)=>a+sig*sig/x.n,0)/assez.length:0;
+  const tau=Math.sqrt(Math.max(1,varObs-varBruit));
+  const m=Math.max(1,Math.min(60,(sig*sig)/(tau*tau)));
   const out=new Map();
   g.forEach((rs,acc)=>{
     const n=rs.length, avg=k=>rs.reduce((a,r)=>a+r[k],0)/n;
-    const brut=avg("sr");
-    out.set(acc,{ n, sr: 1500+(n/(n+m))*(brut-1500), brut,
-                  pC:avg("pC"), pS:avg("pS"), pN:avg("pN"),
-                  marge: Math.round(sig/Math.sqrt(n)),
+    const pC=avg("pC"), pS=avg("pS"), pN=avg("pN");
+    const k=n/(n+m);                       // part de la performance qu'on retient
+    out.set(acc,{ n, brut:1500+pC+pS+pN, sr:1500+pN+k*(pC+pS),
+                  pC:k*pC, pS:k*pS, pN,
+                  marge: Math.round(sig/Math.sqrt(n)), lissage:Number(m.toFixed(1)),
                   etat: n<S.aucun?"insuffisant":(n<S.provisoire?"provisoire":"ok") });
   });
   return out;
