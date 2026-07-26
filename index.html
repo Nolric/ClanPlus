@@ -2192,12 +2192,14 @@ const LS_SESSION = "cp_session";
 function fnCall(name, body){
   return fetch(FN+name, {
     method:"POST",
-    // ⭐ Le serveur ne peut pas DEVINER le mode test : on le lui dit. Sans cet
-    // en-tête, ses ADMIN_IDS accordaient l'édition en permanence — d'où un simple
+    headers:{ "content-type":"application/json", "apikey":SUPABASE_ANON, "Authorization":"Bearer "+SUPABASE_ANON },
+    // ⭐ Le serveur ne peut pas DEVINER le mode test : on le lui dit, DANS LE CORPS.
+    // Sans ça, ses ADMIN_IDS accordaient l'édition en permanence — d'où un simple
     // soldat capable d'enregistrer des stratégies hors ?dev.
-    headers:{ "content-type":"application/json", "apikey":SUPABASE_ANON, "Authorization":"Bearer "+SUPABASE_ANON,
-              ...(DEV ? {"x-cp-dev":"1"} : {}) },
-    body: JSON.stringify(body),
+    // ⚠️ Surtout PAS un en-tête personnalisé : il déclencherait un préflight CORS que
+    // les fonctions non mises à jour refusent (site bloqué au chargement). Un champ
+    // de corps inconnu, lui, est simplement ignoré par une ancienne fonction.
+    body: JSON.stringify(DEV ? { ...(body||{}), dev:true } : body),
   }).then(async r=>{ const j=await r.json().catch(()=>({error:"réponse invalide"})); return {ok:r.ok, status:r.status, j}; });
 }
 function redirectUri(){ return location.origin + location.pathname; }
