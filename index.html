@@ -1484,7 +1484,9 @@
   .st-rp-scrub{flex:1;min-width:120px;accent-color:var(--accent)}
   .st-rp-t{font-size:12px;color:var(--ink-2);font-variant-numeric:tabular-nums;min-width:78px;text-align:right;flex:0 0 auto}
   .st-rp-spd{font:inherit;font-size:11.5px;font-weight:700;color:var(--ink-2);background:#17181b;border:1px solid #202226;border-radius:7px;padding:4px 7px;cursor:pointer}
-  .st-rp-name{font-size:11.5px;color:var(--muted);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .st-rp-name{font-size:11.5px;color:var(--muted);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .st-rp-pin{white-space:nowrap;color:var(--accent-2)!important;border-color:rgba(216,181,102,.45)!important}
+  .st-steptab .tt{display:block;font-size:8.5px;font-weight:700;opacity:.75;line-height:1;margin-top:1px;font-variant-numeric:tabular-nums}
   .st-steps2{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:11px 14px;background:#0e0f11;border-top:1px solid #202226}
   .st-steps2-l{font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--muted)}
   .st-stepnote{flex:1 1 220px;min-width:160px;background:#16171a;border:1px solid #2b2d31;border-radius:8px;padding:7px 11px;color:#e8e6df;font:inherit;font-size:13px;outline:none}
@@ -5641,7 +5643,7 @@ function stGridInner(){ let s=''; const cols='1234567890'.split(''), rows='ABCDE
 // chemin d'une flèche/ligne courbe (bezier quadratique, contrôle perpendiculaire au milieu)
 function stCurvePath(el){ const mx=(el.x1+el.x2)/2,my=(el.y1+el.y2)/2, dx=el.x2-el.x1,dy=el.y2-el.y1, len=Math.hypot(dx,dy)||1, off=len*0.26; const cx=mx+(-dy/len)*off, cy=my+(dx/len)*off; return `M ${el.x1} ${el.y1} Q ${Math.round(cx)} ${Math.round(cy)} ${el.x2} ${el.y2}`; }
 // construit les étapes d'une stratégie (nouveau format .steps, sinon .elements sur 1 étape)
-function stStepsOf(s){ if(s&&Array.isArray(s.steps)&&s.steps.length) return s.steps.map(st=>({els:Array.isArray(st.els)?JSON.parse(JSON.stringify(st.els)):[], note:st.note?String(st.note):''})); const e=(s&&Array.isArray(s.elements))?JSON.parse(JSON.stringify(s.elements)):[]; return [{els:e,note:''}]; }
+function stStepsOf(s){ if(s&&Array.isArray(s.steps)&&s.steps.length) return s.steps.map(st=>({els:Array.isArray(st.els)?JSON.parse(JSON.stringify(st.els)):[], note:st.note?String(st.note):'', t:(st.t!=null&&isFinite(st.t)?Number(st.t):null)})); const e=(s&&Array.isArray(s.elements))?JSON.parse(JSON.stringify(s.elements)):[]; return [{els:e,note:''}]; }
 const ST_MAPS=[
   ["himmelsdorf","Himmelsdorf"],["ensk","Ensk"],["lakeville","Lakeville"],["redshire","Redshire"],
   ["prohorovka","Prokhorovka"],["murovanka","Murovanka"],["malinovka","Malinovka"],["ruinberg","Ruinberg"],
@@ -5795,6 +5797,7 @@ function renderStratEditor(){
       <input class="st-rp-scrub" id="stRpScrub" type="range" min="0" max="100" step="0.1" value="0">
       <span class="st-rp-t" id="stRpTime">0:00</span>
       <select class="st-rp-spd" id="stRpSpeed" title="Vitesse"><option value="1">×1</option><option value="2" selected>×2</option><option value="4">×4</option><option value="8">×8</option></select>
+      <button class="st-mini2 st-rp-pin" id="stRpPin" title="Créer une diapo de débriefing à cet instant">📌 Diapo ici</button>
       <span class="st-rp-name" id="stRpName"></span>
       <button class="st-mini2" id="stRpClose" title="Retirer le replay">✕</button>
     </div>
@@ -5969,6 +5972,14 @@ function stRpDraw(){
   const g=document.getElementById("stReplay"); if(!g) return;
   if(!ST_RP){ g.innerHTML=""; return; }
   const t=ST_RP.t, R=ST_RP_ICON, h=R/2, out=[];
+  // Filtres de teinte : la silhouette de l'icône est repeinte aux couleurs de
+  // l'équipe (feFlood + feComposite sur l'alpha), avec une ombre pour rester
+  // lisible sur les cartes claires.
+  out.push(`<defs>${[["rpTintA","#2ec26e"],["rpTintE","#ec6a6a"]].map(([id,c])=>
+    `<filter id="${id}" x="-40%" y="-40%" width="180%" height="180%">
+       <feFlood flood-color="${c}"/><feComposite in2="SourceAlpha" operator="in"/>
+       <feDropShadow dx="0" dy="0" stdDeviation="1.1" flood-color="#000" flood-opacity="1"/>
+     </filter>`).join("")}</defs>`);
   ST_RP.vehicles.forEach(v=>{
     const p=stRpPos(v,t); if(!p) return;
     const xy=stRpXY(p.x,p.z), x=xy[0], y=xy[1];
@@ -5986,8 +5997,8 @@ function stRpDraw(){
       s+=`<path d="M${x.toFixed(1)} ${y.toFixed(1)} L${x1.toFixed(1)} ${y1.toFixed(1)} A${L} ${L} 0 0 1 ${x2.toFixed(1)} ${y2.toFixed(1)} Z" fill="${col}" opacity=".16"/>`;
     }
     const ic=ST_RP_CLS[v.cls];
-    if(ic) s+=`<image href="strat/class_${ic}.png" x="${(x-h).toFixed(1)}" y="${(y-h).toFixed(1)}" width="${R}" height="${R}" style="filter:drop-shadow(0 0 2px #000)"/>`
-             +`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(h*0.86).toFixed(1)}" fill="none" stroke="${col}" stroke-width="3" opacity=".9"/>`;
+    if(ic) s+=`<image href="strat/class_${ic}.png" x="${(x-h).toFixed(1)}" y="${(y-h).toFixed(1)}" width="${R}" height="${R}" filter="url(#${v.ally?'rpTintA':'rpTintE'})"/>`
+             +`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(h*0.86).toFixed(1)}" fill="none" stroke="${col}" stroke-width="2" opacity=".55"/>`;
     else s+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="10" fill="${col}" stroke="#000" stroke-width="2"/>`;
     s+=`<text x="${x.toFixed(1)}" y="${(y+h+13).toFixed(1)}" text-anchor="middle" font-size="15" font-weight="700" fill="#fff" stroke="#000" stroke-width="3" paint-order="stroke" style="pointer-events:none">${esc(v.name||"")}</text>`;
     out.push(s+`</g>`);
@@ -6007,10 +6018,47 @@ function stRpLoop(now){
   const dt=(now-ST_RP.last)/1000; ST_RP.last=now;
   ST_RP.t=Math.min(ST_RP.dur, ST_RP.t+dt*ST_RP.speed);
   if(ST_RP.t>=ST_RP.dur){ ST_RP.t=ST_RP.dur; ST_RP.playing=false; }
-  stRpDraw(); stRpSync();
+  stRpDraw(); stRpSync(); stRpFollowSteps();
   if(ST_RP.playing) ST_RP.raf=requestAnimationFrame(stRpLoop);
 }
-function stRpSeek(nt){ if(!ST_RP) return; ST_RP.t=Math.max(0,Math.min(ST_RP.dur,nt)); stRpDraw(); stRpSync(); }
+function stRpSeek(nt){ if(!ST_RP) return; ST_RP.t=Math.max(0,Math.min(ST_RP.dur,nt)); stRpDraw(); stRpSync(); stRpFollowSteps(); }
+/* ---- Diapos de débriefing épinglées à un instant du replay ----
+   « Pause = tableau blanc » : on met en pause où l'on veut, on épingle une diapo,
+   on annote. En lecture, la diapo correspondante s'affiche à son instant. */
+function stRpPinStep(){
+  if(!ST_RP||!ST_EDIT) return;
+  const t=Math.round(ST_RP.t*10)/10, cur=ST_EDIT.steps[ST_STEP];
+  stRpStop();
+  // 1re diapo encore vierge et non épinglée -> on l'épingle ici au lieu d'en créer une
+  if(cur && cur.t==null && !(cur.els||[]).length){ cur.t=t; }
+  else {
+    if(ST_EDIT.steps.length>=12){ alert("Maximum 12 diapos."); return; }
+    ST_EDIT.steps.splice(ST_STEP+1,0,{els:[],note:"",t:t});
+    ST_STEP++; ST_EDIT.els=ST_EDIT.steps[ST_STEP].els;
+    stSelClear(); ST_UNDO=[]; ST_REDO=[];
+  }
+  // les diapos restent dans l'ordre chronologique
+  const keep=ST_EDIT.steps[ST_STEP];
+  ST_EDIT.steps.sort((a,b)=>((a.t==null?-1:a.t)-(b.t==null?-1:b.t)));
+  ST_STEP=Math.max(0,ST_EDIT.steps.indexOf(keep));
+  ST_EDIT.els=ST_EDIT.steps[ST_STEP].els;
+  renderStepTabs(); stRedraw(); if(typeof stUpdCount==='function') stUpdCount();
+}
+/* pendant la lecture : afficher la diapo correspondant à l'instant courant.
+   AVANT la première diapo épinglée, aucune annotation ne doit apparaître. */
+let ST_RP_BLANK=false;
+function stRpFollowSteps(){
+  if(!ST_RP||!ST_EDIT||!ST_EDIT.steps) return;
+  if(!ST_EDIT.steps.some(s=>s.t!=null)) return;      // aucune diapo épinglée : on ne touche à rien
+  let idx=-1;
+  ST_EDIT.steps.forEach((s,i)=>{ if(s.t!=null && s.t<=ST_RP.t+0.001) idx=i; });
+  if(idx<0){                                          // on est avant la 1re diapo
+    if(!ST_RP_BLANK){ const g=document.getElementById("stEls"); if(g) g.innerHTML=""; ST_RP_BLANK=true; }
+    return;
+  }
+  if(idx!==ST_STEP){ ST_RP_BLANK=false; stGoStep(idx); }
+  else if(ST_RP_BLANK){ ST_RP_BLANK=false; stRedraw(); }
+}
 /* (re)branche la barre après chaque rendu de l'éditeur */
 function stRpMount(){
   const bar=document.getElementById("stRpBar"); if(!bar) return;
@@ -6030,6 +6078,7 @@ function stRpMount(){
   // ⚠️ lire la valeur AVANT stRpStop() : celui-ci resynchronise le curseur sur ST_RP.t
   sc.oninput=()=>{ const v=+sc.value; stRpStop(); stRpSeek(v); };
   document.getElementById("stRpSpeed").onchange=e=>{ ST_RP.speed=+e.target.value; };
+  document.getElementById("stRpPin").onclick=stRpPinStep;
   document.getElementById("stRpClose").onclick=()=>{ stRpStop(); ST_RP=null; stRpDraw(); stRpMount(); };
   stRpDraw(); stRpSync();
 }
@@ -6070,7 +6119,10 @@ function stUndo(){ if(!ST_UNDO.length) return; ST_REDO.push(JSON.stringify(ST_ED
 function stRedo(){ if(!ST_REDO.length) return; ST_UNDO.push(JSON.stringify(ST_EDIT.els)); stSetEls(JSON.parse(ST_REDO.pop())); stSelClear(); stRedraw(); stUpdCount(); stUpdUndoBtns(); }
 // -- étapes (slideshow) --
 function renderStepTabs(){ const c=document.getElementById("stStepTabs"); if(!c||!ST_EDIT.steps) return;
-  c.innerHTML=ST_EDIT.steps.map((st,i)=>`<button type="button" class="st-steptab${i===ST_STEP?' on':''}" data-step="${i}" title="Étape ${i+1}">${i+1}</button>`).join("")+(ST_EDIT.steps.length<12?`<button type="button" class="st-stepadd" id="stStepAdd" title="Ajouter une étape (copie l'étape actuelle)">+</button>`:'');
+  c.innerHTML=ST_EDIT.steps.map((st,i)=>{
+    const t=(st.t!=null)?stRpFmt(st.t):null;    // diapo épinglée à un instant du replay
+    return `<button type="button" class="st-steptab${i===ST_STEP?' on':''}" data-step="${i}" title="Étape ${i+1}${t?" — épinglée à "+t:""}">${i+1}${t?`<span class="tt">${t}</span>`:""}</button>`;
+  }).join("")+(ST_EDIT.steps.length<12?`<button type="button" class="st-stepadd" id="stStepAdd" title="Ajouter une étape (copie l'étape actuelle)">+</button>`:'');
   c.querySelectorAll(".st-steptab").forEach(b=>b.onclick=()=>stGoStep(+b.dataset.step));
   const add=c.querySelector("#stStepAdd"); if(add) add.onclick=stAddStep; stSyncNote(); }
 function stSyncNote(){ const inp=document.getElementById("stStepNote"); if(inp&&ST_EDIT&&ST_EDIT.steps&&ST_EDIT.steps[ST_STEP]) inp.value=ST_EDIT.steps[ST_STEP].note||''; }
@@ -6259,7 +6311,7 @@ function stWireEditor(){
 }
 async function saveStrat(){
   if(!ST_EDIT.map){ alert("Choisis une carte."); return; }
-  const steps=ST_EDIT.steps.map(st=>({els:st.els, note:st.note||''}));
+  const steps=ST_EDIT.steps.map(st=>({els:st.els, note:st.note||'', t:(st.t!=null?st.t:null)}));
   const payload={ id:ST_EDIT.id||null, name:(ST_EDIT.name||"Stratégie").trim()||"Stratégie", map:ST_EDIT.map, mode:ST_EDIT.mode||"ctf", steps, elements:steps[0].els, editors:ST_EDIT.editors||[] };
   const btn=document.getElementById("stSave"); if(btn){btn.disabled=true;btn.textContent="Enregistrement…";}
   const r=await fnCall("strategies",{session:localStorage.getItem(LS_SESSION),action:"save",strategy:payload});
