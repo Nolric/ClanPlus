@@ -1,0 +1,563 @@
+<!doctype html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Éditeur de stratégie World of Tanks — manuel complet | Clan Plus</title>
+<meta name="description" content="Mode d'emploi de l'éditeur de stratégie Clan Plus : les 15 outils, les raccourcis clavier, le débriefing d'un replay de bataille de clan, le mode présentation, la collaboration en direct et les droits par grade.">
+<link rel="canonical" href="https://clanplus.eu/aide-editeur.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Clan Plus">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:url" content="https://clanplus.eu/aide-editeur.html">
+<meta property="og:title" content="Éditeur de stratégie World of Tanks — manuel complet">
+<meta property="og:description" content="Dessiner un plan sur la minimap, débriefer une vraie bataille à partir de son replay, et présenter le résultat au clan. Tous les outils et raccourcis.">
+<meta property="og:image" content="https://clanplus.eu/og.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20240%20240%22%3E%3Crect%20width%3D%22240%22%20height%3D%22240%22%20rx%3D%2254%22%20fill%3D%22%23141310%22%2F%3E%3Cg%20transform%3D%22translate%2830%2030%29%20scale%280.75%29%22%20fill%3D%22%23d8b566%22%3E%3Ccircle%20cx%3D%22120%22%20cy%3D%22120%22%20r%3D%22100%22%20fill%3D%22none%22%20stroke%3D%22%23d8b566%22%20stroke-width%3D%227%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
+<style>
+  /* Jetons identiques à index.html (thème sombre uniquement, préférence du projet). */
+  :root{
+    --plane:#0c0c0b; --surface-1:#151412; --surface-2:#201f1b; --card:#1a1917;
+    --ink:#f6f5f1; --ink-2:#bdb9af; --muted:#87847b;
+    --border:rgba(255,255,255,.09);
+    --good:#2ec26e; --bad:#ec6a6a; --warn:#e0a34a;
+    --accent:#d8b566; --accent-2:#ecd190; --accent-soft:rgba(216,181,102,.14);
+    --radius:14px; --radius-sm:9px;
+    color-scheme:dark;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--plane);color:var(--ink);
+       font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+       font-size:15.5px;line-height:1.62;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1150px;margin:0 auto;padding:0 20px 80px}
+
+  /* ---------- barre de retour ---------- */
+  .topbar{border-bottom:1px solid var(--border);background:var(--surface-1);position:sticky;top:0;z-index:5}
+  .topbar-in{max-width:1150px;margin:0 auto;padding:11px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .brand{font-weight:800;letter-spacing:-.01em;color:var(--ink);text-decoration:none;font-size:15px}
+  .brand span{color:var(--accent)}
+  .back{margin-left:auto;color:var(--ink-2);text-decoration:none;font-size:13.5px;font-weight:600;
+        border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 12px}
+  .back:hover{color:var(--ink);border-color:var(--accent)}
+
+  /* ---------- en-tête ---------- */
+  header.hero{padding:52px 0 30px;border-bottom:1px solid var(--border)}
+  .eyebrow{font-size:11.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);
+           margin:0 0 12px;font-weight:700}
+  h1{font-size:clamp(27px,4.8vw,42px);line-height:1.1;margin:0 0 14px;letter-spacing:-.02em;
+     text-wrap:balance;font-weight:800}
+  .lede{font-size:17px;color:var(--ink-2);max-width:62ch;margin:0}
+
+  /* ---------- mise en page ---------- */
+  .cols{display:grid;grid-template-columns:222px 1fr;gap:48px;align-items:start;margin-top:38px}
+  @media (max-width:900px){ .cols{grid-template-columns:1fr;gap:26px} }
+
+  nav.toc{position:sticky;top:70px;font-size:13.5px}
+  @media (max-width:900px){ nav.toc{position:static;background:var(--card);border:1px solid var(--border);
+    border-radius:var(--radius);padding:15px 17px} }
+  .toc-t{font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);
+         margin:0 0 10px;font-weight:700}
+  nav.toc ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+  nav.toc a{display:flex;gap:9px;color:var(--ink-2);text-decoration:none;padding:5px 8px;
+            border-radius:7px;border-left:2px solid transparent}
+  nav.toc a:hover{color:var(--ink);background:var(--surface-2);border-left-color:var(--accent)}
+  nav.toc .n{font-variant-numeric:tabular-nums;font-size:12px;color:var(--muted);min-width:15px}
+
+  main{min-width:0}
+  section{scroll-margin-top:72px;padding:34px 0;border-bottom:1px solid var(--border)}
+  section:last-of-type{border-bottom:0}
+  h2{font-size:24px;font-weight:800;margin:0 0 6px;letter-spacing:-.015em;
+     display:flex;align-items:baseline;gap:11px;text-wrap:balance}
+  h2 .n{font-variant-numeric:tabular-nums;font-size:14px;color:var(--accent);font-weight:700}
+  h3{font-size:16.5px;font-weight:700;margin:26px 0 7px}
+  p{margin:0 0 13px;max-width:68ch}
+  ul,ol.steps{margin:0 0 15px;padding-left:21px;max-width:68ch}
+  li{margin:0 0 6px}
+  strong{color:#fff;font-weight:700}
+  em{font-style:italic;color:var(--ink)}
+  a{color:var(--accent)}
+
+  kbd{font-family:ui-monospace,"Cascadia Mono",Consolas,monospace;font-size:12.5px;
+      background:var(--surface-2);border:1px solid var(--border);border-bottom-width:2px;
+      border-radius:5px;padding:2px 6px;color:var(--ink);white-space:nowrap}
+  .btnref{font-size:13px;font-weight:700;background:var(--accent-soft);
+          border:1px solid rgba(216,181,102,.4);border-radius:7px;padding:2px 8px;
+          color:var(--accent);white-space:nowrap}
+
+  .tw{overflow-x:auto;margin:0 0 17px;border:1px solid var(--border);border-radius:var(--radius);
+      background:var(--card)}
+  table{width:100%;border-collapse:collapse;font-size:14px;min-width:450px}
+  th{font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);
+     text-align:left;padding:11px 14px;border-bottom:1px solid var(--border);font-weight:700}
+  td{padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.05);vertical-align:top}
+  tr:last-child td{border-bottom:0}
+  td.g{font-size:18px;text-align:center;width:50px;color:var(--accent);line-height:1.2}
+  td.k{white-space:nowrap;width:94px}
+  .yes{color:var(--good);font-weight:700}
+  .no{color:var(--bad);font-weight:700}
+
+  .note{border:1px solid var(--border);border-left:3px solid var(--accent);background:var(--card);
+        border-radius:0 var(--radius) var(--radius) 0;padding:14px 17px;margin:0 0 17px;font-size:14.5px}
+  .note.warn{border-left-color:var(--warn)}
+  .note.stop{border-left-color:var(--bad)}
+  .note p:last-child{margin-bottom:0}
+  .note .lbl{font-size:10.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--accent);
+             display:block;margin-bottom:4px;font-weight:700}
+  .note.warn .lbl{color:var(--warn)} .note.stop .lbl{color:var(--bad)}
+
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(235px,1fr));gap:13px;margin:0 0 17px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px}
+  .card h4{font-size:14.5px;margin:0 0 6px;color:var(--accent);font-weight:700}
+  .card p{font-size:14px;color:var(--ink-2);margin:0}
+
+  ol.steps{counter-reset:s;list-style:none;padding-left:0}
+  ol.steps>li{counter-increment:s;position:relative;padding-left:36px;margin-bottom:11px}
+  ol.steps>li::before{content:counter(s);position:absolute;left:0;top:1px;width:24px;height:24px;
+    border-radius:50%;background:var(--accent-soft);border:1px solid rgba(216,181,102,.4);
+    color:var(--accent);font-size:12.5px;font-weight:700;display:flex;align-items:center;
+    justify-content:center;font-variant-numeric:tabular-nums}
+
+  footer{padding:36px 0 0;color:var(--muted);font-size:13.5px}
+  footer a{color:var(--ink-2)}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+  @media (prefers-reduced-motion:reduce){ *{transition:none!important;animation:none!important} }
+</style>
+</head>
+<body>
+
+<div class="topbar"><div class="topbar-in">
+  <a class="brand" href="/">Clan<span>Plus</span></a>
+  <a class="back" href="/">← Retour au site</a>
+</div></div>
+
+<div class="wrap">
+<header class="hero">
+  <p class="eyebrow">Aide · World of Tanks</p>
+  <h1>Manuel de l'éditeur de stratégie</h1>
+  <p class="lede">Tout ce que fait l'éditeur : dessiner un plan sur la minimap, débriefer une vraie
+  bataille à partir de son replay, et présenter le résultat au clan. Y compris la collaboration en
+  direct et qui a le droit de quoi.</p>
+</header>
+
+<div class="cols">
+<nav class="toc">
+  <p class="toc-t">Sommaire</p>
+  <ol>
+    <li><a href="#s1"><span class="n">1</span> À quoi ça sert</a></li>
+    <li><a href="#s2"><span class="n">2</span> Y entrer</a></li>
+    <li><a href="#s3"><span class="n">3</span> L'interface</a></li>
+    <li><a href="#s4"><span class="n">4</span> Les 15 outils</a></li>
+    <li><a href="#s5"><span class="n">5</span> Sélectionner, déplacer</a></li>
+    <li><a href="#s6"><span class="n">6</span> Grille, aimant, zoom</a></li>
+    <li><a href="#s7"><span class="n">7</span> Les étapes</a></li>
+    <li><a href="#s8"><span class="n">8</span> Débriefer un replay</a></li>
+    <li><a href="#s9"><span class="n">9</span> Le pointeur</a></li>
+    <li><a href="#s10"><span class="n">10</span> Présenter</a></li>
+    <li><a href="#s11"><span class="n">11</span> Collaborer</a></li>
+    <li><a href="#s12"><span class="n">12</span> Les droits</a></li>
+    <li><a href="#s13"><span class="n">13</span> Raccourcis</a></li>
+    <li><a href="#s14"><span class="n">14</span> Deux recettes</a></li>
+    <li><a href="#s15"><span class="n">15</span> Limites</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<section id="s1">
+  <h2><span class="n">01</span> À quoi ça sert</h2>
+  <p>L'éditeur est une minimap sur laquelle on dessine. Il sert à deux choses très différentes, avec
+  les mêmes outils :</p>
+  <div class="cards">
+    <div class="card">
+      <h4>Préparer un plan</h4>
+      <p>Une carte vierge. Tu places les chars, tu traces les axes, tu écris les consignes. C'est le
+      « voilà ce qu'on va faire » avant une session.</p>
+    </div>
+    <div class="card">
+      <h4>Débriefer une bataille</h4>
+      <p>Le replay d'une vraie bataille tourne sous tes annotations. Tu mets en pause où tu veux et
+      tu expliques. C'est le « voilà ce qui s'est passé, et ce qu'il fallait faire ».</p>
+    </div>
+  </div>
+  <p>Dans les deux cas le résultat s'enregistre dans l'onglet <strong>Stratégie</strong>, reste
+  consultable par tout le clan, et peut être déroulé en plein écran devant l'équipe.</p>
+</section>
+
+<section id="s2">
+  <h2><span class="n">02</span> Y entrer</h2>
+  <p>Il y a exactement <strong>deux portes</strong>, et elles ne donnent pas la même chose :</p>
+  <div class="tw"><table>
+    <thead><tr><th>Porte</th><th>Où</th><th>Ce que tu obtiens</th></tr></thead>
+    <tbody>
+      <tr><td><span class="btnref">+ Nouvelle stratégie</span></td><td>Onglet Stratégie, en haut à droite</td>
+          <td>Choix de la carte, puis une minimap vierge. <strong>Pas de replay.</strong></td></tr>
+      <tr><td><span class="btnref">✎ Débriefer dans l'éditeur</span></td><td>Onglet Batailles → une bataille → onglet Replay</td>
+          <td>La bonne carte, et <strong>les chars de la vraie bataille</strong> dessous.</td></tr>
+    </tbody>
+  </table></div>
+  <div class="note"><span class="lbl">À retenir</span>
+  <p>Le replay ne s'invite jamais tout seul dans une stratégie normale. C'est volontaire : les deux
+  usages restent séparés. Une fois un débrief <em>enregistré</em>, en revanche, il se souvient de sa
+  bataille et recharge son replay tout seul à chaque réouverture.</p></div>
+</section>
+
+<section id="s3">
+  <h2><span class="n">03</span> L'interface</h2>
+  <p>De haut en bas :</p>
+  <ul>
+    <li><strong>La barre du haut</strong> — nom de la stratégie, mode de jeu, carte, présence des
+    autres éditeurs, puis <span class="btnref">👥 Collaborateurs</span>,
+    <span class="btnref">⛶ Plein écran</span>, <span class="btnref">▶ Présenter</span>,
+    <span class="btnref">Enregistrer</span> et la croix de fermeture.</li>
+    <li><strong>La palette d'outils</strong> — les 15 outils, à gauche de la carte.</li>
+    <li><strong>La barre d'options</strong> — annuler/refaire, grille, aimant, pointeur, premier/arrière-plan,
+    dupliquer, supprimer, tout vider. Elle change selon l'outil actif (couleur, épaisseur, classe de char…).</li>
+    <li><strong>La barre Replay</strong> — uniquement en débrief. Détaillée en <a href="#s8">section 8</a>.</li>
+    <li><strong>Les étapes</strong> — les onglets de diapos et la note de l'étape courante.</li>
+    <li><strong>La carte</strong> — 10 × 11 cases nommées <kbd>A1</kbd> à <kbd>K0</kbd>, comme en jeu.</li>
+    <li><strong>La discussion</strong> — un fil de messages attaché à cette stratégie.</li>
+  </ul>
+</section>
+
+<section id="s4">
+  <h2><span class="n">04</span> Les 15 outils</h2>
+  <p>Chaque outil a une lettre. Tape la lettre, l'outil s'active — plus rapide que de viser le bouton.</p>
+  <div class="tw"><table>
+    <thead><tr><th></th><th>Outil</th><th class="k">Touche</th><th>Ce qu'il fait</th></tr></thead>
+    <tbody>
+      <tr><td class="g">✋</td><td>Déplacer</td><td class="k"><kbd>V</kbd></td><td>Sélectionner, bouger, redimensionner, faire tourner.</td></tr>
+      <tr><td class="g">▰</td><td>Chars</td><td class="k"><kbd>H</kbd></td><td>Poser une silhouette de char. Choix de la classe : léger, moyen, lourd, TD, arto. Nom modifiable.</td></tr>
+      <tr><td class="g">➤</td><td>Flèche</td><td class="k"><kbd>F</kbd></td><td>Un déplacement, un axe d'attaque. Droite ou courbe, pleine ou pointillée.</td></tr>
+      <tr><td class="g">／</td><td>Trait</td><td class="k"><kbd>L</kbd></td><td>Une ligne sans pointe : une limite, un alignement.</td></tr>
+      <tr><td class="g">▭</td><td>Zone</td><td class="k"><kbd>Z</kbd></td><td>Un rectangle : secteur à tenir, zone à éviter.</td></tr>
+      <tr><td class="g">◯</td><td>Cercle</td><td class="k"><kbd>O</kbd></td><td>Une zone ronde : point de regroupement, danger.</td></tr>
+      <tr><td class="g">✪</td><td>Symbole</td><td class="k"><kbd>S</kbd></td><td>Un pictogramme parlant : Focus, Vision, Tenir, Danger, Objectif, Pousser, Repli, Interdit, Regroupement.</td></tr>
+      <tr><td class="g">◔</td><td>Cône de tir</td><td class="k"><kbd>C</kbd></td><td>L'angle qu'un char couvre. Orientation, ouverture et portée réglables.</td></tr>
+      <tr><td class="g">⋯</td><td>Trajet</td><td class="k"><kbd>M</kbd></td><td>Un chemin à plusieurs points. Clique chaque étape, <kbd>Entrée</kbd> pour terminer, <kbd>Échap</kbd> pour annuler.</td></tr>
+      <tr><td class="g">↔</td><td>Mesure</td><td class="k"><kbd>D</kbd></td><td>La distance réelle entre deux points, <strong>en mètres</strong>.</td></tr>
+      <tr><td class="g">◎</td><td>Portée</td><td class="k"><kbd>R</kbd></td><td>Un rayon en mètres autour d'un point : vision, portée de tir.</td></tr>
+      <tr><td class="g">✎</td><td>Crayon</td><td class="k"><kbd>P</kbd></td><td>Tracé à main levée.</td></tr>
+      <tr><td class="g">◉</td><td>Jeton</td><td class="k"><kbd>J</kbd></td><td>Un pion numéroté, incrémenté tout seul. Pour un ordre d'exécution.</td></tr>
+      <tr><td class="g">T</td><td>Texte</td><td class="k"><kbd>T</kbd></td><td>Une étiquette libre sur la carte.</td></tr>
+      <tr><td class="g">⌫</td><td>Gomme</td><td class="k"><kbd>G</kbd></td><td>Clique un élément, il disparaît.</td></tr>
+    </tbody>
+  </table></div>
+  <div class="note"><span class="lbl">Astuce</span>
+  <p><strong>Mesure</strong> et <strong>Portée</strong> donnent de vraies distances en mètres, calculées
+  depuis les dimensions réelles de la carte. C'est ce qui permet de trancher un débat du type
+  « il pouvait me voir d'ici ? » avec un chiffre plutôt qu'une intuition.</p></div>
+</section>
+
+<section id="s5">
+  <h2><span class="n">05</span> Sélectionner et manipuler</h2>
+  <p>Avec l'outil <strong>Déplacer</strong> (<kbd>V</kbd>) :</p>
+  <ul>
+    <li><strong>Un élément</strong> : clique dessus. Des poignées apparaissent — les coins
+    redimensionnent, celle du dessus fait tourner.</li>
+    <li><strong>Plusieurs</strong> : glisse un rectangle dans le vide pour tout attraper, ou
+    <kbd>Ctrl</kbd>+<kbd>A</kbd> pour tout sélectionner.</li>
+    <li><strong>Au clavier</strong> : les <kbd>flèches</kbd> déplacent par petits pas,
+    <kbd>Maj</kbd>+<kbd>flèches</kbd> par grands pas.</li>
+    <li><strong>Superposition</strong> : <kbd>]</kbd> met au premier plan, <kbd>[</kbd> envoie derrière.</li>
+    <li><strong>Copier</strong> : <kbd>Ctrl</kbd>+<kbd>C</kbd> / <kbd>Ctrl</kbd>+<kbd>V</kbd>, ou
+    <kbd>Ctrl</kbd>+<kbd>D</kbd> pour dupliquer sur place.</li>
+    <li><strong>Supprimer</strong> : <kbd>Suppr</kbd>. <kbd>Échap</kbd> désélectionne.</li>
+    <li><strong>Clic droit</strong> sur un élément ouvre un menu contextuel.</li>
+  </ul>
+  <p>Tout est annulable : <kbd>Ctrl</kbd>+<kbd>Z</kbd> et <kbd>Ctrl</kbd>+<kbd>Y</kbd>.</p>
+</section>
+
+<section id="s6">
+  <h2><span class="n">06</span> Grille, aimant, zoom</h2>
+  <h3>La grille</h3>
+  <p>Bouton <span class="btnref">▦</span>. Elle affiche le quadrillage <kbd>A1</kbd>–<kbd>K0</kbd> du
+  jeu et elle est <strong>active par défaut</strong> : c'est le vocabulaire commun pour parler d'une
+  position à l'oral. Si tu l'éteins, ton choix est mémorisé.</p>
+  <h3>L'aimant</h3>
+  <p>Bouton <span class="btnref">🧲</span>. Les éléments se collent aux intersections de la grille.
+  Utile pour un schéma propre, gênant pour un tracé précis.</p>
+  <h3>Zoom et déplacement</h3>
+  <ul>
+    <li><kbd>+</kbd> / <kbd>−</kbd> pour zoomer, <kbd>0</kbd> pour revenir à 100 %. La molette
+    fonctionne aussi.</li>
+    <li>Zoomé, maintiens <kbd>Espace</kbd> (ou le clic du milieu) et glisse pour te déplacer.</li>
+    <li>Une <strong>mini-carte</strong> apparaît en bas à droite : clique ou glisse dedans pour sauter
+    ailleurs.</li>
+  </ul>
+</section>
+
+<section id="s7">
+  <h2><span class="n">07</span> Les étapes</h2>
+  <p>Une stratégie peut contenir jusqu'à <strong>12 étapes</strong> — des diapos. Chacune a son propre
+  dessin et sa propre note. C'est ce qui permet de raconter une phase après l'autre au lieu de tout
+  empiler sur une seule image.</p>
+  <ul>
+    <li>Les <strong>onglets d'étape</strong> sont sous la barre d'options. Clique pour passer de l'une
+    à l'autre.</li>
+    <li>Le champ <strong>« ✎ Note de cette étape »</strong> (140 caractères) s'affiche en présentation.
+    Une note = une idée.</li>
+    <li><span class="btnref">🗑 Supprimer l'étape</span> retire l'étape courante.</li>
+  </ul>
+  <div class="note"><span class="lbl">Conseil</span>
+  <p>Trois ou quatre étapes suffisent presque toujours. Un plan à dix diapos, personne ne le retient.</p></div>
+</section>
+
+<section id="s8">
+  <h2><span class="n">08</span> Débriefer un replay</h2>
+  <p>C'est le cœur de l'outil. Le principe s'appelle <strong>« pause = tableau blanc »</strong> :
+  tu figes la bataille à un instant, tu dessines sur l'image figée, et cette pause annotée devient une
+  diapo <em>épinglée à cet instant</em>.</p>
+
+  <h3>La barre Replay</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Commande</th><th>Effet</th></tr></thead>
+    <tbody>
+      <tr><td><span class="btnref">▶</span></td><td>Lecture / pause.</td></tr>
+      <tr><td><span class="btnref">⏴</span> <span class="btnref">⏵</span></td><td>Reculer / avancer de 5 secondes.</td></tr>
+      <tr><td>Le curseur</td><td>Aller n'importe où dans la bataille.</td></tr>
+      <tr><td><span class="btnref">×2</span></td><td>Vitesse : ×1, ×2, ×4, ×8.</td></tr>
+      <tr><td><span class="btnref">📌 Diapo ici</span></td><td>Créer une diapo épinglée à l'instant affiché.</td></tr>
+      <tr><td><span class="btnref">👥 Proposer</span></td><td>Mode « il aurait fallu être ici ».</td></tr>
+      <tr><td><span class="btnref">✕</span></td><td>Retirer le replay de l'éditeur.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Ce que tu vois sur la carte</h3>
+  <ul>
+    <li>Chaque char porte <strong>l'icône de sa classe</strong>, teintée en vert (allié) ou rouge (ennemi).</li>
+    <li>Son <strong>nom de char</strong> est écrit dessous — l'abréviation officielle du jeu :
+    <kbd>Obj. 260</kbd>, <kbd>CS-63</kbd>, <kbd>60TP</kbd>.</li>
+    <li>Un <strong>cône</strong> discret indique où il regarde.</li>
+    <li>Le <strong>cercle autour de l'icône</strong> est sa barre de vie.</li>
+    <li>Une <strong>✕</strong> apparaît quand il meurt.</li>
+    <li>Un char <strong>assombri</strong> n'est plus repéré : sa position est la dernière connue.</li>
+    <li>Les <strong>drapeaux de base</strong> sont ceux du jeu, y compris le blanc des 7 contre 7.</li>
+  </ul>
+
+  <h3>Proposer une position</h3>
+  <p>Active <span class="btnref">👥 Proposer</span>, puis clique un char. Un <strong>fantôme</strong>
+  apparaît, relié par une flèche pointillée à sa position réelle. Déplace le fantôme là où le joueur
+  aurait dû être.</p>
+  <div class="note"><span class="lbl">Pourquoi c'est important</span>
+  <p>La position réelle <strong>ne bouge jamais</strong> : l'origine de la flèche reste ancrée à ce qui
+  s'est vraiment passé. Le message devient lisible d'un coup d'œil — « tu étais là, il fallait être
+  ici » — sans que tu puisses accidentellement réécrire l'histoire de la bataille.</p></div>
+  <p>Reclique sur le bouton pour sortir du mode et revenir au dessin.</p>
+
+  <h3>Le déroulé automatique</h3>
+  <p>Quand tu relances la lecture, les diapos <strong>apparaissent d'elles-mêmes</strong> à leur
+  instant. Avant la première, c'est le tableau blanc : on ne voit que le replay, aucune annotation en
+  avance. Les onglets d'étape affichent l'horodatage (<kbd>0:30</kbd>, <kbd>1:20</kbd>…) et se rangent
+  tout seuls dans l'ordre chronologique.</p>
+</section>
+
+<section id="s9">
+  <h2><span class="n">09</span> Le pointeur</h2>
+  <p>Bouton <span class="btnref">🔴</span> dans la barre d'options. Il transforme ton curseur en point
+  lumineux avec une traînée, pour <strong>montrer sans dessiner</strong>.</p>
+  <ul>
+    <li>Tant qu'il est actif, <strong>le dessin est suspendu</strong> : tu peux cliquer partout sans
+    rien créer.</li>
+    <li>Un clic fait un <strong>ping</strong> — un cercle qui s'élargit, pour attirer l'œil.</li>
+    <li>Si un autre officier édite la stratégie en même temps, <strong>il voit ton pointeur bouger en
+    direct</strong>, avec ton pseudo. Le tien est rouge, ceux des autres sont bleus.</li>
+  </ul>
+  <p>C'est l'outil du commentaire à l'oral, quand tu partages ton écran ou que vous êtes plusieurs
+  dans l'éditeur.</p>
+</section>
+
+<section id="s10">
+  <h2><span class="n">10</span> Présenter</h2>
+  <p><span class="btnref">▶ Présenter</span> passe en plein écran, sans les outils. En débrief, une
+  <strong>deuxième barre</strong> apparaît : celle du replay.</p>
+  <p>Tu lances la lecture et tout se déroule seul — la bataille rejoue, chaque diapo arrive à son
+  instant avec sa note.</p>
+  <div class="tw"><table>
+    <thead><tr><th class="k">Touche</th><th>Action</th></tr></thead>
+    <tbody>
+      <tr><td class="k"><kbd>Espace</kbd></td><td>Lecture / pause du replay.</td></tr>
+      <tr><td class="k"><kbd>←</kbd> <kbd>→</kbd></td><td>Diapo précédente / suivante.</td></tr>
+      <tr><td class="k"><kbd>L</kbd></td><td>Pointeur laser. Clique pour un ping.</td></tr>
+      <tr><td class="k"><kbd>Échap</kbd></td><td>Quitter.</td></tr>
+    </tbody>
+  </table></div>
+  <p>Trois boutons en haut : <span class="btnref">✨</span> anime les transitions entre étapes,
+  <span class="btnref">🔴</span> le laser, <span class="btnref">▦</span> la grille.</p>
+  <div class="note"><span class="lbl">Détail utile</span>
+  <p>Cliquer sur <strong>Précédent / Suivant</strong> met en pause <em>et recale le replay</em> sur
+  l'instant de la diapo. C'est ce qui te permet de revenir sur un moment précis pendant que tu
+  commentes, sans chercher dans le curseur.</p></div>
+  <p>Présenter depuis la première diapo démarre au début de la bataille ; depuis une autre diapo,
+  ça démarre à son instant.</p>
+</section>
+
+<section id="s11">
+  <h2><span class="n">11</span> Collaborer</h2>
+  <p>Il y a <strong>trois mécanismes distincts</strong>, souvent confondus. Voici lequel fait quoi.</p>
+
+  <h3>La présence — qui est là</h3>
+  <p>Dès que tu ouvres une stratégie <em>déjà enregistrée</em>, tu rejoins un salon. Les pastilles dans
+  la barre du haut listent les personnes présentes, avec <strong>✎</strong> si elles éditent et
+  <strong>👁</strong> si elles regardent. Aucune action de ta part : c'est automatique.</p>
+  <div class="note warn"><span class="lbl">Condition</span>
+  <p>Une stratégie <strong>jamais enregistrée n'a pas de salon</strong> : le salon est attaché à son
+  identifiant. Enregistre-la une fois, et la collaboration devient possible.</p></div>
+
+  <h3>L'édition simultanée — ce qui se synchronise</h3>
+  <p>Toutes les 0,4 seconde, ton éditeur envoie l'état de tes étapes aux autres, et applique le leur.
+  Vous voyez donc les dessins apparaître en direct. Deux protections importantes :</p>
+  <ul>
+    <li>L'envoi est suspendu pendant que tu es <strong>en train</strong> de dessiner, déplacer ou faire
+    tourner un élément — on n'envoie jamais un geste inachevé.</li>
+    <li>La réception est <strong>ignorée</strong> pendant que tu manipules quelque chose : le travail
+    d'un autre ne peut pas t'arracher l'élément des mains.</li>
+  </ul>
+  <div class="note stop"><span class="lbl">La limite à connaître</span>
+  <p>Ce n'est <strong>pas</strong> une fusion intelligente : le dernier état reçu remplace le tien.
+  Si vous dessinez tous les deux au même moment sur la même étape, l'un des deux tracés peut
+  disparaître. En pratique, répartissez-vous : « toi le flanc est, moi le centre », ou dessinez à tour
+  de rôle en utilisant le pointeur pour indiquer quand vous prenez la main.</p></div>
+  <p>Le <strong>pointeur</strong> passe par le même canal — c'est ce qui permet de se montrer des
+  choses sans dessiner.</p>
+
+  <h3>Les collaborateurs — qui a le droit d'éditer</h3>
+  <p>C'est le seul des trois qui touche aux <strong>permissions</strong>. Le bouton
+  <span class="btnref">👥 Collaborateurs</span> ouvre la liste des membres du clan avec une case à
+  cocher pour chacun.</p>
+  <ol class="steps">
+    <li>Ouvre la stratégie dans l'éditeur (il faut être officier).</li>
+    <li>Clique <span class="btnref">👥 Collaborateurs</span>, cherche le membre, coche sa case.</li>
+    <li>Ferme la fenêtre, puis <strong>clique Enregistrer</strong>.</li>
+  </ol>
+  <div class="note warn"><span class="lbl">Piège</span>
+  <p>Cocher une case ne suffit pas : la liste part avec la stratégie. <strong>Si tu n'enregistres pas,
+  rien n'est retenu.</strong></p></div>
+  <p>Un membre coché peut <strong>modifier cette stratégie précise</strong>, même s'il est simple
+  soldat. Il ne peut ni en créer d'autres, ni toucher à celles où il n'est pas coché. Seuls les
+  officiers peuvent modifier la liste elle-même.</p>
+  <p>Pour un débrief, c'est particulièrement utile : tu peux inviter le joueur concerné à annoter
+  lui-même sa propre erreur.</p>
+
+  <h3>La discussion</h3>
+  <p>Sous la carte, un fil de messages attaché à la stratégie. Il se rafraîchit tout seul tant que la
+  vue est ouverte, et il est visible par tout le clan — pas besoin de droits d'édition pour y écrire.</p>
+</section>
+
+<section id="s12">
+  <h2><span class="n">12</span> Les droits</h2>
+  <p>La règle est vérifiée <strong>sur le serveur</strong> : même en trafiquant la page, un membre sans
+  les droits ne peut rien enregistrer.</p>
+  <div class="tw"><table>
+    <thead><tr><th>Grade</th><th>Créer / modifier / enregistrer</th><th>Consulter</th></tr></thead>
+    <tbody>
+      <tr><td>Commandant</td><td class="yes">Oui</td><td class="yes">Oui</td></tr>
+      <tr><td>Commandant adjoint · Officier exécutif</td><td class="yes">Oui</td><td class="yes">Oui</td></tr>
+      <tr><td>Officier de combat</td><td class="yes">Oui</td><td class="yes">Oui</td></tr>
+      <tr><td>Officier du personnel · Recruteur</td><td class="yes">Oui</td><td class="yes">Oui</td></tr>
+      <tr><td>Officier renseignement · Intendant</td><td class="yes">Oui</td><td class="yes">Oui</td></tr>
+      <tr><td>Officier subalterne</td><td class="no">Non</td><td class="yes">Oui</td></tr>
+      <tr><td>Soldat · Recrue · Réserviste</td><td class="no">Non</td><td class="yes">Oui</td></tr>
+    </tbody>
+  </table></div>
+  <p>Une seule exception : un membre <strong>coché comme collaborateur</strong> sur une stratégie peut
+  la modifier, quel que soit son grade (<a href="#s11">section 11</a>).</p>
+  <p>En consultation, tout le monde voit les étapes, les notes, <strong>le replay</strong> et la
+  discussion, et peut lancer <span class="btnref">▶ Présenter</span>. Naviguer entre les étapes déplace
+  les chars à l'instant de chaque diapo.</p>
+</section>
+
+<section id="s13">
+  <h2><span class="n">13</span> Tous les raccourcis</h2>
+  <h3>Outils</h3>
+  <p><kbd>V</kbd> Déplacer · <kbd>H</kbd> Chars · <kbd>F</kbd> Flèche · <kbd>L</kbd> Trait ·
+  <kbd>Z</kbd> Zone · <kbd>O</kbd> Cercle · <kbd>S</kbd> Symbole · <kbd>C</kbd> Cône ·
+  <kbd>M</kbd> Trajet · <kbd>D</kbd> Mesure · <kbd>R</kbd> Portée · <kbd>P</kbd> Crayon ·
+  <kbd>J</kbd> Jeton · <kbd>T</kbd> Texte · <kbd>G</kbd> Gomme</p>
+  <h3>Édition</h3>
+  <div class="tw"><table>
+    <tbody>
+      <tr><td class="k"><kbd>Ctrl</kbd>+<kbd>Z</kbd></td><td>Annuler</td></tr>
+      <tr><td class="k"><kbd>Ctrl</kbd>+<kbd>Y</kbd></td><td>Refaire (ou <kbd>Ctrl</kbd>+<kbd>Maj</kbd>+<kbd>Z</kbd>)</td></tr>
+      <tr><td class="k"><kbd>Ctrl</kbd>+<kbd>C</kbd> / <kbd>V</kbd></td><td>Copier / coller</td></tr>
+      <tr><td class="k"><kbd>Ctrl</kbd>+<kbd>X</kbd></td><td>Couper</td></tr>
+      <tr><td class="k"><kbd>Ctrl</kbd>+<kbd>D</kbd></td><td>Dupliquer</td></tr>
+      <tr><td class="k"><kbd>Ctrl</kbd>+<kbd>A</kbd></td><td>Tout sélectionner</td></tr>
+      <tr><td class="k"><kbd>Suppr</kbd></td><td>Supprimer la sélection</td></tr>
+      <tr><td class="k"><kbd>flèches</kbd></td><td>Déplacer d'un petit pas (<kbd>Maj</kbd> = grand pas)</td></tr>
+      <tr><td class="k"><kbd>]</kbd> / <kbd>[</kbd></td><td>Premier plan / arrière-plan</td></tr>
+      <tr><td class="k"><kbd>Entrée</kbd></td><td>Terminer un trajet</td></tr>
+      <tr><td class="k"><kbd>Échap</kbd></td><td>Annuler le trajet, ou désélectionner</td></tr>
+    </tbody>
+  </table></div>
+  <h3>Vue</h3>
+  <p><kbd>+</kbd> / <kbd>−</kbd> zoom · <kbd>0</kbd> zoom 100 % ·
+  <kbd>Espace</kbd> maintenu + glisser pour se déplacer</p>
+</section>
+
+<section id="s14">
+  <h2><span class="n">14</span> Deux recettes</h2>
+  <h3>Préparer un plan pour ce soir</h3>
+  <ol class="steps">
+    <li><span class="btnref">+ Nouvelle stratégie</span>, choisis la carte et le mode — les vraies bases
+    et les points d'apparition s'affichent tout seuls.</li>
+    <li>Étape 1 : le déploiement. Outil <strong>Chars</strong> (<kbd>H</kbd>), une silhouette par
+    joueur, nomme-les.</li>
+    <li>Étape 2 : les axes. <strong>Flèche</strong> (<kbd>F</kbd>) pour les déplacements,
+    <strong>Symbole</strong> (<kbd>S</kbd>) pour « Vision » et « Tenir ».</li>
+    <li>Étape 3 : le plan B. Duplique l'étape 2 et modifie ce qui change.</li>
+    <li>Une note courte par étape, puis <strong>Enregistrer</strong>.</li>
+    <li>Le soir venu : <span class="btnref">▶ Présenter</span>, et <kbd>L</kbd> pour pointer pendant
+    que tu parles.</li>
+  </ol>
+
+  <h3>Débriefer une défaite</h3>
+  <ol class="steps">
+    <li>Onglet Batailles → la bataille → onglet Replay →
+    <span class="btnref">✎ Débriefer dans l'éditeur</span>.</li>
+    <li><strong>Regarde le replay en entier sans rien annoter.</strong> Repère les 3 ou 4 moments qui
+    ont décidé la partie.</li>
+    <li>Reviens sur le premier, pause, <span class="btnref">📌 Diapo ici</span>.</li>
+    <li><span class="btnref">👥 Proposer</span> puis clique le char concerné, déplace son fantôme là
+    où il fallait être. Une flèche pour montrer le mouvement attendu.</li>
+    <li>Écris la note : une phrase, la cause — pas le reproche.</li>
+    <li>Répète pour les autres moments, puis <strong>Enregistrer</strong>.</li>
+    <li><span class="btnref">▶ Présenter</span> devant le clan. Tu lances la lecture et tu commentes ;
+    les diapos arrivent toutes seules.</li>
+  </ol>
+  <div class="note"><span class="lbl">Ce qui fait la différence</span>
+  <p>Regarder d'abord, annoter ensuite. Un débrief construit au fil de l'eau finit toujours à dix
+  diapos dont personne ne retient rien.</p></div>
+</section>
+
+<section id="s15">
+  <h2><span class="n">15</span> Limites à connaître</h2>
+  <ul>
+    <li><strong>Dégâts et tirs ne montrent que ce que ton client a vu.</strong> Le jeu ne transmet pas
+    ce qui se passe hors de ta zone d'intérêt. Les <em>morts</em>, elles, sont toujours complètes. Pour
+    débriefer un flanc où tu n'étais pas, réimporte le replay de quelqu'un qui y était.</li>
+    <li><strong>Réimporter enrichit le passé.</strong> Ouvrir un vieux fichier <kbd>.wotreplay</kbd>
+    dans le jeu met à jour la bataille sur le site — tu peux donc débriefer des batailles antérieures
+    au mod. Les batailles aléatoires restent exclues.</li>
+    <li><strong>Un débrief enregistré avant juillet 2026</strong> ne connaît pas sa bataille et
+    s'ouvrira sans replay. Il suffit de le refaire une fois depuis
+    <span class="btnref">✎ Débriefer</span>.</li>
+    <li><strong>Bases et points d'apparition</strong> ne sont connus que pour une partie des cartes
+    dans une stratégie vierge. En débrief, ils viennent du replay : c'est exact, et disponible sur
+    toutes les cartes.</li>
+    <li><strong>12 étapes maximum</strong> par stratégie, et 140 caractères par note.</li>
+  </ul>
+</section>
+
+<footer>
+  <p>Clan Plus — outils de clan pour World of Tanks EU · <a href="/">Retour au site</a> ·
+  <a href="/trouver-clan.html">Trouver un clan</a></p>
+</footer>
+
+</main>
+</div>
+</div>
+
+</body>
+</html>
