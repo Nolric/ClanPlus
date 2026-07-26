@@ -338,5 +338,24 @@ function pretty(k){ return NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1); }
   }).catch(()=>{ document.getElementById("err").style.display="flex"; document.getElementById("err").textContent="Impossible de charger la liste des cartes (maps3d/index.json)."; loadEl.classList.remove("on"); });
 })();
 </script>
+<script>
+/* Page en chantier : ouverte a tous, contenu reserve au mode test (?dev).
+   On recouvre la page plutot que de rediriger, pour garder le lien partageable. */
+(function(){
+  if(/[?&]dev/.test(location.search)) return;
+  var d=document.createElement("div");
+  d.setAttribute("style","position:fixed;inset:0;z-index:99999;background:#0c0c0b;color:#f6f5f1;"+
+    "display:flex;align-items:center;justify-content:center;padding:24px;"+
+    "font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif");
+  d.innerHTML="<div style='max-width:520px;text-align:center'>"+
+    "<div style='font-size:38px;margin-bottom:14px'>D83dDea7</div>"+
+    "<h1 style='font-size:22px;margin:0 0 10px;font-weight:800'>Cartes 3D 2014 en construction</h1>"+
+    "<p style='margin:0 0 18px;color:#bdb9af;line-height:1.6'>Le relief r00e9el des cartes est en cours de d00e9veloppement. "+
+    "Cette page sera ouverte 00e0 tout le clan d00e8s qu'elle sera pr00eate.</p>"+
+    "<a href='/' style='color:#d8b566;font-weight:700'>2190 Retour au site</a></div>";
+  document.addEventListener("DOMContentLoaded",function(){ document.body.appendChild(d); });
+  if(document.body) document.body.appendChild(d);
+})();
+</script>
 </body>
 </html>
