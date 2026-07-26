@@ -3457,11 +3457,12 @@ function renderReplay(host, rep, mkey, demo){
     let lo=null, hi=null;
     for(let i=0;i<tr.length;i++){ if(tr[i][0]<=time) lo=tr[i]; else { hi=tr[i]; break; } }
     if(!lo) return null;
+    const yaw=(lo.length>3 ? lo[3] : null);      // direction visée (si le mod l'a captée)
     const cont = hi && (hi[0]-lo[0])<=GAP;       // point suivant assez proche = suivi continu
     if(cont){ const f=(time-lo[0])/((hi[0]-lo[0])||1);
-      return {x:lo[1]+(hi[1]-lo[1])*f, z:lo[2]+(hi[2]-lo[2])*f, dead:false, spotted:true, age:0}; }
+      return {x:lo[1]+(hi[1]-lo[1])*f, z:lo[2]+(hi[2]-lo[2])*f, dead:false, spotted:true, age:0, yaw:yaw}; }
     const age=time-lo[0];
-    return {x:lo[1], z:lo[2], dead:false, spotted:(age<=GAP), age:Math.max(0,age-GAP)};
+    return {x:lo[1], z:lo[2], dead:false, spotted:(age<=GAP), age:Math.max(0,age-GAP), yaw:yaw};
   }
 
   // Quadrillage de la minimap du jeu : 10x10, colonnes A..J, lignes 1..10.
@@ -3550,6 +3551,17 @@ function renderReplay(host, rep, mkey, demo){
       // s'efface progressivement. Repéré -> pleine opacité.
       const fade = p.spotted ? 1 : Math.max(.26, .62 - p.age*0.035);
       ctx.globalAlpha = fade;
+      // --- direction visée : cône à peine visible (caisse + tourelle) ---
+      if(p.yaw!=null){
+        const rad=p.yaw*Math.PI/180;
+        const dx=Math.sin(rad), dy=-Math.cos(rad);          // monde +Z = haut de la carte
+        const base=Math.atan2(dy,dx), half=13*Math.PI/180, L=34*K;
+        ctx.beginPath(); ctx.moveTo(px,py);
+        ctx.arc(px,py,L,base-half,base+half); ctx.closePath();
+        const gr=ctx.createRadialGradient(px,py,3*K,px,py,L);
+        gr.addColorStop(0, col); gr.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.globalAlpha=fade*0.20; ctx.fillStyle=gr; ctx.fill(); ctx.globalAlpha=fade;
+      }
       // --- le glyphe de classe SEUL, aux couleurs de son équipe ---
       const S=Math.round(20*K), SH=Math.round(S+5*K);
       if(v.cls){
