@@ -1486,6 +1486,8 @@
   .st-rp-spd{font:inherit;font-size:11.5px;font-weight:700;color:var(--ink-2);background:#17181b;border:1px solid #202226;border-radius:7px;padding:4px 7px;cursor:pointer}
   .st-rp-name{font-size:11.5px;color:var(--muted);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .st-rp-pin{white-space:nowrap;color:var(--accent-2)!important;border-color:rgba(216,181,102,.45)!important}
+  .st-rp-prop{white-space:nowrap}
+  .st-rp-prop.on{background:var(--accent-soft)!important;color:var(--accent-2)!important;border-color:var(--accent)!important}
   .st-steptab .tt{display:block;font-size:8.5px;font-weight:700;opacity:.75;line-height:1;margin-top:1px;font-variant-numeric:tabular-nums}
   .st-steps2{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:11px 14px;background:#0e0f11;border-top:1px solid #202226}
   .st-steps2-l{font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--muted)}
@@ -5798,6 +5800,7 @@ function renderStratEditor(){
       <span class="st-rp-t" id="stRpTime">0:00</span>
       <select class="st-rp-spd" id="stRpSpeed" title="Vitesse"><option value="1">×1</option><option value="2" selected>×2</option><option value="4">×4</option><option value="8">×8</option></select>
       <button class="st-mini2 st-rp-pin" id="stRpPin" title="Créer une diapo de débriefing à cet instant">📌 Diapo ici</button>
+      <button class="st-mini2 st-rp-prop" id="stRpProp" title="Proposer une position : clique un char du replay pour créer un fantôme « il aurait fallu être ici »">👥 Proposer</button>
       <span class="st-rp-name" id="stRpName"></span>
       <button class="st-mini2" id="stRpClose" title="Retirer le replay">✕</button>
     </div>
@@ -5906,6 +5909,15 @@ function stElInner(el,i){
   if(el.type==='pen'){ const w=el.w||7, dash=el.dash?` stroke-dasharray="${w*2.1} ${w*1.6}"`:''; return `<polyline class="st-el${sel}" data-eid="${i}" points="${el.pts.map(p=>p.map(n=>Math.round(n)).join(',')).join(' ')}" fill="none" stroke="${esc(el.color)}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"${dash}/>`; }
   if(el.type==='marker'){ return `<g class="st-el st-marker${sel}" data-eid="${i}"><circle cx="${el.x}" cy="${el.y}" r="24" fill="${esc(el.color)}" stroke="#0009" stroke-width="3"/><text x="${el.x}" y="${el.y+9}" font-size="26" font-weight="800" text-anchor="middle" fill="${stTextOn(el.color)}" style="pointer-events:none">${esc(el.label||'')}</text></g>`; }
   if(el.type==='text'){ return `<text class="st-el${sel}" data-eid="${i}" x="${el.x}" y="${el.y}" font-size="34" font-weight="800" fill="${esc(el.color)}" stroke="#000" stroke-width="1" paint-order="stroke">${esc(el.text||'')}</text>`; }
+  // POSITION PROPOSÉE (débriefing) : fantôme relié par une flèche pointillée à la
+  // position RÉELLE du char dans le replay (x0,y0 ne bougent jamais).
+  if(el.type==='ghost'){ const col=el.color||'#d8b566'; const s=Math.round(66*(el.size||0.72)),h=s/2,
+        cls=(ST_CLASSES.find(c=>c[0]===el.cls)?el.cls:'medium'), nm=String(el.name||'').trim();
+    const arr=(el.x0!=null&&el.y0!=null)
+      ? `<path d="M ${el.x0} ${el.y0} L ${el.x} ${el.y}" stroke="${esc(col)}" stroke-width="4" stroke-dasharray="11 8" fill="none" marker-end="url(#st-ah)" opacity=".9"/>`
+        +`<circle cx="${el.x0}" cy="${el.y0}" r="6" fill="none" stroke="${esc(col)}" stroke-width="3" opacity=".75"/>` : '';
+    const label=nm?`<text x="${el.x}" y="${el.y+h+11}" font-size="14" font-weight="700" text-anchor="middle" fill="#fff" stroke="#000" stroke-width="3" paint-order="stroke" style="pointer-events:none">${esc(nm)}</text>`:'';
+    return `<g class="st-el st-ghost${sel}" data-eid="${i}">${arr}<filter id="stg${i}" x="-45%" y="-45%" width="190%" height="190%"><feFlood flood-color="${esc(col)}" result="f"/><feComposite in="f" in2="SourceAlpha" operator="in" result="s"/><feDropShadow in="s" dx="0" dy="0" stdDeviation="3" flood-color="#000" flood-opacity=".9"/></filter><image href="strat/class_${cls}.png" x="${el.x-h}" y="${el.y-h}" width="${s}" height="${s}" filter="url(#stg${i})" opacity=".7"/>${label}</g>`; }
   if(el.type==='tank'){ const col=el.color||'#5dbb46'; const s=Math.round(66*(el.size||0.78)),h=s/2, cls=(ST_CLASSES.find(c=>c[0]===el.cls)?el.cls:'medium');
     const nm=String(el.name||'').trim(); const nw=nm?Math.round(nm.length*8.6+16):0;
     const label=nm?`<g style="pointer-events:none"><rect x="${el.x-nw/2}" y="${el.y+h-6}" width="${nw}" height="21" rx="6" fill="#0c0d0f" fill-opacity=".82"/><text x="${el.x}" y="${el.y+h+9}" font-size="15" font-weight="700" text-anchor="middle" fill="#fff">${esc(nm)}</text></g>`:'';
@@ -5980,16 +5992,18 @@ function stRpDraw(){
        <feFlood flood-color="${c}"/><feComposite in2="SourceAlpha" operator="in"/>
        <feDropShadow dx="0" dy="0" stdDeviation="1.1" flood-color="#000" flood-opacity="1"/>
      </filter>`).join("")}</defs>`);
-  ST_RP.vehicles.forEach(v=>{
+  const pick=!!ST_RP.propose;   // mode « proposer une position » : chars cliquables
+  ST_RP.vehicles.forEach((v,vi)=>{
     const p=stRpPos(v,t); if(!p) return;
     const xy=stRpXY(p.x,p.z), x=xy[0], y=xy[1];
     const col=v.ally?"#2ec26e":"#ec6a6a";
     const op=p.spotted?1:0.32;
+    const at=pick?` class="rp-pick" data-vi="${vi}" style="pointer-events:auto;cursor:copy"`:"";
     if(p.dead){
-      out.push(`<g opacity="${op*0.6}"><path d="M${x-9} ${y-9} L${x+9} ${y+9} M${x+9} ${y-9} L${x-9} ${y+9}" stroke="${col}" stroke-width="4" stroke-linecap="round" fill="none"/></g>`);
+      out.push(`<g opacity="${op*0.6}"${at}><path d="M${x-9} ${y-9} L${x+9} ${y+9} M${x+9} ${y-9} L${x-9} ${y+9}" stroke="${col}" stroke-width="4" stroke-linecap="round" fill="none"/></g>`);
       return;
     }
-    let s=`<g opacity="${op}">`;
+    let s=`<g opacity="${op}"${at}>`;
     if(p.yaw!=null){   // cône de visée, discret
       const rad=p.yaw*Math.PI/180, L=64, half=13*Math.PI/180;
       const a=Math.atan2(-Math.cos(rad),Math.sin(rad));
@@ -6004,6 +6018,24 @@ function stRpDraw(){
     out.push(s+`</g>`);
   });
   g.innerHTML=out.join("");
+  g.style.pointerEvents = pick ? "auto" : "none";
+  if(pick) g.onpointerdown=stRpPick; else g.onpointerdown=null;
+}
+/* Clic sur un char du replay en mode « proposer » : crée une POSITION PROPOSÉE
+   (fantôme) décalée, reliée par une flèche à la position réelle. Le replay n'est
+   jamais modifié : on ne fait qu'ajouter une annotation à la diapo courante. */
+function stRpPick(ev){
+  const gEl=ev.target.closest && ev.target.closest(".rp-pick");
+  if(!gEl||!ST_RP||!ST_EDIT) return;
+  ev.stopPropagation(); ev.preventDefault();
+  const v=ST_RP.vehicles[+gEl.dataset.vi]; if(!v) return;
+  const p=stRpPos(v,ST_RP.t); if(!p) return;
+  const xy=stRpXY(p.x,p.z);
+  if(typeof stSnapshot==='function') stSnapshot();
+  ST_EDIT.els.push({ type:'ghost', x0:Math.round(xy[0]), y0:Math.round(xy[1]),
+    x:Math.round(xy[0])+80, y:Math.round(xy[1]), cls:(ST_RP_CLS[v.cls]||'medium'),
+    color:'#d8b566', name:String(v.name||'').slice(0,18), size:0.72 });
+  stRedraw(); if(typeof stUpdCount==='function') stUpdCount();
 }
 function stRpSync(){
   const sc=document.getElementById("stRpScrub"), tm=document.getElementById("stRpTime"),
@@ -6079,6 +6111,9 @@ function stRpMount(){
   sc.oninput=()=>{ const v=+sc.value; stRpStop(); stRpSeek(v); };
   document.getElementById("stRpSpeed").onchange=e=>{ ST_RP.speed=+e.target.value; };
   document.getElementById("stRpPin").onclick=stRpPinStep;
+  const pb2=document.getElementById("stRpProp");
+  pb2.classList.toggle("on", !!ST_RP.propose);
+  pb2.onclick=()=>{ ST_RP.propose=!ST_RP.propose; pb2.classList.toggle("on",ST_RP.propose); stRpDraw(); };
   document.getElementById("stRpClose").onclick=()=>{ stRpStop(); ST_RP=null; stRpDraw(); stRpMount(); };
   stRpDraw(); stRpSync();
 }
