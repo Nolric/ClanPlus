@@ -3962,7 +3962,7 @@ function ceForRow(r,C){
    ============================================================ */
 // Marqueur de version : `srVersion()` dans la console dit si le fichier servi
 // est bien le dernier. Évite de confondre « pas déployé » et « ne marche pas ».
-const SR_SITE_VERSION="sr-1.1-lissage-perso";
+const SR_SITE_VERSION="sr-1.2-niveau-par-clan";
 function srVersion(){ return SR_SITE_VERSION; }
 let SR_MODEL=null, SR_SKILL=null, SR_ELO_TAG=null, SR_ELO_ID=null, SR_ROWS=null;
 const SR_CLS={heavyTank:"heavy",mediumTank:"medium",lightTank:"light","AT-SPG":"td",SPG:"spg"};
@@ -4083,13 +4083,21 @@ function srByPlayer(){
   const varBruit=assez.length?assez.reduce((a,x)=>a+sig*sig/x.n,0)/assez.length:0;
   const tau=Math.sqrt(Math.max(1,varObs-varBruit));
   const m=Math.max(1,Math.min(60,(sig*sig)/(tau*tau)));
+  /* ⭐ NIVEAU = CELUI DU CLAN, pas celui de chaque bataille.
+     Calculé par bataille, ce terme récompensait « avoir joué les soirs où le clan
+     affrontait du lourd » — un joueur à 5 batailles tombé sur les grosses soirées
+     dominait le classement. Or l'objectif est de séparer LES CLANS entre eux, pas
+     les soirées d'un même clan. Tous les membres partagent donc le même socle,
+     et à l'intérieur du clan seuls la contribution et la surprise départagent. */
+  const tous=srRows();
+  const pNclan=tous.length? tous.reduce((a,r)=>a+r.pN,0)/tous.length : 0;
   const out=new Map();
   g.forEach((rs,acc)=>{
     const n=rs.length, avg=k=>rs.reduce((a,r)=>a+r[k],0)/n;
-    const pC=avg("pC"), pS=avg("pS"), pN=avg("pN");
+    const pC=avg("pC"), pS=avg("pS");
     const k=n/(n+m);                       // part de la performance qu'on retient
-    out.set(acc,{ n, brut:1500+pC+pS+pN, sr:1500+pN+k*(pC+pS),
-                  pC:k*pC, pS:k*pS, pN,
+    out.set(acc,{ n, brut:1500+pC+pS+avg("pN"), sr:1500+pNclan+k*(pC+pS),
+                  pC:k*pC, pS:k*pS, pN:pNclan,
                   marge: Math.round(sig/Math.sqrt(n)), lissage:Number(m.toFixed(1)),
                   etat: n<S.aucun?"insuffisant":(n<S.provisoire?"provisoire":"ok") });
   });
