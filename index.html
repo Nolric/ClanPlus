@@ -3962,7 +3962,7 @@ function ceForRow(r,C){
    ============================================================ */
 // Marqueur de version : `srVersion()` dans la console dit si le fichier servi
 // est bien le dernier. Évite de confondre « pas déployé » et « ne marche pas ».
-const SR_SITE_VERSION="sr-1.2-niveau-par-clan";
+const SR_SITE_VERSION="sr-1.3-sans-lissage";
 function srVersion(){ return SR_SITE_VERSION; }
 let SR_MODEL=null, SR_SKILL=null, SR_ELO_TAG=null, SR_ELO_ID=null, SR_ROWS=null;
 const SR_CLS={heavyTank:"heavy",mediumTank:"medium",lightTank:"light","AT-SPG":"td",SPG:"spg"};
@@ -4095,9 +4095,13 @@ function srByPlayer(){
   g.forEach((rs,acc)=>{
     const n=rs.length, avg=k=>rs.reduce((a,r)=>a+r[k],0)/n;
     const pC=avg("pC"), pS=avg("pS");
-    const k=n/(n+m);                       // part de la performance qu'on retient
-    out.set(acc,{ n, brut:1500+pC+pS+avg("pN"), sr:1500+pNclan+k*(pC+pS),
-                  pC:k*pC, pS:k*pS, pN:pNclan,
+    /* PAS DE LISSAGE. Il n'écrase pas les différences par principe — il traduit la
+       méfiance envers un petit échantillon — mais le seuil d'affichage (rien en
+       dessous de 10 batailles) joue déjà ce rôle. Cumuler les deux reviendrait à
+       se protéger deux fois et à gommer des écarts réels chez ceux qu'on affiche.
+       On montre donc la vraie valeur, accompagnée de sa marge d'erreur. */
+    out.set(acc,{ n, brut:1500+pC+pS+avg("pN"), sr:1500+pNclan+pC+pS,
+                  pC, pS, pN:pNclan,
                   marge: Math.round(sig/Math.sqrt(n)), lissage:Number(m.toFixed(1)),
                   etat: n<S.aucun?"insuffisant":(n<S.provisoire?"provisoire":"ok") });
   });
