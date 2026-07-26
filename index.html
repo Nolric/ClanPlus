@@ -5618,7 +5618,9 @@ function stMapMeters(){ const b=ST_BASES&&ST_EDIT&&ST_BASES[ST_EDIT.map]&&ST_BAS
 let ST_UNDO=[], ST_REDO=[];          // historique annuler/refaire (snapshots JSON de ST_EDIT.els)
 let ST_STEP=0;                       // étape courante (slideshow) ; ST_EDIT.els = ST_EDIT.steps[ST_STEP].els
 let ST_STROKE={dash:false,w:7,curve:false};   // style de trait courant (flèche/ligne/crayon/forme)
-let ST_GRID = (typeof localStorage!=='undefined' && localStorage.getItem('cp_stgrid')==='1');   // grille A-K / 1-0
+// Grille A-K / 1-0 : ACTIVE PAR DÉFAUT (on ne la masque que si l'utilisateur l'a
+// explicitement désactivée). C'est le repère commun pour parler d'une position.
+let ST_GRID = (typeof localStorage==='undefined') || localStorage.getItem('cp_stgrid')!=='0';
 let ST_ZOOM={x:0,y:0,w:1000,h:1000};   // viewBox courant du canvas (zoom + déplacement)
 let ST_PANNING=null, ST_SPACE=false;   // déplacement (main) en cours / barre Espace maintenue
 let ST_FULL=true;                      // éditeur en plein écran (défaut)
@@ -5693,7 +5695,23 @@ function stFlag(mx,my,kind){ const f=(kind==='red')?'base_red':(kind==='neutral'
 function stSpawn(mx,my,team,n){ const c=team===1?'green':'red', k=Math.max(1,Math.min(4,n||1)); const h=ST_ICON/2; return `<image class="st-ov" href="strat/spawn_${c}_${k}.png" x="${Math.round(mx)-h}" y="${Math.round(my)-h}" width="${ST_ICON}" height="${ST_ICON}"/>`; }
 const ST_MODE_ORDER=["ctf","domination"];   // seulement Standard + Rencontre
 function stModes(map){ const md=ST_BASES&&ST_BASES[map]; if(!md||!md.modes) return []; return ST_MODE_ORDER.filter(mo=>md.modes[mo]); }
+/* Charge maps_bases.json à la demande. Nécessaire car il n'était chargé que par
+   loadStrats() : en arrivant par « Débriefer » (onglet Batailles), l'éditeur
+   s'ouvrait sans ce fichier et AUCUNE base ne s'affichait. */
+async function stEnsureBases(){
+  if(ST_BASES) return;
+  try{ const b=await fetch('maps_bases.json',{cache:'no-cache'}); ST_BASES=b.ok?await b.json():{}; }
+  catch(_){ ST_BASES={}; }
+  const g=document.getElementById("stBases");
+  if(g&&ST_EDIT) g.innerHTML=stBasesSvg(ST_EDIT.map,ST_EDIT.mode);
+}
 function stBasesSvg(map,mode){
+  // En débrief, les bases viennent du REPLAY : ce sont les positions réelles de la
+  // bataille, et cela marche sur toutes les cartes (maps_bases.json n'en couvre que 32).
+  if(ST_RP && ST_RP.map===map && Array.isArray(ST_RP.bases) && ST_RP.bases.length){
+    return ST_RP.bases.map(b=>{ const p=stRpXY(b.x,b.z);
+      return stFlag(p[0],p[1], b.team==="ally"?'green':(b.team==="enemy"?'red':'neutral')); }).join('');
+  }
   const md=ST_BASES&&ST_BASES[map]; if(!md||!md.modes||!md.modes[mode]) return '';
   const m=md.modes[mode]; let s='';
   (m.bases||[]).forEach(b=>{ const p=stWorld(map,b.x,b.z); s+=stFlag(p[0],p[1], b.team===1?'green':'red'); });
@@ -5811,6 +5829,7 @@ function renderStratEditor(){
   stRedraw();
   stWireEditor();
   stRpMount();
+  stEnsureBases();   // sans attendre : le calque des bases se remplira au chargement
 }
 const ST_HINTS={select:"Clique un élément puis glisse pour le déplacer.",tank:"Choisis une couleur + une classe, puis clique sur la carte. Double-clic = nommer.",arrow:"Glisse pour tracer une flèche.",line:"Glisse pour tracer un trait.",rect:"Glisse pour dessiner une zone à surligner.",circle:"Glisse pour dessiner un cercle.",stamp:"Choisis un symbole tactique + une couleur, puis clique sur la carte.",measure:"Glisse d'un point à un autre : la distance s'affiche en mètres.",range:"Clique-glisse depuis un point : cercle de portée/vision en mètres.",cone:"Clique-glisse depuis un char : cône de tir orienté.",path:"Clique pour poser des points ; double-clic ou Entrée pour terminer le trajet.",pen:"Dessine à main levée.",marker:"Clique pour poser un jeton numéroté.",text:"Clique pour ajouter du texte.",erase:"Clique un élément pour l'effacer."};
 function stSyncOptions(){ const o=document.getElementById("stOpts"); if(o) o.dataset.tool=ST_TOOL; const h=document.getElementById("stOptHint"); if(h) h.textContent=ST_HINTS[ST_TOOL]||""; }
@@ -6152,6 +6171,7 @@ async function stOpenReplay(battleId, btn){
   if(!rep){ alert("Aucun replay enregistré pour cette bataille."); return; }
   ST_RP={ battleId:String(g.id), name:pretty2(g.mapName)+" · "+agoFR(g.ts), map:mapKey(g.mapName),
           dur:rep.duration||0, interval:rep.interval||2, bounds:rep.bounds, vehicles:rep.vehicles,
+          bases:rep.bases||[],
           t:0, playing:false, speed:2, raf:null, last:0 };
   // L'éditeur vit DANS l'onglet Stratégie : il faut y basculer, sinon il s'ouvre
   // dans un conteneur masqué (la vue Batailles semblait alors se figer).
@@ -6179,6 +6199,30 @@ const ST_PTRS={};                 // pointeurs DISTANTS : id -> {x,y,name,ts}
 let ST_PTR_LAST=0;                // limitation du débit de diffusion
 const ST_PTR_TTL=3000;            // un pointeur distant inactif disparaît
 
+const ST_TR_MS=420;               // durée de vie d'un point de traînée
+/* Traînée : les points récents reliés par une courbe lissée (passage par les
+   milieux de segments), découpée en tronçons dont l'opacité et l'épaisseur
+   décroissent avec l'âge. C'est ce dégradé par tronçon qui donne la fluidité —
+   un simple polyline donnerait un trait raide et uniforme. */
+function stTrailSvg(tr,c,now){
+  if(!tr||tr.length<2) return "";
+  let s="";
+  for(let i=1;i<tr.length;i++){
+    const a=tr[i-1], b=tr[i];
+    const age=(now-b.t)/ST_TR_MS; if(age>=1) continue;
+    const k=1-age;                                     // 1 = tout frais, 0 = éteint
+    const mx=(a.x+b.x)/2, my=(a.y+b.y)/2;
+    s+=`<path d="M${a.x.toFixed(1)} ${a.y.toFixed(1)} Q${a.x.toFixed(1)} ${a.y.toFixed(1)} ${mx.toFixed(1)} ${my.toFixed(1)} T${b.x.toFixed(1)} ${b.y.toFixed(1)}" fill="none" stroke="${c}" stroke-opacity="${(k*0.55).toFixed(3)}" stroke-width="${(2+k*7).toFixed(2)}" stroke-linecap="round"/>`;
+  }
+  return s;
+}
+function stTrailPush(tr,x,y,now){
+  const last=tr[tr.length-1];
+  if(last && Math.hypot(x-last.x,y-last.y)<1.5){ last.t=now; return; }   // évite les doublons à l'arrêt
+  tr.push({x,y,t:now});
+  while(tr.length && now-tr[0].t>ST_TR_MS) tr.shift();
+  if(tr.length>40) tr.shift();
+}
 function stLaserDot(x,y,name,mine){
   const c=mine?"#ff3b3b":"#4ea1ff";
   return `<circle cx="${x}" cy="${y}" r="13" fill="${c}" fill-opacity=".26"/>`
@@ -6188,16 +6232,25 @@ function stLaserDot(x,y,name,mine){
 }
 function stLaserRedraw(){
   const g=document.getElementById("stLaser"); if(!g) return;
-  const now=Date.now(); let s="";
-  if(ST_LASER && ST_LASER_P) s+=stLaserDot(ST_LASER_P[0].toFixed(1),ST_LASER_P[1].toFixed(1),"",true);
+  const now=Date.now(); let s="", vivant=false;
+  // les traînées passent SOUS les points, sinon elles masqueraient le pointeur
+  if(ST_LASER){ while(ST_LASER_TR.length && now-ST_LASER_TR[0].t>ST_TR_MS) ST_LASER_TR.shift();
+    if(ST_LASER_TR.length>1){ s+=stTrailSvg(ST_LASER_TR,"#ff3b3b",now); vivant=true; } }
   Object.keys(ST_PTRS).forEach(k=>{ const p=ST_PTRS[k];
     if(now-p.ts>ST_PTR_TTL){ delete ST_PTRS[k]; return; }
+    while(p.tr.length && now-p.tr[0].t>ST_TR_MS) p.tr.shift();
+    if(p.tr.length>1){ s+=stTrailSvg(p.tr,"#4ea1ff",now); vivant=true; } });
+  if(ST_LASER && ST_LASER_P) s+=stLaserDot(ST_LASER_P[0].toFixed(1),ST_LASER_P[1].toFixed(1),"",true);
+  Object.keys(ST_PTRS).forEach(k=>{ const p=ST_PTRS[k];
     s+=stLaserDot(p.x.toFixed(1),p.y.toFixed(1),p.name||"",false); });
   g.innerHTML=s;
+  // Tant qu'une traînée s'estompe, on continue d'animer même si la souris ne
+  // bouge plus — sinon la queue resterait figée à l'écran.
+  if(vivant){ if(!ST_TR_RAF) ST_TR_RAF=requestAnimationFrame(()=>{ ST_TR_RAF=0; stLaserRedraw(); }); }
 }
-let ST_LASER_P=null;
+let ST_LASER_P=null, ST_LASER_TR=[], ST_TR_RAF=0;
 function stLaserMove(p){
-  ST_LASER_P=p; stLaserRedraw();
+  ST_LASER_P=p; stTrailPush(ST_LASER_TR,p[0],p[1],Date.now()); stLaserRedraw();
   const now=Date.now();                                  // ~20 envois/s maximum
   if(ST_ROOM && now-ST_PTR_LAST>50){ ST_PTR_LAST=now;
     try{ ST_ROOM.send({type:'broadcast',event:'ptr',payload:{by:STRAT_ME,name:stMyName(),x:p[0],y:p[1]}}); }catch(_){} }
@@ -6215,7 +6268,10 @@ function stLaserPing(p){
 // pointeur reçu d'un collaborateur
 function stPtrRemote(pl){
   if(!pl||pl.by===STRAT_ME) return;
-  ST_PTRS[String(pl.by)]={ x:Number(pl.x)||0, y:Number(pl.y)||0, name:String(pl.name||pl.by||""), ts:Date.now() };
+  const k=String(pl.by), now=Date.now();
+  const cur=ST_PTRS[k] || (ST_PTRS[k]={ x:0, y:0, name:"", ts:now, tr:[] });
+  cur.x=Number(pl.x)||0; cur.y=Number(pl.y)||0; cur.name=String(pl.name||pl.by||""); cur.ts=now;
+  stTrailPush(cur.tr,cur.x,cur.y,now);                 // même traînée pour les collaborateurs
   stLaserRedraw();
   if(pl.ping) stLaserPing([Number(pl.x)||0,Number(pl.y)||0]);
   // sans balayage, un pointeur distant resterait affiché après le départ du collaborateur
@@ -6226,7 +6282,7 @@ function stPtrRemote(pl){
 }
 let ST_PTR_SWEEP=0;
 function stLaserToggle(){
-  ST_LASER=!ST_LASER; ST_LASER_P=null;
+  ST_LASER=!ST_LASER; ST_LASER_P=null; ST_LASER_TR=[];
   const b=document.getElementById("stLaserBtn"), sv=document.getElementById("stSvg");
   if(b) b.classList.toggle("on",ST_LASER);
   if(sv) sv.classList.toggle("st-laser-on",ST_LASER);
