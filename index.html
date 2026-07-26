@@ -1478,6 +1478,13 @@
   .st-opt-act{display:flex;gap:6px;align-items:center;margin-left:auto}
   .st-opt-sep{width:1px;height:22px;background:#2b2d31;margin:0 2px}
   .st-stage{flex:1;padding:16px;background:radial-gradient(120% 90% at 50% 0%,#131417,#0a0b0d);display:flex;justify-content:center;align-items:center;position:relative}
+  /* frise de lecture du replay dans l'éditeur */
+  .st-rp{display:flex;align-items:center;gap:9px;padding:9px 14px;background:#0c0d0f;border-top:1px solid #202226}
+  .st-rp-l{font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--accent);flex:0 0 auto}
+  .st-rp-scrub{flex:1;min-width:120px;accent-color:var(--accent)}
+  .st-rp-t{font-size:12px;color:var(--ink-2);font-variant-numeric:tabular-nums;min-width:78px;text-align:right;flex:0 0 auto}
+  .st-rp-spd{font:inherit;font-size:11.5px;font-weight:700;color:var(--ink-2);background:#17181b;border:1px solid #202226;border-radius:7px;padding:4px 7px;cursor:pointer}
+  .st-rp-name{font-size:11.5px;color:var(--muted);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .st-steps2{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:11px 14px;background:#0e0f11;border-top:1px solid #202226}
   .st-steps2-l{font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--muted)}
   .st-stepnote{flex:1 1 220px;min-width:160px;background:#16171a;border:1px solid #2b2d31;border-radius:8px;padding:7px 11px;color:#e8e6df;font:inherit;font-size:13px;outline:none}
@@ -3336,6 +3343,7 @@ async function startReplay(id, host){
     if(r.ok && r.j && r.j.replay && (r.j.replay.vehicles||[]).length) rep=convertReplay(r.j.replay);
   }catch(e){}
   if(!rep){ rep=mockReplay(g); demo=true; }
+  rep.battleId=String(g.id);
   renderReplay(host, rep, mapKey(g.mapName), demo);
 }
 function mockReplay(g){
@@ -3421,7 +3429,8 @@ function renderReplay(host, rep, mkey, demo){
           <select class="rp-speed" aria-label="Vitesse"><option value="1">×1</option><option value="2" selected>×2</option><option value="4">×4</option><option value="8">×8</option></select>
           <span class="rp-time">0:00 / ${durFR(rep.duration)}</span>
         </div>
-        ${demo?`<div class="rp-note">Démo — positions simulées (le mod enverra bientôt les vraies).</div>`:""}
+        ${demo?`<div class="rp-note">Démo — positions simulées (le mod enverra bientôt les vraies).</div>`
+              :`<div class="rp-note"><button class="rp-launch" type="button" onclick="event.stopPropagation();stOpenReplay('${rep.battleId||""}',this)">✎ Débriefer dans l'éditeur</button></div>`}
       </div>
       ${hasSide?`<div class="rp-side">
         <div class="rp-card rp-jcard">
@@ -5751,15 +5760,28 @@ function renderStratEditor(){
           <image href="maps/top/${esc(ST_EDIT.map)}.jpg" x="0" y="0" width="1000" height="1000" preserveAspectRatio="none"/>
           <g id="stBases" style="pointer-events:none">${stBasesSvg(ST_EDIT.map,ST_EDIT.mode)}</g>
           <g id="stGrid" style="pointer-events:none">${ST_GRID?stGridInner():''}</g>
+          <g id="stReplay" style="pointer-events:none"></g>
           <g id="stEls"></g></svg>
           <div class="st-zoom"><button type="button" id="stZoomOut" title="Dézoomer (−)">−</button><button type="button" class="z-lvl" id="stZoomLvl" title="Réinitialiser le zoom">100%</button><button type="button" id="stZoomIn" title="Zoomer (+)">+</button></div>
           <div class="st-minimap" id="stMinimap" style="display:none" title="Mini-carte : clique ou glisse pour naviguer"><img src="maps/top/${esc(ST_EDIT.map)}.jpg" alt="" draggable="false"><div class="st-mini-vp" id="stMiniVp"></div></div></div>
       </div>
     </div>
+    <div class="st-rp" id="stRpBar" style="display:none">
+      <span class="st-rp-l">Replay</span>
+      <button class="st-mini2" id="stRpPlay" title="Lecture / pause">▶</button>
+      <button class="st-mini2" id="stRpBack" title="Reculer de 5 s">⏴</button>
+      <button class="st-mini2" id="stRpFwd" title="Avancer de 5 s">⏵</button>
+      <input class="st-rp-scrub" id="stRpScrub" type="range" min="0" max="100" step="0.1" value="0">
+      <span class="st-rp-t" id="stRpTime">0:00</span>
+      <select class="st-rp-spd" id="stRpSpeed" title="Vitesse"><option value="1">×1</option><option value="2" selected>×2</option><option value="4">×4</option><option value="8">×8</option></select>
+      <span class="st-rp-name" id="stRpName"></span>
+      <button class="st-mini2" id="stRpClose" title="Retirer le replay">✕</button>
+    </div>
     <div class="st-steps2"><span class="st-steps2-l">Étapes</span><div class="st-steptabs" id="stStepTabs"></div><input class="st-stepnote" id="stStepNote" maxlength="140" placeholder="✎ Note de cette étape (affichée en présentation)…"><button class="st-mini2" id="stStepDel" title="Supprimer l'étape courante">🗑 Supprimer l'étape</button></div>
   </div>`;
   stRedraw();
   stWireEditor();
+  stRpMount();
 }
 const ST_HINTS={select:"Clique un élément puis glisse pour le déplacer.",tank:"Choisis une couleur + une classe, puis clique sur la carte. Double-clic = nommer.",arrow:"Glisse pour tracer une flèche.",line:"Glisse pour tracer un trait.",rect:"Glisse pour dessiner une zone à surligner.",circle:"Glisse pour dessiner un cercle.",stamp:"Choisis un symbole tactique + une couleur, puis clique sur la carte.",measure:"Glisse d'un point à un autre : la distance s'affiche en mètres.",range:"Clique-glisse depuis un point : cercle de portée/vision en mètres.",cone:"Clique-glisse depuis un char : cône de tir orienté.",path:"Clique pour poser des points ; double-clic ou Entrée pour terminer le trajet.",pen:"Dessine à main levée.",marker:"Clique pour poser un jeton numéroté.",text:"Clique pour ajouter du texte.",erase:"Clique un élément pour l'effacer."};
 function stSyncOptions(){ const o=document.getElementById("stOpts"); if(o) o.dataset.tool=ST_TOOL; const h=document.getElementById("stOptHint"); if(h) h.textContent=ST_HINTS[ST_TOOL]||""; }
@@ -5890,6 +5912,124 @@ function stFinishPath(commit){ const b=ST_PATHBUILD; ST_PATHBUILD=null;
   if(commit&&b){ const pts=b.pts.filter((p,i)=> i===0 || Math.hypot(p[0]-b.pts[i-1][0],p[1]-b.pts[i-1][1])>4 );
     if(pts.length>1){ stSnapshot(); ST_EDIT.els.push({type:'path',color:b.color,w:b.w,dash:b.dash,pts}); } }
   stRedraw(); }
+/* ============================================================
+   REPLAY DANS L'ÉDITEUR  (débriefing)
+   Couche EN LECTURE SEULE : les chars sont placés d'après le replay
+   enregistré par le mod. Les annotations restent des éléments normaux
+   de l'étape courante -> remettre "play" ne les déplace jamais.
+   ============================================================ */
+let ST_RP=null;            // {battleId,name,dur,interval,bounds,vehicles,t,playing,speed,raf,last}
+const ST_RP_CLS={heavyTank:"heavy", mediumTank:"medium", lightTank:"light", "AT-SPG":"td", SPG:"spg"};
+const ST_RP_ICON=42;       // taille du char sur la carte (repère 0-1000)
+
+function stRpFmt(s){ s=Math.max(0,Math.floor(s)); return Math.floor(s/60)+":"+String(s%60).padStart(2,"0"); }
+/* monde -> repère 0-1000 de l'éditeur (les bornes du replay font autorité) */
+function stRpXY(x,z){ const b=ST_RP.bounds;
+  return [ (x-b.minX)/((b.maxX-b.minX)||1)*1000, (b.maxZ-z)/((b.maxZ-b.minZ)||1)*1000 ]; }
+/* position + état de repérage d'un char à l'instant t (mêmes règles que le lecteur) */
+function stRpPos(v,time){
+  const tr=v.track; if(!tr||!tr.length) return null;
+  const GAP=Math.max(2,(ST_RP.interval||2)*1.6);
+  if(v.deathT!=null && time>=v.deathT){
+    let p=tr[0]; for(let i=0;i<tr.length;i++){ if(tr[i][0]<=v.deathT) p=tr[i]; else break; }
+    return {x:p[1],z:p[2],dead:true,spotted:true,yaw:(p.length>3?p[3]:null)};
+  }
+  if(time<tr[0][0]) return null;
+  let lo=null,hi=null;
+  for(let i=0;i<tr.length;i++){ if(tr[i][0]<=time) lo=tr[i]; else { hi=tr[i]; break; } }
+  if(!lo) return null;
+  const yaw=(lo.length>3?lo[3]:null);
+  if(hi && (hi[0]-lo[0])<=GAP){ const f=(time-lo[0])/((hi[0]-lo[0])||1);
+    return {x:lo[1]+(hi[1]-lo[1])*f, z:lo[2]+(hi[2]-lo[2])*f, dead:false, spotted:true, yaw}; }
+  return {x:lo[1], z:lo[2], dead:false, spotted:((time-lo[0])<=GAP), yaw};
+}
+/* dessine la couche replay dans le SVG de l'éditeur */
+function stRpDraw(){
+  const g=document.getElementById("stReplay"); if(!g) return;
+  if(!ST_RP){ g.innerHTML=""; return; }
+  const t=ST_RP.t, R=ST_RP_ICON, h=R/2, out=[];
+  ST_RP.vehicles.forEach(v=>{
+    const p=stRpPos(v,t); if(!p) return;
+    const xy=stRpXY(p.x,p.z), x=xy[0], y=xy[1];
+    const col=v.ally?"#2ec26e":"#ec6a6a";
+    const op=p.spotted?1:0.32;
+    if(p.dead){
+      out.push(`<g opacity="${op*0.6}"><path d="M${x-9} ${y-9} L${x+9} ${y+9} M${x+9} ${y-9} L${x-9} ${y+9}" stroke="${col}" stroke-width="4" stroke-linecap="round" fill="none"/></g>`);
+      return;
+    }
+    let s=`<g opacity="${op}">`;
+    if(p.yaw!=null){   // cône de visée, discret
+      const rad=p.yaw*Math.PI/180, L=64, half=13*Math.PI/180;
+      const a=Math.atan2(-Math.cos(rad),Math.sin(rad));
+      const x1=x+Math.cos(a-half)*L, y1=y+Math.sin(a-half)*L, x2=x+Math.cos(a+half)*L, y2=y+Math.sin(a+half)*L;
+      s+=`<path d="M${x.toFixed(1)} ${y.toFixed(1)} L${x1.toFixed(1)} ${y1.toFixed(1)} A${L} ${L} 0 0 1 ${x2.toFixed(1)} ${y2.toFixed(1)} Z" fill="${col}" opacity=".16"/>`;
+    }
+    const ic=ST_RP_CLS[v.cls];
+    if(ic) s+=`<image href="strat/class_${ic}.png" x="${(x-h).toFixed(1)}" y="${(y-h).toFixed(1)}" width="${R}" height="${R}" style="filter:drop-shadow(0 0 2px #000)"/>`
+             +`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(h*0.86).toFixed(1)}" fill="none" stroke="${col}" stroke-width="3" opacity=".9"/>`;
+    else s+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="10" fill="${col}" stroke="#000" stroke-width="2"/>`;
+    s+=`<text x="${x.toFixed(1)}" y="${(y+h+13).toFixed(1)}" text-anchor="middle" font-size="15" font-weight="700" fill="#fff" stroke="#000" stroke-width="3" paint-order="stroke" style="pointer-events:none">${esc(v.name||"")}</text>`;
+    out.push(s+`</g>`);
+  });
+  g.innerHTML=out.join("");
+}
+function stRpSync(){
+  const sc=document.getElementById("stRpScrub"), tm=document.getElementById("stRpTime"),
+        pb=document.getElementById("stRpPlay");
+  if(sc) sc.value=ST_RP?ST_RP.t:0;
+  if(tm) tm.textContent=ST_RP?(stRpFmt(ST_RP.t)+" / "+stRpFmt(ST_RP.dur)):"0:00";
+  if(pb) pb.textContent=(ST_RP&&ST_RP.playing)?"❚❚":"▶";
+}
+function stRpStop(){ if(ST_RP&&ST_RP.raf){ cancelAnimationFrame(ST_RP.raf); ST_RP.raf=null; } if(ST_RP) ST_RP.playing=false; stRpSync(); }
+function stRpLoop(now){
+  if(!ST_RP||!ST_RP.playing) return;
+  const dt=(now-ST_RP.last)/1000; ST_RP.last=now;
+  ST_RP.t=Math.min(ST_RP.dur, ST_RP.t+dt*ST_RP.speed);
+  if(ST_RP.t>=ST_RP.dur){ ST_RP.t=ST_RP.dur; ST_RP.playing=false; }
+  stRpDraw(); stRpSync();
+  if(ST_RP.playing) ST_RP.raf=requestAnimationFrame(stRpLoop);
+}
+function stRpSeek(nt){ if(!ST_RP) return; ST_RP.t=Math.max(0,Math.min(ST_RP.dur,nt)); stRpDraw(); stRpSync(); }
+/* (re)branche la barre après chaque rendu de l'éditeur */
+function stRpMount(){
+  const bar=document.getElementById("stRpBar"); if(!bar) return;
+  if(!ST_RP){ bar.style.display="none"; return; }
+  bar.style.display="flex";
+  const sc=document.getElementById("stRpScrub");
+  sc.max=ST_RP.dur; sc.value=ST_RP.t;
+  document.getElementById("stRpName").textContent=ST_RP.name||"";
+  document.getElementById("stRpSpeed").value=String(ST_RP.speed);
+  document.getElementById("stRpPlay").onclick=()=>{
+    if(!ST_RP) return;
+    if(ST_RP.playing){ stRpStop(); }
+    else { if(ST_RP.t>=ST_RP.dur) ST_RP.t=0; ST_RP.playing=true; ST_RP.last=performance.now(); ST_RP.raf=requestAnimationFrame(stRpLoop); stRpSync(); }
+  };
+  document.getElementById("stRpBack").onclick=()=>{ stRpStop(); stRpSeek(ST_RP.t-5); };
+  document.getElementById("stRpFwd").onclick =()=>{ stRpStop(); stRpSeek(ST_RP.t+5); };
+  // ⚠️ lire la valeur AVANT stRpStop() : celui-ci resynchronise le curseur sur ST_RP.t
+  sc.oninput=()=>{ const v=+sc.value; stRpStop(); stRpSeek(v); };
+  document.getElementById("stRpSpeed").onchange=e=>{ ST_RP.speed=+e.target.value; };
+  document.getElementById("stRpClose").onclick=()=>{ stRpStop(); ST_RP=null; stRpDraw(); stRpMount(); };
+  stRpDraw(); stRpSync();
+}
+/* Point d'entrée : ouvre le replay d'une bataille dans l'éditeur */
+async function stOpenReplay(battleId, btn){
+  const g=BL_BY_ID[battleId]; if(!g) return;
+  if(btn){ btn.disabled=true; btn.textContent="Chargement…"; }
+  let rep=null;
+  try{
+    const r=await fnCall("replay",{session:localStorage.getItem(LS_SESSION), battle_id:g.id});
+    if(r.ok && r.j && r.j.replay && (r.j.replay.vehicles||[]).length) rep=convertReplay(r.j.replay);
+  }catch(e){}
+  if(btn){ btn.disabled=false; btn.innerHTML='✎ Débriefer dans l\'éditeur'; }
+  if(!rep){ alert("Aucun replay enregistré pour cette bataille."); return; }
+  ST_RP={ battleId:String(g.id), name:pretty2(g.mapName)+" · "+agoFR(g.ts), dur:rep.duration||0,
+          interval:rep.interval||2, bounds:rep.bounds, vehicles:rep.vehicles,
+          t:0, playing:false, speed:2, raf:null, last:0 };
+  openStratEditor({ name:"Débrief — "+ST_RP.name, map:mapKey(g.mapName), mode:"ctf" });
+}
+function pretty2(s){ try{ return pretty(mapKey(s)); }catch(e){ return String(s||""); } }
+
 function stRedraw(){ const g=document.getElementById("stEls"); if(g) g.innerHTML=ST_EDIT.els.map((e,i)=>stElSvg(e,i)).join("")+stDrawPreview()+stSelBoxSvg()+stHandlesSvg(); }
 // Métriques du canvas : le viewBox (carré) est centré dans l'élément SVG (letterbox
 // via preserveAspectRatio "meet"), donc échelle = plus petite dimension / côté du viewBox.
