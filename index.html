@@ -2311,6 +2311,7 @@ async function openApp(){
     showLoginError("Erreur de chargement : "+(res.j.error||res.status)); return;
   }
   buildRaw(res.j);
+  srInit(res.j);   // modèle SR figé de la saison + profils joueurs + cotes Bastion
   MEMBERS = res.j.members || [];
   ME_ID = res.j.me ? res.j.me.account_id : null;
   CLANINFO = res.j.clanInfo || null;
@@ -3951,6 +3952,123 @@ function ceForRow(r,C){
   return CE_W.imp*rImp + CE_W.frag*rImp*rFrag + CE_W.spot*rImp*rSpot + CE_W.tank*rImp*rTank
        + CE_W.win*Math.min(1.8,rWin) + CE_W.surv*Math.min(1.8,rSurv);
 }
+/* ============================================================
+   SR SAISON 1 — application du modèle FIGÉ
+   Le site n'invente rien : il applique les coefficients calculés une fois par
+   `sr-calibrate` et stockés en base. C'est ce qui garantit que l'historique ne
+   bouge plus (le défaut majeur de l'ancien SR, dont la référence se recalculait
+   à chaque chargement).
+     SR = 1500 + échelle × ( 0,40·z(contribution) + 0,25·z(surprise) + 0,35·z(niveau) )
+   ============================================================ */
+let SR_MODEL=null, SR_SKILL=null, SR_ELO_TAG=null, SR_ELO_ID=null, SR_ROWS=null;
+const SR_CLS={heavyTank:"heavy",mediumTank:"medium",lightTank:"light","AT-SPG":"td",SPG:"spg"};
+
+function srInit(data){
+  SR_MODEL={};
+  (data.srModel||[]).forEach(m=>{ if(m.kind==="weights") SR_MODEL[m.format_key]=m.payload; });
+  SR_SKILL=new Map(); (data.srProfiles||[]).forEach(p=>SR_SKILL.set(Number(p.account_id), +p.avg_dmg||0));
+  SR_ELO_TAG=new Map(); SR_ELO_ID=new Map();
+  (data.clanElo||[]).forEach(c=>{
+    const o={10:c.fb10!=null?+c.fb10:null, 8:c.fb8!=null?+c.fb8:null, 6:c.fb6!=null?+c.fb6:null};
+    SR_ELO_ID.set(Number(c.clan_id),o);
+    if(c.tag) SR_ELO_TAG.set(String(c.tag).toUpperCase(),o);
+  });
+  SR_ROWS=null;   // recalculé à la demande
+}
+const srOk=()=>!!(SR_MODEL&&SR_MODEL["7v7"]);
+
+function srProba(M,gap,eGap){
+  const use=M.mesure_ecart, W=(use==="fusion"&&eGap!=null)?M.winprob_fusion
+           :(use==="elo_bastion"&&eGap!=null)?M.winprob_elo:M.winprob_rosters;
+  if(!W) return 0.5;
+  const x=(use==="fusion"&&eGap!=null)?[gap,eGap]:((use==="elo_bastion"&&eGap!=null)?[eGap]:[gap]);
+  let z=W.b; for(let j=0;j<W.w.length;j++) z+=W.w[j]*((x[j]-W.mu[j])/W.sd[j]);
+  return 1/(1+Math.exp(-z));
+}
+/* Contribution = PARTS INTRA-ÉQUIPE. Neutre à l'intensité de la bataille :
+   une partie longue et violente gonfle tout le monde, les parts ne bougent pas. */
+function srContrib(side,M){
+  const S=(f)=>side.reduce((a,r)=>a+f(r),0);
+  const Td=S(r=>(+r.dmg||0)+(+r.assist||0)), Te=S(r=>(+r.block||0)+(+r.dmgr||0)),
+        Tv=S(r=>(+r.spot||0)*300+(+r.a_radio||0)), To=S(r=>(+r.cap||0)+(+r.decap||0));
+  const s0=1/side.length, eb=M.e_blindage||0.18, CAP=M.cap||2.5;
+  const cap=x=>Math.max(0,Math.min(CAP,x));
+  return side.map(r=>{
+    const role=SR_CLS[r.cls]||"medium", w=(M.poids&&M.poids[role])||M.poids.medium;
+    const enc=(+r.block||0)+(+r.dmgr||0);
+    const d={ deg:cap((Td>0?((+r.dmg||0)+(+r.assist||0))/Td:0)/s0),
+              enc:cap((Te>0?enc/Te:0)/s0),
+              bli:cap(enc>0?((+r.block||0)/enc)/eb:0),
+              vis:cap((Tv>0?((+r.spot||0)*300+(+r.a_radio||0))/Tv:0)/s0),
+              obj:cap((To>0?((+r.cap||0)+(+r.decap||0))/To:0)/s0) };
+    let c=0; for(const k in w) c+=w[k]*(d[k]-1);
+    return { row:r, role, c:c-((M.centrage&&M.centrage[role])||0), parts:d };
+  });
+}
+/* Une ligne de SR par (joueur, bataille). C'est la granularité qui permet
+   ensuite toutes les analyses : par période, par carte, par classe de char. */
+function srBuild(){
+  if(!srOk()) return [];
+  const byB={}; (RAW||[]).forEach(r=>{ (byB[r.battleId]=byB[r.battleId]||[]).push(r); });
+  const TAG=String(CLANTAG||"").toUpperCase(), out=[];
+  Object.keys(byB).forEach(bid=>{
+    const rows=byB[bid]; if(rows.length<4) return;
+    const res=rows[0].result; if(res!==1&&res!==0) return;
+    // notre camp = équipe où notre tag est majoritaire
+    const cnt={}; rows.forEach(r=>{ if(String(r.clan||"").toUpperCase()===TAG) cnt[r.team]=(cnt[r.team]||0)+1; });
+    let mine=null,best=0; for(const t in cnt) if(cnt[t]>best){best=cnt[t];mine=+t;}
+    if(mine==null) return;
+    const ours=rows.filter(r=>+r.team===mine), theirs=rows.filter(r=>+r.team!==mine);
+    if(!ours.length||!theirs.length) return;
+    const fmt=Math.max(ours.length,theirs.length)<=8?"7v7":"15v15";
+    const M=SR_MODEL[fmt]; if(!M) return;
+    const need=fmt==="7v7"?4:8;
+    const sk=a=>{ const v=a.map(r=>SR_SKILL.get(Number(r.accId))).filter(x=>x!=null);
+                  return v.length>=need? v.reduce((x,y)=>x+y,0)/v.length : null; };
+    const s1=sk(ours), s2=sk(theirs); if(s1==null||s2==null) return;
+    const gap=s1-s2, lvl=(s1+s2)/2;
+    // cote Bastion du bon rang, via le tag majoritaire d'en face
+    const ct={}; theirs.forEach(r=>{ const t=String(r.clan||"").toUpperCase(); if(t) ct[t]=(ct[t]||0)+1; });
+    let atag="",an=0; for(const t in ct) if(ct[t]>an){an=ct[t];atag=t;}
+    const tiers=ours.map(r=>(VEHMAP[r.veh]||{}).tier||0).filter(Boolean).sort((a,b)=>b-a);
+    const tb=tiers[Math.floor(tiers.length/2)]||10, rang=tb>=10?10:(tb>=8?8:6);
+    const eU=(SR_ELO_TAG.get(TAG)||{})[rang]??null, eT=(SR_ELO_TAG.get(atag)||{})[rang]??null;
+    const eGap=(eU!=null&&eT!=null)?eU-eT:null, eLvl=(eU!=null&&eT!=null)?(eU+eT)/2:null;
+    const surprise=(res===1?1:0)-srProba(M,gap,eGap);
+    const NV=M.niveau||{roster:{mu:0,sd:1},elo:{mu:0,sd:1}};
+    const zr=(lvl-NV.roster.mu)/(NV.roster.sd||1);
+    const niv=eLvl==null?zr:(zr+(eLvl-NV.elo.mu)/(NV.elo.sd||1))/2;
+    const Z=M.z, P=M.parts;
+    srContrib(ours,M).forEach(c=>{
+      const pC=M.echelle*P.contribution*((c.c-Z.contribution.m)/(Z.contribution.s||1));
+      const pS=M.echelle*P.surprise*((surprise-Z.surprise.m)/(Z.surprise.s||1));
+      const pN=M.echelle*P.niveau*((niv-Z.niveau.m)/(Z.niveau.s||1));
+      out.push({ battleId:bid, ts:c.row.ts, accId:c.row.accId, name:c.row.name, role:c.role,
+                 mapName:c.row.mapName, sr:(M.centre_sr||1500)+pC+pS+pN, pC, pS, pN, parts:c.parts });
+    });
+  });
+  return out;
+}
+function srRows(){ if(!SR_ROWS) SR_ROWS=srBuild(); return SR_ROWS; }
+/* Agrégat par joueur, avec lissage bayésien et RÈGLES D'AFFICHAGE :
+   en dessous de 10 batailles on n'affiche rien — l'erreur type dépasse alors
+   l'écart réel entre joueurs, le chiffre ne voudrait rien dire. */
+function srByPlayer(){
+  const M=SR_MODEL&&SR_MODEL["7v7"]; if(!M) return new Map();
+  const m=M.lissage_m||3, S=M.seuils||{aucun:10,provisoire:20}, sig=M.sigma||500;
+  const g=new Map();
+  srRows().forEach(r=>{ const a=g.get(r.accId); if(a) a.push(r); else g.set(r.accId,[r]); });
+  const out=new Map();
+  g.forEach((rs,acc)=>{
+    const n=rs.length, avg=k=>rs.reduce((a,r)=>a+r[k],0)/n;
+    const brut=avg("sr");
+    out.set(acc,{ n, sr: 1500+(n/(n+m))*(brut-1500), brut,
+                  pC:avg("pC"), pS:avg("pS"), pN:avg("pN"),
+                  marge: Math.round(sig/Math.sqrt(n)),
+                  etat: n<S.aucun?"insuffisant":(n<S.provisoire?"provisoire":"ok") });
+  });
+  return out;
+}
 function aggregate(rows){
   // Clé par ID DE COMPTE (pas le pseudo) : un joueur qui se renomme garde ses stats.
   const nameById={}; (MEMBERS||[]).forEach(mb=>{ if(mb.account_id!=null) nameById[Number(mb.account_id)]=mb.nickname; });
@@ -3972,7 +4090,16 @@ function aggregate(rows){
     dmg:a.n?a.dmg/a.n:0,kills:a.n?a.kills/a.n:0,assist:a.n?a.assist/a.n:0,
     spot:a.n?a.spot/a.n:0,survrate:a.n?a.surv/a.n:0,xp:a.n?a.xp/a.n:0,
     block:a.n?a.block/a.n:0,dmgr:a.n?a.dmgr/a.n:0,obj:a.n?a.obj/a.n:0,
-    ce:a.n?Math.round(a.ce/a.n):0,                   // GLOBAL = moyenne des CÉ par bataille
+    // SR SAISON 1 dès que le modèle figé est disponible, ancien calcul en repli.
+    // On expose aussi la décomposition, la marge d'erreur et l'état
+    // (insuffisant / provisoire / ok) : c'est ce qui pilotera l'affichage.
+    ...(function(){
+      const s = srOk() ? srByPlayer().get(a.accId) : null;
+      if(!s) return { ce: a.n?Math.round(a.ce/a.n):0, srEtat:"ancien" };
+      return { ce: Math.round(s.sr), srBrut: Math.round(s.brut), srNb: s.n,
+               srMarge: s.marge, srEtat: s.etat,
+               srC: Math.round(s.pC), srS: Math.round(s.pS), srN: Math.round(s.pN) };
+    })(),
   }));
 }
 function ceTier(v){
@@ -4016,6 +4143,9 @@ function renderBars(id,list,key,f){
 }
 function renderTrend(rows){
   const svg=document.getElementById("trend");
+  // Le gestionnaire de redimensionnement appelle cette fonction meme depuis un
+  // autre onglet, ou #trend n'est pas dans la page -> il plantait sur clientWidth.
+  if(!svg) return;
   const W=svg.clientWidth||900,H=190,padL=34,padR=12,padT=14,padB=26;
   const perDay={};
   rows.forEach(r=>{ if(!r.ts)return; const d=new Date(r.ts*1000);
