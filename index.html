@@ -3960,6 +3960,10 @@ function ceForRow(r,C){
    à chaque chargement).
      SR = 1500 + échelle × ( 0,40·z(contribution) + 0,25·z(surprise) + 0,35·z(niveau) )
    ============================================================ */
+// Marqueur de version : `srVersion()` dans la console dit si le fichier servi
+// est bien le dernier. Évite de confondre « pas déployé » et « ne marche pas ».
+const SR_SITE_VERSION="sr-1.1-lissage-perso";
+function srVersion(){ return SR_SITE_VERSION; }
 let SR_MODEL=null, SR_SKILL=null, SR_ELO_TAG=null, SR_ELO_ID=null, SR_ROWS=null;
 const SR_CLS={heavyTank:"heavy",mediumTank:"medium",lightTank:"light","AT-SPG":"td",SPG:"spg"};
 
