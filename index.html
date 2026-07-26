@@ -2208,11 +2208,16 @@ const state = { mode:"", days:0, search:"", sortKey:"ce", sortDir:-1 };
 const normRole = r => String(r||"").toLowerCase().replace(/[\s-]+/g,"_");
 const ROLE_ORDER = {commander:0,deputy_commander:1,executive_officer:1,combat_officer:2,personnel_officer:2,
   recruitment_officer:2,intelligence_officer:2,quartermaster:2,junior_officer:3,private:4,recruit:5,reservist:6};
+// Administrateurs de l'application : accès TOTAL, quel que soit le grade dans le clan.
+// Doit rester aligné avec ADMIN_IDS des fonctions Supabase (qui, elles, font foi
+// pour les enregistrements). Sans ça le site recalculait les droits dans son coin
+// et bloquait l'admin alors que le serveur l'autorisait.
+const APP_ADMINS = [539467185];
+function isAppAdmin(){ return ME_ID!=null && APP_ADMINS.includes(Number(ME_ID)); }
 // Droits d'édition CÔTÉ CLIENT : basés sur le VRAI grade WG du joueur, sauf en mode DEV
-// (qui débloque tout comme un commandant). Le backend garde ADMIN_IDS pour que les
-// enregistrements en DEV passent. -> vue normale = ton grade réel ; vue dev = commandant.
+// ou pour un administrateur (qui débloquent tout comme un commandant).
 function meIsManager(){
-  if(DEV) return true;
+  if(DEV || isAppAdmin()) return true;
   const m=(MEMBERS||[]).find(x=>Number(x.account_id)===Number(ME_ID));
   return !!m && (ROLE_ORDER[normRole(m.wg_role)] ?? 9) <= 2;
 }
@@ -4445,7 +4450,7 @@ async function loadLineups(){
     LINEUPS=r.j.lineups||[];
     // Double verrou : le serveur doit autoriser l'écriture et le grade Wargaming
     // du membre connecté doit appartenir à la liste des officiers/commandants.
-    LU_CANEDIT=(!!r.j.canEdit&&luCurrentUserCanManage())||DEV;
+    LU_CANEDIT=(!!r.j.canEdit&&luCurrentUserCanManage())||DEV||isAppAdmin();
     document.getElementById("luNewBtn").classList.toggle("hidden",!LU_CANEDIT);
     document.getElementById("luRole").textContent = LU_CANEDIT
       ? "Ton grade permet de créer et modifier les line-ups du clan."
@@ -5690,9 +5695,14 @@ async function loadStrats(){
   try{
     const r=await fnCall("strategies",{session:localStorage.getItem(LS_SESSION),action:"list"});
     if(!r.ok){ list.innerHTML='<div class="card"><div class="empty">Erreur stratégies : '+esc((r.j&&r.j.error)||String(r.status))+' — la fonction « strategies » est-elle déployée ?</div></div>'; return; }
-    STRATS=r.j.strategies||[]; STRAT_CANEDIT=meIsManager(); STRAT_ME=(r.j.me!=null?Number(r.j.me):ME_ID);
+    // le serveur fait foi (il applique déjà grade + ADMIN_IDS) ; repli sur le calcul local
+    STRATS=r.j.strategies||[]; STRAT_ME=(r.j.me!=null?Number(r.j.me):ME_ID);
+    STRAT_CANEDIT=(r.j.canEdit!=null ? !!r.j.canEdit : meIsManager()) || isAppAdmin();
     document.getElementById("stNewBtn").classList.toggle("hidden",!STRAT_CANEDIT);
-    document.getElementById("stRole").textContent = STRAT_CANEDIT ? "Ton grade te permet de créer et modifier les stratégies." : "Consultation : tu peux ouvrir et lire les stratégies du clan.";
+    document.getElementById("stRole").textContent = isAppAdmin()
+      ? "Mode administrateur : accès complet aux stratégies."
+      : (STRAT_CANEDIT ? "Ton grade te permet de créer et modifier les stratégies."
+                       : "Consultation : tu peux ouvrir et lire les stratégies du clan.");
     renderStrats();
   }catch(e){ list.innerHTML='<div class="card"><div class="empty">Impossible de joindre « strategies » ('+esc(String(e))+').</div></div>'; }
 }
