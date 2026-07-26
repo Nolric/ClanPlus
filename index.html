@@ -1370,7 +1370,9 @@
   .st-present:hover{background:var(--gold);color:#12110d}
   /* navigation d'étape en consultation */
   .st-viewnav{display:flex;align-items:center;justify-content:center;gap:14px;padding:12px 16px 0}
-  .st-navbtn{width:42px;font-size:18px;font-weight:800;padding:6px 0}
+  /* .btn est en inline-flex SANS justify-content : sans le centrage ci-dessous, la
+     flèche se collait au bord gauche du bouton (largeur fixe + padding horizontal nul). */
+  .st-navbtn{width:42px;font-size:18px;font-weight:800;padding:6px 0;justify-content:center}
   .st-viewind{font-size:13px;font-weight:800;color:var(--gold);min-width:98px;text-align:center}
   /* overlay présentation plein écran */
   .st-present-ov{position:fixed;inset:0;z-index:9999;background:#08090b;display:flex;flex-direction:column;align-items:center;padding:14px;gap:12px}
@@ -5578,7 +5580,11 @@ function stRenderPresence(){ const boxes=document.querySelectorAll('.st-presence
 function stStartBroadcastLoop(){ stStopBroadcastLoop(); ST_BC_LOOP=setInterval(()=>{ if(!ST_ROOM||!ST_EDIT||ST_MOVE||ST_DRAW||ST_XFORM||ST_PATHBUILD) return; let j; try{ j=JSON.stringify(ST_EDIT.steps); }catch(_){ return; } if(j!==ST_BC_LAST){ ST_BC_LAST=j; try{ ST_ROOM.send({type:'broadcast',event:'els',payload:{by:STRAT_ME,steps:ST_EDIT.steps}}); }catch(_){} } },400); }
 function stStopBroadcastLoop(){ if(ST_BC_LOOP){ clearInterval(ST_BC_LOOP); ST_BC_LOOP=null; } }
 function stApplyRemoteEls(p){ if(!p||!ST_EDIT||String(p.by)===String(STRAT_ME)||ST_MOVE||ST_DRAW||ST_XFORM||ST_PATHBUILD||!Array.isArray(p.steps)||!p.steps.length) return;
-  ST_EDIT.steps=p.steps.map(s=>({els:Array.isArray(s.els)?s.els:[]})); if(ST_STEP>=ST_EDIT.steps.length) ST_STEP=ST_EDIT.steps.length-1; ST_EDIT.els=ST_EDIT.steps[ST_STEP].els; stSelClear();
+  // ⚠️ Conserver `note` ET `t` : ne garder que `els` effaçait les notes et les
+  // instants épinglés des diapos de débrief dès qu'un collaborateur dessinait.
+  ST_EDIT.steps=p.steps.map(s=>({ els:Array.isArray(s.els)?s.els:[], note:String(s&&s.note||''),
+                                  t:(s&&s.t!=null&&isFinite(s.t))?Number(s.t):null }));
+  if(ST_STEP>=ST_EDIT.steps.length) ST_STEP=ST_EDIT.steps.length-1; ST_EDIT.els=ST_EDIT.steps[ST_STEP].els; stSelClear();
   ST_BC_LAST=JSON.stringify(ST_EDIT.steps);
   if(document.getElementById('stStepTabs')) renderStepTabs(); stRedraw(); if(typeof stUpdCount==='function') stUpdCount(); }
 let ST_EDIT=null;   // {id,name,map,els:[]}
