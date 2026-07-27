@@ -873,7 +873,19 @@
   /* (.sr-break / .srb* retirés avec l'ancienne décomposition en pourcentages :
      le radar et la réglette portent la même information, en plus lisible.) */
   .plan-goals{margin-top:12px;border-top:1px solid var(--border);padding-top:10px}
-  .plan-goals .pg-h{font-weight:700;font-size:13px;margin-bottom:4px}
+  .plan-goals .pg-h{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:800;margin-bottom:5px}
+  /* La priorité porte le poids visuel : une seule chose à travailler, pas huit. */
+  .pl-prio{background:var(--surface-2);border:1px solid var(--border);border-left:3px solid var(--dv-minus);
+           border-radius:0 var(--radius-sm) var(--radius-sm) 0;padding:12px 14px;margin-bottom:12px}
+  .pl-prio.pl-ok{border-left-color:var(--dv-plus)}
+  .pl-tag{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dv-minus);font-weight:800}
+  .pl-ok .pl-tag{color:var(--dv-plus)}
+  .pl-t{font-size:16px;font-weight:800;margin-top:3px;display:flex;align-items:baseline;gap:8px}
+  .pl-x{font-size:13px;font-weight:700;color:var(--dv-minus);font-variant-numeric:tabular-nums}
+  .pl-c{margin:6px 0 0;font-size:13.5px;line-height:1.6;color:var(--ink-2)}
+  .pl-q{margin:9px 0 0 !important;padding-left:18px}
+  .pl-q li{font-size:13px;line-height:1.55;color:var(--ink-2);margin:6px 0}
+  .pl-next{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:800;margin-bottom:2px}
   /* ================= Dashboard "Mon clan" — salle de commandement ================= */
   .dashx{
     --plane:#0b0c0c;--surface-1:#16171a;--surface-2:#1e1f22;--card:#16171a;
@@ -2138,11 +2150,11 @@
          C'est la partie utile : elle remonte AVANT les tableaux, pas après. -->
     <p class="pz-title">Quoi travailler</p>
     <div class="pz-diag">
-      <div id="pDiag"></div>
       <div class="pz-stack">
-        <div class="card plan" id="pPlanCard"><h2>🎯 Plan de progression</h2><div id="pPlan"></div></div>
+        <div id="pDiag"></div>
         <div id="pDecomp"></div>
       </div>
+      <div class="card plan" id="pPlanCard"><h2>🎯 Plan de progression</h2><div id="pPlan"></div></div>
     </div>
 
     <!-- ═══ 3. EST-CE QUE JE PROGRESSE ═══ deux lectures de la même question,
@@ -4137,7 +4149,7 @@ function ceForRow(r,C){
    ============================================================ */
 // Marqueur de version : `srVersion()` dans la console dit si le fichier servi
 // est bien le dernier. Évite de confondre « pas déployé » et « ne marche pas ».
-const SR_SITE_VERSION="sr-3.2-progression-mois-records";
+const SR_SITE_VERSION="sr-3.5-plan-priorise";
 function srVersion(){ return SR_SITE_VERSION; }
 let SR_MODEL=null, SR_SKILL=null, SR_ELO_TAG=null, SR_ELO_ID=null, SR_ROWS=null;
 const SR_CLS={heavyTank:"heavy",mediumTank:"medium",lightTank:"light","AT-SPG":"td",SPG:"spg"};
@@ -4306,6 +4318,8 @@ function srDecomp(accId){
    fois. 1,00 = tu fais exactement ce qu'on attend de ton rôle.
    ============================================================ */
 const SR_AXES=[["deg","Dégâts"],["enc","Encaissé"],["bli","Blindage"],["vis","Vision"],["obj","Objectif"]];
+/* Virgule décimale : toFixed rend « 0.72 », illisible au milieu d'un texte français. */
+const nb2=v=>Number(v||0).toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2});
 let SR_MED={};
 /* ⚠️ La référence EXCLUT les batailles du joueur mesuré. Avec une vingtaine de
    joueurs seulement, un habitué tire la médiane vers lui et finirait par se
@@ -4363,12 +4377,12 @@ function srRadar(accId){
     return `<text x="${p[0].toFixed(1)}" y="${p[1].toFixed(1)}" text-anchor="middle"
       dominant-baseline="middle" font-size="11.5" font-weight="700" fill="var(--ink-2)">${nom}</text>
       <text x="${p[0].toFixed(1)}" y="${(p[1]+13).toFixed(1)}" text-anchor="middle"
-      dominant-baseline="middle" font-size="11" fill="${col}">${sg}${v.toFixed(2)}×</text>`;}).join("");
+      dominant-baseline="middle" font-size="11" fill="${col}">${sg}${nb2(v)}×</text>`;}).join("");
   // survol : chaque sommet expose sa valeur et sa lecture
   const zones=SR_AXES.map(([k,nom],i)=>{const p=pt(i,a.val[k]); const v=a.val[k];
     const lec=v>=1.15?"au-dessus de l'attendu":(v<=0.85?"en dessous de l'attendu":"conforme à l'attendu");
     return `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="13" fill="transparent"
-      style="cursor:help"><title>${nom} : ${v.toFixed(2)}× la médiane de ton rôle — ${lec}</title></circle>`;}).join("");
+      style="cursor:help"><title>${nom} : ${nb2(v)}× la médiane de ton rôle — ${lec}</title></circle>`;}).join("");
   // le point fort et le point faible, nommés
   const tri=SR_AXES.map(([k,nom])=>({nom,v:a.val[k]})).sort((x,y)=>y.v-x.v);
   return `<div class="sr-radar">
@@ -4380,10 +4394,11 @@ function srRadar(accId){
         ${dots}${labs}${zones}
       </svg>
       <div class="srr-txt">
-        <p><b style="color:var(--dv-plus)">${tri[0].nom}</b> est ton point fort — ${tri[0].v.toFixed(2)}× la médiane de ton rôle.</p>
-        <p><b style="color:var(--dv-minus)">${tri[tri.length-1].nom}</b> est ton point faible, à ${tri[tri.length-1].v.toFixed(2)}×.</p>
+        <p><b style="color:var(--dv-plus)">${tri[0].nom}</b> est ton point fort — ${nb2(tri[0].v)}× la médiane de ton rôle.</p>
         <p class="srr-hint">Le pointillé doré est le niveau attendu pour ton rôle. Au-delà, tu fais
         plus que ta part ; en deçà, moins.</p>
+        <p class="srr-hint">Ton point faible est traité dans le plan de progression, à côté — il
+        n'est pas répété ici.</p>
       </div>
     </div></div>`;
 }
@@ -4991,37 +5006,98 @@ function renderPTrend(my){
   g+=`<line class="axis-line" x1="${padL}" y1="${H-padB}" x2="${W-padR}" y2="${H-padB}"/>`;
   svg.innerHTML=g;
 }
+/* ============================================================
+   PLAN DE PROGRESSION
+   Il découle du diagnostic, il ne le double pas : le radar dit QUEL axe est
+   faible, le plan dit QUOI FAIRE et DE COMBIEN. Une seule priorité mise en
+   avant — une liste de huit conseils au même poids ne se travaille pas.
+   ============================================================ */
+const PLAN_AXES={
+  deg:{nom:"Dégâts", champ:r=>r.dmg, unite:"dégâts par bataille",
+    cause:"Tu infliges moins que ce qu'on attend de ton rôle.",
+    quoi:["Cherche les fenêtres de tir plutôt que les duels ouverts : trois obus tirés depuis un angle sûr valent mieux qu'un échange frontal.",
+          "Une grosse part des dégâts manquants sont des dégâts jamais tirés — reste à portée de la ligne au lieu de repositionner trop tôt."]},
+  enc:{nom:"Encaissé", champ:r=>r.dmgr, unite:"dégâts encaissés par bataille",
+    cause:"Tu absorbes moins que ta part : l'équipe encaisse à ta place.",
+    quoi:["Prends le premier contact quand ton char est fait pour ça, mais en angle : encaisser utile, ce n'est pas mourir tôt.",
+          "Reviens te montrer après avoir rechargé plutôt que d'attendre à couvert — un char caché ne protège personne."]},
+  bli:{nom:"Blindage", champ:r=>r.block, unite:"dégâts bloqués par bataille",
+    cause:"Ton blindage travaille peu : tu prends les coups plutôt que tu ne les renvoies.",
+    quoi:["Travaille l'angle du char plutôt que la position : 20° de plus suffisent souvent à faire ricocher.",
+          "En sortie de couvert, montre la joue la plus épaisse et rentre avant le deuxième tir."]},
+  vis:{nom:"Vision", champ:r=>r.spot, unite:"dégâts par repérage",
+    cause:"Tu vois peu pour l'équipe : les dégâts partent sur des cibles repérées par d'autres.",
+    quoi:["Tiens un point de vision passive au lieu de suivre la ligne : rester immobile en buisson rapporte plus que d'avancer.",
+          "Prends l'information tôt dans la partie — un repérage à la première minute oriente tout le reste."]},
+  obj:{nom:"Objectif", champ:r=>r.cap+r.decap, unite:"points de base par bataille",
+    cause:"Tu joues peu la base : en Bastion, le compteur gagne aussi des batailles.",
+    quoi:["Quand l'échange est équilibré, entrer sur la base force l'adversaire à venir — c'est souvent plus rentable que de chercher un dernier duel.",
+          "Surveille le décapage : reprendre trois points au bon moment vaut un char sauvé."]},
+};
+function planPriorite(accId,rows){
+  if(accId==null||!srOk()) return null;
+  const a=srAptitudes(accId); if(!a) return null;
+  const M=SR_MODEL["7v7"], S=(M&&M.seuils)||{aucun:10};
+  if(a.n<S.aucun) return null;
+  const tri=SR_AXES.map(([k,nom])=>({k,nom,v:a.val[k]})).sort((x,y)=>x.v-y.v);
+  const faible=tri[0], fort=tri[tri.length-1];
+  if(faible.v>=0.9) return {fort, faible:null};        // rien de vraiment faible
+  const A=PLAN_AXES[faible.k]; if(!A) return {fort, faible:null};
+  const moy=rows.length?rows.reduce((s,r)=>s+A.champ(r),0)/rows.length:0;
+  // La part et la valeur brute ne sont pas proportionnelles (elles dépendent du
+  // total de l'équipe) : la cible est donnée comme un ordre de grandeur, pas
+  // comme une promesse au point près.
+  const cible = faible.v>0.05 ? moy/faible.v : 0;
+  return {fort, faible:{...faible, A, moy, cible, manque:Math.round((1/faible.v-1)*100)}};
+}
 function renderPlan(name,my,byClass,byMap,elist,prec,survrate,myDmg,clanDmg,obj){
   const b=[];
-  const first=name.split(" ")[0];
-  if(byClass.length){ const best=byClass[0];
-    b.push(`Ton point fort : la classe <b>${clsFR(best.key)}</b> (${fmt(best.dmg)} dégâts moyens, ${pct(best.wr)} de victoire). Privilégie ce rôle en Bastion.`);
-    if(byClass.length>1){ const worst=byClass[byClass.length-1];
-      if(worst.dmg < best.dmg*0.7) b.push(`À travailler : en <b>${clsFR(worst.key)}</b>, tes dégâts tombent à ${fmt(worst.dmg)}. Entraîne-toi ou évite ce rôle en compétition.`); } }
-  if(byMap.length){ const bm=byMap.slice().sort((a,b)=>b.wr-a.wr);
-    b.push(`Carte la plus rentable : <b>${prettyMap(bm[0].key)}</b> (${pct(bm[0].wr)} de victoire). Carte la plus difficile : <b>${prettyMap(bm[bm.length-1].key)}</b> (${pct(bm[bm.length-1].wr)}).`); }
-  if(elist.length){ const dang=elist[0], easy=elist[elist.length-1];
-    if(dang.wr<0.5) b.push(`Adversaire redouté : <b>${esc(dang.tag)}</b> (seulement ${pct(dang.wr)} de victoire). Prépare une stratégie spécifique contre eux.`);
-    if(easy.wr>0.5 && easy.tag!==dang.tag) b.push(`Tu domines <b>${esc(easy.tag)}</b> (${pct(easy.wr)} de victoire).`); }
-  if(survrate<0.5) b.push(`Tu survis à ${pct(survrate)} des batailles — tu prends beaucoup de dégâts. Joue plus couvert pour rester en vie et prolonger ton impact.`);
-  else b.push(`Bonne longévité (${pct(survrate)} de survie) : tu restes en vie et utile longtemps.`);
-  if(prec<0.6) b.push(`Précision de tir à ${pct(prec)} : vise mieux (points faibles, tirs à l'arrêt) pour convertir plus d'obus en dégâts.`);
-  if(myDmg && clanDmg){ const d=Math.round((myDmg-clanDmg)/clanDmg*100);
-    b.push(d>=0 ? `Globalement tu es <span class="tagpos">${d}% au-dessus</span> de la moyenne du clan en dégâts. 💪`
-                : `Tu es <span class="tagneg">${Math.abs(d)}% sous</span> la moyenne du clan en dégâts — de la marge de progression.`); }
-  // objectifs chiffres (viser le meilleur du clan / le palier SR suivant)
-  const goals=[];
-  if(obj){
-    if(obj.bestDmg && obj.myDmg && obj.bestDmg>obj.myDmg*1.03)
-      goals.push(`Dégâts : passer de <b>${fmt(obj.myDmg)}</b> à <b>${fmt(obj.bestDmg)}</b> (niveau du meilleur du clan, +${fmt(obj.bestDmg-obj.myDmg)}).`);
-    const paliers=[1000,1350,1650,2000,2500];
-    const next=paliers.find(p=>p>obj.myCE);
-    if(next) goals.push(`SR : encore <b>+${fmt(next-obj.myCE)}</b> pour atteindre <b>${fmt(next)}</b> et passer au palier supérieur.`);
-    if(obj.bestCE && obj.bestCE>obj.myCE)
-      goals.push(`Le meilleur coéquipier est à <b>${fmt(obj.bestCE)}</b> de SR — ton objectif à terme.`);
+  // ── Secondaire : le contexte, une observation par sujet, sans redite.
+  if(byClass.length>1){ const best=byClass[0], worst=byClass[byClass.length-1];
+    if(worst.dmg < best.dmg*0.7)
+      b.push(`En <b>${clsFR(worst.key)}</b> tes dégâts tombent à ${fmt(worst.dmg)}, contre ${fmt(best.dmg)} en <b>${clsFR(best.key)}</b>. Privilégie le second en compétition.`); }
+  if(byMap.length>1){ const bm=byMap.slice().sort((a,b)=>b.wr-a.wr), pire=bm[bm.length-1];
+    if(pire.wr<0.45) b.push(`<b>${prettyMap(pire.key)}</b> est ta carte la plus difficile (${pct(pire.wr)} de victoire) — celle à revoir en débriefing.`); }
+  if(elist.length){ const dang=elist[0];
+    if(dang.wr<0.4) b.push(`Contre <b>${esc(dang.tag)}</b> tu tombes à ${pct(dang.wr)} de victoire. Un adversaire qui mérite une stratégie préparée.`); }
+  if(prec<0.6) b.push(`Précision à ${pct(prec)} : tirs à l'arrêt et points faibles convertiraient plus d'obus en dégâts.`);
+  if(survrate<0.4) b.push(`Tu ne survis qu'à ${pct(survrate)} des batailles — beaucoup d'impact perdu en fin de partie.`);
+
+  // ── Priorité : l'axe le plus faible du radar, avec l'ordre de grandeur du manque.
+  const _acc = my[0] && my[0].accId;
+  const P = planPriorite(_acc, my);
+  let tete="";
+  if(P && P.faible){
+    const F=P.faible;
+    tete=`<div class="pl-prio">
+      <div class="pl-tag">à travailler en priorité</div>
+      <div class="pl-t">${F.nom} <span class="pl-x">${nb2(F.v)}×</span></div>
+      <p class="pl-c">${F.A.cause} Il te manque environ <b>${F.manque} %</b> sur cet axe
+        ${F.moy>0?` — de ${fmt(F.moy)} à ~${fmt(F.cible)} ${F.A.unite}`:""}.</p>
+      <ul class="pl-q">${F.A.quoi.map(q=>`<li>${q}</li>`).join("")}</ul></div>`;
+  } else if(P && P.fort){
+    tete=`<div class="pl-prio pl-ok">
+      <div class="pl-tag">rien de faible</div>
+      <p class="pl-c">Aucun de tes cinq axes ne décroche sous la médiane de ton rôle.
+        Ton point fort reste <b>${P.fort.nom}</b> (${nb2(P.fort.v)}×) — c'est là qu'il faut creuser l'écart.</p></div>`;
   }
-  const goalsHtml = goals.length ? `<div class="plan-goals"><div class="pg-h">🎯 Objectifs chiffrés</div><ul>${goals.map(g=>`<li>${g}</li>`).join("")}</ul></div>` : "";
-  document.getElementById("pPlan").innerHTML="<ul>"+b.map(x=>`<li>${x}</li>`).join("")+"</ul>"+goalsHtml;
+
+  // ── Objectif chiffré : le palier suivant, une seule cible à la fois.
+  const goals=[];
+  if(obj && obj.myCE!=null){
+    const next=SR_SEUILS.find(p=>p>obj.myCE);
+    if(next) goals.push(`Encore <b>+${fmt(next-obj.myCE)}</b> de SR pour atteindre <b>${fmt(next)}</b> — « ${esc(ceTier(next).l)} ».`);
+    if(obj.bestCE && obj.bestCE>obj.myCE+40)
+      goals.push(`Le meilleur du clan est à <b>${fmt(obj.bestCE)}</b>.`);
+  }
+  if(obj && obj.bestDmg && obj.myDmg && obj.bestDmg>obj.myDmg*1.03)
+    goals.push(`Dégâts : <b>${fmt(obj.myDmg)}</b> aujourd'hui, <b>${fmt(obj.bestDmg)}</b> pour le meilleur du clan.`);
+  const goalsHtml = goals.length
+    ? `<div class="plan-goals"><div class="pg-h">Objectif</div><ul>${goals.map(g=>`<li>${g}</li>`).join("")}</ul></div>` : "";
+
+  const suite = b.length
+    ? `<div class="pl-next">Ensuite</div><ul>${b.slice(0,3).map(x=>`<li>${x}</li>`).join("")}</ul>` : "";
+  document.getElementById("pPlan").innerHTML = tete + suite + goalsHtml;
 }
 
 /* ============================================================
