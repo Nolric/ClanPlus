@@ -111,15 +111,6 @@
   .lp-feat h3{margin:0 0 6px;font-size:16px}
   .lp-feat p{margin:0;font-size:13.5px;color:var(--ink-2);line-height:1.55}
 
-  .lp-install{padding:52px 0 20px}
-  .lp-steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-bottom:30px}
-  .lp-step{display:flex;gap:14px;align-items:flex-start;background:var(--surface-1);border:1px solid var(--border);border-radius:13px;padding:18px}
-  .lp-step-n{flex:0 0 auto;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:15px;
-    color:#1a1608;background:linear-gradient(180deg,var(--accent-2),var(--accent))}
-  .lp-step h4{margin:0 0 4px;font-size:15px}
-  .lp-step p{margin:0;font-size:13px;color:var(--ink-2)}
-  .lp-step code{background:var(--surface-2);border:1px solid var(--border);border-radius:5px;padding:1px 5px;font-size:12px}
-  .lp-install-cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
 
   .lp-foot{margin-top:56px;border-top:1px solid var(--border);padding:26px 4px 4px}
   .lp-foot-in{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
@@ -1969,7 +1960,7 @@
     <h1 class="lp-title">Clan Plus</h1>
     <p class="lp-tag">Le compagnon de ton clan sur <b>World of Tanks</b>. Le mod enregistre tes batailles de <b>Bastion</b> et le site en tire des statistiques, un indicateur de jeu d'équipe et un plan de progression — pour tout le clan.</p>
     <div class="lp-cta">
-      <a class="lp-btn lp-btn-primary" id="lpDownload" href="download/clanplus_1.0.31.wotmod" download>⬇ Télécharger le mod</a>
+      <a class="lp-btn lp-btn-primary" id="lpDownload" href="mod.html">Découvrir le mod →</a>
       <button class="lp-btn lp-btn-ghost" id="lpLogin">Accéder à mon clan →</button>
     </div>
     <div class="lp-hero-note">Version 1.0.31 · World of Tanks EU 2.3.1.0 · Gratuit · Sans publicité</div>
@@ -1987,16 +1978,7 @@
     </div>
   </section>
 
-  <section class="lp-install" id="lp-install">
-    <h2 class="lp-h2">Le mod, en deux minutes</h2>
-    <p style="text-align:center;max-width:600px;margin:0 auto 28px;color:var(--ink-2);font-size:15.5px">
-      Un fichier à déposer dans un dossier. Rien à exécuter. La page du mod explique tout&nbsp;:
-      ce qu'il fait, ce qu'il ne fait pas, et la marche à suivre pas à pas.</p>
-    <div class="lp-install-cta">
-      <a class="lp-btn lp-btn-primary" href="mod.html">Découvrir le mod →</a>
-      <a class="lp-btn lp-btn-ghost" href="download/clanplus_1.0.31.wotmod" download>⬇ Télécharger directement</a>
-    </div>
-  </section>
+  
 
   <footer class="lp-foot">
     <div class="lp-foot-in">
@@ -4189,7 +4171,7 @@ function ceForRow(r,C){
    ============================================================ */
 // Marqueur de version : `srVersion()` dans la console dit si le fichier servi
 // est bien le dernier. Évite de confondre « pas déployé » et « ne marche pas ».
-const SR_SITE_VERSION="sr-3.9-page-mod";
+const SR_SITE_VERSION="sr-4.0-page-mod";
 function srVersion(){ return SR_SITE_VERSION; }
 let SR_MODEL=null, SR_SKILL=null, SR_ELO_TAG=null, SR_ELO_ID=null, SR_ROWS=null;
 const SR_CLS={heavyTank:"heavy",mediumTank:"medium",lightTank:"light","AT-SPG":"td",SPG:"spg"};

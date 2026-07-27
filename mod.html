@@ -80,6 +80,11 @@ strong{color:#fff;font-weight:600}
 .top-ref{font-family:var(--d-mono);font-size:11px;color:var(--ink-3);letter-spacing:.1em;
          padding-left:18px;border-left:1px solid var(--rule);align-self:stretch;display:flex;align-items:center}
 .top-sp{margin-left:auto}
+.top-lk{font-family:var(--d-sans);font-weight:500;font-size:14px;color:var(--ink-2);
+        text-decoration:none;height:44px;padding:0 14px;display:inline-flex;align-items:center;
+        border-radius:var(--r);transition:color .16s ease,background .16s ease}
+.top-lk:hover{color:var(--ink);background:rgba(255,255,255,.05)}
+@media (max-width:760px){.top-lk{display:none}}
 .top-cta{font-family:var(--d-cond);font-weight:700;font-size:15px;letter-spacing:.02em;
          color:#14120c;background:var(--gold);text-decoration:none;padding:0 20px;height:44px;
          display:inline-flex;align-items:center;border-radius:var(--r);
@@ -198,6 +203,45 @@ figcaption b{display:block;color:var(--ink);font-family:var(--d-cond);font-weigh
           font-size:9.5px;color:var(--ink-3)}
 .rad-demo{padding:14px 10px}
 .rad-demo svg{display:block;width:100%;max-width:340px;height:auto;margin:0 auto}
+
+/* ── la bataille se joue vraiment ─────────────────────────────────
+   Le produit rejoue la bataille : la vignette doit le faire aussi, sinon
+   c'est une capture qui prétend. Tout est en CSS, une seule boucle de 11 s,
+   et `prefers-reduced-motion` fige l'ensemble sur une image lisible. */
+@keyframes trace{from{stroke-dashoffset:400}to{stroke-dashoffset:0}}
+@keyframes roule{from{offset-distance:0%}to{offset-distance:100%}}
+@keyframes tir{0%,54%{opacity:0}58%,70%{opacity:1}76%,100%{opacity:0}}
+@keyframes impact{0%,56%{opacity:0;transform:scale(.4)}62%{opacity:1;transform:scale(1)}
+                  78%,100%{opacity:0;transform:scale(1.5)}}
+@keyframes mort{0%,72%{opacity:0;transform:scale(.5)}78%{opacity:1;transform:scale(1)}100%{opacity:1}}
+@keyframes tete{from{width:2%}to{width:96%}}
+@keyframes pouls{0%,100%{opacity:.45}50%{opacity:1}}
+.map .voie{stroke-dasharray:400;animation:trace 11s linear infinite}
+.map .ch{offset-rotate:0deg;animation:roule 11s linear infinite}
+.map .ch-1{offset-path:path("M92 176C150 190 196 214 236 232")}
+.map .ch-2{offset-path:path("M96 126C154 108 200 86 238 72")}
+.map .ch-3{offset-path:path("M100 150C168 148 214 150 250 152")}
+.map .ch-4{offset-path:path("M92 176C140 184 174 190 196 196")}
+.map .ch-5{offset-path:path("M96 126C120 120 138 116 150 112")}
+.map .ch-6{offset-path:path("M628 124C566 104 512 86 470 74")}
+.map .ch-7{offset-path:path("M624 178C570 200 522 220 486 234")}
+.map .ch-8{offset-path:path("M636 150C592 150 552 150 520 150")}
+.map .shot{animation:tir 11s linear infinite}
+.map .boom{transform-box:fill-box;transform-origin:center;animation:impact 11s linear infinite}
+.map .kill{transform-box:fill-box;transform-origin:center;animation:mort 11s linear infinite}
+.scr-ctl .bar span{animation:tete 11s linear infinite}
+.scr-ctl .pl{animation:pouls 11s linear infinite}
+.gain-big .scr,.gain-duo .scr{transition:transform .3s cubic-bezier(.16,1,.3,1),border-color .3s ease}
+.gain-big:hover .scr,.gain-duo figure:hover .scr{transform:translateY(-4px);border-color:rgba(216,181,102,.34)}
+@media (prefers-reduced-motion:reduce){
+  .map .voie,.map .ch,.map .shot,.map .boom,.map .kill,
+  .scr-ctl .bar span,.scr-ctl .pl{animation:none}
+  .map .voie{stroke-dasharray:none}
+  .map .ch{offset-distance:88%}
+  .map .shot,.map .boom,.map .kill{opacity:1}
+  .scr-ctl .bar span{width:46%}
+  .gain-big .scr,.gain-duo .scr{transition:none}
+}
 
 /* ── sections ────────────────────────────────────────────────────── */
 section{padding:96px 0;border-top:1px solid var(--rule);position:relative}
@@ -357,6 +401,8 @@ footer p{max-width:70ch;font-size:13.5px;line-height:1.7}
     <span class="wm">Clan <em>Plus</em></span></a>
   <span class="top-ref">MOD / 1.0.31</span>
   <span class="top-sp"></span>
+  <a class="top-lk" href="soutenir.html">Soutenir</a>
+  <a class="top-lk" href="/">Se connecter</a>
   <a class="top-cta" href="download/clanplus_1.0.31.wotmod" download>Télécharger</a>
 </div></div>
 
@@ -451,33 +497,32 @@ footer p{max-width:70ch;font-size:13.5px;line-height:1.7}
         </g>
         <!-- trajets -->
         <g fill="none" stroke-linecap="round" opacity=".5">
-          <path d="M92 176C150 190 196 214 236 232" stroke="#5fc27e" stroke-width="1.6"/>
-          <path d="M96 126C154 108 200 86 238 72" stroke="#5fc27e" stroke-width="1.6"/>
-          <path d="M100 150C168 148 214 150 250 152" stroke="#5fc27e" stroke-width="1.6"/>
-          <path d="M628 124C566 104 512 86 470 74" stroke="#e2685f" stroke-width="1.6"/>
-          <path d="M624 178C570 200 522 220 486 234" stroke="#e2685f" stroke-width="1.6"/>
+          <path class="voie" d="M92 176C150 190 196 214 236 232" stroke="#5fc27e" stroke-width="1.6"/>
+          <path class="voie" d="M96 126C154 108 200 86 238 72" stroke="#5fc27e" stroke-width="1.6"/>
+          <path class="voie" d="M100 150C168 148 214 150 250 152" stroke="#5fc27e" stroke-width="1.6"/>
+          <path class="voie" d="M628 124C566 104 512 86 470 74" stroke="#e2685f" stroke-width="1.6"/>
+          <path class="voie" d="M624 178C570 200 522 220 486 234" stroke="#e2685f" stroke-width="1.6"/>
+          <path class="voie" d="M636 150C592 150 552 150 520 150" stroke="#e2685f" stroke-width="1.6"/>
         </g>
         <!-- tir en cours -->
-        <path d="M252 70L466 76" stroke="#e8a13c" stroke-width="1.6" stroke-dasharray="7 5" opacity=".95"/>
-        <circle cx="466" cy="76" r="11" fill="#e8a13c" opacity=".2" filter="url(#soft)"/>
-        <text x="360" y="60" fill="#e8a13c" font-family="IBM Plex Mono,monospace" font-size="11" text-anchor="middle">−1 240</text>
+        <g class="shot">
+          <path d="M186 93L529 93" stroke="#e8a13c" stroke-width="1.6" stroke-dasharray="7 5" opacity=".95"/>
+          <text x="357" y="82" fill="#e8a13c" font-family="IBM Plex Mono,monospace" font-size="11" text-anchor="middle">−1 240</text>
+        </g>
+        <circle class="boom" cx="529" cy="93" r="14" fill="#e8a13c" opacity=".24" filter="url(#soft)"/>
         <!-- chars alliés -->
-        <g>
-          <circle cx="250" cy="152" r="8" fill="#5fc27e"/><rect x="246" y="149" width="8" height="5" rx="1" fill="#0f1a12"/>
-          <circle cx="238" cy="72" r="8" fill="#5fc27e"/><rect x="234" y="69" width="8" height="5" rx="1" fill="#0f1a12"/>
-          <circle cx="236" cy="232" r="8" fill="#5fc27e"/><path d="M236 228l4 4-4 4-4-4z" fill="#0f1a12"/>
-          <circle cx="196" cy="196" r="8" fill="#5fc27e"/><circle cx="196" cy="196" r="2.6" fill="#0f1a12"/>
-          <circle cx="150" cy="112" r="8" fill="#5fc27e"/><path d="M146 193h0" fill="none"/><path d="M146 109h8l-4 6z" fill="#0f1a12"/>
-        </g>
+        <g class="ch ch-3"><circle r="8" fill="#5fc27e"/><rect x="-4" y="-2.5" width="8" height="5" rx="1" fill="#0f1a12"/></g>
+        <g class="ch ch-2"><circle r="8" fill="#5fc27e"/><rect x="-4" y="-2.5" width="8" height="5" rx="1" fill="#0f1a12"/></g>
+        <g class="ch ch-1"><circle r="8" fill="#5fc27e"/><path d="M0 -4l4 4-4 4-4-4z" fill="#0f1a12"/></g>
+        <g class="ch ch-4"><circle r="8" fill="#5fc27e"/><circle r="2.6" fill="#0f1a12"/></g>
+        <g class="ch ch-5"><circle r="8" fill="#5fc27e"/><path d="M-4 -3h8l-4 6z" fill="#0f1a12"/></g>
         <!-- chars adverses -->
-        <g>
-          <circle cx="466" cy="76" r="8" fill="#e2685f"/><rect x="462" y="73" width="8" height="5" rx="1" fill="#1a0f0f"/>
-          <circle cx="486" cy="234" r="8" fill="#e2685f"/><rect x="482" y="231" width="8" height="5" rx="1" fill="#1a0f0f"/>
-          <circle cx="520" cy="150" r="8" fill="#e2685f"/><path d="M520 146l4 4-4 4-4-4z" fill="#1a0f0f"/>
-        </g>
+        <g class="ch ch-6"><circle r="8" fill="#e2685f"/><rect x="-4" y="-2.5" width="8" height="5" rx="1" fill="#1a0f0f"/></g>
+        <g class="ch ch-7"><circle r="8" fill="#e2685f"/><rect x="-4" y="-2.5" width="8" height="5" rx="1" fill="#1a0f0f"/></g>
+        <g class="ch ch-8"><circle r="8" fill="#e2685f"/><path d="M0 -4l4 4-4 4-4-4z" fill="#1a0f0f"/></g>
         <!-- élimination -->
-        <g stroke="#8d8a80" stroke-width="2" opacity=".8">
-          <path d="M420 196l10 10M430 196l-10 10"/>
+        <g class="kill" stroke="#c2beb4" stroke-width="2.2" opacity=".9">
+          <path d="M523 87l12 12M535 87l-12 12"/>
         </g>
         <!-- horodatage -->
         <text x="20" y="284" fill="#8d8a80" font-family="IBM Plex Mono,monospace" font-size="11">04:12</text>
