@@ -25,6 +25,12 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://clanplus.eu/soutenir.html</loc>
+    <lastmod>2026-07-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
     <loc>https://clanplus.eu/carte3d.html</loc>
     <lastmod>2026-07-25</lastmod>
     <changefreq>monthly</changefreq>
