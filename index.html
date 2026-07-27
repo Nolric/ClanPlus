@@ -1958,7 +1958,7 @@
     </div>
     <nav class="lp-nav-r">
       <a class="lp-nav-link" href="#lp-feats">Fonctions</a>
-      <a class="lp-nav-link" href="#lp-install">Installation</a>
+      <a class="lp-nav-link" href="mod.html">Le mod</a>
       <button class="lp-btn lp-btn-ghost lp-btn-sm" id="lpLoginTop">Se connecter</button>
     </nav>
   </header>
@@ -1969,10 +1969,10 @@
     <h1 class="lp-title">Clan Plus</h1>
     <p class="lp-tag">Le compagnon de ton clan sur <b>World of Tanks</b>. Le mod enregistre tes batailles de <b>Bastion</b> et le site en tire des statistiques, un indicateur de jeu d'équipe et un plan de progression — pour tout le clan.</p>
     <div class="lp-cta">
-      <a class="lp-btn lp-btn-primary" id="lpDownload" href="download/clanplus_1.0.24.wotmod" download>⬇ Télécharger le mod</a>
+      <a class="lp-btn lp-btn-primary" id="lpDownload" href="download/clanplus_1.0.31.wotmod" download>⬇ Télécharger le mod</a>
       <button class="lp-btn lp-btn-ghost" id="lpLogin">Accéder à mon clan →</button>
     </div>
-    <div class="lp-hero-note">Version 1.0.24 · World of Tanks EU 2.3.0.1 · Gratuit · Sans publicité</div>
+    <div class="lp-hero-note">Version 1.0.31 · World of Tanks EU 2.3.1.0 · Gratuit · Sans publicité</div>
   </section>
 
   <section class="lp-feats" id="lp-feats">
@@ -1990,14 +1990,14 @@
   <section class="lp-install" id="lp-install">
     <h2 class="lp-h2">Installer en 4 étapes</h2>
     <div class="lp-steps">
-      <div class="lp-step"><span class="lp-step-n">1</span><div><h4>Télécharge le mod</h4><p>Récupère le fichier <code>clanplus_1.0.24.wotmod</code> avec le bouton ci-dessus.</p></div></div>
-      <div class="lp-step"><span class="lp-step-n">2</span><div><h4>Installe-le</h4><p>Place le fichier dans <code>World_of_Tanks_EU/mods/2.3.0.1/</code>, ou installe-le via le modpack d'Aslain.</p></div></div>
+      <div class="lp-step"><span class="lp-step-n">1</span><div><h4>Télécharge le mod</h4><p>Récupère le fichier <code>clanplus_1.0.31.wotmod</code> avec le bouton ci-dessus.</p></div></div>
+      <div class="lp-step"><span class="lp-step-n">2</span><div><h4>Installe-le</h4><p>Place le fichier dans <code>World_of_Tanks_EU/mods/2.3.1.0/</code>, ou installe-le via le modpack d'Aslain.</p></div></div>
       <div class="lp-step"><span class="lp-step-n">3</span><div><h4>Joue au Bastion</h4><p>Lance le jeu et joue tes batailles de clan : elles sont enregistrées et envoyées automatiquement.</p></div></div>
       <div class="lp-step"><span class="lp-step-n">4</span><div><h4>Connecte-toi ici</h4><p>Reviens sur le site et connecte-toi avec ton compte World of Tanks pour voir les stats de ton clan.</p></div></div>
     </div>
     <div class="lp-install-cta">
-      <a class="lp-btn lp-btn-primary" href="download/clanplus_1.0.24.wotmod" download>⬇ Télécharger le mod</a>
-      <button class="lp-btn lp-btn-ghost" id="lpLogin2">Se connecter</button>
+      <a class="lp-btn lp-btn-primary" href="download/clanplus_1.0.31.wotmod" download>⬇ Télécharger le mod</a>
+      <a class="lp-btn lp-btn-ghost" href="mod.html">Guide d'installation détaillé →</a>
     </div>
   </section>
 
@@ -4089,7 +4089,7 @@ function showLanding(){
 let _landingWired=false;
 function wireLanding(){
   if(_landingWired) return; _landingWired=true;
-  ["lpLogin","lpLogin2","lpLoginTop"].forEach(id=>{
+  ["lpLogin","lpLoginTop"].forEach(id=>{
     const el=document.getElementById(id); if(el) el.onclick=()=>showLogin();
   });
   // liens légaux (accueil, footer, bandeau cookies)
@@ -4192,7 +4192,7 @@ function ceForRow(r,C){
    ============================================================ */
 // Marqueur de version : `srVersion()` dans la console dit si le fichier servi
 // est bien le dernier. Évite de confondre « pas déployé » et « ne marche pas ».
-const SR_SITE_VERSION="sr-3.7-tier-x";
+const SR_SITE_VERSION="sr-3.8-page-mod";
 function srVersion(){ return SR_SITE_VERSION; }
 let SR_MODEL=null, SR_SKILL=null, SR_ELO_TAG=null, SR_ELO_ID=null, SR_ROWS=null;
 const SR_CLS={heavyTank:"heavy",mediumTank:"medium",lightTank:"light","AT-SPG":"td",SPG:"spg"};
