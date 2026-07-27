@@ -1455,6 +1455,23 @@
      Zone 3 : 2 × 460 + 14, pour que la courbe ne passe pas sous sa taille de dessin. */
   @container (max-width:1050px){ .pz-diag{grid-template-columns:1fr} }
   @container (max-width:940px){ .pz-evo{grid-template-columns:1fr} }
+  /* Comparaison du mois : six tuiles, la valeur d'abord, l'écart en second */
+  .pd-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:2px;
+           background:var(--border);border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden}
+  .pd-t{background:var(--card);padding:11px 13px}
+  .pd-l{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  .pd-v{font-size:21px;font-weight:800;margin-top:3px;font-variant-numeric:tabular-nums;letter-spacing:-.4px}
+  .pd-d{font-size:12.5px;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums}
+  .pd-up{color:var(--dv-plus)} .pd-down{color:var(--dv-minus)}
+  .pd-flat,.pd-nil{color:var(--muted);font-weight:600}
+  /* Records : la valeur porte, le contexte (char, carte, date) la rend rejouable */
+  .pr-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
+  .pr-t{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:11px 13px}
+  .pr-new{border-color:rgba(216,181,102,.45)}
+  .pr-l{font-size:11.5px;color:var(--muted);font-weight:700;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .pr-tag{font-size:10px;background:var(--accent-soft);color:var(--accent);border-radius:5px;padding:1px 6px;font-weight:700}
+  .pr-v{font-size:22px;font-weight:800;margin-top:4px;font-variant-numeric:tabular-nums;letter-spacing:-.4px}
+  .pr-ctx{font-size:12px;color:var(--muted);margin-top:3px}
   /* Bloc repliable : les tableaux ne s'interposent plus entre le joueur et son diagnostic */
   .pz-more{margin:26px 0 16px;border-top:1px solid var(--border);padding-top:6px}
   .pz-more > summary{cursor:pointer;list-style:none;padding:12px 2px;display:flex;
@@ -2138,6 +2155,8 @@
         <svg class="trend" id="pTrend" preserveAspectRatio="none"></svg>
       </div>
     </div>
+    <div id="pDiff"></div>
+    <div id="pRecords"></div>
 
     <!-- ═══ 4. LE DÉTAIL ═══ données de consultation, repliées par défaut : elles
          ne doivent pas s'interposer entre le joueur et son diagnostic. -->
@@ -4118,7 +4137,7 @@ function ceForRow(r,C){
    ============================================================ */
 // Marqueur de version : `srVersion()` dans la console dit si le fichier servi
 // est bien le dernier. Évite de confondre « pas déployé » et « ne marche pas ».
-const SR_SITE_VERSION="sr-3.1-progression-refonte";
+const SR_SITE_VERSION="sr-3.2-progression-mois-records";
 function srVersion(){ return SR_SITE_VERSION; }
 let SR_MODEL=null, SR_SKILL=null, SR_ELO_TAG=null, SR_ELO_ID=null, SR_ROWS=null;
 const SR_CLS={heavyTank:"heavy",mediumTank:"medium",lightTank:"light","AT-SPG":"td",SPG:"spg"};
@@ -4693,6 +4712,89 @@ function pSRTrend(rows){
   const older=Math.round(ce(s.slice(0,h))), recent=Math.round(ce(s.slice(h)));
   return {older,recent,delta:recent-older};
 }
+/* ============================================================
+   LE MOIS ÉCOULÉ, COMPARÉ AU PRÉCÉDENT
+   La courbe SR répond « est-ce que je progresse » sur toute la saison ; ce bloc
+   y répond sur l'échelle que le joueur ressent vraiment. Les deux fenêtres font
+   30 jours chacune, et on refuse de conclure sous PD_MIN batailles : en dessous,
+   l'écart affiché serait du bruit et se lirait comme un progrès.
+   ============================================================ */
+const PD_MIN=5, PD_J=86400;
+const PD_MESURES=[
+  ["SR",          rs=>srAvg(rs),                  v=>fmt(v),      0],
+  ["Dégâts",      rs=>avgOf(rs,"dmg"),            v=>fmt(v),      0],
+  ["Victoires",   rs=>battlesWinrate(rs).wr*100,  v=>Math.round(v)+" %", 1],
+  ["Encaissé",    rs=>avgOf(rs,"dmgr"),           v=>fmt(v),      0],
+  ["Assistance",  rs=>avgOf(rs,"assist"),         v=>fmt(v),      0],
+  ["Survie",      rs=>rs.length?rs.reduce((s,r)=>s+(r.surv?1:0),0)/rs.length*100:0,
+                                                  v=>Math.round(v)+" %", 1],
+];
+function pDiff30(rows){
+  const now=Date.now()/1000;
+  const rec=rows.filter(r=>r.ts && now-r.ts<=30*PD_J);
+  const pre=rows.filter(r=>r.ts && now-r.ts>30*PD_J && now-r.ts<=60*PD_J);
+  if(rec.length<PD_MIN)
+    return `<div class="card"><h2>Les 30 derniers jours</h2>
+      <div class="sr-note">Seulement <b>${rec.length}</b> bataille${rec.length>1?"s":""} sur les 30 derniers
+      jours. Il en faut au moins ${PD_MIN} pour qu'une comparaison veuille dire quelque chose.</div></div>`;
+  const compar = pre.length>=PD_MIN;
+  const tuiles=PD_MESURES.map(([nom,calc,form,dec])=>{
+    const a=calc(rec), b=compar?calc(pre):null;
+    if(a==null) return "";
+    let chip=`<div class="pd-d pd-nil">—</div>`;
+    if(compar && b!=null){
+      const d=a-b, seuil=Math.abs(b)*0.02;            // 2 % : en deçà, c'est stable
+      const cls=Math.abs(d)<=seuil?"pd-flat":(d>0?"pd-up":"pd-down");
+      const sg=Math.abs(d)<=seuil?"=":(d>0?"▲ +":"▼ ");
+      chip=`<div class="pd-d ${cls}">${sg}${Math.abs(d)<=seuil?"":form(Math.abs(d)).replace(/\s?%/,dec?" pt":"")}</div>`;
+    }
+    return `<div class="pd-t"><div class="pd-l">${nom}</div>
+      <div class="pd-v">${form(a)}</div>${chip}</div>`;
+  }).join("");
+  return `<div class="card"><h2>Les 30 derniers jours
+      <span class="hint">${rec.length} bataille${rec.length>1?"s":""}${compar?` · comparé aux ${pre.length} des 30 jours précédents`:""}</span></h2>
+    <div class="pd-grid">${tuiles}</div>
+    ${compar?"":`<div class="srd-legend">Pas encore 30 jours de données avant cette période : rien à comparer pour l'instant.</div>`}</div>`;
+}
+/* ============================================================
+   RECORDS PERSONNELS
+   Le SR dit où on en est en moyenne ; les records disent de quoi on est capable.
+   Chacun est daté et rattaché à un char et une carte — un record sans contexte
+   ne s'explique pas et ne se rejoue pas.
+   ============================================================ */
+const PR_CHAMPS=[
+  ["dmg",   "Dégâts infligés"],
+  ["block", "Blindage encaissé"],
+  ["assist","Dégâts assistés"],
+  ["spot",  "Dégâts par repérage"],
+  ["kills", "Frags"],
+  ["xp",    "Expérience"],
+];
+function pRecords(rows){
+  const ok=rows.filter(r=>r.ts);
+  if(ok.length<3) return "";
+  const now=Date.now()/1000;
+  const carte=(cle,nom,form)=>{
+    let best=null;
+    ok.forEach(r=>{ const v=cle==="sr"?srBattle(r):r[cle];
+      if(v!=null && v>0 && (!best||v>best.v)) best={v,r}; });
+    if(!best) return "";
+    const r=best.r, frais=now-r.ts<=30*PD_J;
+    const d=new Date(r.ts*1000).toLocaleDateString("fr-FR",{day:"2-digit",month:"short",year:"2-digit"});
+    return `<div class="pr-t${frais?" pr-new":""}">
+      <div class="pr-l">${nom}${frais?`<span class="pr-tag">nouveau</span>`:""}</div>
+      <div class="pr-v">${form?form(best.v):fmt(best.v)}</div>
+      <div class="pr-ctx">${esc(r.tank||"?")} · ${esc(prettyMap(r.mapName))} · ${d}</div></div>`;
+  };
+  const cartes=[
+    ...(srOk()?[carte("sr","Meilleure bataille (SR)")]:[]),
+    ...PR_CHAMPS.map(([k,n])=>carte(k,n)),
+  ].filter(Boolean).join("");
+  if(!cartes) return "";
+  return `<div class="card"><h2>Tes records
+      <span class="hint">sur les ${ok.length} batailles enregistrées</span></h2>
+    <div class="pr-grid">${cartes}</div></div>`;
+}
 function renderPlayerView(){
   const f=pfilter();
   const my=RAW.filter(r=>r.accId===SELP && f(r));
@@ -4714,7 +4816,9 @@ function renderPlayerView(){
 
   if(!my.length){
     document.getElementById("pKpis").innerHTML='<div class="empty" style="grid-column:1/-1">Aucune bataille pour ce joueur sur la période.</div>';
-    ["pSR","pByClass","pByTank","pByTier","pByMap","pCompare","pEnemies","pHidden","pPlan"].forEach(id=>document.getElementById(id).innerHTML="");
+    ["pSR","pDiag","pDecomp","pEvo","pDiff","pRecords",
+     "pByClass","pByTank","pByTier","pByMap","pCompare","pEnemies","pHidden","pPlan"]
+      .forEach(id=>document.getElementById(id).innerHTML="");
     document.getElementById("pTrend").innerHTML=""; return;
   }
   const shots=my.reduce((s,r)=>s+r.shots,0),hits=my.reduce((s,r)=>s+r.hits,0);
@@ -4759,6 +4863,13 @@ function renderPlayerView(){
   // Le conteneur est vide : sa largeur est celle de sa colonne, pas de son contenu.
   const _evo = document.getElementById("pEvo");
   _evo.innerHTML = srCurve(_acc, _evo.clientWidth);
+  // Ces deux blocs portent leur propre période : un record filtré sur 7 jours
+  // n'est pas un record, et « les 30 derniers jours » n'a aucun sens sous un
+  // filtre de 7 jours. On garde en revanche le filtre de FORMAT — comparer une
+  // performance 7v7 à une 15v15 ne veut rien dire.
+  const myTout = RAW.filter(r=>r.accId===SELP && (!state.mode || r.mode===state.mode));
+  document.getElementById("pDiff").innerHTML    = pDiff30(myTout);
+  document.getElementById("pRecords").innerHTML = pRecords(myTout);
 
   // --- details de combat (collecte complete) ---
   const perfo=hits?my.reduce((s,r)=>s+r.pierce,0)/hits:0;
