@@ -1467,6 +1467,22 @@
      Zone 3 : 2 × 460 + 14, pour que la courbe ne passe pas sous sa taille de dessin. */
   @container (max-width:1050px){ .pz-diag{grid-template-columns:1fr} }
   @container (max-width:940px){ .pz-evo{grid-template-columns:1fr} }
+  /* Chars : un point par char sur un axe commun, la bande étant sa marge d'erreur.
+     Deux bandes qui se recouvrent = deux chars qu'on ne peut pas départager. */
+  .pt-list{display:flex;flex-direction:column;gap:2px}
+  .pt-r{display:grid;grid-template-columns:minmax(96px,1.1fr) minmax(120px,3fr) 92px 58px;
+        gap:10px;align-items:center;padding:6px 0}
+  .pt-n{font-size:13.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pt-b{position:relative;height:12px;background:var(--plane);border-radius:6px}
+  .pt-band{position:absolute;top:2px;bottom:2px;background:var(--accent-soft);border-radius:4px}
+  .pt-dot{position:absolute;top:1px;bottom:1px;width:3px;margin-left:-1.5px;background:var(--accent);border-radius:2px}
+  .pt-v{font-size:13.5px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
+  .pt-m{font-size:11.5px;font-weight:600;color:var(--muted);margin-left:5px}
+  .pt-c{font-size:12px;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+  @media (max-width:560px){
+    .pt-r{grid-template-columns:1fr 76px 50px;gap:8px}
+    .pt-b{grid-column:1/-1;order:3}
+  }
   /* Comparaison du mois : six tuiles, la valeur d'abord, l'écart en second */
   .pd-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:2px;
            background:var(--border);border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden}
@@ -2157,7 +2173,11 @@
       <div class="card plan" id="pPlanCard"><h2>🎯 Plan de progression</h2><div id="pPlan"></div></div>
     </div>
 
-    <!-- ═══ 3. EST-CE QUE JE PROGRESSE ═══ deux lectures de la même question,
+    <!-- ═══ 3. AVEC QUOI JE JOUE ═══ la décision d'avant-bataille. -->
+    <p class="pz-title">Avec quoi je joue</p>
+    <div id="pTanks"></div>
+
+    <!-- ═══ 4. EST-CE QUE JE PROGRESSE ═══ deux lectures de la même question,
          côte à côte : le SR lissé, et les dégâts bruts qui en sont une composante. -->
     <p class="pz-title">Est-ce que je progresse</p>
     <div class="pz-evo">
@@ -2170,7 +2190,7 @@
     <div id="pDiff"></div>
     <div id="pRecords"></div>
 
-    <!-- ═══ 4. LE DÉTAIL ═══ données de consultation, repliées par défaut : elles
+    <!-- ═══ 5. LE DÉTAIL ═══ données de consultation, repliées par défaut : elles
          ne doivent pas s'interposer entre le joueur et son diagnostic. -->
     <details class="pz-more">
       <summary><span class="pz-sum">Toutes mes statistiques</span>
@@ -2386,7 +2406,7 @@ const ROLE_ORDER = {commander:0,deputy_commander:1,executive_officer:1,combat_of
 // ⚠️ Les pouvoirs d'admin ne s'appliquent QU'EN MODE TEST (?dev=1). Hors mode test,
 // on retrouve son VRAI grade dans le clan -> permet de vérifier l'expérience d'un
 // simple membre. (Le serveur, lui, garde ADMIN_IDS en permanence.)
-const APP_ADMINS = [539467185];
+const APP_ADMINS = [539467185, 504857706];   // Robert · BeNoBaX (A-T-O)
 function isAppAdmin(){ return DEV && ME_ID!=null && APP_ADMINS.includes(Number(ME_ID)); }
 // Droits d'édition CÔTÉ CLIENT : basés sur le VRAI grade WG du joueur, sauf en mode DEV
 // ou pour un administrateur (qui débloquent tout comme un commandant).
@@ -4149,7 +4169,7 @@ function ceForRow(r,C){
    ============================================================ */
 // Marqueur de version : `srVersion()` dans la console dit si le fichier servi
 // est bien le dernier. Évite de confondre « pas déployé » et « ne marche pas ».
-const SR_SITE_VERSION="sr-3.5-plan-priorise";
+const SR_SITE_VERSION="sr-3.6-chars-bastion";
 function srVersion(){ return SR_SITE_VERSION; }
 let SR_MODEL=null, SR_SKILL=null, SR_ELO_TAG=null, SR_ELO_ID=null, SR_ROWS=null;
 const SR_CLS={heavyTank:"heavy",mediumTank:"medium",lightTank:"light","AT-SPG":"td",SPG:"spg"};
@@ -4810,6 +4830,53 @@ function pRecords(rows){
       <span class="hint">sur les ${ok.length} batailles enregistrées</span></h2>
     <div class="pr-grid">${cartes}</div></div>`;
 }
+/* ============================================================
+   TES CHARS EN BASTION
+   La seule décision que le joueur prend AVANT la bataille : lequel amener.
+   On la traite avec la marge d'erreur, parce qu'avec huit batailles par char
+   l'écart entre deux chars est le plus souvent du bruit — et un classement
+   affiché sans marge se lit comme une vérité.
+   ============================================================ */
+const PT_MIN=6;
+function pTanks(rows){
+  const vals=[], par={};
+  rows.forEach(r=>{ const v=srBattle(r); if(v==null||!r.tank) return;
+    vals.push(v); (par[r.tank]=par[r.tank]||[]).push({v,dmg:r.dmg}); });
+  if(vals.length<12) return "";
+  // Écart-type commun : avec 6 à 15 batailles par char, un écart-type calculé
+  // char par char serait lui-même trop instable pour servir de marge.
+  const moy=vals.reduce((a,b)=>a+b,0)/vals.length;
+  const sd=Math.sqrt(vals.reduce((s,v)=>s+(v-moy)*(v-moy),0)/Math.max(1,vals.length-1));
+  const L=Object.keys(par).map(t=>{ const a=par[t];
+    return { tank:t, n:a.length, sr:a.reduce((s,x)=>s+x.v,0)/a.length,
+             dmg:a.reduce((s,x)=>s+x.dmg,0)/a.length, marge:Math.round(sd/Math.sqrt(a.length)) }; });
+  const retenus=L.filter(x=>x.n>=PT_MIN).sort((a,b)=>b.sr-a.sr);
+  const ecartes=L.length-retenus.length;
+  if(!retenus.length)
+    return `<div class="card"><h2>Tes chars en Bastion</h2>
+      <div class="sr-note">Aucun char n'atteint ${PT_MIN} batailles enregistrées. En dessous,
+      le SR d'un char est trop incertain pour être comparé à un autre.</div></div>`;
+  const lo=Math.min(...retenus.map(x=>x.sr-x.marge)), hi=Math.max(...retenus.map(x=>x.sr+x.marge));
+  const pos=v=>hi>lo?((v-lo)/(hi-lo))*100:50;
+  const lignes=retenus.map(x=>`<div class="pt-r">
+      <div class="pt-n">${esc(x.tank)}</div>
+      <div class="pt-b"><div class="pt-band" style="left:${pos(x.sr-x.marge).toFixed(1)}%;width:${(pos(x.sr+x.marge)-pos(x.sr-x.marge)).toFixed(1)}%"></div>
+        <div class="pt-dot" style="left:${pos(x.sr).toFixed(1)}%"></div></div>
+      <div class="pt-v">${fmt(x.sr)}<span class="pt-m">±${x.marge}</span></div>
+      <div class="pt-c">${x.n} bat.</div></div>`).join("");
+  // Verdict : on ne nomme un meilleur char que si son intervalle ne recoupe pas
+  // celui du dernier. Sinon on le dit — c'est le seul message honnête.
+  const a=retenus[0], z=retenus[retenus.length-1];
+  const net = retenus.length>1 && (a.sr-a.marge) > (z.sr+z.marge);
+  const verdict = retenus.length<2
+    ? `Un seul char atteint ${PT_MIN} batailles pour l'instant.`
+    : net ? `Ton meilleur char en Bastion est le <b>${esc(a.tank)}</b> (${fmt(a.sr)} sur ${a.n} batailles), devant le <b>${esc(z.tank)}</b> (${fmt(z.sr)}). L'écart dépasse la marge d'erreur : il est réel.`
+          : `Les écarts entre tes chars ne dépassent pas la marge d'erreur — sur ces volumes, aucun ne se détache vraiment. Joue celui que tu maîtrises le mieux.`;
+  return `<div class="card"><h2>Tes chars en Bastion
+      <span class="hint">SR moyen · ${PT_MIN} batailles minimum${ecartes?` · ${ecartes} char${ecartes>1?"s":""} écarté${ecartes>1?"s":""}`:""}</span></h2>
+    <div class="pt-list">${lignes}</div>
+    <div class="srd-legend">${verdict}</div></div>`;
+}
 function renderPlayerView(){
   const f=pfilter();
   const my=RAW.filter(r=>r.accId===SELP && f(r));
@@ -4831,7 +4898,7 @@ function renderPlayerView(){
 
   if(!my.length){
     document.getElementById("pKpis").innerHTML='<div class="empty" style="grid-column:1/-1">Aucune bataille pour ce joueur sur la période.</div>';
-    ["pSR","pDiag","pDecomp","pEvo","pDiff","pRecords",
+    ["pSR","pDiag","pDecomp","pTanks","pEvo","pDiff","pRecords",
      "pByClass","pByTank","pByTier","pByMap","pCompare","pEnemies","pHidden","pPlan"]
       .forEach(id=>document.getElementById(id).innerHTML="");
     document.getElementById("pTrend").innerHTML=""; return;
@@ -4883,6 +4950,7 @@ function renderPlayerView(){
   // filtre de 7 jours. On garde en revanche le filtre de FORMAT — comparer une
   // performance 7v7 à une 15v15 ne veut rien dire.
   const myTout = RAW.filter(r=>r.accId===SELP && (!state.mode || r.mode===state.mode));
+  document.getElementById("pTanks").innerHTML   = pTanks(my);
   document.getElementById("pDiff").innerHTML    = pDiff30(myTout);
   document.getElementById("pRecords").innerHTML = pRecords(myTout);
 
@@ -4924,7 +4992,9 @@ function renderPlayerView(){
   const byClass=groupRows(my,r=>r.cls);
   renderMiniPerf("pByClass",byClass,clsFR,"Classe");
   // --- par char ---
-  const byTank=groupRows(my,r=>r.tank).slice(0,8);
+  // La carte annonce « les plus joués » : on trie donc par nombre de batailles,
+  // pas par dégâts, sinon le tableau ne montre pas ce que son titre promet.
+  const byTank=groupRows(my,r=>r.tank).sort((a,b)=>b.n-a.n).slice(0,8);
   renderMiniPerf("pByTank",byTank,x=>x,"Char");
   // --- par carte ---
   const byMap=groupRows(my,r=>r.mapName);
@@ -4977,14 +5047,18 @@ function groupRows(rows,keyFn){
   const m={};
   rows.forEach(r=>{ const k=keyFn(r); if(k==null||k==="")return; (m[k]=m[k]||[]).push(r); });
   return Object.keys(m).map(k=>{ const rs=m[k]; const bw=battlesWinrate(rs);
-    return {key:k, n:bw.battles, dmg:avgOf(rs,"dmg"), wr:bw.wr, kills:avgOf(rs,"kills")}; })
+    return {key:k, n:bw.battles, dmg:avgOf(rs,"dmg"), wr:bw.wr, kills:avgOf(rs,"kills"), sr:srAvg(rs)}; })
     .sort((a,b)=>b.dmg-a.dmg);
 }
 function renderMiniPerf(id,list,labelFn,head){
   const el=document.getElementById(id);
   if(!list.length){ el.innerHTML='<div class="empty">Pas encore de données</div>'; return; }
-  let h=`<table class="mini"><thead><tr><th>${head}</th><th>Bat.</th><th>Dég. moy</th><th>% Vict.</th></tr></thead><tbody>`;
-  list.forEach(x=>{ h+=`<tr><td>${esc(labelFn(x.key))}</td><td>${x.n}</td><td>${fmt(x.dmg)}</td><td>${pct(x.wr)}</td></tr>`; });
+  // Le SR n'apparaît que s'il existe pour au moins une ligne : une colonne
+  // entièrement remplie de « — » n'apprend rien et vole de la place.
+  const avecSR=list.some(x=>x.sr!=null);
+  let h=`<table class="mini"><thead><tr><th>${head}</th><th>Bat.</th><th>Dég. moy</th><th>% Vict.</th>${avecSR?"<th>SR</th>":""}</tr></thead><tbody>`;
+  list.forEach(x=>{ h+=`<tr><td>${esc(labelFn(x.key))}</td><td>${x.n}</td><td>${fmt(x.dmg)}</td><td>${pct(x.wr)}</td>${
+    avecSR?`<td>${x.sr==null?'<span style="color:var(--muted)">—</span>':fmt(x.sr)}</td>`:""}</tr>`; });
   h+="</tbody></table>"; el.innerHTML=h;
 }
 function renderPTrend(my){
