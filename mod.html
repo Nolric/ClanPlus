@@ -3,128 +3,179 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Le mod Clan Plus — installation et fonctionnement | Clan Plus</title>
-<meta name="description" content="Le mod Clan Plus enregistre tes batailles de Bastion et t'aide à choisir tes chars. Téléchargement, installation pas à pas en images, et tout ce qu'il fait exactement.">
+<title>Le mod Clan Plus — ce qu'il fait et comment l'installer | Clan Plus</title>
+<meta name="description" content="Le mod Clan Plus enregistre tes batailles de clan et t'aide à choisir tes chars. Ce qu'il fait, ce qu'il ne fait pas, et comment l'installer en deux minutes.">
 <link rel="canonical" href="https://clanplus.eu/mod.html">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Clan Plus">
 <meta property="og:locale" content="fr_FR">
 <meta property="og:url" content="https://clanplus.eu/mod.html">
 <meta property="og:title" content="Le mod Clan Plus pour World of Tanks">
-<meta property="og:description" content="Une fenêtre compagnon pour tes batailles de clan, et le replay tactique de chaque combat. Gratuit, sans publicité.">
+<meta property="og:description" content="Une fenêtre compagnon pour tes batailles de clan. Rien pendant le combat, tout après. Gratuit, sans publicité.">
 <meta property="og:image" content="https://clanplus.eu/og.jpg">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20240%20240%22%3E%3Crect%20width%3D%22240%22%20height%3D%22240%22%20rx%3D%2254%22%20fill%3D%22%23141310%22%2F%3E%3Cg%20transform%3D%22translate%2830%2030%29%20scale%280.75%29%22%20fill%3D%22%23d8b566%22%3E%3Ccircle%20cx%3D%22120%22%20cy%3D%22120%22%20r%3D%22100%22%20fill%3D%22none%22%20stroke%3D%22%23d8b566%22%20stroke-width%3D%227%22%2F%3E%3C%2Fsvg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20240%20240%22%3E%3Crect%20width%3D%22240%22%20height%3D%22240%22%20rx%3D%2254%22%20fill%3D%22%23141310%22%2F%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22%23d8b566%22%3E%3Ccircle%20cx%3D%22120%22%20cy%3D%22120%22%20r%3D%22100%22%20stroke-width%3D%227%22%2F%3E%3Cpath%20d%3D%22M161%2C155%20A54%2C54%200%201%201%20161%2C85%22%20stroke-width%3D%2220%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fg%3E%3Cg%20fill%3D%22%23d8b566%22%3E%3Crect%20x%3D%22112%22%20y%3D%2294%22%20width%3D%2216%22%20height%3D%2252%22%20rx%3D%225%22%2F%3E%3Crect%20x%3D%2294%22%20y%3D%22112%22%20width%3D%2252%22%20height%3D%2216%22%20rx%3D%225%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
 <style>
+  /* Jetons repris À L'IDENTIQUE d'index.html. Ne pas les recopier partiellement :
+     la première version de cette page omettait --shadow et --ring, et se retrouvait
+     sans aucun relief par construction. */
   :root{
     --plane:#0c0c0b; --surface-1:#151412; --surface-2:#201f1b; --card:#1a1917;
     --ink:#f6f5f1; --ink-2:#bdb9af; --muted:#87847b;
-    --border:rgba(255,255,255,.09); --border-2:rgba(255,255,255,.16);
+    --border:rgba(255,255,255,.09);
     --good:#2ec26e; --bad:#ec6a6a; --warn:#e0a34a;
-    --accent:#d8b566; --accent-2:#ecd190; --accent-soft:rgba(216,181,102,.13);
+    --accent:#d8b566; --accent-2:#ecd190; --accent-soft:rgba(216,181,102,.14);
+    --shadow-sm:0 1px 2px rgba(0,0,0,.45);
+    --shadow:0 2px 10px rgba(0,0,0,.40);
+    --shadow-lg:0 18px 44px -18px rgba(0,0,0,.55);
+    --ring:rgba(216,181,102,.45);
     --radius:14px; --radius-sm:9px;
     color-scheme:dark;
   }
   *{box-sizing:border-box}
   html,body{margin:0}
+  img,svg{max-width:100%}
   body{background:var(--plane);color:var(--ink);
        font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
        font-size:15.5px;line-height:1.62;-webkit-font-smoothing:antialiased}
-  .wrap{max-width:920px;margin:0 auto;padding:0 20px 90px}
+  .wrap{max-width:960px;margin:0 auto;padding:0 20px 90px}
   a{color:var(--accent)}
   strong{color:#fff;font-weight:700}
   code{font-family:ui-monospace,"Cascadia Code",Consolas,monospace;font-size:.92em;
-       background:var(--surface-2);border:1px solid var(--border);border-radius:5px;padding:1px 6px;color:var(--accent-2)}
+       background:var(--surface-2);border:1px solid var(--border);border-radius:5px;
+       padding:1px 6px;color:var(--accent-2)}
+  :focus-visible{outline:2px solid var(--ring);outline-offset:2px;border-radius:4px}
+  .skip{position:absolute;left:-9999px;top:0;background:var(--accent);color:#12110d;
+        padding:10px 16px;border-radius:0 0 8px 0;font-weight:800;z-index:60}
+  .skip:focus{left:0}
 
   /* ---------- barre du haut ---------- */
-  .topbar{border-bottom:1px solid var(--border);background:rgba(21,20,18,.9);
+  .topbar{border-bottom:1px solid var(--border);background:rgba(21,20,18,.92);
           backdrop-filter:blur(8px);position:sticky;top:0;z-index:20}
-  .topbar-in{max-width:920px;margin:0 auto;padding:11px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-  .brand{font-weight:800;color:var(--ink);text-decoration:none;font-size:15px}
+  .topbar-in{max-width:960px;margin:0 auto;padding:10px 20px;display:flex;align-items:center;gap:12px}
+  .brand{display:flex;align-items:center;gap:9px;font-weight:800;color:var(--ink);
+         text-decoration:none;font-size:15px;padding:11px 6px;min-height:44px}
+  .brand svg{width:22px;height:22px;flex:0 0 auto}
   .brand span{color:var(--accent)}
   .tb-sp{margin-left:auto}
-  .tb-dl{background:var(--accent);color:#12110d;font-weight:800;font-size:13.5px;text-decoration:none;
-         border-radius:8px;padding:7px 15px;white-space:nowrap}
-  .tb-dl:hover{background:var(--accent-2)}
-  .back{color:var(--ink-2);text-decoration:none;font-size:13.5px;font-weight:600;
-        border:1px solid var(--border);border-radius:8px;padding:6px 12px}
-  .back:hover{color:var(--ink);border-color:var(--accent)}
+  .tb-dl{background:linear-gradient(180deg,var(--accent-2),var(--accent));color:#12110d;
+         font-weight:800;font-size:13.5px;text-decoration:none;border-radius:9px;
+         padding:11px 16px;min-height:44px;white-space:nowrap;box-shadow:var(--shadow-sm);
+         transition:filter .18s ease,transform .18s ease}
+  .tb-dl:hover{filter:brightness(1.06);transform:translateY(-1px)}
 
   /* ---------- ouverture ---------- */
-  header.hero{padding:60px 0 10px;text-align:center}
-  .eyebrow{font-size:11.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--accent);
-           margin:0 0 14px;font-weight:800}
-  h1{font-size:clamp(30px,6vw,50px);line-height:1.05;margin:0 0 16px;letter-spacing:-.025em;
-     text-wrap:balance;font-weight:800}
-  .lede{font-size:18px;color:var(--ink-2);margin:0 auto;max-width:620px;text-wrap:pretty}
-  .cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin:28px 0 12px}
-  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:800;font-size:16px;
-       text-decoration:none;border-radius:11px;padding:14px 26px;border:1px solid var(--accent)}
-  .btn-1{background:var(--accent);color:#12110d}
-  .btn-1:hover{background:var(--accent-2)}
-  .btn-2{background:transparent;color:var(--accent)}
-  .btn-2:hover{background:var(--accent-soft)}
-  .meta{font-size:13px;color:var(--muted)}
+  .hero{position:relative;text-align:center;padding:56px 0 8px;overflow:hidden}
+  .glow{position:absolute;top:-60px;left:50%;transform:translateX(-50%);
+        width:620px;height:360px;max-width:130%;pointer-events:none;
+        background:radial-gradient(ellipse at center,var(--accent-soft),transparent 68%);
+        filter:blur(10px)}
+  .mark-box{position:relative;width:96px;height:96px;margin:0 auto 22px;background:#141310;
+            border-radius:24px;display:grid;place-items:center;padding:11px;
+            box-shadow:inset 0 0 0 1px rgba(216,181,102,.28),var(--shadow-lg)}
+  .kicker{position:relative;font-size:11.5px;letter-spacing:.22em;text-transform:uppercase;
+          color:var(--accent);margin:0 0 12px;font-weight:800}
+  h1{position:relative;font-size:clamp(32px,6.4vw,56px);line-height:1.03;margin:0 0 16px;
+     letter-spacing:-.035em;text-wrap:balance;font-weight:800}
+  .lede{position:relative;font-size:clamp(15px,2.3vw,18px);color:var(--ink-2);
+        margin:0 auto 28px;max-width:56ch;text-wrap:pretty}
+  .cta{position:relative;display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:800;
+       font-size:16px;text-decoration:none;border-radius:11px;padding:14px 26px;
+       border:1px solid var(--accent);min-height:48px;
+       transition:filter .18s ease,transform .18s ease,background .18s ease}
+  .btn-1{background:linear-gradient(180deg,var(--accent-2),var(--accent));color:#12110d;
+         box-shadow:var(--shadow-sm)}
+  .btn-1:hover{filter:brightness(1.06);transform:translateY(-2px)}
+  .btn-2{background:var(--card);color:var(--ink);border-color:var(--border)}
+  .btn-2:hover{border-color:var(--accent);transform:translateY(-2px)}
+  .meta{position:relative;margin-top:18px;font-size:12.5px;color:var(--muted);letter-spacing:.2px}
   .meta b{color:var(--ink-2);font-weight:700}
 
-  .facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:2px;
-         background:var(--border);border:1px solid var(--border);border-radius:var(--radius);
-         overflow:hidden;margin:34px 0 0}
-  .fact{background:var(--card);padding:14px 15px}
-  .fact-k{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:800}
-  .fact-v{font-size:15px;font-weight:700;margin-top:3px}
-  .fact-v.ok{color:var(--good)}
+  /* Un seul moment animé sur la page : l'entrée. Le reste, ce sont des états. */
+  @keyframes cpIn{from{opacity:0;transform:scale(.82)}to{opacity:1;transform:scale(1)}}
+  @keyframes cpPlusPop{0%{opacity:0;transform:scale(0)}70%{transform:scale(1.18)}100%{opacity:1;transform:scale(1)}}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  .cp-mark{animation:cpIn .55s cubic-bezier(.16,1,.3,1) both}
+  .cp-mark .cp-plus{transform-box:fill-box;transform-origin:center;
+                    animation:cpPlusPop .5s .35s cubic-bezier(.16,1,.3,1) both}
+  .hero .kicker{animation:rise .5s .10s cubic-bezier(.16,1,.3,1) both}
+  .hero h1{animation:rise .5s .18s cubic-bezier(.16,1,.3,1) both}
+  .hero .lede{animation:rise .5s .26s cubic-bezier(.16,1,.3,1) both}
+  .hero .cta{animation:rise .5s .34s cubic-bezier(.16,1,.3,1) both}
+  .hero .meta{animation:rise .5s .42s cubic-bezier(.16,1,.3,1) both}
+  @media (prefers-reduced-motion:reduce){
+    .cp-mark,.cp-mark .cp-plus,.hero .kicker,.hero h1,.hero .lede,.hero .cta,.hero .meta{animation:none}
+    .btn,.tb-dl,.shot-fig,.rel-i{transition:none}
+  }
 
   /* ---------- sections ---------- */
-  section{padding-top:56px}
-  h2{font-size:clamp(21px,3.4vw,28px);font-weight:800;margin:0 0 8px;letter-spacing:-.015em}
-  .sub{color:var(--ink-2);margin:0 0 22px;max-width:660px}
+  section{padding-top:60px;scroll-margin-top:70px}
+  h2{font-size:clamp(22px,3.4vw,30px);font-weight:800;margin:0 0 10px;letter-spacing:-.02em;text-wrap:balance}
+  .sub{color:var(--ink-2);margin:0 0 26px;max-width:62ch}
   h3{font-size:17px;font-weight:700;margin:0 0 6px}
-  p{margin:0 0 13px}
-  ul{margin:0 0 15px;padding-left:21px} li{margin:0 0 7px}
+  p{margin:0 0 13px;max-width:70ch}
+  ul{margin:0 0 15px;padding-left:21px} li{margin:0 0 7px;max-width:68ch}
+  .ui-en{font-style:normal;color:var(--accent-2);white-space:nowrap}
 
-  /* ---------- capture d'écran ---------- */
-  figure{margin:0 0 18px}
-  .shot{display:block;width:100%;height:auto;border:1px solid var(--border-2);
-        border-radius:var(--radius);background:var(--surface-2)}
-  figcaption{font-size:13px;color:var(--muted);margin-top:9px;text-align:center}
-  /* Emplacement d'une capture pas encore fournie : visible et explicite, jamais
-     une image cassée. À remplacer par <img class="shot" src="…" alt="…">. */
-  .todo{border:1px dashed var(--border-2);border-radius:var(--radius);background:var(--surface-1);
-        padding:34px 22px;text-align:center;color:var(--muted)}
-  .todo b{display:block;color:var(--ink-2);font-size:14.5px;margin-bottom:5px}
-  .todo span{font-size:13px}
-  .todo-sm{padding:56px 16px;font-family:ui-monospace,Consolas,monospace}
-  /* Les deux états de la fenêtre se lisent côte à côte : c'est la case à cocher
-     qui fait toute la différence, on doit pouvoir comparer d'un coup d'œil. */
-  .duo{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;align-items:start}
-  .duo figcaption{text-align:left}
-  .cap-c{font-size:13px;color:var(--muted);text-align:center;margin:4px 0 0}
+  /* ---------- captures ---------- */
+  .duo{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:20px;align-items:start}
+  .shot-fig{margin:0;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+            padding:14px;box-shadow:var(--shadow);transition:border-color .18s ease,transform .18s ease}
+  .shot-fig:hover{border-color:rgba(216,181,102,.4);transform:translateY(-3px)}
+  .shot{display:block;width:100%;height:auto;border-radius:var(--radius-sm);background:var(--surface-2)}
+  .shot-fig figcaption{font-size:13.5px;color:var(--ink-2);margin-top:12px;line-height:1.55}
+  .shot-fig figcaption b{display:block;color:var(--ink);font-size:14px;margin-bottom:3px}
+  /* Emplacement d'une capture non encore fournie. Volontairement explicite :
+     mieux vaut un cadre qui dit ce qui manque qu'une image cassée. */
+  .todo{display:grid;place-items:center;min-height:180px;border:1px dashed rgba(255,255,255,.18);
+        border-radius:var(--radius-sm);background:var(--surface-2);padding:26px 18px;text-align:center}
+  .todo b{display:block;color:var(--ink-2);font-size:13.5px;margin-bottom:5px}
+  .todo span{font-size:12.5px;color:var(--muted);
+             font-family:ui-monospace,Consolas,monospace}
 
-  /* ---------- fonctionnalités ---------- */
-  .feats{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
-  .feat{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px 19px}
-  .feat .ic{width:34px;height:34px;border-radius:9px;background:var(--accent-soft);color:var(--accent);
-            display:flex;align-items:center;justify-content:center;margin-bottom:11px}
-  .feat .ic svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.8;
-                stroke-linecap:round;stroke-linejoin:round}
-  .feat p{font-size:14px;color:var(--ink-2);margin:0}
+  /* ---------- ce qu'il fait / ne fait pas ---------- */
+  .verdict{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-bottom:22px}
+  .vcard{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+         padding:18px 20px;box-shadow:var(--shadow-sm)}
+  .vcard.no{border-color:rgba(46,194,110,.32)}
+  .vh{display:flex;align-items:center;gap:9px;font-size:12px;letter-spacing:.13em;
+      text-transform:uppercase;font-weight:800;margin-bottom:12px}
+  .vcard.yes .vh{color:var(--accent)} .vcard.no .vh{color:var(--good)}
+  .vlist{list-style:none;margin:0;padding:0}
+  .vlist li{display:flex;gap:10px;align-items:flex-start;margin:0 0 10px;font-size:14.5px;color:var(--ink-2)}
+  .vlist li:last-child{margin-bottom:0}
+  .vlist .mk{flex:0 0 auto;width:18px;text-align:center;font-weight:800;line-height:1.6}
+  .vcard.yes .mk{color:var(--accent)} .vcard.no .mk{color:var(--good)}
 
   /* ---------- installation ---------- */
-  .step{display:grid;grid-template-columns:44px 1fr;gap:16px;align-items:start;
+  .route{background:var(--card);border:1px solid rgba(216,181,102,.34);border-radius:var(--radius);
+         padding:20px 22px;margin-bottom:26px;box-shadow:var(--shadow)}
+  .route .tag{font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--accent);font-weight:800}
+  .route h3{margin:5px 0 7px;font-size:19px}
+  .route p{color:var(--ink-2);font-size:14.5px;margin-bottom:0}
+  .alt-h{font-size:12px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);
+         font-weight:800;margin:0 0 4px}
+  .step{display:grid;grid-template-columns:40px 1fr;gap:16px;align-items:start;
         padding:22px 0;border-top:1px solid var(--border)}
-  .step:first-of-type{border-top:0;padding-top:6px}
-  .step-n{width:36px;height:36px;border-radius:50%;background:var(--accent);color:#12110d;
-          font-weight:800;font-size:16px;display:flex;align-items:center;justify-content:center}
-  .step-b h3{margin-bottom:5px}
+  .step-n{width:34px;height:34px;border-radius:50%;
+          background:linear-gradient(180deg,var(--accent-2),var(--accent));color:#12110d;
+          font-weight:800;font-size:15px;display:grid;place-items:center;box-shadow:var(--shadow-sm)}
   .step-b p{font-size:14.5px;color:var(--ink-2)}
   .step-b p:last-child{margin-bottom:0}
-  .diagram{width:100%;height:auto;display:block;margin:14px 0 4px;
-           background:var(--surface-1);border:1px solid var(--border);border-radius:var(--radius-sm)}
+  .diagram{width:100%;height:auto;display:block;margin:14px 0 4px;background:var(--surface-1);
+           border:1px solid var(--border);border-radius:var(--radius-sm)}
   .diagram text{font-family:ui-monospace,"Cascadia Code",Consolas,monospace}
+  .tree{margin:14px 0 4px;padding:16px 18px;background:var(--surface-1);border:1px solid var(--border);
+        border-radius:var(--radius-sm);font-family:ui-monospace,Consolas,monospace;
+        font-size:13.5px;line-height:1.75;color:var(--muted);overflow-x:auto}
+  .tree .on{color:var(--accent);font-weight:700}
+  .tree .file{color:#12110d;background:var(--accent);border-radius:4px;padding:1px 7px;font-weight:700}
+  .tree .cm{color:var(--accent);font-family:system-ui,sans-serif;font-size:12.5px}
 
   .note{border:1px solid var(--border);border-left:3px solid var(--accent);background:var(--card);
-        border-radius:0 var(--radius) var(--radius) 0;padding:14px 17px;margin:16px 0;font-size:14.5px}
+        border-radius:0 var(--radius) var(--radius) 0;padding:14px 17px;margin:16px 0;
+        font-size:14.5px;box-shadow:var(--shadow-sm)}
   .note.warn{border-left-color:var(--warn)}
   .note.good{border-left-color:var(--good)}
   .note .lbl{font-size:10.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--accent);
@@ -132,155 +183,202 @@
   .note.warn .lbl{color:var(--warn)} .note.good .lbl{color:var(--good)}
   .note p:last-child{margin-bottom:0}
 
-  /* ---------- tableaux ---------- */
-  .tw{overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius);background:var(--card);margin:0 0 14px}
-  table{width:100%;border-collapse:collapse;font-size:14.5px;min-width:430px}
-  th{font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);text-align:left;
-     padding:11px 14px;border-bottom:1px solid var(--border);font-weight:800}
-  td{padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.05);vertical-align:top}
-  tr:last-child td{border-bottom:0}
-  td.y{color:var(--good);white-space:nowrap} td.n{color:var(--bad);white-space:nowrap}
-
   /* ---------- versions ---------- */
-  .rel{border-left:2px solid var(--border);padding:0 0 4px 20px;margin-left:6px;position:relative}
-  .rel-i{padding:0 0 22px}
-  .rel-i::before{content:"";position:absolute;left:-6px;width:10px;height:10px;border-radius:50%;
-                 background:var(--surface-2);border:2px solid var(--border-2);margin-top:6px}
-  .rel-i.now::before{background:var(--accent);border-color:var(--accent)}
-  .rel-v{font-size:14px;font-weight:800;color:var(--ink-2)}
+  .rel{border-left:2px solid var(--border);padding-left:20px;margin-left:6px}
+  .rel-i{position:relative;padding-bottom:20px}
+  .rel-i::before{content:"";position:absolute;left:-27px;top:7px;width:10px;height:10px;
+                 border-radius:50%;background:var(--surface-2);border:2px solid var(--border)}
+  .rel-i.now::before{background:var(--accent);border-color:var(--accent);
+                     box-shadow:0 0 0 4px rgba(216,181,102,.14)}
+  .rel-v{font-size:13px;font-weight:800;color:var(--muted);letter-spacing:.04em}
   .rel-i.now .rel-v{color:var(--accent)}
-  .rel-t{font-size:16px;font-weight:700;margin:2px 0 5px}
+  .rel-t{font-size:16.5px;font-weight:700;margin:2px 0 5px}
   .rel-d{font-size:14px;color:var(--ink-2);margin:0}
 
   /* ---------- questions ---------- */
   details{border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--card);
-          margin:0 0 9px;padding:0 15px}
-  summary{cursor:pointer;list-style:none;padding:13px 0;font-weight:700;font-size:15px;
-          display:flex;align-items:center;gap:10px}
+          margin:0 0 9px;padding:0 16px;box-shadow:var(--shadow-sm)}
+  summary{cursor:pointer;list-style:none;padding:14px 0;font-weight:700;font-size:15px;
+          display:flex;align-items:center;gap:10px;min-height:48px}
   summary::-webkit-details-marker{display:none}
-  summary::after{content:"+";margin-left:auto;color:var(--accent);font-weight:800;font-size:18px}
-  details[open] summary::after{content:"−"}
+  summary::after{content:"+";margin-left:auto;color:var(--accent);font-weight:800;font-size:20px;line-height:1}
+  details[open] summary::after{content:"\2212"}
   details > p{font-size:14.5px;color:var(--ink-2);margin:0 0 14px}
 
-  footer{padding:40px 0 0;color:var(--muted);font-size:13.5px;border-top:1px solid var(--border);margin-top:60px}
+  .final{position:relative;text-align:center;margin-top:60px;padding:38px 24px;
+         background:var(--card);border:1px solid rgba(216,181,102,.3);
+         border-radius:var(--radius);box-shadow:var(--shadow)}
+  .final h2{margin-bottom:8px}
+  .final p{color:var(--ink-2);max-width:46ch;margin:0 auto 20px}
+
+  footer{padding:38px 0 0;color:var(--muted);font-size:13.5px;
+         border-top:1px solid var(--border);margin-top:60px}
   footer a{color:var(--ink-2)}
-  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
-  @media (max-width:560px){
+  footer p{max-width:none}
+  .fl{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px}
+  .fl a{text-decoration:none;padding:12px 11px;border-radius:8px;display:inline-flex;align-items:center;min-height:44px}
+  .fl a:hover{color:var(--ink);background:var(--surface-2)}
+
+  @media (max-width:600px){
     .step{grid-template-columns:1fr;gap:10px}
     .cta .btn{width:100%}
+    section{padding-top:46px}
   }
 </style>
 </head>
 <body>
 
+<a class="skip" href="#contenu">Aller au contenu</a>
+
 <div class="topbar"><div class="topbar-in">
-  <a class="brand" href="/">Clan<span>Plus</span></a>
+  <a class="brand" href="/">
+    <svg viewBox="0 0 240 240" aria-hidden="true"><circle cx="120" cy="120" r="100" fill="none" stroke="#d8b566" stroke-width="12"/><path d="M161,155 A54,54 0 1 1 161,85" fill="none" stroke="#d8b566" stroke-width="26" stroke-linecap="round"/></svg>
+    Clan<span>Plus</span></a>
   <span class="tb-sp"></span>
-  <a class="back" href="/">Le site</a>
   <a class="tb-dl" href="download/clanplus_1.0.31.wotmod" download>Télécharger</a>
 </div></div>
 
-<div class="wrap">
+<div class="wrap" id="contenu">
 
 <header class="hero">
-  <p class="eyebrow">Le mod</p>
-  <h1>Ton clan joue.<br>Le mod s'occupe du reste.</h1>
-  <p class="lede">Une fenêtre compagnon pour choisir tes chars en Bastion, et l'enregistrement
-  complet de chaque bataille de clan — pour que le site puisse ensuite te dire ce qui s'est
-  vraiment passé.</p>
+  <div class="glow" aria-hidden="true"></div>
+  <div class="mark-box">
+    <svg class="cp-mark" viewBox="0 0 240 240" aria-label="Clan Plus">
+      <circle cx="120" cy="120" r="100" fill="none" stroke="#d8b566" stroke-width="7"/>
+      <circle cx="120" cy="120" r="88" fill="none" stroke="#d8b566" stroke-width="2.5" opacity=".5"/>
+      <rect x="81" y="8" width="18" height="18" fill="#d8b566"/>
+      <rect x="111" y="4" width="18" height="18" fill="#d8b566"/>
+      <rect x="141" y="8" width="18" height="18" fill="#d8b566"/>
+      <circle cx="20" cy="120" r="4.5" fill="#d8b566"/>
+      <circle cx="220" cy="120" r="4.5" fill="#d8b566"/>
+      <path d="M161,155 A54,54 0 1 1 161,85" fill="none" stroke="#d8b566" stroke-width="20" stroke-linecap="round"/>
+      <g class="cp-plus"><rect x="112" y="94" width="16" height="52" rx="5" fill="#d8b566"/><rect x="94" y="112" width="52" height="16" rx="5" fill="#d8b566"/></g>
+    </svg>
+  </div>
+  <p class="kicker">Le mod</p>
+  <h1>Rien pendant le combat.<br>Tout après.</h1>
+  <p class="lede">Une fenêtre pour choisir tes chars en Bastion, et l'enregistrement complet de
+  chaque bataille de clan, pour que le site puisse ensuite te dire ce qui s'est vraiment passé.</p>
   <div class="cta">
     <a class="btn btn-1" href="download/clanplus_1.0.31.wotmod" download>Télécharger le mod</a>
     <a class="btn btn-2" href="#install">Comment l'installer</a>
   </div>
-  <p class="meta"><b>Version 1.0.31</b> · 97 Ko · World of Tanks EU <b>2.3.1.0</b></p>
-
-  <div class="facts">
-    <div class="fact"><div class="fact-k">Prix</div><div class="fact-v ok">Gratuit</div></div>
-    <div class="fact"><div class="fact-k">Publicité</div><div class="fact-v ok">Aucune</div></div>
-    <div class="fact"><div class="fact-k">Installation</div><div class="fact-v">Un fichier à déposer</div></div>
-    <div class="fact"><div class="fact-k">En combat</div><div class="fact-v ok">N'intervient pas</div></div>
-  </div>
+  <p class="meta"><b>Version 1.0.31</b> · 97 Ko · World of Tanks EU <b>2.3.1.0</b> · Gratuit, sans publicité</p>
 </header>
 
-<section id="quoi">
-  <h2>La fenêtre, en jeu</h2>
-  <p class="sub">Elle apparaît toute seule quand tu entres sur un écran de bataille de clan, et
-  disparaît quand tu en sors. Tu peux la déplacer, la replier, et le jeu reste cliquable derrière.</p>
+<section id="fenetre">
+  <h2>Voici exactement ce que tu installes</h2>
+  <p class="sub">Une fenêtre qui apparaît sur les écrans de bataille de clan, et nulle part ailleurs.
+  Déplaçable, repliable, et le jeu reste cliquable derrière. <code>F2</code> l'ouvre et la ferme.</p>
 
   <div class="duo">
-    <figure>
-      <div class="todo todo-sm">
-        <b>img/mod/fenetre-selection.png</b>
-        <span>La fenêtre, case décochée</span>
+    <figure class="shot-fig">
+      <!-- Remplacer par : <img class="shot" src="img/mod/fenetre-selection.png"
+           alt="La fenêtre Clan Plus en mode normal : liste des chars avec drapeau, tier, nom et type."> -->
+      <div class="todo">
+        <b>Capture à déposer</b>
+        <span>web/img/mod/fenetre-selection.png</span>
       </div>
-      <figcaption><b>Mode normal.</b> La liste de tes chars — drapeau, icône, tier, nom, type.
-      L'en-tête indique <em>« Click a tank to select it »</em> : un clic le sélectionne
-      dans le garage.</figcaption>
+      <figcaption><b>Choisir son char</b>
+      Tous tes chars dans une liste : drapeau de nation, icône, tier, nom, type. Un clic le
+      sélectionne dans le garage. L'en-tête indique
+      <em class="ui-en" lang="en">Click a tank to select it</em>.</figcaption>
     </figure>
-    <figure>
-      <div class="todo todo-sm">
-        <b>img/mod/fenetre-simulation.png</b>
-        <span>La fenêtre, case cochée, un char OUT</span>
+    <figure class="shot-fig">
+      <!-- Remplacer par : <img class="shot" src="img/mod/fenetre-simulation.png"
+           alt="La fenêtre en mode Clan Wars : une colonne STATUS et un char marqué OUT."> -->
+      <div class="todo">
+        <b>Capture à déposer</b>
+        <span>web/img/mod/fenetre-simulation.png</span>
       </div>
-      <figcaption><b>Mode Clan Wars.</b> Une colonne <em>STATUS</em> apparaît, le compteur
-      <em>« Out of commission »</em> s'affiche, et les chars indisponibles passent en
-      <span style="color:var(--bad)">OUT</span>.</figcaption>
+      <figcaption><b>Suivre sa formation</b>
+      Coche <em class="ui-en" lang="en">Clan Wars simulation mode</em> : une colonne
+      <em class="ui-en" lang="en">STATUS</em> apparaît, les chars indisponibles passent
+      <em class="ui-en" lang="en">OUT</em>, et un compteur donne le total. Comme en vraies
+      Manœuvres.</figcaption>
     </figure>
   </div>
-  <p class="cap-c">La fenêtre s'ouvre et se ferme avec <code>F2</code>. L'interface du mod est
-  en anglais, comme les modpacks auxquels il s'intègre.</p>
 
-  <div class="feats">
-    <div class="feat">
-      <div class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 14h8"/></svg></div>
-      <h3>Choisir son char sans chercher</h3>
-      <p>Tous tes chars dans une seule liste, avec le drapeau de la nation, l'icône du véhicule,
-      son tier et son type. Un clic le sélectionne vraiment dans le garage — plus besoin de le
-      chercher dans le carrousel. La rangée d'icônes filtre par classe : lourds, moyens, légers,
-      chasseurs, artillerie.</p>
+  <p style="margin-top:22px">Il enregistre aussi le déroulé de chaque bataille de clan : positions
+  seconde par seconde, tirs, dégâts, éliminations, et la direction visée par chaque char. C'est ce
+  qui alimente les statistiques, le Synergy Rating et le rejeu de la bataille sur le site.</p>
+</section>
+
+<!-- ⭐ La section de confiance passe AVANT l'installation. La version précédente la
+     plaçait à 58 % de la page, après deux demandes de téléchargement : on demandait
+     l'acte avant de lever l'objection qui bloque réellement ce public. -->
+<section id="confiance">
+  <h2>Ce qu'il fait, ce qu'il ne fait pas</h2>
+  <p class="sub">C'est la question qu'on se pose avant d'installer un mod, alors elle est traitée
+  ici, avant l'installation.</p>
+
+  <div class="verdict">
+    <div class="vcard yes">
+      <div class="vh"><span aria-hidden="true">✓</span> Ce qu'il fait</div>
+      <ul class="vlist">
+        <li><span class="mk" aria-hidden="true">·</span> Affiche une fenêtre sur les écrans de clan</li>
+        <li><span class="mk" aria-hidden="true">·</span> Sélectionne le char sur lequel tu cliques</li>
+        <li><span class="mk" aria-hidden="true">·</span> Relève les chiffres <strong>après</strong> la bataille</li>
+        <li><span class="mk" aria-hidden="true">·</span> Envoie ces chiffres au site pour les analyses de clan</li>
+      </ul>
     </div>
-    <div class="feat">
-      <div class="ic"><svg viewBox="0 0 24 24"><path d="M12 3l7 4v5c0 4.5-3 8-7 9-4-1-7-4.5-7-9V7z"/><path d="M9 12l2 2 4-4"/></svg></div>
-      <h3>Simuler les chars hors service</h3>
-      <p>Coche <em>« Clan Wars simulation mode »</em> et le mod suit l'état de ta formation :
-      après chaque combat, un char passe <span style="color:var(--bad)">OUT</span> s'il y a eu
-      défaite ou match nul, ou victoire avec le char détruit. Il n'est alors plus sélectionnable,
-      comme en vraies Manœuvres. Le compteur en haut donne le total, un clic sur un badge corrige
-      une erreur, et <em>REPAIR ALL</em> remet tout à neuf.</p>
-    </div>
-    <div class="feat">
-      <div class="ic"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg></div>
-      <h3>Enregistrer chaque bataille</h3>
-      <p>À la fin d'un combat de clan, le mod relève les chiffres de fin de partie : dégâts,
-      blocage, assistance, repérage, éliminations, survie, carte, résultat. C'est ce qui alimente
-      les statistiques et le Synergy Rating du site.</p>
-    </div>
-    <div class="feat">
-      <div class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M10 8l6 4-6 4z"/></svg></div>
-      <h3>Rejouer la bataille</h3>
-      <p>Le mod enregistre aussi le déroulé : positions seconde par seconde, tirs, dégâts,
-      éliminations, et la direction dans laquelle chaque char vise. Sur le site, la bataille se
-      rejoue sur la carte — et sert de support de débriefing.</p>
+    <div class="vcard no">
+      <div class="vh"><span aria-hidden="true">✕</span> Ce qu'il ne fait pas</div>
+      <ul class="vlist">
+        <li><span class="mk" aria-hidden="true">·</span> Rien ne s'affiche <strong>pendant</strong> le combat</li>
+        <li><span class="mk" aria-hidden="true">·</span> Aucun avantage : ni position ennemie, ni aide à la visée</li>
+        <li><span class="mk" aria-hidden="true">·</span> Aucune modification côté serveur Wargaming</li>
+        <li><span class="mk" aria-hidden="true">·</span> Aucun accès à ton mot de passe ni à tes identifiants</li>
+      </ul>
     </div>
   </div>
+
+  <div class="note good"><span class="lbl">La question du bannissement</span>
+  <p><strong>Non.</strong> Le mod ne lit que des informations déjà affichées par le jeu, uniquement
+  après la fin du combat, et ne communique pas avec les serveurs de Wargaming.</p>
+  <p>En toute honnêteté : Wargaming ne publie pas de liste blanche officielle de mods. Ce qu'on peut
+  garantir, c'est que le mod ne fait rien de ce qui est interdit. C'est exactement la liste
+  ci-dessus.</p></div>
+
+  <div class="note"><span class="lbl">Où vont les données</span>
+  <p>Les chiffres de fin de bataille partent vers le stockage commun de Clan Plus et servent aux
+  analyses de clan. Une copie reste sur ta machine dans <code>mods/configs/im.robert.clanui/</code>.
+  Si un envoi échoue, la bataille est mise en attente et repart plus tard. Rien n'est perdu.</p>
+  <p>Le détail de ce qui est conservé et où : <a href="/#legal-privacy">politique de
+  confidentialité</a>.</p></div>
+
+  <!-- ⚠️ À REMPLIR quand le dépôt public existera. Ne rien publier avant :
+       la page ne doit affirmer que ce qui est vrai au moment où elle est en ligne.
+       <div class="note"><span class="lbl">Code source</span>
+       <p>Le code du mod est public : <a href="URL">voir le dépôt</a>.</p></div> -->
 </section>
 
 <section id="install">
   <h2>Installer le mod</h2>
-  <p class="sub">Il n'y a rien à exécuter : un mod World of Tanks est un fichier qu'on dépose dans
-  un dossier. Compte deux minutes.</p>
+  <p class="sub">Un mod World of Tanks est un fichier qu'on dépose dans un dossier. Il n'y a rien à
+  exécuter. Deux minutes.</p>
+
+  <div class="route">
+    <div class="tag">La voie la plus simple</div>
+    <h3>Tu utilises le modpack d'Aslain ?</h3>
+    <p>Coche <strong>Clan Plus</strong> dans la liste au moment de l'installation, et tu n'as rien
+    d'autre à faire — ni téléchargement, ni dossier à trouver. Si tu n'as jamais installé de mod à la main, prends celle-ci. <strong>Ne le dépose pas aussi manuellement</strong> : tu te
+    retrouverais avec deux copies.</p>
+  </div>
+
+  <p class="alt-h">Sinon, à la main</p>
 
   <div class="step">
     <div class="step-n">1</div>
     <div class="step-b">
       <h3>Télécharger le fichier</h3>
-      <p>Récupère <code>clanplus_1.0.31.wotmod</code> — 97 Ko. Il part dans ton dossier
+      <p>Récupère <code>clanplus_1.0.31.wotmod</code>, 97 Ko. Il part dans ton dossier
       <em>Téléchargements</em> comme n'importe quel fichier.</p>
-      <p><a class="btn btn-2" style="font-size:14px;padding:9px 18px" href="download/clanplus_1.0.31.wotmod" download>Télécharger</a></p>
+      <p style="margin-top:12px"><a class="btn btn-2" style="font-size:14px;padding:10px 20px;min-height:44px" href="download/clanplus_1.0.31.wotmod" download>Télécharger</a></p>
       <div class="note warn"><span class="lbl">Si le navigateur bloque</span>
       <p>Certains navigateurs se méfient d'une extension qu'ils ne connaissent pas. Choisis
-      <strong>« Conserver »</strong> ou <strong>« Conserver quand même »</strong>. Le fichier n'est
-      pas un programme : c'est une archive que seul World of Tanks sait lire.</p></div>
+      <strong>« Conserver »</strong>. Ce n'est pas un programme : c'est une archive que seul World
+      of Tanks sait lire, et son contenu est décrit plus haut.</p></div>
     </div>
   </div>
 
@@ -288,34 +386,24 @@
     <div class="step-n">2</div>
     <div class="step-b">
       <h3>Ouvrir le dossier du jeu</h3>
-      <p>Le plus simple : dans le <strong>Wargaming Game Center</strong>, clique sur
-      <strong>World of Tanks</strong>, puis sur la roue dentée, puis
-      <strong>« Afficher dans l'explorateur »</strong>. Le dossier s'ouvre.</p>
-      <p>Sinon, il se trouve en général ici :</p>
-      <p><code>C:\Games\World_of_Tanks_EU\</code></p>
+      <p>Dans le <strong>Wargaming Game Center</strong> : clique sur World of Tanks, puis sur la
+      roue dentée, puis <strong>« Afficher dans l'explorateur »</strong>. Le dossier s'ouvre.</p>
+      <p>Sinon il se trouve en général dans <code>C:\Games\World_of_Tanks_EU\</code>.</p>
 
-      <svg class="diagram" viewBox="0 0 620 232" role="img"
-           aria-label="Arborescence du dossier du jeu : le fichier du mod se dépose dans mods, puis 2.3.1.0.">
-        <rect x="0" y="0" width="620" height="232" fill="none"/>
-        <text x="22" y="34" fill="#bdb9af" font-size="14">World_of_Tanks_EU/</text>
-        <text x="46" y="60" fill="#87847b" font-size="14">├── res/</text>
-        <text x="46" y="86" fill="#87847b" font-size="14">├── res_mods/</text>
-        <text x="46" y="112" fill="#d8b566" font-size="14">├── mods/</text>
-        <text x="82" y="138" fill="#d8b566" font-size="14">│   └── 2.3.1.0/</text>
-        <rect x="112" y="150" width="352" height="30" rx="6" fill="rgba(216,181,102,.13)" stroke="#d8b566"/>
-        <text x="124" y="170" fill="#ecd190" font-size="14">└── clanplus_1.0.31.wotmod</text>
-        <text x="46" y="206" fill="#87847b" font-size="14">└── WorldOfTanks.exe</text>
-        <path d="M492 165 L474 165" stroke="#d8b566" stroke-width="1.6" marker-end="url(#fa)"/>
-        <text x="500" y="161" fill="#d8b566" font-size="12.5" font-family="system-ui">le fichier</text>
-        <text x="500" y="176" fill="#d8b566" font-size="12.5" font-family="system-ui">va ici</text>
-        <defs><marker id="fa" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
-          <path d="M0 0 L8 4 L0 8 z" fill="#d8b566"/></marker></defs>
-      </svg>
+      <div class="tree" role="img" aria-label="Dans le dossier du jeu, le fichier du mod se dépose dans mods, puis dans le dossier 2.3.1.0.">
+World_of_Tanks_EU\<br>
+&nbsp;&nbsp;&nbsp;res\<br>
+&nbsp;&nbsp;&nbsp;res_mods\<br>
+&nbsp;&nbsp;&nbsp;<span class="on">mods\</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="on">2.3.1.0\</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">clanplus_1.0.31.wotmod</span> <span class="cm">← ici</span><br>
+&nbsp;&nbsp;&nbsp;WorldOfTanks.exe
+      </div>
 
       <div class="note warn"><span class="lbl">L'erreur la plus fréquente</span>
-      <p>Le dossier s'appelle <code>mods</code>, <strong>pas</strong> <code>res_mods</code>. Les deux
-      existent côte à côte et ne servent pas à la même chose : un fichier <code>.wotmod</code> déposé
-      dans <code>res_mods</code> ne sera jamais chargé.</p></div>
+      <p>Le dossier s'appelle <code>mods</code>, <strong>pas</strong> <code>res_mods</code>. Les
+      deux existent côte à côte et ne servent pas à la même chose : un fichier déposé dans
+      <code>res_mods</code> ne sera jamais chargé.</p></div>
     </div>
   </div>
 
@@ -323,33 +411,13 @@
     <div class="step-n">3</div>
     <div class="step-b">
       <h3>Déposer le fichier</h3>
-      <p>Dans <code>mods</code>, tu trouves un dossier portant le numéro de version du jeu, par
-      exemple <code>2.3.1.0</code>. Ouvre-le et glisse le fichier dedans. C'est tout — rien à
-      décompresser, rien à renommer.</p>
-
-      <svg class="diagram" viewBox="0 0 620 180" role="img"
-           aria-label="Le fichier du mod est glissé depuis le dossier Téléchargements vers le dossier mods barre 2.3.1.0 du jeu.">
-        <rect x="26" y="42" width="200" height="96" rx="10" fill="#201f1b" stroke="rgba(255,255,255,.16)"/>
-        <text x="126" y="76" fill="#87847b" font-size="12" text-anchor="middle" font-family="system-ui">Téléchargements</text>
-        <rect x="56" y="88" width="140" height="30" rx="6" fill="#1a1917" stroke="#d8b566"/>
-        <text x="126" y="107" fill="#ecd190" font-size="11.5" text-anchor="middle">clanplus_1.0.31</text>
-
-        <path d="M242 90 C282 90 292 90 322 90" stroke="#d8b566" stroke-width="2"
-              stroke-dasharray="5 4" fill="none" marker-end="url(#fb)"/>
-        <text x="282" y="78" fill="#d8b566" font-size="12" text-anchor="middle" font-family="system-ui">glisser</text>
-
-        <rect x="338" y="42" width="248" height="96" rx="10" fill="#201f1b" stroke="#d8b566"/>
-        <text x="462" y="76" fill="#d8b566" font-size="12" text-anchor="middle" font-family="system-ui">World_of_Tanks_EU / mods / 2.3.1.0</text>
-        <rect x="368" y="88" width="188" height="30" rx="6" fill="rgba(216,181,102,.13)" stroke="rgba(216,181,102,.45)"/>
-        <text x="462" y="107" fill="#ecd190" font-size="11.5" text-anchor="middle">clanplus_1.0.31.wotmod</text>
-        <defs><marker id="fb" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
-          <path d="M0 0 L9 4.5 L0 9 z" fill="#d8b566"/></marker></defs>
-      </svg>
-
-      <div class="note"><span class="lbl">Tu utilises le modpack d'Aslain ?</span>
-      <p>Clan Plus y est proposé : coche-le dans la liste au moment de l'installation, et tu n'as
-      rien d'autre à faire. Ne le déposes pas aussi à la main — tu te retrouverais avec deux copies
-      et le mod se chargerait deux fois.</p></div>
+      <p>Dans <code>mods</code>, ouvre le dossier qui porte le numéro de version du jeu — par
+      exemple <code>2.3.1.0</code> — et glisse le fichier dedans. Rien à décompresser, rien à
+      renommer.</p>
+      <div class="note warn"><span class="lbl">Le dossier n'existe pas ?</span>
+      <p>Sur une installation neuve, <code>mods</code> peut être vide. Crée simplement un dossier
+      portant <strong>exactement</strong> le numéro de version affiché par le Game Center, par
+      exemple <code>2.3.1.0</code>, et dépose le fichier dedans.</p></div>
     </div>
   </div>
 
@@ -358,47 +426,19 @@
     <div class="step-b">
       <h3>Lancer le jeu et vérifier</h3>
       <p>Démarre World of Tanks et va sur un écran de <strong>Bastion</strong>, de
-      <strong>Manœuvres</strong> ou d'<strong>Incursion</strong>. La fenêtre apparaît d'elle-même.
-      Si tu ne la vois pas, appuie sur <code>F2</code>.</p>
+      <strong>Manœuvres</strong> ou d'<strong>Incursion</strong>. Elle n'apparaît nulle part ailleurs, c'est voulu. Si tu ne la vois pas, appuie sur <code>F2</code>.</p>
       <div class="note good"><span class="lbl">Comment savoir que ça marche</span>
-      <p>La fenêtre s'affiche avec la liste de tes chars. Joue une bataille de clan : quelques
-      secondes après la fin du combat, elle est enregistrée. Connecte-toi sur
-      <a href="/">clanplus.eu</a> avec ton compte World of Tanks — elle doit apparaître dans
+      <p>Tu dois voir la fenêtre montrée en haut de cette page, avec la liste de tes chars. Joue une
+      bataille de clan : quelques secondes après la fin, elle est enregistrée. Connecte-toi sur
+      <a href="/">clanplus.eu</a> avec ton compte World of Tanks — elle apparaît dans
       « Batailles ».</p></div>
     </div>
   </div>
 
-  <h3 style="margin-top:30px">À chaque mise à jour de World of Tanks</h3>
+  <h3 style="margin-top:32px">À chaque mise à jour de World of Tanks</h3>
   <p>Le jeu crée un nouveau dossier de version dans <code>mods</code> et les mods de l'ancien ne
-  sont plus chargés. Recopie simplement le fichier dans le nouveau dossier. Rien d'autre à faire,
-  et rien n'est perdu : tes réglages et ton historique sont ailleurs, dans
-  <code>mods/configs/im.robert.clanui/</code>.</p>
-</section>
-
-<section id="donnees">
-  <h2>Ce qu'il fait — et ce qu'il ne fait pas</h2>
-  <p class="sub">Un mod a accès à beaucoup de choses. Voici exactement où s'arrête celui-ci.</p>
-  <div class="tw"><table>
-    <thead><tr><th>&nbsp;</th><th>Le mod</th></tr></thead>
-    <tbody>
-      <tr><td>Affiche une fenêtre sur les écrans de clan</td><td class="y">oui</td></tr>
-      <tr><td>Sélectionne un char à ta place quand tu cliques</td><td class="y">oui</td></tr>
-      <tr><td>Relève les chiffres <em>après</em> la bataille</td><td class="y">oui</td></tr>
-      <tr><td>Envoie ces chiffres au site pour les analyses de clan</td><td class="y">oui</td></tr>
-      <tr><td>Affiche quoi que ce soit <em>pendant</em> le combat</td><td class="n">non</td></tr>
-      <tr><td>Donne un avantage — position ennemie, aide à la visée…</td><td class="n">non</td></tr>
-      <tr><td>Modifie quoi que ce soit côté serveur Wargaming</td><td class="n">non</td></tr>
-      <tr><td>Lit ton mot de passe ou tes identifiants</td><td class="n">non</td></tr>
-    </tbody>
-  </table></div>
-  <p>Le mod ne lit que des informations déjà affichées par le jeu, et uniquement après la fin du
-  combat. Tout le code est protégé : en cas de problème il se désactive au lieu de faire planter
-  la partie.</p>
-  <div class="note"><span class="lbl">Où vont les données</span>
-  <p>Les chiffres de fin de bataille partent vers le stockage commun de Clan Plus et servent aux
-  analyses de clan. Une copie reste sur ta machine dans
-  <code>mods/configs/im.robert.clanui/</code>. Si un envoi échoue — connexion coupée, site
-  indisponible — la bataille est mise en attente et repart plus tard : rien n'est perdu.</p></div>
+  sont plus chargés. Recopie le fichier dans le nouveau dossier. C'est tout. Tes réglages et ton
+  historique sont ailleurs, dans <code>mods/configs/im.robert.clanui/</code>, et ne bougent pas.</p>
 </section>
 
 <section id="versions">
@@ -408,78 +448,53 @@
     <div class="rel-i now">
       <div class="rel-v">1.0.31 — version actuelle</div>
       <div class="rel-t">On voit où chaque char regarde</div>
-      <p class="rel-d">Le mod enregistre désormais la direction visée par chaque char — orientation
-      de la caisse plus angle de la tourelle. Sur le replay, on ne voit plus seulement où les chars
-      sont, mais ce qu'ils surveillent. Un char qui tient un angle se distingue enfin d'un char qui
-      traverse.</p>
+      <p class="rel-d">Le mod enregistre la direction visée par chaque char — orientation de la caisse, plus angle de la tourelle. Sur le rejeu, un char qui tient un angle se distingue enfin d'un char qui traverse.</p>
     </div>
     <div class="rel-i">
       <div class="rel-v">1.0.30</div>
-      <div class="rel-t">Réglages en jeu et envois qui ne se perdent plus</div>
-      <p class="rel-d">Un panneau de réglages accessible depuis le garage (via ModsSettingsAPI),
-      avec une section dédiée aux Manœuvres. Et surtout : quand un envoi échoue, la bataille est
-      mise en file d'attente au lieu d'être perdue, puis renvoyée automatiquement. L'assistance
-      par étourdissement d'artillerie est aussi enregistrée.</p>
-    </div>
-    <div class="rel-i">
-      <div class="rel-v">1.0.29</div>
-      <div class="rel-t">Les vrais drapeaux de base</div>
-      <p class="rel-d">Les bases ne sont plus des cercles mais les drapeaux d'origine du jeu, y
-      compris la base neutre des batailles en 7 contre 7, dont la position n'était pas enregistrée
-      jusque-là.</p>
-    </div>
-    <div class="rel-i">
-      <div class="rel-v">1.0.28</div>
-      <div class="rel-t">Les icônes de classe sur la carte</div>
-      <p class="rel-d">Chaque char porte le logo de sa classe dans une pastille aux couleurs de son
-      équipe. Au survol : le pseudo et le nom du char.</p>
-    </div>
-    <div class="rel-i">
-      <div class="rel-v">1.0.27</div>
-      <div class="rel-t">Le replay devient une analyse tactique</div>
-      <p class="rel-d">Les éliminations, les dégâts coup par coup avec leur auteur, et les tirs sont
-      enregistrés. La carte passe à 700 pixels, avec la trace des vingt dernières secondes et le fil
-      des éliminations.</p>
-    </div>
-    <div class="rel-i">
-      <div class="rel-v">1.0.26</div>
-      <div class="rel-t">Le raccourci F2</div>
-      <p class="rel-d">La fenêtre se fermait parfois sans revenir. Elle s'ouvre et se ferme
-      maintenant avec <code>F2</code>, touche modifiable dans les réglages.</p>
+      <div class="rel-t">Les envois ne se perdent plus</div>
+      <p class="rel-d">Quand un envoi échoue, la bataille est mise en file d'attente au lieu d'être
+      perdue, puis renvoyée automatiquement. Ajout d'un panneau de réglages accessible depuis le
+      garage.</p>
     </div>
   </div>
+  <details style="margin-top:6px">
+    <summary>Les versions précédentes</summary>
+    <p><strong>1.0.29</strong> — Les bases ne sont plus des cercles mais les drapeaux d'origine du
+    jeu, y compris la base neutre des batailles en 7 contre 7.</p>
+    <p><strong>1.0.28</strong> — Chaque char porte le logo de sa classe sur la carte, aux couleurs
+    de son équipe.</p>
+    <p><strong>1.0.27</strong> — Le rejeu devient une analyse tactique : éliminations, dégâts coup
+    par coup avec leur auteur, et tirs enregistrés.</p>
+    <p><strong>1.0.26</strong> — La fenêtre s'ouvre et se ferme avec <code>F2</code>, touche
+    modifiable dans les réglages.</p>
+  </details>
 </section>
 
 <section id="aide">
   <h2>Ça ne marche pas</h2>
 
   <details><summary>La fenêtre n'apparaît pas</summary>
-    <p>Dans l'ordre : appuie sur <code>F2</code> — elle a peut-être simplement été fermée.
-    Vérifie ensuite que tu es bien sur un écran de <strong>Bastion, Manœuvres ou Incursion</strong> :
-    elle ne s'affiche nulle part ailleurs, c'est voulu. Enfin, contrôle que le fichier est dans
-    <code>mods/</code> et non <code>res_mods/</code>, et que le dossier de version correspond bien à
-    la version du jeu que tu lances.</p></details>
+    <p>Dans l'ordre : appuie sur <code>F2</code>, elle a peut-être simplement été fermée. Vérifie
+    que tu es bien sur un écran de <strong>Bastion, Manœuvres ou Incursion</strong> — elle ne
+    s'affiche nulle part ailleurs. Enfin, contrôle que le fichier est dans <code>mods</code> et non
+    <code>res_mods</code>, et que le dossier de version correspond à la version du jeu que tu
+    lances.</p></details>
 
   <details><summary>Le jeu vient d'être mis à jour et le mod a disparu</summary>
     <p>Normal : chaque version du jeu a son propre dossier dans <code>mods</code>. Recopie le
-    fichier dans le nouveau. Tes réglages et ton historique sont conservés, ils sont stockés
-    ailleurs.</p></details>
+    fichier dans le nouveau. Tes réglages et ton historique sont conservés.</p></details>
 
   <details><summary>Mes batailles n'apparaissent pas sur le site</summary>
-    <p>Seules les <strong>batailles de clan</strong> sont enregistrées — les batailles aléatoires ne
-    comptent jamais. Vérifie aussi que tu es connecté sur le site avec le compte World of Tanks
+    <p>Seules les <strong>batailles de clan</strong> sont enregistrées — les batailles aléatoires ne comptent jamais. Vérifie aussi que tu es connecté avec le compte World of Tanks
     <em>avec lequel tu as joué</em>. Si un envoi a échoué, la bataille est en attente et repartira
     au prochain lancement.</p></details>
 
-  <details><summary>J'ai plusieurs mods installés, y a-t-il un risque de conflit ?</summary>
+  <details><summary>J'ai d'autres mods installés, y a-t-il un risque de conflit ?</summary>
     <p>Le mod est autonome et n'écrase aucun fichier du jeu. Il utilise ModsSettingsAPI et ModsList
-    s'ils sont présents, pour proposer ses réglages depuis le garage, mais fonctionne très bien
-    sans. En cas d'erreur, il se désactive silencieusement plutôt que de faire planter la partie.</p></details>
-
-  <details><summary>Est-ce que je risque un bannissement ?</summary>
-    <p>Le mod n'affiche rien pendant le combat et ne donne aucun avantage : il ne lit que des
-    informations de fin de partie, déjà visibles à l'écran des résultats. Il ne communique pas avec
-    les serveurs de Wargaming et ne modifie aucun fichier du jeu.</p></details>
+    s'ils sont présents, mais fonctionne sans. En cas d'erreur il se désactive silencieusement
+    plutôt que de faire planter la partie. Si un autre mod utilise déjà <code>F2</code>, tu peux
+    changer la touche dans les réglages.</p></details>
 
   <details><summary>Comment le désinstaller ?</summary>
     <p>Supprime le fichier <code>.wotmod</code> du dossier <code>mods/&lt;version&gt;/</code>. Pour
@@ -487,20 +502,25 @@
     <code>mods/configs/im.robert.clanui/</code>.</p></details>
 </section>
 
-<section>
-  <div class="note good" style="text-align:center;border-left:0;border:1px solid rgba(216,181,102,.35);border-radius:var(--radius);padding:26px">
-    <h2 style="margin-bottom:6px">Prêt ?</h2>
-    <p style="color:var(--ink-2);max-width:460px;margin:0 auto 18px">Un fichier, un dossier, deux
-    minutes. Et chaque bataille de clan que tu joues nourrit les analyses de tout le clan.</p>
-    <a class="btn btn-1" href="download/clanplus_1.0.31.wotmod" download>Télécharger la version 1.0.31</a>
-  </div>
-</section>
+<div class="final">
+  <h2>Prêt ?</h2>
+  <p>Un fichier, un dossier, deux minutes. Et chaque bataille de clan que tu joues nourrit les
+  analyses de tout le clan.</p>
+  <a class="btn btn-1" href="download/clanplus_1.0.31.wotmod" download>Télécharger la version 1.0.31</a>
+</div>
 
 <footer>
-  <p>Clan Plus — outils de clan pour World of Tanks EU ·
-  <a href="/">Site</a> · <a href="aide-editeur.html">Manuel de l'éditeur</a> ·
-  <a href="aide-sr.html">Le SR expliqué</a> · <a href="soutenir.html">Soutenir</a></p>
-  <p>Clan Plus n'est pas affilié à Wargaming. World of Tanks est une marque de Wargaming.net.</p>
+  <nav class="fl" aria-label="Liens du site">
+    <a href="/">Site</a>
+    <a href="aide-editeur.html">Manuel de l'éditeur</a>
+    <a href="aide-sr.html">Le SR expliqué</a>
+    <a href="soutenir.html">Soutenir</a>
+    <a href="/#legal-privacy">Confidentialité</a>
+    <a href="/#legal-mentions">Mentions légales</a>
+  </nav>
+  <p>Clan Plus est un projet communautaire indépendant, gratuit et sans publicité, développé par un
+  joueur de World of Tanks EU. <strong>Non affilié à Wargaming.</strong> World of Tanks est une
+  marque de Wargaming.net.</p>
 </footer>
 
 </div>
