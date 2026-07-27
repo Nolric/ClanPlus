@@ -870,14 +870,8 @@
   .sr-name{font-size:15px;font-weight:700}
   .sr-trend{font-size:12px;margin-top:6px;font-weight:600}
   .sr-streak{font-size:12px;margin-top:3px;color:var(--ink-2)}
-  .sr-break{flex:1;min-width:250px;display:flex;flex-direction:column;gap:6px}
-  .srb{display:flex;align-items:center;gap:10px;font-size:12px}
-  .srb-l{width:72px;flex:0 0 auto;color:var(--ink-2)}
-  .srb-track{flex:1;height:8px;border-radius:5px;background:var(--surface-2);position:relative;overflow:hidden}
-  .srb-track::before{content:"";position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--axis)}
-  .srb-fill{position:absolute;left:0;top:0;bottom:0;border-radius:5px}
-  .srb-fill.up{background:var(--good)} .srb-fill.down{background:var(--accent)}
-  .srb-v{width:44px;text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+  /* (.sr-break / .srb* retirés avec l'ancienne décomposition en pourcentages :
+     le radar et la réglette portent la même information, en plus lisible.) */
   .plan-goals{margin-top:12px;border-top:1px solid var(--border);padding-top:10px}
   .plan-goals .pg-h{font-weight:700;font-size:13px;margin-bottom:4px}
   /* ================= Dashboard "Mon clan" — salle de commandement ================= */
@@ -1395,8 +1389,11 @@
   .wip-msg h3{margin:0 0 8px;font-size:19px;font-weight:800;color:var(--ink)}
   .wip-msg p{margin:0;color:var(--ink-2);font-size:14.5px;line-height:1.6}
   /* Décomposition du SR : trois barres signées + marge d'erreur */
-  .sr-decomp{margin:14px 0 4px;padding:12px 14px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm)}
-  .srd-head{display:flex;align-items:center;gap:8px;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:10px}
+  .sr-decomp,.sr-radar,.sr-curve{margin:0;padding:18px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-sm)}
+  /* Même registre que .card h2 : ces blocs sont désormais des cartes à part entière,
+     leurs titres doivent se lire comme ceux des cartes voisines. */
+  .srd-head{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;font-size:13px;
+            letter-spacing:.2px;color:var(--ink);font-weight:700;margin-bottom:16px}
   .srd-tag{font-size:10.5px;background:var(--accent-soft);color:var(--accent);border-radius:6px;padding:1px 7px;text-transform:none;letter-spacing:0}
   .srd-marge{margin-left:auto;text-transform:none;letter-spacing:0;font-weight:600}
   .srd-row{display:grid;grid-template-columns:96px 1fr 54px;align-items:center;gap:10px;margin:5px 0}
@@ -1406,35 +1403,81 @@
   .srd-fill.neg{background:var(--dv-minus)}
   .srd-val{font-size:13px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
   /* ---- Palette de données de « Ma progression » ----
-     Échelle DIVERGENTE (au-dessus / en dessous de l'attendu), pas catégorielle.
-     Validée par script : séparation daltonisme ΔE 23,0 en protanopie et 27,1 en
-     tritanopie, contraste ≥ 3:1 sur fond sombre. Le couple vert/rouge a été
-     écarté : le vert était à ΔE 1,3 de l'or de la page en protanopie — un
-     daltonien ne distinguait pas une barre positive de l'accent du site.
-     Le signe (+/−) reste affiché : la couleur n'est jamais seule à porter le sens. */
+     Échelle DIVERGENTE : au-dessus / en dessous de l'attendu.
+     Vert/rouge assumé — c'est la convention du jeu vidéo, et elle prime ici sur
+     ma préférence. ⚠️ Contrôle automatique : le vert est à ΔE 1,3 de l'or du site
+     en protanopie, donc INDISTINGUABLE pour un daltonien. C'est pourquoi la
+     couleur n'est JAMAIS seule à porter le sens : signe +/− sur les barres,
+     ▲/▼ sur les axes du radar. Ne pas retirer ces marqueurs. */
   :root{
-    --dv-plus:#4f92d6;   /* au-dessus de l'attendu */
-    --dv-minus:#d2792c;  /* en dessous */
-    --dv-plus-soft:rgba(79,146,214,.16);
-    --dv-minus-soft:rgba(210,121,44,.16);
+    --dv-plus:var(--good);   /* au-dessus de l attendu */
+    --dv-minus:var(--bad);   /* en dessous */
+    --dv-plus-soft:rgba(46,194,110,.16);
+    --dv-minus-soft:rgba(236,106,106,.16);
   }
-  /* Grille de la fiche : diagnostic à deux colonnes, évolution pleine largeur */
-  .prog-grid{display:grid;grid-template-columns:minmax(280px,360px) 1fr;gap:14px;margin:14px 0 0;align-items:stretch}
-  @media (max-width:820px){ .prog-grid{grid-template-columns:1fr} }
-  .prog-grid > *{margin:0 !important}
-  /* Sous le seuil de batailles, le radar ne s'affiche pas : la grille se replie
-     au lieu de laisser les barres coincées dans une colonne étroite. */
-  .prog-grid:has(> :only-child){grid-template-columns:1fr}
-  /* En colonne étroite, le radar empile son graphique et sa lecture. */
-  .prog-grid .srr-body{grid-template-columns:1fr;gap:10px}
-  .prog-grid .srr-body svg{margin:0 auto;display:block}
+  /* ---- Structure de « Ma progression » ----
+     Trois zones, dans l'ordre où on lit une fiche : où j'en suis, quoi travailler,
+     est-ce que je progresse. Le détail chiffré vient après, replié. */
+  .pz-title{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);
+            font-weight:800;margin:26px 0 10px}
+  /* Réglette des paliers, dans le bloc du haut : situe le chiffre au lieu de le
+     laisser seul. Les segments sont séparés par 2 px de fond, pas collés. */
+  .sr-scale{flex:1 1 320px;min-width:260px;max-width:560px}
+  .srs-track{position:relative;height:10px;border-radius:6px;background:var(--plane);overflow:hidden}
+  .srs-seg{position:absolute;top:0;bottom:0;opacity:.5;
+           border-right:2px solid var(--card);box-sizing:border-box}
+  .srs-seg:last-of-type{border-right:0}
+  .srs-band{position:absolute;top:0;bottom:0;background:rgba(255,255,255,.30)}
+  .srs-mark{position:absolute;top:-3px;bottom:-3px;width:3px;margin-left:-1.5px;
+            background:var(--ink);border-radius:2px;box-shadow:0 0 0 2px var(--card)}
+  .srs-ticks{position:relative;height:15px;margin-top:5px}
+  .srs-tick{position:absolute;top:0;transform:translateX(-50%);font-size:10.5px;color:var(--muted);
+            font-variant-numeric:tabular-nums;white-space:nowrap}
+  .srs-note{font-size:12px;color:var(--muted);margin-top:2px}
+  .srs-note b{color:var(--ink-2);font-variant-numeric:tabular-nums}
+  /* ⚠️ Les colonnes se règlent sur la largeur DISPONIBLE, pas sur celle de la
+     fenêtre : la barre latérale mange ~210 px, donc une requête média se
+     tromperait de presque une colonne. D'où le conteneur sur la vue elle-même. */
+  #viewPlayer{container-type:inline-size}
+  /* Diagnostic : le radar (le « où ») et le plan (le « quoi faire ») se lisent ensemble */
+  .pz-diag{display:grid;grid-template-columns:minmax(320px,1fr) minmax(300px,.85fr);gap:14px;align-items:start}
+  .pz-diag > *{margin:0 !important;container-type:inline-size}
+  .pz-stack{display:flex;flex-direction:column;gap:14px}
+  .pz-stack > *{margin:0 !important}
+  #pPlanCard{margin:0 !important}
+  /* Zone 3 : les deux courbes se lisent en parallèle */
+  .pz-evo{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start;margin-bottom:16px}
+  .pz-evo > *{margin:0 !important}
+  /* Seuil de la zone 2 : la colonne de gauche vaut 54 % de la place, et le radar
+     ne tient en deux colonnes qu'à partir de 560 px — d'où 560/0,54 ≈ 1050. En
+     dessous, une seule colonne vaut mieux : le radar y retrouve sa largeur au
+     lieu de s'étirer en hauteur à côté d'un plan bien plus court.
+     Zone 3 : 2 × 460 + 14, pour que la courbe ne passe pas sous sa taille de dessin. */
+  @container (max-width:1050px){ .pz-diag{grid-template-columns:1fr} }
+  @container (max-width:940px){ .pz-evo{grid-template-columns:1fr} }
+  /* Bloc repliable : les tableaux ne s'interposent plus entre le joueur et son diagnostic */
+  .pz-more{margin:26px 0 16px;border-top:1px solid var(--border);padding-top:6px}
+  .pz-more > summary{cursor:pointer;list-style:none;padding:12px 2px;display:flex;
+    align-items:baseline;gap:10px;flex-wrap:wrap;user-select:none}
+  .pz-more > summary::-webkit-details-marker{display:none}
+  .pz-more > summary::before{content:"▸";color:var(--accent);font-size:13px;transition:transform .15s}
+  .pz-more[open] > summary::before{transform:rotate(90deg)}
+  .pz-sum{font-weight:800;font-size:15px;color:var(--ink)}
+  .pz-hint{font-size:12.5px;color:var(--muted)}
+  .pz-more > summary:hover .pz-sum{color:var(--accent)}
+  .pz-more[open]{padding-bottom:4px}
+  .pz-more > summary + *{margin-top:14px}
   /* Radar des aptitudes : la toile dorée est le niveau attendu du rôle */
-  .sr-radar{margin:14px 0 4px;padding:12px 14px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm)}
   .srr-body{display:grid;grid-template-columns:300px 1fr;gap:18px;align-items:center}
-  @media (max-width:640px){ .srr-body{grid-template-columns:1fr} }
+  /* Le radar occupe une colonne, pas la pleine largeur : il replie son texte sous
+     le graphique quand la colonne devient trop étroite pour les deux. Requête de
+     CONTENEUR, pas de fenêtre — c'est la largeur de la colonne qui décide.
+     Seuil : 300 (svg) + 18 (gouttière) + ~166 (texte) + 36 (marge interne).
+     ⚠️ Doit rester APRÈS la règle .srr-body ci-dessus : même spécificité, c'est
+     l'ordre qui tranche. */
+  @container (max-width:520px){ .srr-body{grid-template-columns:1fr;gap:12px} }
   .srr-txt p{margin:0 0 9px;font-size:14px;color:var(--ink-2)}
   .srr-hint{font-size:12.5px;color:var(--muted)}
-  .sr-curve{margin:14px 0 4px;padding:12px 14px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm)}
   .srd-legend{margin-top:6px;font-size:12px;color:var(--muted)}
   .sr-note{margin:12px 0 2px;padding:11px 13px;background:var(--surface-2);border:1px solid var(--border);
     border-left:3px solid var(--accent);border-radius:0 var(--radius-sm) var(--radius-sm) 0;font-size:13.5px;color:var(--ink-2)}
@@ -2070,28 +2113,54 @@
   <div id="viewPlayer" class="hidden">
     <p class="sec-desc" style="margin-top:2px">Le <b>bilan personnel</b> d'un joueur en Bastion, calculé sur les batailles enregistrées par le mod. Change de joueur avec le menu <b>« Joueur »</b> en haut à droite.</p>
     <div id="pHead"></div>
+
+    <!-- ═══ 1. OÙ J'EN SUIS ═══ le chiffre, son palier, sa marge -->
     <div id="pSR"></div>
-    <section class="kpis" id="pKpis"></section>
-    <div class="grid2">
-      <div class="card"><h2>Par classe de char <span class="hint">dégâts moy · % vict.</span></h2><div id="pByClass"></div></div>
-      <div class="card"><h2>Top chars joués <span class="hint">les plus joués</span></h2><div id="pByTank"></div></div>
+
+    <!-- ═══ 2. QUOI TRAVAILLER ═══ le diagnostic et le plan, côte à côte.
+         C'est la partie utile : elle remonte AVANT les tableaux, pas après. -->
+    <p class="pz-title">Quoi travailler</p>
+    <div class="pz-diag">
+      <div id="pDiag"></div>
+      <div class="pz-stack">
+        <div class="card plan" id="pPlanCard"><h2>🎯 Plan de progression</h2><div id="pPlan"></div></div>
+        <div id="pDecomp"></div>
+      </div>
     </div>
-    <div class="grid2">
-      <div class="card"><h2>Par tier <span class="hint">dégâts moy · % vict.</span></h2><div id="pByTier"></div></div>
-      <div class="card"><h2>Par carte <span class="hint">dégâts moy · % vict.</span></h2><div id="pByMap"></div></div>
+
+    <!-- ═══ 3. EST-CE QUE JE PROGRESSE ═══ deux lectures de la même question,
+         côte à côte : le SR lissé, et les dégâts bruts qui en sont une composante. -->
+    <p class="pz-title">Est-ce que je progresse</p>
+    <div class="pz-evo">
+      <div id="pEvo"></div>
+      <div class="card">
+        <h2>Dégâts par bataille <span class="hint">valeur brute, sans lissage</span></h2>
+        <svg class="trend" id="pTrend" preserveAspectRatio="none"></svg>
+      </div>
     </div>
-    <div class="grid2">
-      <div class="card"><h2>Clans adverses <span class="hint">🔴 dangereux · 🟢 facile</span></h2><div id="pEnemies"></div></div>
-      <div class="card"><h2>Détails de combat <span class="hint">tes moyennes</span></h2><div id="pHidden"></div></div>
-    </div>
-    <div class="card" style="margin-bottom:16px">
-      <h2>Toi vs le clan <span class="hint">moyenne · meilleur membre</span></h2><div id="pCompare"></div>
-    </div>
-    <div class="card" style="margin-bottom:16px">
-      <h2>Évolution — dégâts par bataille</h2>
-      <svg class="trend" id="pTrend" preserveAspectRatio="none"></svg>
-    </div>
-    <div class="card plan"><h2>🎯 Plan de progression</h2><div id="pPlan"></div></div>
+
+    <!-- ═══ 4. LE DÉTAIL ═══ données de consultation, repliées par défaut : elles
+         ne doivent pas s'interposer entre le joueur et son diagnostic. -->
+    <details class="pz-more">
+      <summary><span class="pz-sum">Toutes mes statistiques</span>
+        <span class="pz-hint">chars, cartes, adversaires, détails de combat</span></summary>
+      <section class="kpis" id="pKpis"></section>
+      <div class="card" style="margin-bottom:16px">
+        <h2>Toi vs le clan <span class="hint">moyenne · meilleur membre</span></h2><div id="pCompare"></div>
+      </div>
+      <div class="grid2">
+        <div class="card"><h2>Top chars joués <span class="hint">les plus joués</span></h2><div id="pByTank"></div></div>
+        <div class="card"><h2>Par carte <span class="hint">dégâts moy · % vict.</span></h2><div id="pByMap"></div></div>
+      </div>
+      <div class="grid2">
+        <div class="card"><h2>Clans adverses <span class="hint">🔴 dangereux · 🟢 facile</span></h2><div id="pEnemies"></div></div>
+        <div class="card"><h2>Détails de combat <span class="hint">tes moyennes</span></h2><div id="pHidden"></div></div>
+      </div>
+      <div class="grid2">
+        <div class="card"><h2>Par classe de char <span class="hint">dégâts moy · % vict.</span></h2><div id="pByClass"></div></div>
+        <div class="card"><h2>Par tier <span class="hint">dégâts moy · % vict.</span></h2><div id="pByTier"></div></div>
+      </div>
+    </details>
   </div>
 
   <div id="viewLineups" class="hidden dashx">
@@ -4049,7 +4118,7 @@ function ceForRow(r,C){
    ============================================================ */
 // Marqueur de version : `srVersion()` dans la console dit si le fichier servi
 // est bien le dernier. Évite de confondre « pas déployé » et « ne marche pas ».
-const SR_SITE_VERSION="sr-2.6-da-progression";
+const SR_SITE_VERSION="sr-3.1-progression-refonte";
 function srVersion(){ return SR_SITE_VERSION; }
 let SR_MODEL=null, SR_SKILL=null, SR_ELO_TAG=null, SR_ELO_ID=null, SR_ROWS=null;
 const SR_CLS={heavyTank:"heavy",mediumTank:"medium",lightTank:"light","AT-SPG":"td",SPG:"spg"};
@@ -4156,6 +4225,35 @@ function srHint(){
   const M=SR_MODEL&&SR_MODEL["7v7"];
   return M ? "SR — saison 1 · calculé sur les batailles de ce clan"
            : "SR indisponible : modèle de saison non chargé";
+}
+/* Échelle des paliers : « 1712 » ne veut rien dire seul. La réglette montre où
+   ce chiffre tombe, et la bande claire autour du repère rappelle que la note a
+   une marge d'erreur — elle interdit de lire 20 points d'écart comme un écart. */
+// Les seuils ne sont écrits qu'une fois : couleur et libellé viennent de ceTier,
+// sinon les deux finiraient par se contredire.
+const SR_SEUILS=[1000,1350,1650,2000,2500];
+const SR_ECH_MIN=900, SR_ECH_MAX=2700;
+function srScale(v,marge){
+  if(v==null) return "";
+  const pos=x=>Math.max(0,Math.min(100,
+    (Math.max(SR_ECH_MIN,Math.min(SR_ECH_MAX,x))-SR_ECH_MIN)/(SR_ECH_MAX-SR_ECH_MIN)*100));
+  const bornes=[SR_ECH_MIN,...SR_SEUILS];
+  const seg=bornes.map((b,i)=>{
+    const fin=i+1<bornes.length?bornes[i+1]:SR_ECH_MAX, t=ceTier(b);
+    return `<div class="srs-seg" style="left:${pos(b)}%;width:${pos(fin)-pos(b)}%;background:${t.c}"
+      title="${esc(t.l)} — ${fmt(b)} et plus"></div>`;
+  }).join("");
+  const tick=SR_SEUILS.map(b=>
+    `<div class="srs-tick" style="left:${pos(b)}%"><span>${fmt(b)}</span></div>`).join("");
+  const m=Math.max(0,marge||0);
+  const bande=m>0?`<div class="srs-band" style="left:${pos(v-m)}%;width:${pos(v+m)-pos(v-m)}%"></div>`:"";
+  return `<div class="sr-scale">
+    <div class="srs-track">${seg}${bande}
+      <div class="srs-mark" style="left:${pos(v)}%"></div></div>
+    <div class="srs-ticks">${tick}</div>
+    <div class="srs-note">${m>0?`Ton SR se situe entre <b>${fmt(v-m)}</b> et <b>${fmt(v+m)}</b> — un écart plus petit que ça ne se lit pas.`
+                              :"Échelle des paliers."}</div>
+  </div>`;
 }
 /* Décomposition : d'où viennent les points, et avec quelle certitude.
    C'est ce qui rend la note actionnable — « ma vision est faible » se travaille,
@@ -4279,7 +4377,7 @@ function srRadar(accId){
    pour que la dispersion reste visible — et non masquée par le lissage.
    ============================================================ */
 const SR_FENETRE=10;
-function srCurve(accId){
+function srCurve(accId,largeur){
   if(accId==null||!srOk()) return "";
   const rs=srRows().filter(r=>r.accId===Number(accId)&&r.ts).sort((a,b)=>a.ts-b.ts);
   if(rs.length<SR_FENETRE)
@@ -4291,7 +4389,11 @@ function srCurve(accId){
     let s=0; for(let j=i-SR_FENETRE+1;j<=i;j++) s+=rs[j].sr;
     pts.push({ x:i, y:s/SR_FENETRE, ts:rs[i].ts });
   }
-  const W=620,H=190,L=44,R=12,T=14,B=26;
+  // Le dessin est fait À LA LARGEUR RÉELLE de la carte, comme renderTrend : sinon
+  // le SVG se met à l'échelle et emporte les libellés avec lui — étirés à
+  // l'horizontale avec preserveAspectRatio="none", surdimensionnés sans.
+  // 36 = marge interne gauche + droite de la carte.
+  const W=Math.max(360,Math.round((largeur||556)-36)),H=190,L=44,R=12,T=14,B=26;
   const ys=[...rs.map(r=>r.sr),...pts.map(p=>p.y),1500];
   let y0=Math.min(...ys), y1=Math.max(...ys);
   const pad=(y1-y0)*0.12||100; y0-=pad; y1+=pad;
@@ -4308,7 +4410,7 @@ function srCurve(accId){
   return `<div class="sr-curve">
     <div class="srd-head">Progression <span class="srd-tag">moyenne sur ${SR_FENETRE} batailles</span>
       <span class="srd-marge" style="color:${delta>=0?"var(--dv-plus)":"var(--dv-minus)"}">${delta>=0?"+":""}${delta} depuis le début</span></div>
-    <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="width:100%;height:190px">
+    <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block">
       <line x1="${L}" x2="${W-R}" y1="${ref.toFixed(1)}" y2="${ref.toFixed(1)}"
             stroke="var(--border)" stroke-dasharray="4 4"/>
       <text x="${L-6}" y="${(ref+4).toFixed(1)}" text-anchor="end" font-size="11" fill="var(--muted)">1500</text>
@@ -4632,28 +4734,31 @@ function renderPlayerView(){
   // --- SR (Synergy Rating) : score + decomposition + tendance + serie ---
   const av=k=>avgOf(my,k);
   const myCE=playerCE(my), tier=ceTier(myCE);
-  const comp=[["Victoire",bw.wr,CE_REF.win],["Survie",survrate,CE_REF.surv],
-    ["Impact",av("dmg")+av("assist"),CE_REF.imp],["Blindage",av("block"),CE_REF.tank],
-    ["Repérage",av("spot"),CE_REF.spot],["Frags",av("kills"),CE_REF.frag]];
-  const bars=comp.map(([lab,v,ref])=>{ const r=ref>0?v/ref:1, pv=Math.round(r*100), pos=r>=1;
-    const w=Math.max(4,Math.min(100,r*50));
-    return `<div class="srb"><span class="srb-l">${lab}</span><span class="srb-track"><span class="srb-fill ${pos?'up':'down'}" style="width:${w}%"></span></span><span class="srb-v ${pos?'tagpos':'tagneg'}">${pv}%</span></div>`; }).join("");
   const tr=pSRTrend(my); let trendHtml="";
   if(tr){ const up=tr.delta>0, flat=Math.abs(tr.delta)<40;
     trendHtml=`<div class="sr-trend ${flat?'':(up?'tagpos':'tagneg')}">${flat?'➡️ stable':(up?'📈 en progression':'📉 en baisse')} <b>${tr.delta>0?'+':''}${tr.delta}</b> <span class="hint">(${tr.older} → ${tr.recent})</span></div>`; }
   const stk=pStreak(my); let stkHtml="";
   if(stk){ const w=stk.res===1, d=stk.res===-1, lbl=w?('victoire'+(stk.n>1?'s':'')):(d?('nul'+(stk.n>1?'s':'')):('défaite'+(stk.n>1?'s':'')));
     stkHtml=`<div class="sr-streak">Série en cours : <b class="${w?'tagpos':(d?'':'tagneg')}">${stk.n} ${lbl}</b></div>`; }
+  const _acc = my[0] && my[0].accId;
+  // ── 1. OÙ J'EN SUIS : le chiffre seul, sans rien pour le concurrencer.
+  const _srP = (_acc!=null && srOk()) ? srByPlayer().get(Number(_acc)) : null;
   document.getElementById("pSR").innerHTML=`<div class="card sr-hero">
     <div class="sr-main"><div class="sr-big" style="color:${tier.c}">${fmt(myCE)}</div>
       <div class="sr-lab"><div class="sr-name" style="color:${tier.c}">${esc(tier.l)}</div>
       <div class="hint">${srHint()}</div>${trendHtml}${stkHtml}</div></div>
-    <!-- DIAGNOSTIC : la forme (radar) et la répartition (barres) se lisent ensemble.
-         Le radar dit « où », les barres disent « combien ». -->
-    <div class="prog-grid">${srRadar(my[0]&&my[0].accId)}${srDecomp(my[0]&&my[0].accId)}</div>
-    <!-- ÉVOLUTION : pleine largeur, c'est une série temporelle -->
-    ${srCurve(my[0]&&my[0].accId)}
-    <div class="sr-break">${bars}</div></div>`;
+    ${srScale(myCE, _srP && _srP.marge)}</div>`;
+
+  // ── 2. QUOI TRAVAILLER : le radar dit « où », les barres disent « combien ».
+  // `bars` (l'ancienne décomposition en pourcentages) est retirée : le radar
+  // porte la même information sous une forme lisible d'un coup d'œil.
+  document.getElementById("pDiag").innerHTML   = srRadar(_acc);
+  document.getElementById("pDecomp").innerHTML = srDecomp(_acc);
+
+  // ── 3. EST-CE QUE JE PROGRESSE
+  // Le conteneur est vide : sa largeur est celle de sa colonne, pas de son contenu.
+  const _evo = document.getElementById("pEvo");
+  _evo.innerHTML = srCurve(_acc, _evo.clientWidth);
 
   // --- details de combat (collecte complete) ---
   const perfo=hits?my.reduce((s,r)=>s+r.pierce,0)/hits:0;
