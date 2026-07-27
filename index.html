@@ -1401,6 +1401,8 @@
   .srd-fill{height:100%;background:var(--good);border-radius:5px}
   .srd-fill.neg{background:var(--bad)}
   .srd-val{font-size:13px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
+  .sr-curve{margin:14px 0 4px;padding:12px 14px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm)}
+  .srd-legend{margin-top:6px;font-size:12px;color:var(--muted)}
   .sr-note{margin:12px 0 2px;padding:11px 13px;background:var(--surface-2);border:1px solid var(--border);
     border-left:3px solid var(--accent);border-radius:0 var(--radius-sm) var(--radius-sm) 0;font-size:13.5px;color:var(--ink-2)}
   .st-present-stage.st-laser-on svg{cursor:none}
@@ -4013,7 +4015,7 @@ function ceForRow(r,C){
    ============================================================ */
 // Marqueur de version : `srVersion()` dans la console dit si le fichier servi
 // est bien le dernier. Évite de confondre « pas déployé » et « ne marche pas ».
-const SR_SITE_VERSION="sr-2.3-sr-absent";
+const SR_SITE_VERSION="sr-2.4-courbe";
 function srVersion(){ return SR_SITE_VERSION; }
 let SR_MODEL=null, SR_SKILL=null, SR_ELO_TAG=null, SR_ELO_ID=null, SR_ROWS=null;
 const SR_CLS={heavyTank:"heavy",mediumTank:"medium",lightTank:"light","AT-SPG":"td",SPG:"spg"};
@@ -4145,6 +4147,58 @@ function srDecomp(accId){
     ? `<span class="srd-tag">provisoire — ${s.n} batailles</span>` : "";
   return `<div class="sr-decomp"><div class="srd-head">D'où viennent les points ${prov}
     <span class="srd-marge">marge ±${s.marge}</span></div>${bars}</div>`;
+}
+/* ============================================================
+   COURBE DE PROGRESSION
+   Le SR d'UNE bataille est très bruité (±500) : tracé brut, il ressemblerait à
+   un électrocardiogramme et ne montrerait aucune tendance. On trace donc une
+   MOYENNE GLISSANTE sur 10 batailles, avec les batailles individuelles en fond
+   pour que la dispersion reste visible — et non masquée par le lissage.
+   ============================================================ */
+const SR_FENETRE=10;
+function srCurve(accId){
+  if(accId==null||!srOk()) return "";
+  const rs=srRows().filter(r=>r.accId===Number(accId)&&r.ts).sort((a,b)=>a.ts-b.ts);
+  if(rs.length<SR_FENETRE)
+    return `<div class="sr-note">Courbe disponible à partir de ${SR_FENETRE} batailles
+      — tu en as <b>${rs.length}</b>.</div>`;
+  // moyenne glissante : chaque point résume les 10 dernières batailles
+  const pts=[];
+  for(let i=SR_FENETRE-1;i<rs.length;i++){
+    let s=0; for(let j=i-SR_FENETRE+1;j<=i;j++) s+=rs[j].sr;
+    pts.push({ x:i, y:s/SR_FENETRE, ts:rs[i].ts });
+  }
+  const W=620,H=190,L=44,R=12,T=14,B=26;
+  const ys=[...rs.map(r=>r.sr),...pts.map(p=>p.y),1500];
+  let y0=Math.min(...ys), y1=Math.max(...ys);
+  const pad=(y1-y0)*0.12||100; y0-=pad; y1+=pad;
+  const px=i=>L+(rs.length<2?0:i/(rs.length-1))*(W-L-R);
+  const py=v=>T+(1-(v-y0)/((y1-y0)||1))*(H-T-B);
+  // batailles individuelles en fond : la dispersion réelle reste lisible
+  const dots=rs.map((r,i)=>`<circle cx="${px(i).toFixed(1)}" cy="${py(r.sr).toFixed(1)}" r="2"
+     fill="var(--muted)" opacity=".45"/>`).join("");
+  const d=pts.map((p,i)=>`${i?"L":"M"}${px(p.x).toFixed(1)} ${py(p.y).toFixed(1)}`).join(" ");
+  const ref=py(1500);
+  const dernier=pts[pts.length-1], premier=pts[0];
+  const delta=Math.round(dernier.y-premier.y);
+  const dateFR=t=>{ try{ return new Date(t*1000).toLocaleDateString("fr-FR",{day:"2-digit",month:"short"}); }catch(_){ return ""; } };
+  return `<div class="sr-curve">
+    <div class="srd-head">Progression <span class="srd-tag">moyenne sur ${SR_FENETRE} batailles</span>
+      <span class="srd-marge" style="color:${delta>=0?"var(--good)":"var(--bad)"}">${delta>=0?"+":""}${delta} depuis le début</span></div>
+    <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="width:100%;height:190px">
+      <line x1="${L}" x2="${W-R}" y1="${ref.toFixed(1)}" y2="${ref.toFixed(1)}"
+            stroke="var(--border)" stroke-dasharray="4 4"/>
+      <text x="${L-6}" y="${(ref+4).toFixed(1)}" text-anchor="end" font-size="11" fill="var(--muted)">1500</text>
+      <text x="${L-6}" y="${(py(y1)+12).toFixed(1)}" text-anchor="end" font-size="11" fill="var(--muted)">${Math.round(y1)}</text>
+      <text x="${L-6}" y="${py(y0).toFixed(1)}" text-anchor="end" font-size="11" fill="var(--muted)">${Math.round(y0)}</text>
+      ${dots}
+      <path d="${d}" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+      <circle cx="${px(dernier.x).toFixed(1)}" cy="${py(dernier.y).toFixed(1)}" r="4" fill="var(--accent)"/>
+      <text x="${L}" y="${H-8}" font-size="11" fill="var(--muted)">${dateFR(rs[0].ts)}</text>
+      <text x="${W-R}" y="${H-8}" text-anchor="end" font-size="11" fill="var(--muted)">${dateFR(rs[rs.length-1].ts)}</text>
+    </svg>
+    <div class="srd-legend">Les points gris sont tes batailles une à une ; la ligne est leur moyenne glissante.</div>
+  </div>`;
 }
 function srAvg(rows){ const v=(rows||[]).map(srBattle).filter(x=>x!=null);
   return v.length ? Math.round(v.reduce((a,b)=>a+b,0)/v.length) : null; }
@@ -4472,6 +4526,7 @@ function renderPlayerView(){
       <div class="sr-lab"><div class="sr-name" style="color:${tier.c}">${esc(tier.l)}</div>
       <div class="hint">${srHint()}</div>${trendHtml}${stkHtml}</div></div>
     ${srDecomp(my[0]&&my[0].accId)}
+    ${srCurve(my[0]&&my[0].accId)}
     <div class="sr-break">${bars}</div></div>`;
 
   // --- details de combat (collecte complete) ---
