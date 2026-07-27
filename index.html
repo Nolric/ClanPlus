@@ -1432,6 +1432,15 @@
      est-ce que je progresse. Le détail chiffré vient après, replié. */
   .pz-title{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);
             font-weight:800;margin:26px 0 10px}
+  /* Sélecteur de rang : les rangs non couverts restent visibles mais éteints —
+     ils annoncent ce qui vient, au lieu de faire croire qu'il n'existe qu'un rang. */
+  .tiersel{display:flex;align-items:center;gap:11px;flex-wrap:wrap;margin:0 0 14px}
+  .ts-lab{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:800}
+  .ts-seg{display:inline-flex;background:var(--surface-2);border-radius:9px;padding:3px;gap:2px}
+  .ts-b{font-size:13px;padding:5px 13px;border-radius:6px;font-weight:600}
+  .ts-b.on{background:var(--accent);color:#12110d}
+  .ts-b.off{color:var(--muted);opacity:.55;cursor:not-allowed}
+  .ts-note{font-size:12.5px;color:var(--muted);flex:1 1 240px;min-width:0}
   /* Réglette des paliers, dans le bloc du haut : situe le chiffre au lieu de le
      laisser seul. Les segments sont séparés par 2 px de fond, pas collés. */
   .sr-scale{flex:1 1 320px;min-width:260px;max-width:560px}
@@ -2157,6 +2166,10 @@
 
   <div id="viewPlayer" class="hidden">
     <p class="sec-desc" style="margin-top:2px">Le <b>bilan personnel</b> d'un joueur en Bastion, calculé sur les batailles enregistrées par le mod. Change de joueur avec le menu <b>« Joueur »</b> en haut à droite.</p>
+    <!-- Le filtre de tier est AFFICHÉ, pas silencieux : sans lui, un joueur qui
+         a fait du Tier VI verrait moins de batailles que ce qu'il a joué, sans
+         comprendre pourquoi. Les rangs non couverts restent visibles, désactivés. -->
+    <div class="tiersel" id="pTierSel"></div>
     <div id="pHead"></div>
 
     <!-- ═══ 1. OÙ J'EN SUIS ═══ le chiffre, son palier, sa marge -->
@@ -3981,7 +3994,7 @@ function renderMembers(){
   if(more){ if(list.length>12){ more.classList.remove("hidden"); more.textContent=MEM_EXPANDED?"Réduire ▴":("Afficher les "+list.length+" membres ↓"); more.onclick=()=>{MEM_EXPANDED=!MEM_EXPANDED; renderMembers();}; } else more.classList.add("hidden"); }
 }
 
-let VEHMAP={}, MEMBERSET=new Set(), CLANTAG="", BATTLE_ENEMY={};
+let VEHMAP={}, MEMBERSET=new Set(), CLANTAG="", BATTLE_ENEMY={}, BATTLE_TIER={};
 function buildRaw(data){
   CLANTAG = (data.clan && data.clan.tag) ? String(data.clan.tag) : "";
   VEHMAP = {}; (data.vehicles||[]).forEach(v=>{ VEHMAP[Number(v.tank_id)]=v; });
@@ -4020,6 +4033,16 @@ function buildRaw(data){
   });
   Object.keys(cnt).forEach(bid=>{ let best="",bn=0;
     for(const t in cnt[bid]){ if(cnt[bid][t]>bn){bn=cnt[bid][t];best=t;} } BATTLE_ENEMY[bid]=best; });
+  // Rang de Bastion par bataille, décidé UNE fois pour toutes.
+  // ⚠️ Même règle que srBuild : le tier MÉDIAN des chars présents, pas celui d'une
+  // ligne isolée. Un char absent de la table des véhicules ferait autrement
+  // disparaître la bataille de l'affichage alors que le SR, lui, la compte.
+  BATTLE_TIER={}; const tpar={};
+  RAW.forEach(r=>{ const t=Number((VEHMAP[r.veh]||{}).tier)||0;
+    if(t) (tpar[r.battleId]=tpar[r.battleId]||[]).push(t); });
+  Object.keys(tpar).forEach(bid=>{ const v=tpar[bid].sort((a,b)=>a-b);
+    const med=v[Math.floor(v.length/2)];
+    BATTLE_TIER[bid]= med>=10?10:(med>=8?8:6); });
   // bannière si vide
   const b = document.getElementById("banner");
   if(!RAW.length){ b.classList.remove("hidden");
@@ -4169,7 +4192,7 @@ function ceForRow(r,C){
    ============================================================ */
 // Marqueur de version : `srVersion()` dans la console dit si le fichier servi
 // est bien le dernier. Évite de confondre « pas déployé » et « ne marche pas ».
-const SR_SITE_VERSION="sr-3.6-chars-bastion";
+const SR_SITE_VERSION="sr-3.7-tier-x";
 function srVersion(){ return SR_SITE_VERSION; }
 let SR_MODEL=null, SR_SKILL=null, SR_ELO_TAG=null, SR_ELO_ID=null, SR_ROWS=null;
 const SR_CLS={heavyTank:"heavy",mediumTank:"medium",lightTank:"light","AT-SPG":"td",SPG:"spg"};
@@ -4243,6 +4266,11 @@ function srBuild(){
     let atag="",an=0; for(const t in ct) if(ct[t]>an){an=ct[t];atag=t;}
     const tiers=ours.map(r=>(VEHMAP[r.veh]||{}).tier||0).filter(Boolean).sort((a,b)=>b-a);
     const tb=tiers[Math.floor(tiers.length/2)]||10, rang=tb>=10?10:(tb>=8?8:6);
+    // ⭐ Un Bastion Tier VI et un Tier X n'ont ni les mêmes dégâts, ni les mêmes PV,
+    // ni la même cote Elo : les mélanger dans une seule note n'a pas de sens. Le
+    // jeu impose le tier, donc le tier du char EST celui de la bataille — le test
+    // est exact, pas approché. Restreint au X tant qu'un seul rang est calibré.
+    if(rang!==SR_TIER) return;
     const eU=(SR_ELO_TAG.get(TAG)||{})[rang]??null, eT=(SR_ELO_TAG.get(atag)||{})[rang]??null;
     const eGap=(eU!=null&&eT!=null)?eU-eT:null, eLvl=(eU!=null&&eT!=null)?(eU+eT)/2:null;
     const surprise=(res===1?1:0)-srProba(M,gap,eGap);
@@ -4337,6 +4365,14 @@ function srDecomp(accId){
    un joueur qui alterne lourd et moyen est ainsi comparé au bon groupe à chaque
    fois. 1,00 = tu fais exactement ce qu'on attend de ton rôle.
    ============================================================ */
+/* Rang de Bastion couvert par le SR. Une seule constante à changer le jour où un
+   second rang est calibré — et un seul endroit à relire pour savoir ce qui est
+   compté. Le jeu impose le tier en Bastion : le tier du char est celui du combat. */
+const SR_TIER=10;
+// Le rang vient de la BATAILLE (voir BATTLE_TIER), pas du char de la ligne :
+// c est la meme regle que celle qui decide le SR, donc les deux ne peuvent pas
+// diverger. Repli sur le char si la bataille est inconnue.
+const estTierSR=r=>(BATTLE_TIER[r.battleId] ?? (Number((VEHMAP[r.veh]||{}).tier)>=10?10:0))===SR_TIER;
 const SR_AXES=[["deg","Dégâts"],["enc","Encaissé"],["bli","Blindage"],["vis","Vision"],["obj","Objectif"]];
 /* Virgule décimale : toFixed rend « 0.72 », illisible au milieu d'un texte français. */
 const nb2=v=>Number(v||0).toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -4725,8 +4761,11 @@ function prettyMap(s){ s=String(s||""); if(!s) return "?";
   s=s.replace(/^\d+_/,"").replace(/_/g," ");
   return s.replace(/\b\w/g,c=>c.toUpperCase()); }
 function clsFR(c){ return ({heavyTank:"Lourd",mediumTank:"Moyen",lightTank:"Léger","AT-SPG":"Chasseur (TD)",SPG:"Artillerie"})[c]||c||"—"; }
+/* ⚠️ Le tier fait partie du filtre, au même titre que le mode : « Ma progression »
+   ne montre que le rang couvert par le SR. Sans ça, les KPI, les records et les
+   chars porteraient sur des batailles que la note, elle, ne compte pas. */
 function pfilter(){ const now=Date.now()/1000;
-  return r=>(!state.mode||r.mode===state.mode)&&(!(state.days)|| !r.ts || (now-r.ts)<=state.days*86400); }
+  return r=>estTierSR(r)&&(!state.mode||r.mode===state.mode)&&(!(state.days)|| !r.ts || (now-r.ts)<=state.days*86400); }
 function battlesWinrate(rows){ const seen={}; let w=0,t=0;
   rows.forEach(r=>{ if(!(r.battleId in seen)){ seen[r.battleId]=1; if(r.result===1)w++; if(r.result!==-1&&r.result!=null)t++; } });
   return {w,t,wr:t?w/t:0,battles:Object.keys(seen).length}; }
@@ -4887,6 +4926,21 @@ function renderPlayerView(){
   const meMember=(MEMBERS||[]).find(m=>Number(m.account_id)===Number(SELP));
   const role=meMember?(ROLE_FR[normRole(meMember.wg_role)]||meMember.wg_role||""):"";
   const initials=(name||"?").replace(/[_\-]/g," ").trim().slice(0,2).toUpperCase();
+  // Nombre de batailles écartées par le filtre de tier : c'est ce qui rend le
+  // filtre compréhensible plutôt qu'inquiétant.
+  {
+    const tousRangs=RAW.filter(r=>r.accId===SELP);
+    const hors=tousRangs.length-tousRangs.filter(estTierSR).length;
+    const RANGS=[[10,"X"],[8,"VIII"],[6,"VI"]];
+    document.getElementById("pTierSel").innerHTML=
+      `<span class="ts-lab">Rang</span>
+       <span class="ts-seg">${RANGS.map(([n,rn])=>
+         n===SR_TIER ? `<span class="ts-b on">Tier ${rn}</span>`
+                     : `<span class="ts-b off" title="Pas encore calibré">Tier ${rn}</span>`).join("")}</span>
+       <span class="ts-note">${hors
+         ? `${fmt(hors)} bataille${hors>1?"s":""} d'un autre rang ${hors>1?"sont écartées":"est écartée"} — le SR n'est calibré que sur le Tier ${RANGS[0][1]} pour l'instant.`
+         : `Les autres rangs seront ouverts dès qu'ils auront assez de batailles pour être calibrés.`}</span>`;
+  }
   document.getElementById("pHead").innerHTML=`
     <div class="pcard">
       <div class="pav">${esc(initials)}</div>
@@ -4949,7 +5003,7 @@ function renderPlayerView(){
   // n'est pas un record, et « les 30 derniers jours » n'a aucun sens sous un
   // filtre de 7 jours. On garde en revanche le filtre de FORMAT — comparer une
   // performance 7v7 à une 15v15 ne veut rien dire.
-  const myTout = RAW.filter(r=>r.accId===SELP && (!state.mode || r.mode===state.mode));
+  const myTout = RAW.filter(r=>r.accId===SELP && estTierSR(r) && (!state.mode || r.mode===state.mode));
   document.getElementById("pTanks").innerHTML   = pTanks(my);
   document.getElementById("pDiff").innerHTML    = pDiff30(myTout);
   document.getElementById("pRecords").innerHTML = pRecords(myTout);
