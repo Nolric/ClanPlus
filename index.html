@@ -3196,7 +3196,7 @@ function blTeam(rows, ours, tag, url){
   const ceH = ours?`<th class="c">SR</th>`:``;
   const body=sorted.map(r=>{
     let ceCell="";
-    if(ours) ceCell = r.isMember ? `<td class="c">${ceBadge(Math.round(srBattle(r)))}</td>` : `<td class="c" style="color:var(--muted)">—</td>`;
+    if(ours) ceCell = r.isMember ? `<td class="c">${ceBadge((function(){const v=srBattle(r); return v==null?null:Math.round(v);})())}</td>` : `<td class="c" style="color:var(--muted)">—</td>`;
     return `<tr class="${r.isMember?'me':''}">
       <td>${esc(r.tank||'?')}</td><td>${esc(shortName(r.name))}</td>
       <td>${fmt(r.dmg)}</td><td>${r.kills}</td><td>${fmt(r.assist)}</td><td>${fmt(r.block)}</td>
@@ -4013,7 +4013,7 @@ function ceForRow(r,C){
    ============================================================ */
 // Marqueur de version : `srVersion()` dans la console dit si le fichier servi
 // est bien le dernier. Évite de confondre « pas déployé » et « ne marche pas ».
-const SR_SITE_VERSION="sr-2.2-sections-en-chantier";
+const SR_SITE_VERSION="sr-2.3-sr-absent";
 function srVersion(){ return SR_SITE_VERSION; }
 let SR_MODEL=null, SR_SKILL=null, SR_ELO_TAG=null, SR_ELO_ID=null, SR_ROWS=null;
 const SR_CLS={heavyTank:"heavy",mediumTank:"medium",lightTank:"light","AT-SPG":"td",SPG:"spg"};

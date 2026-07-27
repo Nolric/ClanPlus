@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Le SR expliqué — Synergy Rating World of Tanks | Clan Plus</title>
+<meta name="description" content="Comment fonctionne le SR de Clan Plus : contribution dans l'équipe, surprise face à l'adversaire, niveau du clan. Ce que mesure chaque composante, pourquoi il faut 10 batailles, et comment lire son score pour progresser.">
+<link rel="canonical" href="https://clanplus.eu/aide-sr.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Clan Plus">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:url" content="https://clanplus.eu/aide-sr.html">
+<meta property="og:title" content="Le SR expliqué — Synergy Rating World of Tanks">
+<meta property="og:description" content="Trois composantes, une note. Ce que le SR mesure vraiment, ce qu'il ne mesure pas, et comment s'en servir pour progresser.">
+<meta property="og:image" content="https://clanplus.eu/og.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20240%20240%22%3E%3Crect%20width%3D%22240%22%20height%3D%22240%22%20rx%3D%2254%22%20fill%3D%22%23141310%22%2F%3E%3Cg%20transform%3D%22translate%2830%2030%29%20scale%280.75%29%22%20fill%3D%22%23d8b566%22%3E%3Ccircle%20cx%3D%22120%22%20cy%3D%22120%22%20r%3D%22100%22%20fill%3D%22none%22%20stroke%3D%22%23d8b566%22%20stroke-width%3D%227%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
+<style>
+  /* Mêmes jetons que index.html et aide-editeur.html (thème sombre uniquement). */
+  :root{
+    --plane:#0c0c0b; --surface-1:#151412; --surface-2:#201f1b; --card:#1a1917;
+    --ink:#f6f5f1; --ink-2:#bdb9af; --muted:#87847b;
+    --border:rgba(255,255,255,.09);
+    --good:#2ec26e; --bad:#ec6a6a; --warn:#e0a34a;
+    --accent:#d8b566; --accent-2:#ecd190; --accent-soft:rgba(216,181,102,.14);
+    --radius:14px; --radius-sm:9px;
+    color-scheme:dark;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--plane);color:var(--ink);
+       font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+       font-size:15.5px;line-height:1.62;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1150px;margin:0 auto;padding:0 20px 80px}
+
+  .topbar{border-bottom:1px solid var(--border);background:var(--surface-1);position:sticky;top:0;z-index:5}
+  .topbar-in{max-width:1150px;margin:0 auto;padding:11px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .brand{font-weight:800;letter-spacing:-.01em;color:var(--ink);text-decoration:none;font-size:15px}
+  .brand span{color:var(--accent)}
+  .tblink{color:var(--ink-2);text-decoration:none;font-size:13.5px;font-weight:600;
+        border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 12px}
+  .tblink:hover{color:var(--ink);border-color:var(--accent)}
+  .tbright{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+
+  header.hero{padding:52px 0 30px;border-bottom:1px solid var(--border)}
+  .eyebrow{font-size:11.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);
+           margin:0 0 12px;font-weight:700}
+  h1{font-size:clamp(27px,4.8vw,42px);line-height:1.1;margin:0 0 14px;letter-spacing:-.02em;
+     text-wrap:balance;font-weight:800}
+  .lede{font-size:17px;color:var(--ink-2);max-width:62ch;margin:0}
+
+  .cols{display:grid;grid-template-columns:222px 1fr;gap:48px;align-items:start;margin-top:38px}
+  @media (max-width:900px){ .cols{grid-template-columns:1fr;gap:26px} }
+  nav.toc{position:sticky;top:70px;font-size:13.5px}
+  @media (max-width:900px){ nav.toc{position:static;background:var(--card);border:1px solid var(--border);
+    border-radius:var(--radius);padding:15px 17px} }
+  .toc-t{font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);
+         margin:0 0 10px;font-weight:700}
+  nav.toc ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+  nav.toc a{display:flex;gap:9px;color:var(--ink-2);text-decoration:none;padding:5px 8px;
+            border-radius:7px;border-left:2px solid transparent}
+  nav.toc a:hover{color:var(--ink);background:var(--surface-2);border-left-color:var(--accent)}
+  nav.toc .n{font-variant-numeric:tabular-nums;font-size:12px;color:var(--muted);min-width:15px}
+
+  main{min-width:0}
+  section{scroll-margin-top:72px;padding:34px 0;border-bottom:1px solid var(--border)}
+  section:last-of-type{border-bottom:0}
+  h2{font-size:24px;font-weight:800;margin:0 0 6px;letter-spacing:-.015em;
+     display:flex;align-items:baseline;gap:11px;text-wrap:balance}
+  h2 .n{font-variant-numeric:tabular-nums;font-size:14px;color:var(--accent);font-weight:700}
+  h3{font-size:16.5px;font-weight:700;margin:26px 0 7px}
+  p{margin:0 0 13px;max-width:68ch}
+  ul,ol.steps{margin:0 0 15px;padding-left:21px;max-width:68ch}
+  li{margin:0 0 6px}
+  strong{color:#fff;font-weight:700}
+  em{font-style:italic;color:var(--ink)}
+  a{color:var(--accent)}
+
+  .tw{overflow-x:auto;margin:0 0 17px;border:1px solid var(--border);border-radius:var(--radius);
+      background:var(--card)}
+  table{width:100%;border-collapse:collapse;font-size:14px;min-width:450px}
+  th{font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);
+     text-align:left;padding:11px 14px;border-bottom:1px solid var(--border);font-weight:700}
+  td{padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.05);vertical-align:top}
+  tr:last-child td{border-bottom:0}
+  td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+  .yes{color:var(--good);font-weight:700}
+  .no{color:var(--bad);font-weight:700}
+
+  .note{border:1px solid var(--border);border-left:3px solid var(--accent);background:var(--card);
+        border-radius:0 var(--radius) var(--radius) 0;padding:14px 17px;margin:0 0 17px;font-size:14.5px}
+  .note.warn{border-left-color:var(--warn)}
+  .note.stop{border-left-color:var(--bad)}
+  .note p:last-child{margin-bottom:0}
+  .note .lbl{font-size:10.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--accent);
+             display:block;margin-bottom:4px;font-weight:700}
+  .note.warn .lbl{color:var(--warn)} .note.stop .lbl{color:var(--bad)}
+
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:13px;margin:0 0 17px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px}
+  .card h4{font-size:14.5px;margin:0 0 6px;color:var(--accent);font-weight:700}
+  .card .pct{font-size:26px;font-weight:800;line-height:1;margin:0 0 8px;font-variant-numeric:tabular-nums}
+  .card p{font-size:14px;color:var(--ink-2);margin:0}
+
+  /* maquette de la décomposition, identique à celle du site */
+  .demo{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);
+        padding:14px 16px;margin:0 0 17px}
+  .demo-h{display:flex;align-items:center;gap:8px;font-size:11.5px;letter-spacing:.1em;
+          text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:11px}
+  .demo-h .tag{font-size:10.5px;background:var(--accent-soft);color:var(--accent);border-radius:6px;
+               padding:1px 7px;text-transform:none;letter-spacing:0}
+  .demo-h .mg{margin-left:auto;text-transform:none;letter-spacing:0;font-weight:600}
+  .row{display:grid;grid-template-columns:104px 1fr 58px;align-items:center;gap:10px;margin:6px 0}
+  .lab{font-size:13px;color:var(--ink-2)}
+  .track{height:8px;background:var(--plane);border-radius:5px;overflow:hidden}
+  .fill{height:100%;background:var(--good);border-radius:5px}
+  .fill.neg{background:var(--bad)}
+  .val{font-size:13px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
+
+  footer{padding:36px 0 0;color:var(--muted);font-size:13.5px}
+  footer a{color:var(--ink-2)}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+  @media (prefers-reduced-motion:reduce){ *{transition:none!important;animation:none!important} }
+</style>
+</head>
+<body>
+
+<div class="topbar"><div class="topbar-in">
+  <a class="brand" href="/">Clan<span>Plus</span></a>
+  <div class="tbright">
+    <a class="tblink" href="aide-editeur.html">Manuel de l'éditeur</a>
+    <a class="tblink" href="/">← Retour au site</a>
+  </div>
+</div></div>
+
+<div class="wrap">
+<header class="hero">
+  <p class="eyebrow">Aide · World of Tanks</p>
+  <h1>Le SR expliqué</h1>
+  <p class="lede">Le Synergy Rating répond à une question : <em>as-tu aidé ton équipe à gagner, compte tenu
+  de ce que tu affrontais ?</em> Cette page détaille comment il est calculé, ce qu'il mesure vraiment,
+  ce qu'il ne mesure pas — et comment t'en servir pour progresser.</p>
+</header>
+
+<div class="cols">
+<nav class="toc">
+  <p class="toc-t">Sommaire</p>
+  <ol>
+    <li><a href="#s1"><span class="n">1</span> L'idée en une minute</a></li>
+    <li><a href="#s2"><span class="n">2</span> Les trois composantes</a></li>
+    <li><a href="#s3"><span class="n">3</span> La contribution</a></li>
+    <li><a href="#s4"><span class="n">4</span> La surprise</a></li>
+    <li><a href="#s5"><span class="n">5</span> Le niveau</a></li>
+    <li><a href="#s6"><span class="n">6</span> Lire son score</a></li>
+    <li><a href="#s7"><span class="n">7</span> Les 10 batailles</a></li>
+    <li><a href="#s8"><span class="n">8</span> Les échelles</a></li>
+    <li><a href="#s9"><span class="n">9</span> Ce qu'il ne fait pas</a></li>
+    <li><a href="#s10"><span class="n">10</span> Questions fréquentes</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<section id="s1">
+  <h2><span class="n">01</span> L'idée en une minute</h2>
+  <p>La plupart des notes de World of Tanks récompensent les <strong>dégâts</strong>. C'est pratique en
+  aléatoire, où chacun joue pour soi. En bataille de clan, ça ne marche pas : le joueur qui pousse en
+  premier, encaisse le premier contact et meurt tôt fait peu de dégâts — et il vient peut-être de faire
+  gagner la partie.</p>
+  <p>Le SR essaie de mesurer <strong>l'utilité réelle</strong>, en tenant compte de trois choses :</p>
+  <ol class="steps">
+    <li>Ce que tu as apporté <strong>par rapport à tes six coéquipiers</strong> de cette bataille</li>
+    <li>Si le résultat était <strong>attendu ou non</strong> face à cet adversaire</li>
+    <li>À quel <strong>niveau ton clan évolue</strong></li>
+  </ol>
+  <p><strong>1500 est le repère central.</strong> Au-dessus, tu apportes plus que la référence ; en dessous,
+  moins. L'écart typique entre le meilleur et le plus faible d'un clan est de quelques centaines de points.</p>
+</section>
+
+<section id="s2">
+  <h2><span class="n">02</span> Les trois composantes</h2>
+  <p>Le SR est la somme de trois contributions, chacune pouvant être positive ou négative :</p>
+  <div class="cards">
+    <div class="card"><div class="pct" style="color:var(--accent)">40 %</div>
+      <h4>Contribution</h4>
+      <p>Ce que tu fais dans ton équipe, comparé à tes coéquipiers de la même bataille.</p></div>
+    <div class="card"><div class="pct" style="color:var(--accent)">35 %</div>
+      <h4>Niveau</h4>
+      <p>La hauteur à laquelle ton clan joue, mesurée sur les adversaires réellement affrontés.</p></div>
+    <div class="card"><div class="pct" style="color:var(--accent)">25 %</div>
+      <h4>Surprise</h4>
+      <p>Le résultat comparé à ce qui était prévu avant la bataille.</p></div>
+  </div>
+  <div class="note"><span class="lbl">Pourquoi la surprise pèse le moins</span>
+  <p>Parce qu'elle est <strong>identique pour les sept joueurs</strong> d'une même bataille : vous gagnez
+  ou vous perdez ensemble. Elle dit donc très peu de chose sur toi en particulier. Lui donner un poids
+  élevé rendait le SR beaucoup plus instable sans le rendre plus juste — c'est mesuré, pas supposé.</p></div>
+</section>
+
+<section id="s3">
+  <h2><span class="n">03</span> La contribution — ta part du travail</h2>
+  <p>C'est la composante la plus importante, et la seule qui te distingue de tes coéquipiers.</p>
+  <p>Le principe : dans chaque bataille, on regarde <strong>quelle part du travail de l'équipe tu as
+  assurée</strong>. Sept joueurs, donc « ta part » vaut un septième. Faire plus que ça te fait monter,
+  moins te fait descendre.</p>
+  <h3>Les cinq mesures</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Mesure</th><th>Ce qu'elle compte</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Dégâts</strong></td><td>Tes dégâts plus tes dégâts assistés</td></tr>
+      <tr><td><strong>Feu encaissé</strong></td><td>Ce que tu as bloqué plus ce que tu as pris. C'est la mesure du joueur qui va au contact</td></tr>
+      <tr><td><strong>Blindage</strong></td><td>La part du feu reçu qui a rebondi. Récompense le bon placement, pas la chance</td></tr>
+      <tr><td><strong>Vision</strong></td><td>Repérages et dégâts assistés par éclairage</td></tr>
+      <tr><td><strong>Objectif</strong></td><td>Capture et décapture</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Pourquoi des parts, et pas des chiffres bruts</h3>
+  <p>Une bataille longue et violente gonfle les statistiques de tout le monde ; une bataille expédiée en
+  trois minutes les écrase. Si on comparait des chiffres bruts, tu serais noté sur le <em>type</em> de
+  bataille que tu as vécu plutôt que sur ton jeu.</p>
+  <p>En raisonnant en parts, ce biais disparaît : que l'équipe fasse 5 000 ou 20 000 de dégâts, ta part
+  reste ta part.</p>
+
+  <h3>Chaque rôle est jugé selon son rôle</h3>
+  <p>Les cinq mesures n'ont pas le même poids selon la classe de ton char. Un lourd est attendu sur
+  l'encaissement, un éclaireur sur la vision, un chasseur de chars sur les dégâts.</p>
+  <div class="tw"><table>
+    <thead><tr><th>Classe</th><th>Ce qui compte le plus</th></tr></thead>
+    <tbody>
+      <tr><td>Lourd</td><td>Dégâts et feu encaissé à parts égales, puis blindage</td></tr>
+      <tr><td>Moyen</td><td>Dégâts avant tout, puis vision et encaissement</td></tr>
+      <tr><td>Léger</td><td>Vision très majoritairement</td></tr>
+      <tr><td>Chasseur de chars</td><td>Dégâts très majoritairement</td></tr>
+      <tr><td>Artillerie</td><td>Dégâts, puis vision</td></tr>
+    </tbody>
+  </table></div>
+  <div class="note"><span class="lbl">Correction importante</span>
+  <p>À niveau égal, un éclaireur obtenait mécaniquement une meilleure note qu'un moyen — l'écart mesuré
+  atteignait plusieurs centaines de points, uniquement à cause de la classe choisie. Chaque rôle est donc
+  <strong>recentré sur sa propre médiane</strong> : tu es comparé aux autres joueurs de ta classe, pas à
+  l'ensemble du clan.</p></div>
+</section>
+
+<section id="s4">
+  <h2><span class="n">04</span> La surprise — battre plus fort que soi</h2>
+  <p>Avant chaque bataille, un modèle estime <strong>vos chances de gagner</strong> à partir du niveau des
+  quatorze joueurs présents — les sept de chaque côté, d'après leurs statistiques Wargaming.</p>
+  <p>La surprise, c'est l'écart entre ce qui était prévu et ce qui s'est passé :</p>
+  <div class="tw"><table>
+    <thead><tr><th>Situation</th><th>Effet sur le SR</th></tr></thead>
+    <tbody>
+      <tr><td>Victoire alors que vous étiez donnés perdants</td><td class="yes">Fort gain</td></tr>
+      <tr><td>Victoire attendue contre plus faible</td><td>Gain léger</td></tr>
+      <tr><td>Défaite face à beaucoup plus fort</td><td>Perte légère</td></tr>
+      <tr><td>Défaite face à plus faible</td><td class="no">Forte perte</td></tr>
+    </tbody>
+  </table></div>
+  <p>Autrement dit : <strong>battre un gros clan rapporte plusieurs fois plus que battre un petit</strong>,
+  et perdre contre bien plus fort ne coûte presque rien. Farmer des clans faibles ne fait pas monter le SR.</p>
+  <div class="note"><span class="lbl">Est-ce que le modèle est fiable ?</span>
+  <p>Il a été vérifié sur des batailles qu'il n'avait <strong>jamais vues</strong> pendant son
+  apprentissage. Entre une victoire et une défaite tirées au hasard, il les classe correctement environ
+  <strong>deux fois sur trois</strong>. C'est un vrai signal — le hasard donnerait une fois sur deux —
+  mais ça reste modeste : une bataille de 7v7 demeure largement imprévisible, et c'est tant mieux.</p></div>
+</section>
+
+<section id="s5">
+  <h2><span class="n">05</span> Le niveau — le contexte de ton clan</h2>
+  <p>Une même partie ne vaut pas la même chose partout. À haut niveau, les adversaires ne ratent pas leurs
+  tirs, se couvrent, punissent la moindre erreur. Plus bas, faire de grosses statistiques est
+  structurellement plus facile.</p>
+  <p>Le SR intègre donc <strong>la hauteur à laquelle ton clan évolue</strong>, mesurée sur les adversaires
+  réellement rencontrés et sur la cote Bastion officielle des clans affrontés.</p>
+  <div class="note"><span class="lbl">Ce que ça veut dire concrètement</span>
+  <p>Un joueur correct qui affronte régulièrement du très haut niveau se retrouvera au-dessus d'un joueur
+  brillant qui n'affronte que des clans faibles. C'est voulu : les deux ne jouent pas au même jeu.</p></div>
+  <h3>À l'intérieur d'un clan, ce terme ne départage personne</h3>
+  <p>Tous les membres d'un clan partagent le même contexte, donc le même socle. Entre coéquipiers, seules
+  la <strong>contribution</strong> et la <strong>surprise</strong> font la différence.</p>
+  <p>Le niveau ne sert qu'à comparer des joueurs de clans différents — et il évolue tout seul si votre
+  niveau d'adversité change.</p>
+</section>
+
+<section id="s6">
+  <h2><span class="n">06</span> Lire son score et savoir quoi travailler</h2>
+  <p>Sur ta fiche, sous le SR, trois barres montrent d'où viennent tes points :</p>
+  <div class="demo">
+    <div class="demo-h">D'où viennent les points <span class="tag">provisoire — 11 batailles</span>
+      <span class="mg">marge ±132</span></div>
+    <div class="row"><div class="lab">Contribution</div>
+      <div class="track"><div class="fill" style="width:30%"></div></div>
+      <div class="val" style="color:var(--good)">+222</div></div>
+    <div class="row"><div class="lab">Surprise</div>
+      <div class="track"><div class="fill neg" style="width:6%"></div></div>
+      <div class="val" style="color:var(--bad)">−45</div></div>
+    <div class="row"><div class="lab">Niveau</div>
+      <div class="track"><div class="fill" style="width:100%"></div></div>
+      <div class="val" style="color:var(--good)">+730</div></div>
+  </div>
+  <p>C'est ce détail qui rend la note utile. <strong>« J'ai 1870 » ne se travaille pas ; « ma vision est
+  faible pour un moyen » se travaille.</strong></p>
+  <div class="tw"><table>
+    <thead><tr><th>Ce que tu vois</th><th>Ce que ça veut dire</th></tr></thead>
+    <tbody>
+      <tr><td>Contribution négative</td><td>Tu fais moins que ta part. Regarde laquelle des cinq mesures décroche par rapport à ton rôle</td></tr>
+      <tr><td>Surprise négative persistante</td><td>Vous perdez des batailles que vous étiez censés gagner. C'est un sujet d'équipe, pas individuel</td></tr>
+      <tr><td>Niveau élevé</td><td>Votre clan affronte du lourd. Rien à corriger, c'est du contexte</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="s7">
+  <h2><span class="n">07</span> Pourquoi 10 batailles minimum</h2>
+  <p>En dessous de dix batailles, <strong>aucun SR n'est affiché</strong>. Ce n'est pas de la prudence
+  excessive : la marge d'erreur y dépasse les écarts qu'on cherche à mesurer.</p>
+  <div class="tw"><table>
+    <thead><tr><th class="num">Batailles</th><th class="num">Marge</th><th>Ce que ça vaut</th></tr></thead>
+    <tbody>
+      <tr><td class="num">5</td><td class="num">±200 environ</td><td>Le chiffre ne veut rien dire</td></tr>
+      <tr><td class="num">10</td><td class="num">±160</td><td>Premier affichage, marqué <strong>provisoire</strong></td></tr>
+      <tr><td class="num">20</td><td class="num">±113</td><td>Utilisable</td></tr>
+      <tr><td class="num">50</td><td class="num">±71</td><td>Solide</td></tr>
+    </tbody>
+  </table></div>
+  <p>La marge reste affichée à côté du score. <strong>Deux joueurs séparés de moins que leur marge ne sont
+  pas départageables</strong> — c'est aussi vrai que le score lui-même.</p>
+  <div class="note warn"><span class="lbl">À retenir</span>
+  <p>Une seule bataille exceptionnelle ne fait pas monter un SR durablement, et une mauvaise soirée ne le
+  détruit pas. C'est une moyenne : elle bouge lentement, et c'est ce qui la rend crédible.</p></div>
+</section>
+
+<section id="s8">
+  <h2><span class="n">08</span> Les échelles, les saisons, les clans</h2>
+  <h3>Le SR est attaché au clan</h3>
+  <p>Il ne compte que les batailles disputées <strong>avec ce clan</strong>. En changeant de clan, tu repars
+  de zéro — et si tu reviens dans un clan où tu as déjà joué, tu retrouves le SR que tu y avais.</p>
+  <h3>Les saisons</h3>
+  <p>Les coefficients sont <strong>figés au début d'une saison</strong> et ne bougent plus. C'est essentiel :
+  dans l'ancien système, la référence se recalculait en permanence, et un joueur pouvait perdre du SR
+  <em>sans avoir joué</em>, simplement parce que d'autres avaient joué. Ça n'arrive plus.</p>
+  <h3>Le SR d'une bataille</h3>
+  <p>Sur les cartes de bataille, tu vois un SR pour <em>cette</em> partie. Il se lit comme une note de
+  match, pas comme une mesure de ton niveau : une seule bataille est bien trop variable pour ça.</p>
+</section>
+
+<section id="s9">
+  <h2><span class="n">09</span> Ce que le SR ne fait pas</h2>
+  <ul>
+    <li><strong>Ce n'est pas un classement de mérite.</strong> Deux joueurs proches ne sont pas départageables,
+    et il n'y a pas de « meilleur joueur » désigné — la mesure n'est pas assez fine pour ça, et le prétendre
+    serait malhonnête.</li>
+    <li><strong>Il ne récompense pas la survie.</strong> Rester en vie sans rien produire ne rapporte rien.
+    À l'inverse, mourir tôt en ayant attiré le feu et permis à l'équipe d'avancer rapporte beaucoup.</li>
+    <li><strong>Il ne compare pas les formats.</strong> Le 7v7 et le 15v15 sont traités séparément : ce ne
+    sont pas les mêmes attentes.</li>
+    <li><strong>Il ne voit que les batailles de clan.</strong> Les batailles aléatoires ne sont jamais prises
+    en compte.</li>
+    <li><strong>Il n'est pas figé dans le marbre.</strong> Les poids des trois composantes sont un choix
+    d'équilibre, pas une vérité démontrée. Ils évolueront quand on aura de quoi les mesurer.</li>
+  </ul>
+</section>
+
+<section id="s10">
+  <h2><span class="n">10</span> Questions fréquentes</h2>
+  <h3>J'ai fait 5 000 de dégâts et mon SR a baissé. Pourquoi ?</h3>
+  <p>Trois causes possibles : tes coéquipiers en ont fait autant ou plus, donc ta <em>part</em> n'a pas
+  bougé ; vous avez perdu une bataille que vous étiez censés gagner ; ou les dégâts ne sont pas ce qu'on
+  attend le plus de ta classe. Regarde tes trois barres, elles le disent.</p>
+
+  <h3>Pourquoi mon coéquipier a plus que moi alors qu'il a moins de dégâts ?</h3>
+  <p>Parce que les dégâts ne sont qu'une des cinq mesures. S'il a encaissé le premier contact, éclairé, ou
+  tenu un objectif, il a fait une part du travail que les dégâts ne montrent pas.</p>
+
+  <h3>Le SR de tout le clan est très haut. C'est normal ?</h3>
+  <p>Oui, si vous affrontez du haut niveau. Le socle est commun à tout le clan. Ce qui vous départage entre
+  vous, c'est l'écart <em>autour</em> de ce socle.</p>
+
+  <h3>Je viens d'arriver, je n'ai pas de SR.</h3>
+  <p>Il apparaîtra à ta dixième bataille avec le clan, marqué provisoire, puis se stabilisera vers la
+  vingtième.</p>
+
+  <h3>Est-ce que le mod peut me faire baisser en jouant mal exprès ?</h3>
+  <p>Oui, comme toute mesure. Mais le SR récompense des comportements qui font gagner — aller au contact,
+  éclairer, tenir un point — plutôt que des chiffres faciles à gonfler. Camper à l'arrière en préservant
+  ses points de vie ne rapporte rien.</p>
+</section>
+
+<footer>
+  <p>Clan Plus — outils de clan pour World of Tanks EU ·
+  <a href="aide-editeur.html">Manuel de l'éditeur</a> ·
+  <a href="/">Retour au site</a></p>
+</footer>
+
+</main>
+</div>
+</div>
+
+</body>
+</html>
