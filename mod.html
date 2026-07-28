@@ -139,7 +139,14 @@ h1 .dim{color:var(--ink-3)}
 .win-opt .cnt{margin-left:auto;color:#9aa4ac;font-family:var(--d-mono);font-size:11px;white-space:nowrap}
 .win-opt .cnt b{color:var(--halt);font-weight:600}
 .win-filters{display:flex;align-items:center;gap:2px;padding:7px 10px;border-bottom:1px solid rgba(0,0,0,.35)}
-.fl{padding:5px 11px;color:#98a2aa;font-size:11px;letter-spacing:.08em;border-radius:2px}
+.fl,.fl-ic{cursor:pointer;background:none;border:0;font:inherit;border-radius:2px;
+  transition:background .14s,color .14s,opacity .14s}
+.fl{padding:5px 11px;color:#98a2aa;font-size:11px;letter-spacing:.08em}
+.fl:hover,.fl-ic:hover{background:rgba(255,255,255,.08)}
+.fl-ic.on{background:rgba(255,255,255,.09);opacity:1}
+.fl-ic.on svg{fill:#e9e6df}
+.win-row.masque{display:none}
+.win-vide{padding:22px 12px;color:#7e8891;font-family:var(--d-mono);font-size:11px;letter-spacing:.06em}
 .fl.on{background:rgba(255,255,255,.09);color:#e9e6df}
 .fl-ic{width:22px;height:20px;display:grid;place-items:center;opacity:.55}
 .fl-ic svg{width:11px;height:11px;fill:#c7ccd1}
@@ -175,8 +182,12 @@ h1 .dim{color:var(--ink-3)}
   linear-gradient(0deg,transparent 31%,#fff 31% 69%,transparent 69%),
   linear-gradient(90deg,transparent 28%,#fff 28% 72%,transparent 72%),
   #012169}
-.flag.cn{background:radial-gradient(circle at 27% 33%,#ffde00 0 21%,transparent 21%),#de2910}
-.flag.su{background:radial-gradient(circle at 28% 32%,#ffd700 0 19%,transparent 19%),#cd0000}
+.flag.cn{background:
+  radial-gradient(circle at 48% 20%,#ffde00 0 7%,transparent 7%),
+  radial-gradient(circle at 56% 36%,#ffde00 0 7%,transparent 7%),
+  radial-gradient(circle at 48% 52%,#ffde00 0 7%,transparent 7%),
+  radial-gradient(circle at 26% 32%,#ffde00 0 20%,transparent 20%),#de2910}
+.flag.su{background:radial-gradient(circle at 30% 34%,#ffd700 0 24%,transparent 24%),#a8000f}
 .nm{font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cls{opacity:.5}.cls svg{width:11px;height:11px;fill:#c7ccd1}
 .badge{font-family:var(--d-mono);font-size:9.5px;font-weight:600;letter-spacing:.06em;text-align:center;
@@ -292,11 +303,9 @@ figcaption b{display:block;color:var(--ink);font-family:var(--d-cond);font-weigh
 .win-row.sel{background:rgba(216,181,102,.1);box-shadow:inset 2px 0 0 var(--gold)}
 .win.sim .win-row.ko.sel{box-shadow:inset 2px 0 0 var(--halt)}
 /* sans le mode simulation, la colonne STATUS disparaît */
-.win:not(.sim) .win-head,.win:not(.sim) .win-row{grid-template-columns:24px 26px 1fr 26px}
 .win:not(.sim) .win-head .r,.win:not(.sim) .win-row .badge{display:none}
 .rig-cap .pt{color:var(--gold)}
 @media(max-width:620px){
-  .win:not(.sim) .win-head,.win:not(.sim) .win-row{grid-template-columns:22px 22px 1fr}
 }
 @media (prefers-reduced-motion:reduce){
   .win-opt .chk,.win-opt .chk span,.repair,.win-row{transition:none}
@@ -442,7 +451,6 @@ footer p{max-width:70ch;font-size:13.5px;line-height:1.7}
   .rel-b{border-left:0;padding-left:0}
   .rel-b::before{display:none}
   .win{font-size:11px}
-  .win-head,.win-row{grid-template-columns:22px 22px 1fr 42px;gap:7px;padding:0 9px}
   .win-head .h-type,.win-row .cls{display:none}
   .win-opt .cnt{font-size:10px}
   .tree{font-size:11.5px;padding:16px}
@@ -528,82 +536,92 @@ footer p{max-width:70ch;font-size:13.5px;line-height:1.7}
         <span class="cnt off" lang="en">Click a tank to select it</span>
       </div>
       <div class="win-filters">
-        <span class="fl on">ALL</span>
-        <span class="fl-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9h14v6H5z"/></svg></span>
-        <span class="fl-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l9 9-9 9-9-9z"/></svg></span>
-        <span class="fl-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/></svg></span>
-        <span class="fl-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18l-9 13z"/></svg></span>
-        <span class="fl-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16v3H4zm0 7h16v3H4z"/></svg></span>
+      <button type="button" class="fl on" data-f="all">ALL</button>
+        <button type="button" class="fl-ic" data-f="heavy" aria-label="Chars lourds"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9h14v6H5z"/></svg></button>
+        <button type="button" class="fl-ic" data-f="medium" aria-label="Chars moyens"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l9 9-9 9-9-9z"/></svg></button>
+        <button type="button" class="fl-ic" data-f="light" aria-label="Chars légers"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/></svg></button>
+        <button type="button" class="fl-ic" data-f="td" aria-label="Chasseurs de chars"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18l-9 13z"/></svg></button>
+        <button type="button" class="fl-ic" data-f="spg" aria-label="Artillerie"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16v3H4zm0 7h16v3H4z"/></svg></button>
         <button type="button" class="repair" id="winFix" lang="en">REPAIR ALL</button>
       </div>
       <div class="win-head"><span></span><span>TIER</span><span></span><span>NAME</span><span class="h-type">TYPE</span><span class="r">STATUS</span></div>
 
-      <button type="button" class="win-row" data-nom="60TP Lewandowskiego">
-        <span class="flag pl"></span><span class="tier">X</span><span class="veh"><svg viewBox="0 0 44 20" aria-hidden="true"><use href="#v-heavy"/></svg></span>
-        
+      <button type="button" class="win-row" data-nom="60TP Lewandowskiego" data-cls="heavy">
+        <span class="flag pl"></span>
+        <span class="tier">X</span>
+        <span class="veh"><svg viewBox="0 0 44 20" aria-hidden="true"><use href="#v-heavy"/></svg></span>
         <span class="nm">60TP Lewandowskiego</span>
         <span class="cls"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9h14v6H5z"/></svg></span>
         <span class="badge"><span class="ok">OK</span><span class="out">OUT</span></span>
       </button>
-      <button type="button" class="win-row ko" data-nom="AMX 50 B">
-        <span class="flag fr"></span><span class="tier">X</span><span class="veh"><svg viewBox="0 0 44 20" aria-hidden="true"><use href="#v-heavy"/></svg></span>
-        
+      <button type="button" class="win-row ko" data-nom="AMX 50 B" data-cls="heavy">
+        <span class="flag fr"></span>
+        <span class="tier">X</span>
+        <span class="veh"><svg viewBox="0 0 44 20" aria-hidden="true"><use href="#v-heavy"/></svg></span>
         <span class="nm">AMX 50 B</span>
         <span class="cls"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9h14v6H5z"/></svg></span>
         <span class="badge"><span class="ok">OK</span><span class="out">OUT</span></span>
       </button>
-      <button type="button" class="win-row sel" data-nom="Ashbringer">
-        <span class="flag pl"></span><span class="tier">X</span><span class="veh"><svg viewBox="0 0 44 20" aria-hidden="true"><use href="#v-heavy"/></svg></span>
-        
-        <span class="nm">Ashbringer</span>
-        <span class="cls"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9h14v6H5z"/></svg></span>
-        <span class="badge"><span class="ok">OK</span><span class="out">OUT</span></span>
-      </button>
-      <button type="button" class="win-row" data-nom="BZ-75">
-        <span class="flag cn"></span><span class="tier">X</span><span class="veh"><svg viewBox="0 0 44 20" aria-hidden="true"><use href="#v-heavy"/></svg></span>
-        
+      <button type="button" class="win-row" data-nom="BZ-75" data-cls="heavy">
+        <span class="flag cn"></span>
+        <span class="tier">X</span>
+        <span class="veh"><svg viewBox="0 0 44 20" aria-hidden="true"><use href="#v-heavy"/></svg></span>
         <span class="nm">BZ-75</span>
         <span class="cls"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9h14v6H5z"/></svg></span>
         <span class="badge"><span class="ok">OK</span><span class="out">OUT</span></span>
       </button>
-      <button type="button" class="win-row" data-nom="BZT-70">
-        <span class="flag cn"></span><span class="tier">X</span><span class="veh"><svg viewBox="0 0 44 20" aria-hidden="true"><use href="#v-medium"/></svg></span>
-        
-        <span class="nm">BZT-70</span>
+      <button type="button" class="win-row" data-nom="121" data-cls="medium">
+        <span class="flag cn"></span>
+        <span class="tier">X</span>
+        <span class="veh"><svg viewBox="0 0 44 20" aria-hidden="true"><use href="#v-medium"/></svg></span>
+        <span class="nm">121</span>
         <span class="cls"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l9 9-9 9-9-9z"/></svg></span>
         <span class="badge"><span class="ok">OK</span><span class="out">OUT</span></span>
       </button>
-      <button type="button" class="win-row" data-nom="Chieftain Mk. 6">
-        <span class="flag uk"></span><span class="tier">X</span><span class="veh"><svg viewBox="0 0 44 20" aria-hidden="true"><use href="#v-heavy"/></svg></span>
-        
+      <button type="button" class="win-row sel" data-nom="Chieftain Mk. 6" data-cls="heavy">
+        <span class="flag uk"></span>
+        <span class="tier">X</span>
+        <span class="veh"><svg viewBox="0 0 44 20" aria-hidden="true"><use href="#v-heavy"/></svg></span>
         <span class="nm">Chieftain Mk. 6</span>
         <span class="cls"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9h14v6H5z"/></svg></span>
         <span class="badge"><span class="ok">OK</span><span class="out">OUT</span></span>
       </button>
-      <button type="button" class="win-row" data-nom="E 100">
-        <span class="flag de"></span><span class="tier">X</span><span class="veh"><svg viewBox="0 0 44 20" aria-hidden="true"><use href="#v-heavy"/></svg></span>
-        
+      <button type="button" class="win-row" data-nom="Manticore" data-cls="light">
+        <span class="flag uk"></span>
+        <span class="tier">X</span>
+        <span class="veh"><svg viewBox="0 0 44 20" aria-hidden="true"><use href="#v-light"/></svg></span>
+        <span class="nm">Manticore</span>
+        <span class="cls"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/></svg></span>
+        <span class="badge"><span class="ok">OK</span><span class="out">OUT</span></span>
+      </button>
+      <button type="button" class="win-row" data-nom="E 100" data-cls="heavy">
+        <span class="flag de"></span>
+        <span class="tier">X</span>
+        <span class="veh"><svg viewBox="0 0 44 20" aria-hidden="true"><use href="#v-heavy"/></svg></span>
         <span class="nm">E 100</span>
         <span class="cls"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9h14v6H5z"/></svg></span>
         <span class="badge"><span class="ok">OK</span><span class="out">OUT</span></span>
       </button>
-      <button type="button" class="win-row" data-nom="FV215b">
-        <span class="flag uk"></span><span class="tier">X</span><span class="veh"><svg viewBox="0 0 44 20" aria-hidden="true"><use href="#v-heavy"/></svg></span>
-        
-        <span class="nm">FV215b</span>
-        <span class="cls"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9h14v6H5z"/></svg></span>
+      <button type="button" class="win-row" data-nom="Grille 15" data-cls="td">
+        <span class="flag de"></span>
+        <span class="tier">X</span>
+        <span class="veh"><svg viewBox="0 0 44 20" aria-hidden="true"><use href="#v-td"/></svg></span>
+        <span class="nm">Grille 15</span>
+        <span class="cls"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18l-9 13z"/></svg></span>
         <span class="badge"><span class="ok">OK</span><span class="out">OUT</span></span>
       </button>
-      <button type="button" class="win-row" data-nom="FV230 Canopener">
-        <span class="flag uk"></span><span class="tier">X</span><span class="veh"><svg viewBox="0 0 44 20" aria-hidden="true"><use href="#v-td"/></svg></span>
-        
-        <span class="nm">FV230 Canopener</span>
-        <span class="cls"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l9 9-9 9-9-9z"/></svg></span>
+      <button type="button" class="win-row" data-nom="Object 261" data-cls="spg">
+        <span class="flag su"></span>
+        <span class="tier">X</span>
+        <span class="veh"><svg viewBox="0 0 44 20" aria-hidden="true"><use href="#v-spg"/></svg></span>
+        <span class="nm">Object 261</span>
+        <span class="cls"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16v3H4zm0 7h16v3H4z"/></svg></span>
         <span class="badge"><span class="ok">OK</span><span class="out">OUT</span></span>
       </button>
-      <button type="button" class="win-row" data-nom="IS-7">
-        <span class="flag su"></span><span class="tier">X</span><span class="veh"><svg viewBox="0 0 44 20" aria-hidden="true"><use href="#v-heavy"/></svg></span>
-        
+      <button type="button" class="win-row" data-nom="IS-7" data-cls="heavy">
+        <span class="flag su"></span>
+        <span class="tier">X</span>
+        <span class="veh"><svg viewBox="0 0 44 20" aria-hidden="true"><use href="#v-heavy"/></svg></span>
         <span class="nm">IS-7</span>
         <span class="cls"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9h14v6H5z"/></svg></span>
         <span class="badge"><span class="ok">OK</span><span class="out">OUT</span></span>
@@ -1083,6 +1101,27 @@ footer p{max-width:70ch;font-size:13.5px;line-height:1.7}
     });
   });
   compte();
+
+  // les filtres de classe, comme dans le mod
+  var filtres = win.querySelectorAll("[data-f]");
+  var vide = document.createElement("div");
+  vide.className = "win-vide";
+  vide.textContent = "No tank of this class in the garage";
+  vide.hidden = true;
+  win.querySelector(".win-fade").before(vide);
+  Array.prototype.forEach.call(filtres, function(b){
+    b.addEventListener("click", function(){
+      Array.prototype.forEach.call(filtres, function(x){ x.classList.remove("on"); });
+      b.classList.add("on");
+      var f = b.dataset.f, visibles = 0;
+      Array.prototype.forEach.call(lignes, function(l){
+        var ok = (f === "all" || l.dataset.cls === f);
+        l.classList.toggle("masque", !ok);
+        if (ok) visibles++;
+      });
+      vide.hidden = visibles > 0;
+    });
+  });
 })();
 
 </script>
