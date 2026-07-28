@@ -15,6 +15,9 @@
 <meta property="og:image" content="https://clanplus.eu/og.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20240%20240%22%3E%3Crect%20width%3D%22240%22%20height%3D%22240%22%20rx%3D%2254%22%20fill%3D%22%23141310%22%2F%3E%3Cg%20transform%3D%22translate%2830%2030%29%20scale%280.75%29%22%20fill%3D%22%23d8b566%22%3E%3Ccircle%20cx%3D%22120%22%20cy%3D%22120%22%20r%3D%22100%22%20fill%3D%22none%22%20stroke%3D%22%23d8b566%22%20stroke-width%3D%227%22%2F%3E%3Crect%20x%3D%2281%22%20y%3D%228%22%20width%3D%2218%22%20height%3D%2218%22%2F%3E%3Crect%20x%3D%22111%22%20y%3D%224%22%20width%3D%2218%22%20height%3D%2218%22%2F%3E%3Crect%20x%3D%22141%22%20y%3D%228%22%20width%3D%2218%22%20height%3D%2218%22%2F%3E%3Cpath%20d%3D%22M161%2C155%20A54%2C54%200%201%201%20161%2C85%22%20fill%3D%22none%22%20stroke%3D%22%23d8b566%22%20stroke-width%3D%2220%22%20stroke-linecap%3D%22round%22%2F%3E%3Crect%20x%3D%22112%22%20y%3D%2294%22%20width%3D%2216%22%20height%3D%2252%22%20rx%3D%225%22%2F%3E%3Crect%20x%3D%2294%22%20y%3D%22112%22%20width%3D%2252%22%20height%3D%2216%22%20rx%3D%225%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
   :root{
     --plane:#f3f2ee; --surface-1:#faf9f6; --surface-2:#f1f0ea; --card:#ffffff;
@@ -1909,6 +1912,170 @@
     .bl-scorebox{min-width:70px} .bl-scorebox .sc{font-size:22px}
     .bl-sr{padding:5px 9px;min-width:52px} .bl-sr .val{font-size:14px}
   }
+
+/* ══ ACCUEIL — même monde visuel que la page du mod ══════════════════
+   Tout est scopé sous #landing : l'application garde ses propres règles. */
+#landing{max-width:none;margin:0;padding:0;
+  --ld-gold:#d8b566; --ld-gold-hi:#f0d497; --ld-ink:#f7f6f2; --ld-ink2:#c2beb4;
+  --ld-ink3:#8d8a80; --ld-rule:rgba(255,255,255,.08); --ld-rule2:rgba(255,255,255,.15);
+  --ld-plate:#1c1b18; --ld-live:#5fc27e; --ld-halt:#e2685f;
+  --ld-cond:"IBM Plex Sans Condensed",system-ui,sans-serif;
+  --ld-sans:"IBM Plex Sans",system-ui,sans-serif;
+  --ld-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  font-family:var(--ld-sans);color:var(--ld-ink);
+  background:
+    radial-gradient(ellipse 90% 50% at 50% -6%, rgba(216,181,102,.07), transparent 60%),
+    repeating-linear-gradient(0deg, rgba(255,255,255,.014) 0 1px, transparent 1px 3px);}
+#landing .sh{max-width:1180px;margin:0 auto;padding:0 24px}
+#landing a{color:var(--ld-gold)}
+#landing .lnav{display:flex;align-items:center;gap:16px;height:64px;
+  border-bottom:1px solid var(--ld-rule);position:sticky;top:0;z-index:30;
+  background:rgba(10,10,9,.84);backdrop-filter:blur(14px)}
+#landing .lbrand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ld-ink);
+  height:44px;padding-right:4px}
+#landing .lbrand .mk{width:34px;height:34px;background:#141310;border-radius:9px;display:grid;
+  place-items:center;padding:5px;box-shadow:inset 0 0 0 1px rgba(216,181,102,.3)}
+#landing .lbrand .mk svg{width:100%;height:100%}
+#landing .lbrand b{font-weight:700;font-size:16.5px;letter-spacing:-.01em}
+#landing .lbrand b em{font-style:normal;color:var(--ld-gold)}
+#landing .lsp{margin-left:auto}
+#landing .llk{font-size:14px;font-weight:500;color:var(--ld-ink2);text-decoration:none;height:44px;
+  padding:0 14px;display:inline-flex;align-items:center;border-radius:3px;
+  transition:color .16s,background .16s}
+#landing .llk:hover{color:var(--ld-ink);background:rgba(255,255,255,.05)}
+#landing .lgo{font-family:var(--ld-cond);font-weight:700;font-size:15px;color:#14120c;
+  background:var(--ld-gold);text-decoration:none;height:44px;padding:0 20px;display:inline-flex;
+  align-items:center;border-radius:3px;transition:background .16s,transform .16s;cursor:pointer;
+  border:0;font-family:var(--ld-cond)}
+#landing .lgo:hover{background:var(--ld-gold-hi);transform:translateY(-1px)}
+@media(max-width:720px){#landing .llk{display:none}}
+
+#landing .lhero{padding:70px 0 54px;text-align:center;position:relative;overflow:hidden}
+#landing .lmark{width:96px;height:96px;margin:0 auto 26px;background:#141310;border-radius:24px;
+  display:grid;place-items:center;padding:11px;
+  box-shadow:inset 0 0 0 1px rgba(216,181,102,.28),0 18px 44px -18px rgba(0,0,0,.6)}
+#landing .lkick{font-family:var(--ld-mono);font-size:11.5px;letter-spacing:.28em;text-transform:uppercase;
+  color:var(--ld-gold);margin:0 0 16px}
+#landing h1{font-family:var(--ld-cond);font-weight:700;font-size:clamp(42px,6.4vw,76px);
+  line-height:.96;letter-spacing:-.03em;margin:0 0 20px;text-wrap:balance;color:var(--ld-ink)}
+#landing h1 .dim{color:var(--ld-ink3)}
+#landing .lled{font-size:clamp(16px,1.6vw,19px);color:var(--ld-ink2);max-width:56ch;
+  margin:0 auto 32px;line-height:1.6}
+#landing .lacts{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:26px}
+#landing .lbtn{font-family:var(--ld-cond);font-weight:700;font-size:17px;text-decoration:none;
+  padding:0 28px;height:54px;display:inline-flex;align-items:center;justify-content:center;
+  border-radius:3px;border:1px solid transparent;cursor:pointer;
+  transition:background .16s,transform .16s,border-color .16s,color .16s}
+#landing .lbtn-1{background:var(--ld-gold);color:#14120c;box-shadow:0 12px 26px -12px rgba(0,0,0,.75)}
+#landing .lbtn-1:hover{background:var(--ld-gold-hi);transform:translateY(-2px)}
+#landing .lbtn-2{color:var(--ld-ink);border-color:var(--ld-rule2);background:rgba(255,255,255,.02)}
+#landing .lbtn-2:hover{border-color:var(--ld-gold);color:var(--ld-gold);transform:translateY(-2px)}
+#landing .lspec{font-family:var(--ld-mono);font-size:12px;color:var(--ld-ink3);letter-spacing:.04em;margin:0}
+
+#landing .lsec{padding:70px 0;border-top:1px solid var(--ld-rule)}
+#landing .lsh{display:flex;align-items:baseline;gap:16px;margin-bottom:12px}
+#landing .lsn{font-family:var(--ld-mono);font-size:11.5px;color:var(--ld-gold);letter-spacing:.16em}
+#landing h2{font-family:var(--ld-cond);font-weight:700;font-size:clamp(28px,3.6vw,42px);
+  line-height:1.03;letter-spacing:-.022em;margin:0;color:var(--ld-ink);text-wrap:balance}
+#landing .lsub{color:var(--ld-ink2);max-width:58ch;margin:0 0 40px;font-size:16.5px}
+
+#landing .lscr{background:linear-gradient(180deg,#191d21,#141719);border:1px solid var(--ld-rule2);
+  border-radius:6px;overflow:hidden;box-shadow:0 34px 70px -34px rgba(0,0,0,.95);
+  transition:transform .3s cubic-bezier(.16,1,.3,1),border-color .3s}
+#landing figure:hover .lscr{transform:translateY(-4px);border-color:rgba(216,181,102,.34)}
+#landing .lscr-b{display:flex;align-items:center;gap:7px;padding:10px 14px;background:#101315;
+  border-bottom:1px solid rgba(0,0,0,.6)}
+#landing .lscr-b i{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.13)}
+#landing .lscr-t{margin-left:10px;font-family:var(--ld-mono);font-size:11px;color:var(--ld-ink3)}
+#landing .lmap{display:block;width:100%;height:auto}
+#landing .lctl{display:flex;align-items:center;gap:14px;padding:12px 16px;background:#101315;
+  border-top:1px solid rgba(0,0,0,.5)}
+#landing .lctl .p{color:var(--ld-gold);font-size:12px}
+#landing .lctl .b{flex:1;height:3px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden}
+#landing .lctl .b i{display:block;width:46%;height:100%;background:var(--ld-gold)}
+#landing .lctl .s{font-family:var(--ld-mono);font-size:11px;color:var(--ld-ink3)}
+#landing figure{margin:0}
+#landing figcaption{color:var(--ld-ink2);font-size:15px;margin-top:18px;max-width:62ch;line-height:1.6}
+#landing figcaption b{display:block;color:var(--ld-ink);font-family:var(--ld-cond);font-weight:700;
+  font-size:19px;margin-bottom:5px}
+#landing .lduo{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:26px;
+  margin-top:26px;align-items:stretch}
+#landing .lduo figure{display:flex;flex-direction:column}
+#landing .lduo .lscr{flex:1;display:flex;flex-direction:column}
+#landing .lduo .lscr>:not(.lscr-b){flex:1;display:flex;flex-direction:column;justify-content:center}
+#landing .lsr{padding:26px 24px}
+#landing .lsr-r{display:flex;align-items:center;gap:16px;margin-bottom:22px}
+#landing .lsr-n{font-family:var(--ld-cond);font-weight:700;font-size:52px;line-height:1;color:#4f97ee}
+#landing .lsr-t{font-family:var(--ld-cond);font-weight:700;font-size:17px;color:#4f97ee}
+#landing .lsr-s{font-family:var(--ld-mono);font-size:11px;color:var(--ld-ink3);margin-top:3px}
+#landing .lsr-k{position:relative;height:10px;background:#0d1012;border-radius:5px;overflow:hidden}
+#landing .lsr-k s{position:absolute;top:0;bottom:0;opacity:.55;border-right:2px solid #191d21;
+  text-decoration:none}
+#landing .lsr-k u{position:absolute;top:-3px;bottom:-3px;width:3px;margin-left:-1.5px;
+  background:var(--ld-ink);border-radius:2px;box-shadow:0 0 0 2px #191d21}
+#landing .lsr-x{display:flex;justify-content:space-between;margin-top:7px;font-family:var(--ld-mono);
+  font-size:9.5px;color:var(--ld-ink3)}
+#landing .lrad{padding:14px 10px}
+#landing .lrad svg{display:block;width:100%;max-width:340px;height:auto;margin:0 auto}
+
+#landing .lgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:20px}
+#landing .lcard{background:linear-gradient(180deg,var(--ld-plate),#171614);
+  border:1px solid var(--ld-rule);border-radius:3px;padding:24px 24px 22px;
+  transition:transform .22s cubic-bezier(.16,1,.3,1),border-color .22s}
+#landing .lcard:hover{transform:translateY(-4px);border-color:rgba(216,181,102,.32)}
+#landing .lcard .n{font-family:var(--ld-mono);font-size:11px;color:var(--ld-gold);letter-spacing:.14em}
+#landing .lcard h3{font-family:var(--ld-cond);font-weight:700;font-size:20px;margin:8px 0 7px;
+  color:var(--ld-ink)}
+#landing .lcard p{color:var(--ld-ink2);font-size:14.5px;margin:0;line-height:1.6}
+
+#landing .lend{padding:100px 0;text-align:center;
+  background:radial-gradient(ellipse 70% 100% at 50% 100%,rgba(216,181,102,.1),transparent 70%)}
+#landing .lend p{color:var(--ld-ink2);max-width:46ch;margin:14px auto 30px}
+#landing .lfoot{border-top:1px solid var(--ld-rule);padding:34px 0 50px;color:var(--ld-ink3);font-size:13.5px}
+#landing .lfn{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:14px}
+#landing .lfn a,#landing .lfn button{color:var(--ld-ink2);text-decoration:none;padding:12px 13px;
+  border-radius:3px;display:inline-flex;align-items:center;min-height:44px;font-size:13.5px;
+  cursor:pointer;background:none;border:0;font-family:inherit}
+#landing .lfn a:hover,#landing .lfn button:hover{color:var(--ld-ink);background:rgba(255,255,255,.045)}
+#landing .lfoot p{max-width:74ch;line-height:1.7;margin:0}
+
+/* la bataille se joue — même boucle que sur la page du mod */
+@keyframes ldTrace{from{stroke-dashoffset:400}to{stroke-dashoffset:0}}
+@keyframes ldRoule{from{offset-distance:0%}to{offset-distance:100%}}
+@keyframes ldTir{0%,54%{opacity:0}58%,70%{opacity:1}76%,100%{opacity:0}}
+@keyframes ldBoom{0%,56%{opacity:0;transform:scale(.4)}62%{opacity:1;transform:scale(1)}
+  78%,100%{opacity:0;transform:scale(1.5)}}
+@keyframes ldMort{0%,72%{opacity:0;transform:scale(.5)}78%,100%{opacity:1;transform:scale(1)}}
+@keyframes ldTete{from{width:2%}to{width:96%}}
+#landing .lmap .v{stroke-dasharray:400;animation:ldTrace 11s linear infinite}
+#landing .lmap .c{offset-rotate:0deg;animation:ldRoule 11s linear infinite}
+#landing .lmap .c1{offset-path:path("M92 176C150 190 196 214 236 232")}
+#landing .lmap .c2{offset-path:path("M96 126C154 108 200 86 238 72")}
+#landing .lmap .c3{offset-path:path("M100 150C168 148 214 150 250 152")}
+#landing .lmap .c4{offset-path:path("M92 176C140 184 174 190 196 196")}
+#landing .lmap .c5{offset-path:path("M96 126C120 120 138 116 150 112")}
+#landing .lmap .c6{offset-path:path("M628 124C566 104 512 86 470 74")}
+#landing .lmap .c7{offset-path:path("M624 178C570 200 522 220 486 234")}
+#landing .lmap .c8{offset-path:path("M636 150C592 150 552 150 520 150")}
+#landing .lmap .sh2{animation:ldTir 11s linear infinite}
+#landing .lmap .bo{transform-box:fill-box;transform-origin:center;animation:ldBoom 11s linear infinite}
+#landing .lmap .ki{transform-box:fill-box;transform-origin:center;animation:ldMort 11s linear infinite}
+#landing .lctl .b i{animation:ldTete 11s linear infinite}
+@media (prefers-reduced-motion:reduce){
+  #landing .lmap .v,#landing .lmap .c,#landing .lmap .sh2,#landing .lmap .bo,
+  #landing .lmap .ki,#landing .lctl .b i{animation:none}
+  #landing .lmap .v{stroke-dasharray:none}
+  #landing .lmap .c{offset-distance:88%}
+  #landing .lmap .sh2,#landing .lmap .bo,#landing .lmap .ki{opacity:1}
+  #landing .lscr,#landing .lcard,#landing .lbtn{transition:none}
+}
+@media(max-width:620px){
+  #landing .lhero{padding:48px 0 40px}
+  #landing .lsec{padding:56px 0}
+  #landing .lacts{flex-direction:column}
+  #landing .lacts .lbtn{width:100%}
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" defer></script>
 </head>
@@ -1942,58 +2109,154 @@
 
 <!-- ======================= PAGE D'ACCUEIL PUBLIQUE ======================= -->
 <div id="landing" class="hidden">
-  <header class="lp-nav">
-    <div class="lp-brand">
-      <span class="logo-sm"><svg class="cp-mark" viewBox="0 0 240 240" aria-label="Clan Plus"><circle cx="120" cy="120" r="100" fill="none" stroke="#d8b566" stroke-width="7"/><circle cx="120" cy="120" r="88" fill="none" stroke="#d8b566" stroke-width="2.5" opacity=".5"/><rect x="81" y="8" width="18" height="18" fill="#d8b566"/><rect x="111" y="4" width="18" height="18" fill="#d8b566"/><rect x="141" y="8" width="18" height="18" fill="#d8b566"/><circle cx="20" cy="120" r="4.5" fill="#d8b566"/><circle cx="220" cy="120" r="4.5" fill="#d8b566"/><path d="M161,155 A54,54 0 1 1 161,85" fill="none" stroke="#d8b566" stroke-width="20" stroke-linecap="round"/><g class="cp-plus"><rect x="112" y="94" width="16" height="52" rx="5" fill="#d8b566"/><rect x="94" y="112" width="52" height="16" rx="5" fill="#d8b566"/></g></svg></span>
-      <span>Clan Plus</span>
+  <div class="sh"><header class="lnav">
+    <a class="lbrand" href="/"><span class="mk"><svg viewBox="0 0 240 240" aria-hidden="true"><circle cx="120" cy="120" r="100" fill="none" stroke="#d8b566" stroke-width="7"/><circle cx="120" cy="120" r="88" fill="none" stroke="#d8b566" stroke-width="2.5" opacity=".5"/><rect x="81" y="8" width="18" height="18" fill="#d8b566"/><rect x="111" y="4" width="18" height="18" fill="#d8b566"/><rect x="141" y="8" width="18" height="18" fill="#d8b566"/><circle cx="20" cy="120" r="4.5" fill="#d8b566"/><circle cx="220" cy="120" r="4.5" fill="#d8b566"/><path d="M161,155 A54,54 0 1 1 161,85" fill="none" stroke="#d8b566" stroke-width="20" stroke-linecap="round"/><rect x="112" y="94" width="16" height="52" rx="5" fill="#d8b566"/><rect x="94" y="112" width="52" height="16" rx="5" fill="#d8b566"/></svg></span><b>Clan <em>Plus</em></b></a>
+    <span class="lsp"></span>
+    <a class="llk" href="mod.html">Le mod</a>
+    <a class="llk" href="soutenir.html">Soutenir</a>
+    <button class="lgo" id="lpLoginTop">Se connecter</button>
+  </header></div>
+
+  <header class="lhero"><div class="sh">
+    <div class="lmark"><svg viewBox="0 0 240 240" aria-hidden="true"><circle cx="120" cy="120" r="100" fill="none" stroke="#d8b566" stroke-width="7"/><circle cx="120" cy="120" r="88" fill="none" stroke="#d8b566" stroke-width="2.5" opacity=".5"/><rect x="81" y="8" width="18" height="18" fill="#d8b566"/><rect x="111" y="4" width="18" height="18" fill="#d8b566"/><rect x="141" y="8" width="18" height="18" fill="#d8b566"/><circle cx="20" cy="120" r="4.5" fill="#d8b566"/><circle cx="220" cy="120" r="4.5" fill="#d8b566"/><path d="M161,155 A54,54 0 1 1 161,85" fill="none" stroke="#d8b566" stroke-width="20" stroke-linecap="round"/><rect x="112" y="94" width="16" height="52" rx="5" fill="#d8b566"/><rect x="94" y="112" width="52" height="16" rx="5" fill="#d8b566"/></svg></div>
+    <p class="lkick">World of Tanks EU · Bastion</p>
+    <h1>Ton clan joue.<br><span class="dim">Le reste se mesure.</span></h1>
+    <p class="lled">Le mod enregistre chaque bataille de clan. Le site en tire les statistiques,
+    une note de jeu d'équipe et un plan de progression — pour toi et pour tout le clan.</p>
+    <div class="lacts">
+      <a class="lbtn lbtn-1" href="mod.html">Découvrir le mod →</a>
+      <button class="lbtn lbtn-2" id="lpLogin">Accéder à mon clan →</button>
     </div>
-    <nav class="lp-nav-r">
-      <a class="lp-nav-link" href="#lp-feats">Fonctions</a>
-      <a class="lp-nav-link" href="mod.html">Le mod</a>
-      <button class="lp-btn lp-btn-ghost lp-btn-sm" id="lpLoginTop">Se connecter</button>
-    </nav>
-  </header>
+    <p class="lspec">Gratuit · sans publicité · World of Tanks EU 2.3.1.0</p>
+  </div></header>
 
-  <section class="lp-hero">
-    <div class="lp-hero-glow"></div>
-    <div class="lp-logo-xl"><svg class="cp-mark" viewBox="0 0 240 240" aria-label="Clan Plus"><circle cx="120" cy="120" r="100" fill="none" stroke="#d8b566" stroke-width="7"/><circle cx="120" cy="120" r="88" fill="none" stroke="#d8b566" stroke-width="2.5" opacity=".5"/><rect x="81" y="8" width="18" height="18" fill="#d8b566"/><rect x="111" y="4" width="18" height="18" fill="#d8b566"/><rect x="141" y="8" width="18" height="18" fill="#d8b566"/><circle cx="20" cy="120" r="4.5" fill="#d8b566"/><circle cx="220" cy="120" r="4.5" fill="#d8b566"/><path d="M161,155 A54,54 0 1 1 161,85" fill="none" stroke="#d8b566" stroke-width="20" stroke-linecap="round"/><g class="cp-plus"><rect x="112" y="94" width="16" height="52" rx="5" fill="#d8b566"/><rect x="94" y="112" width="52" height="16" rx="5" fill="#d8b566"/></g></svg></div>
-    <h1 class="lp-title">Clan Plus</h1>
-    <p class="lp-tag">Le compagnon de ton clan sur <b>World of Tanks</b>. Le mod enregistre tes batailles de <b>Bastion</b> et le site en tire des statistiques, un indicateur de jeu d'équipe et un plan de progression — pour tout le clan.</p>
-    <div class="lp-cta">
-      <a class="lp-btn lp-btn-primary" id="lpDownload" href="mod.html">Découvrir le mod →</a>
-      <button class="lp-btn lp-btn-ghost" id="lpLogin">Accéder à mon clan →</button>
-    </div>
-    <div class="lp-hero-note">Version 1.0.31 · World of Tanks EU 2.3.1.0 · Gratuit · Sans publicité</div>
-  </section>
+  <section class="lsec"><div class="sh">
+    <div class="lsh"><span class="lsn">01</span><h2>Chaque bataille,<br>rejouable et mesurée.</h2></div>
+    <p class="lsub">Ce que le mod enregistre pendant que tu joues, le site te le rend après.</p>
 
-  <section class="lp-feats" id="lp-feats">
-    <h2 class="lp-h2">Ce que Clan Plus t'apporte</h2>
-    <div class="lp-grid">
-      <div class="lp-feat"><div class="lp-feat-ic">🏰</div><h3>Stats Bastion</h3><p>Les performances de ton clan en mode Bastion, bataille après bataille, réunies au même endroit.</p></div>
-      <div class="lp-feat"><div class="lp-feat-ic">⚔️</div><h3>Batailles détaillées</h3><p>Revis chaque affrontement façon carte de match e-sport : équipes, logos, cartes et résultats.</p></div>
-      <div class="lp-feat"><div class="lp-feat-ic">🎯</div><h3>Indicateur SR</h3><p>Le « Synergy Rating », un score inspiré du WN8 mais pensé pour mesurer l'efficacité du jeu d'équipe.</p></div>
-      <div class="lp-feat"><div class="lp-feat-ic">📈</div><h3>Ma progression</h3><p>Ton évolution, tes points forts et faibles, et un plan de progression personnalisé.</p></div>
-      <div class="lp-feat"><div class="lp-feat-ic">🛠️</div><h3>Loadouts clan</h3><p>Les équipements, consommables et compétences recommandés par l'état-major, char par char.</p></div>
-      <div class="lp-feat"><div class="lp-feat-ic">🎬</div><h3>Relecteur animé</h3><p>Rejoue tes batailles sur une mini-carte animée, à la manière du jeu.</p></div>
-    </div>
-  </section>
-
-  
-
-  <footer class="lp-foot">
-    <div class="lp-foot-in">
-      <div class="lp-foot-brand">
-        <span class="logo-sm"><svg class="cp-mark" viewBox="0 0 240 240" aria-label="Clan Plus"><circle cx="120" cy="120" r="100" fill="none" stroke="#d8b566" stroke-width="7"/><path d="M161,155 A54,54 0 1 1 161,85" fill="none" stroke="#d8b566" stroke-width="20" stroke-linecap="round"/><g class="cp-plus"><rect x="112" y="94" width="16" height="52" rx="5" fill="#d8b566"/><rect x="94" y="112" width="52" height="16" rx="5" fill="#d8b566"/></g></svg></span>
-        <span>Clan Plus</span>
+    <figure>
+      <div class="lscr">
+        <div class="lscr-b"><i></i><i></i><i></i><span class="lscr-t">Himmelsdorf · 7 — 5 · victoire</span></div>
+        <svg class="lmap" viewBox="0 0 720 300" role="img" aria-label="La bataille rejouée sur la carte : les chars des deux équipes, leurs trajets, un tir et une élimination.">
+          <defs><pattern id="ldg" width="30" height="30" patternUnits="userSpaceOnUse">
+            <path d="M30 0H0V30" fill="none" stroke="rgba(255,255,255,.045)"/></pattern>
+            <filter id="ldsoft"><feGaussianBlur stdDeviation="5"/></filter></defs>
+          <rect width="720" height="300" fill="#12161a"/><rect width="720" height="300" fill="url(#ldg)"/>
+          <g fill="#1b2127">
+            <rect x="248" y="52" width="92" height="58" rx="2"/><rect x="366" y="46" width="74" height="70" rx="2"/>
+            <rect x="252" y="140" width="66" height="52" rx="2"/><rect x="352" y="150" width="98" height="44" rx="2"/>
+            <rect x="268" y="214" width="80" height="50" rx="2"/><rect x="386" y="212" width="62" height="56" rx="2"/>
+            <rect x="120" y="120" width="54" height="66" rx="2"/><rect x="540" y="112" width="58" height="70" rx="2"/></g>
+          <g><circle cx="74" cy="150" r="30" fill="none" stroke="#5fc27e" stroke-dasharray="4 5" opacity=".7"/>
+            <path d="M74 132v36" stroke="#5fc27e" stroke-width="2"/><path d="M74 132h16l-4 7 4 7H74z" fill="#5fc27e"/>
+            <circle cx="646" cy="150" r="30" fill="none" stroke="#e2685f" stroke-dasharray="4 5" opacity=".7"/>
+            <path d="M646 132v36" stroke="#e2685f" stroke-width="2"/><path d="M646 132h16l-4 7 4 7h-16z" fill="#e2685f"/></g>
+          <g fill="none" stroke-linecap="round" opacity=".5">
+            <path class="v" d="M92 176C150 190 196 214 236 232" stroke="#5fc27e" stroke-width="1.6"/>
+            <path class="v" d="M96 126C154 108 200 86 238 72" stroke="#5fc27e" stroke-width="1.6"/>
+            <path class="v" d="M100 150C168 148 214 150 250 152" stroke="#5fc27e" stroke-width="1.6"/>
+            <path class="v" d="M628 124C566 104 512 86 470 74" stroke="#e2685f" stroke-width="1.6"/>
+            <path class="v" d="M624 178C570 200 522 220 486 234" stroke="#e2685f" stroke-width="1.6"/>
+            <path class="v" d="M636 150C592 150 552 150 520 150" stroke="#e2685f" stroke-width="1.6"/></g>
+          <g class="sh2"><path d="M186 93L529 93" stroke="#e8a13c" stroke-width="1.6" stroke-dasharray="7 5" opacity=".95"/>
+            <text x="357" y="82" fill="#e8a13c" font-family="IBM Plex Mono,monospace" font-size="11" text-anchor="middle">−1 240</text></g>
+          <circle class="bo" cx="529" cy="93" r="14" fill="#e8a13c" opacity=".24" filter="url(#ldsoft)"/>
+          <g class="c c3"><circle r="8" fill="#5fc27e"/><rect x="-4" y="-2.5" width="8" height="5" rx="1" fill="#0f1a12"/></g>
+          <g class="c c2"><circle r="8" fill="#5fc27e"/><rect x="-4" y="-2.5" width="8" height="5" rx="1" fill="#0f1a12"/></g>
+          <g class="c c1"><circle r="8" fill="#5fc27e"/><path d="M0 -4l4 4-4 4-4-4z" fill="#0f1a12"/></g>
+          <g class="c c4"><circle r="8" fill="#5fc27e"/><circle r="2.6" fill="#0f1a12"/></g>
+          <g class="c c5"><circle r="8" fill="#5fc27e"/><path d="M-4 -3h8l-4 6z" fill="#0f1a12"/></g>
+          <g class="c c6"><circle r="8" fill="#e2685f"/><rect x="-4" y="-2.5" width="8" height="5" rx="1" fill="#1a0f0f"/></g>
+          <g class="c c7"><circle r="8" fill="#e2685f"/><rect x="-4" y="-2.5" width="8" height="5" rx="1" fill="#1a0f0f"/></g>
+          <g class="c c8"><circle r="8" fill="#e2685f"/><path d="M0 -4l4 4-4 4-4-4z" fill="#1a0f0f"/></g>
+          <g class="ki" stroke="#c2beb4" stroke-width="2.2" opacity=".9"><path d="M523 87l12 12M535 87l-12 12"/></g>
+        </svg>
+        <div class="lctl"><span class="p">▶</span><span class="b"><i></i></span><span class="s">×2</span></div>
       </div>
-      <nav class="lp-foot-links">
-        <a href="#" data-legal="legal">Mentions légales</a>
-        <a href="#" data-legal="privacy">Confidentialité</a>
-        <a href="#" data-legal="cookies">Cookies</a>
-      </nav>
+      <figcaption><b>La bataille se rejoue.</b> Chaque char seconde par seconde : les trajets, les
+      tirs, les dégâts avec leur auteur, les éliminations. Tu peux mettre en pause et commenter —
+      c'est le débriefing.</figcaption>
+    </figure>
+
+    <div class="lduo">
+      <figure>
+        <div class="lscr">
+          <div class="lscr-b"><i></i><i></i><i></i><span class="lscr-t">Ma progression</span></div>
+          <div class="lsr">
+            <div class="lsr-r"><div class="lsr-n">1&nbsp;712</div>
+              <div><div class="lsr-t">Bon coéquipier</div><div class="lsr-s">64 batailles · marge ±63</div></div></div>
+            <div class="lsr-k">
+              <s style="left:0;width:5.5%;background:#e2685f"></s><s style="left:5.5%;width:19.5%;background:#d8b566"></s>
+              <s style="left:25%;width:16.7%;background:#8d8a80"></s><s style="left:41.7%;width:19.4%;background:#4f97ee"></s>
+              <s style="left:61.1%;width:27.8%;background:#5fc27e"></s><s style="left:88.9%;width:11.1%;background:#a970ff"></s>
+              <u style="left:45.1%"></u></div>
+            <div class="lsr-x"><span>1000</span><span>1350</span><span>1650</span><span>2000</span><span>2500</span></div>
+          </div>
+        </div>
+        <figcaption><b>Une note qui mesure le jeu d'équipe.</b> Pas les dégâts bruts : ta part réelle
+        dans la victoire, pondérée par la force de l'adversaire, avec sa marge d'erreur affichée.</figcaption>
+      </figure>
+      <figure>
+        <div class="lscr">
+          <div class="lscr-b"><i></i><i></i><i></i><span class="lscr-t">Quoi travailler</span></div>
+          <div class="lrad">
+            <svg viewBox="0 0 320 210" role="img" aria-label="Radar des cinq aptitudes comparées à la médiane du rôle.">
+              <g transform="translate(160,102)">
+                <polygon points="0,-72 68,-22 42,58 -42,58 -68,-22" fill="none" stroke="rgba(255,255,255,.09)"/>
+                <polygon points="0,-36 34,-11 21,29 -21,29 -34,-11" fill="none" stroke="rgba(255,255,255,.07)"/>
+                <polygon points="0,-54 51,-17 32,44 -32,44 -51,-17" fill="none" stroke="#d8b566" stroke-width="1.2" stroke-dasharray="3 3" opacity=".85"/>
+                <polygon points="0,-70 44,-14 30,41 -25,34 -37,-12" fill="rgba(216,181,102,.2)" stroke="#d8b566" stroke-width="2" stroke-linejoin="round"/>
+                <g fill="#d8b566"><circle cx="0" cy="-70" r="3.2"/><circle cx="44" cy="-14" r="3.2"/><circle cx="30" cy="41" r="3.2"/><circle cx="-25" cy="34" r="3.2"/><circle cx="-37" cy="-12" r="3.2"/></g></g>
+              <g font-family="IBM Plex Mono,monospace" font-size="9.5" fill="#8d8a80">
+                <text x="160" y="16" text-anchor="middle">DÉGÂTS</text><text x="252" y="84" text-anchor="middle">ENCAISSÉ</text>
+                <text x="216" y="182" text-anchor="middle">BLINDAGE</text><text x="104" y="182" text-anchor="middle">VISION</text>
+                <text x="66" y="84" text-anchor="middle">OBJECTIF</text></g>
+              <g font-family="IBM Plex Mono,monospace" font-size="10">
+                <text x="160" y="30" text-anchor="middle" fill="#5fc27e">▲1,34×</text>
+                <text x="252" y="98" text-anchor="middle" fill="#e2685f">▼0,72×</text></g>
+            </svg>
+          </div>
+        </div>
+        <figcaption><b>Un plan, pas un tableau.</b> Tes cinq aptitudes comparées à la médiane de ton
+        rôle, et ce qu'il faut travailler en priorité — avec l'écart chiffré.</figcaption>
+      </figure>
     </div>
-    <p class="lp-disclaimer">World of Tanks et Wargaming sont des marques de Wargaming. Clan Plus est un projet communautaire indépendant, gratuit et non affilié à Wargaming.</p>
-  </footer>
+  </div></section>
+
+  <section class="lsec"><div class="sh">
+    <div class="lsh"><span class="lsn">02</span><h2>Et pour l'état-major</h2></div>
+    <p class="lsub">Le clan n'est pas qu'une somme de joueurs. Les officiers ont leurs propres outils.</p>
+    <div class="lgrid">
+      <div class="lcard"><span class="n">STRATÉGIE</span><h3>L'éditeur de plans</h3>
+        <p>Dessine la manœuvre sur la vraie carte, partage-la, et rejoue le replay par-dessus pour
+        comparer ce qui était prévu à ce qui s'est passé.</p></div>
+      <div class="lcard"><span class="n">FORMATION</span><h3>Line-ups et loadouts</h3>
+        <p>Les compositions par carte et par format, et les équipements recommandés char par char,
+        décidés une fois pour tout le clan.</p></div>
+      <div class="lcard"><span class="n">ROSTER</span><h3>Qui joue quoi</h3>
+        <p>Les performances de chaque membre en Bastion, l'état de sa formation, et le classement
+        interne — sans avoir à tenir un tableur.</p></div>
+    </div>
+  </div></section>
+
+  <div class="lend"><div class="sh">
+    <h2>Deux minutes pour commencer.</h2>
+    <p>Un fichier à déposer dans un dossier. Ensuite, joue comme d'habitude.</p>
+    <a class="lbtn lbtn-1" href="mod.html">Découvrir le mod →</a>
+  </div></div>
+
+  <footer class="lfoot"><div class="sh">
+    <nav class="lfn">
+      <a href="mod.html">Le mod</a><a href="aide-editeur.html">Manuel de l'éditeur</a>
+      <a href="aide-sr.html">Le SR expliqué</a><a href="soutenir.html">Soutenir</a>
+      <a href="trouver-clan.html">Trouver un clan</a>
+      <button type="button" data-legal="mentions">Mentions légales</button><button type="button" data-legal="privacy">Confidentialité</button>
+      <button type="button" data-legal="cookies">Cookies</button>
+    </nav>
+    <p>Clan Plus est un projet communautaire indépendant, gratuit et sans publicité, développé par un
+    joueur de World of Tanks EU. <strong>Non affilié à Wargaming.</strong> World of Tanks et Wargaming
+    sont des marques de Wargaming.net.</p>
+  </div></footer>
 </div>
 
 <!-- ======================= MODALE LÉGALE ======================= -->
@@ -4171,7 +4434,7 @@ function ceForRow(r,C){
    ============================================================ */
 // Marqueur de version : `srVersion()` dans la console dit si le fichier servi
 // est bien le dernier. Évite de confondre « pas déployé » et « ne marche pas ».
-const SR_SITE_VERSION="sr-4.0-page-mod";
+const SR_SITE_VERSION="sr-4.1-accueil-refondue";
 function srVersion(){ return SR_SITE_VERSION; }
 let SR_MODEL=null, SR_SKILL=null, SR_ELO_TAG=null, SR_ELO_ID=null, SR_ROWS=null;
 const SR_CLS={heavyTank:"heavy",mediumTank:"medium",lightTank:"light","AT-SPG":"td",SPG:"spg"};
