@@ -14,151 +14,408 @@
 <meta property="og:description" content="Gratuit et sans publicité. Voici ce que coûte le projet, en toute transparence.">
 <meta property="og:image" content="https://clanplus.eu/og.jpg">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20240%20240%22%3E%3Crect%20width%3D%22240%22%20height%3D%22240%22%20rx%3D%2254%22%20fill%3D%22%23141310%22%2F%3E%3Cg%20transform%3D%22translate%2830%2030%29%20scale%280.75%29%22%20fill%3D%22%23d8b566%22%3E%3Ccircle%20cx%3D%22120%22%20cy%3D%22120%22%20r%3D%22100%22%20fill%3D%22none%22%20stroke%3D%22%23d8b566%22%20stroke-width%3D%227%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20240%20240%22%3E%3Crect%20width%3D%22240%22%20height%3D%22240%22%20rx%3D%2254%22%20fill%3D%22%23141310%22%2F%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22%23d8b566%22%3E%3Ccircle%20cx%3D%22120%22%20cy%3D%22120%22%20r%3D%22100%22%20stroke-width%3D%227%22%2F%3E%3Cpath%20d%3D%22M161%2C155%20A54%2C54%200%201%201%20161%2C85%22%20stroke-width%3D%2220%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fg%3E%3Cg%20fill%3D%22%23d8b566%22%3E%3Crect%20x%3D%22112%22%20y%3D%2294%22%20width%3D%2216%22%20height%3D%2252%22%20rx%3D%225%22%2F%3E%3Crect%20x%3D%2294%22%20y%3D%22112%22%20width%3D%2252%22%20height%3D%2216%22%20rx%3D%225%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
-  :root{
-    --plane:#0c0c0b; --surface-1:#151412; --surface-2:#201f1b; --card:#1a1917;
-    --ink:#f6f5f1; --ink-2:#bdb9af; --muted:#87847b;
-    --border:rgba(255,255,255,.09);
-    --good:#2ec26e; --bad:#ec6a6a; --warn:#e0a34a;
-    --accent:#d8b566; --accent-2:#ecd190; --accent-soft:rgba(216,181,102,.14);
-    --radius:14px; --radius-sm:9px;
-    color-scheme:dark;
-  }
-  *{box-sizing:border-box}
-  html,body{margin:0}
-  body{background:var(--plane);color:var(--ink);
-       font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-       font-size:15.5px;line-height:1.62;-webkit-font-smoothing:antialiased}
-  .wrap{max-width:780px;margin:0 auto;padding:0 20px 80px}
-  .topbar{border-bottom:1px solid var(--border);background:var(--surface-1);position:sticky;top:0;z-index:5}
-  .topbar-in{max-width:780px;margin:0 auto;padding:11px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-  .brand{font-weight:800;color:var(--ink);text-decoration:none;font-size:15px}
-  .brand span{color:var(--accent)}
-  .back{margin-left:auto;color:var(--ink-2);text-decoration:none;font-size:13.5px;font-weight:600;
-        border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 12px}
-  .back:hover{color:var(--ink);border-color:var(--accent)}
+/* ══════════════════════════════════════════════════════════════════
+   Même monde que l'accueil et la page du mod : la plaque d'ordonnance.
+   Ici la pièce maîtresse est le relevé de coûts. Il est traité comme un
+   instrument de mesure et non comme un tableau : chaque poste porte sa
+   part réelle, et la barre de répartition montre d'un coup d'œil que le
+   plus gros poste est aussi le moins évident. C'est l'argument de la
+   page — autant le rendre visible plutôt que de l'écrire.
+   ══════════════════════════════════════════════════════════════════ */
+:root{
+  --steel-0:#0a0a09; --steel-1:#100f0e; --steel-2:#171614; --plate:#1c1b18;
+  --ink:#f7f6f2; --ink-2:#c2beb4; --ink-3:#8d8a80;
+  --rule:rgba(255,255,255,.08); --rule-2:rgba(255,255,255,.15);
+  --gold:#d8b566; --gold-hi:#f0d497;
+  --live:#5fc27e; --sea:#4f97ee;
+  --r:3px;
+  --d-cond:"IBM Plex Sans Condensed",system-ui,sans-serif;
+  --d-sans:"IBM Plex Sans",system-ui,sans-serif;
+  --d-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+html,body{margin:0}
+img,svg{max-width:100%}
+body{background:var(--steel-0);color:var(--ink);font-family:var(--d-sans);
+  font-size:16px;line-height:1.65;-webkit-font-smoothing:antialiased;
+  background-image:
+    radial-gradient(ellipse 90% 55% at 50% -10%, rgba(216,181,102,.07), transparent 60%),
+    repeating-linear-gradient(0deg, rgba(255,255,255,.014) 0 1px, transparent 1px 3px);
+  background-attachment:fixed}
+a{color:var(--gold);text-decoration-thickness:1px;text-underline-offset:3px}
+strong{color:#fff;font-weight:600}
+:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+.skip{position:absolute;left:-9999px;background:var(--gold);color:#100f0e;padding:12px 18px;font-weight:600;z-index:99}
+.skip:focus{left:0;top:0}
+.sheet{max-width:900px;margin:0 auto;padding:0 24px}
 
-  header.hero{padding:52px 0 8px}
-  .eyebrow{font-size:11.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);margin:0 0 12px;font-weight:700}
-  h1{font-size:clamp(27px,5vw,40px);line-height:1.1;margin:0 0 14px;letter-spacing:-.02em;text-wrap:balance;font-weight:800}
-  .lede{font-size:17px;color:var(--ink-2);margin:0}
-  h2{font-size:21px;font-weight:800;margin:38px 0 10px;letter-spacing:-.01em}
-  h3{font-size:16px;font-weight:700;margin:24px 0 7px}
-  p{margin:0 0 13px}
-  ul{margin:0 0 15px;padding-left:21px} li{margin:0 0 7px}
-  strong{color:#fff;font-weight:700}
-  a{color:var(--accent)}
+/* ── en-tête ── */
+.top{position:sticky;top:0;z-index:40;background:rgba(10,10,9,.84);
+  backdrop-filter:blur(14px) saturate(1.2);border-bottom:1px solid var(--rule)}
+.top-in{max-width:900px;margin:0 auto;padding:0 24px;height:60px;display:flex;align-items:center;gap:16px}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink);height:44px}
+.logo .mk{width:34px;height:34px;flex:0 0 auto;background:#141310;border-radius:9px;display:grid;
+  place-items:center;padding:5px;box-shadow:inset 0 0 0 1px rgba(216,181,102,.3);
+  transition:transform .4s cubic-bezier(.16,1,.3,1)}
+.logo:hover .mk{transform:rotate(-8deg) scale(1.06)}
+.logo .mk svg{width:100%;height:100%}
+.logo b{font-weight:700;font-size:16.5px;letter-spacing:-.01em}
+.logo b em{font-style:normal;color:var(--gold)}
+.sp{margin-left:auto}
+.lk{font-size:14px;font-weight:500;color:var(--ink-2);text-decoration:none;height:44px;padding:0 14px;
+  display:inline-flex;align-items:center;border-radius:var(--r);transition:color .16s,background .16s}
+.lk:hover{color:var(--ink);background:rgba(255,255,255,.05)}
+@media(max-width:640px){.lk{display:none}}
 
-  /* bloc de dons */
-  .give{background:var(--card);border:1px solid rgba(216,181,102,.35);border-radius:var(--radius);
-        padding:24px 26px;margin:26px 0;text-align:center}
-  .give h2{margin:0 0 8px;font-size:20px}
-  .give p{color:var(--ink-2);margin:0 0 18px}
-  .cta{display:inline-block;background:var(--accent);color:#12110d;font-weight:800;font-size:16px;
-       text-decoration:none;border-radius:11px;padding:13px 28px;border:1px solid var(--accent)}
-  .cta:hover{background:var(--accent-2)}
-  .cta.alt{background:transparent;color:var(--accent);margin-left:8px}
-  .cta.alt:hover{background:var(--accent-soft)}
-  .give small{display:block;margin-top:14px;color:var(--muted);font-size:12.5px}
+/* ── ouverture ── */
+.hero{padding:66px 0 46px;text-align:center}
+.mark{position:relative;width:88px;height:88px;margin:0 auto 24px;background:#141310;border-radius:22px;
+  display:grid;place-items:center;padding:10px;
+  box-shadow:inset 0 0 0 1px rgba(216,181,102,.28),0 18px 44px -18px rgba(0,0,0,.6)}
+.kick{font-family:var(--d-mono);font-size:11.5px;letter-spacing:.28em;text-transform:uppercase;
+  color:var(--gold);margin:0 0 16px}
+h1{font-family:var(--d-cond);font-weight:700;font-size:clamp(38px,5.6vw,64px);line-height:.98;
+  letter-spacing:-.03em;margin:0 0 20px;text-wrap:balance}
+h1 .dim{color:var(--ink-3)}
+.lede{font-size:clamp(16px,1.6vw,18.5px);color:var(--ink-2);max-width:54ch;margin:0 auto;line-height:1.6}
 
-  .tw{overflow-x:auto;margin:0 0 8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--card)}
-  table{width:100%;border-collapse:collapse;font-size:14.5px;min-width:420px}
-  th{font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);text-align:left;
-     padding:11px 14px;border-bottom:1px solid var(--border);font-weight:700}
-  td{padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.05)}
-  tr:last-child td{border-bottom:0}
-  td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
-  tr.tot td{border-top:1px solid var(--border);font-weight:800;color:#fff}
-  .cap{font-size:12.5px;color:var(--muted);margin:0 0 20px}
+/* ── sections ── */
+section{padding:64px 0;border-top:1px solid var(--rule);position:relative}
+section::before{content:"";position:absolute;top:-1px;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,var(--gold),transparent 60%);transform-origin:left;transform:scaleX(0)}
+.mo section.vu::before{animation:trait 1.1s cubic-bezier(.16,1,.3,1) both}
+.sec-h{display:flex;align-items:baseline;gap:16px;margin:0 0 12px}
+.sec-n{font-family:var(--d-mono);font-size:11.5px;color:var(--gold);letter-spacing:.16em}
+h2{font-family:var(--d-cond);font-weight:700;font-size:clamp(26px,3.4vw,38px);line-height:1.04;
+  letter-spacing:-.022em;margin:0;text-wrap:balance}
+.sub{color:var(--ink-2);max-width:58ch;margin:0 0 34px;font-size:16.5px}
+h3{font-family:var(--d-cond);font-weight:700;font-size:20px;margin:0 0 8px}
+p{margin:0 0 14px;max-width:66ch}
+.lbl{font-family:var(--d-mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--ink-3);margin:0 0 10px}
 
-  .note{border:1px solid var(--border);border-left:3px solid var(--accent);background:var(--card);
-        border-radius:0 var(--radius) var(--radius) 0;padding:14px 17px;margin:0 0 17px;font-size:14.5px}
-  .note.free{border-left-color:var(--good)}
-  .note p:last-child{margin-bottom:0}
-  .note .lbl{font-size:10.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--accent);
-             display:block;margin-bottom:4px;font-weight:700}
-  .note.free .lbl{color:var(--good)}
-  footer{padding:38px 0 0;color:var(--muted);font-size:13.5px;border-top:1px solid var(--border);margin-top:40px}
-  footer a{color:var(--ink-2)}
-  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+/* ── le relevé de coûts ── */
+.releve{border:1px solid var(--rule);border-radius:var(--r);overflow:hidden;
+  background:linear-gradient(180deg,var(--plate),var(--steel-2))}
+.poste{display:grid;grid-template-columns:1fr 116px;gap:20px;padding:22px 24px;
+  border-top:1px solid var(--rule);align-items:start}
+.poste:first-child{border-top:0}
+.poste h3{margin-bottom:5px}
+.poste .src{font-family:var(--d-mono);font-size:10.5px;color:var(--ink-3);letter-spacing:.12em;margin:0 0 9px}
+.poste p{font-size:14.5px;color:var(--ink-2);margin:0;max-width:52ch}
+.poste .eur{font-family:var(--d-cond);font-weight:700;font-size:30px;text-align:right;
+  line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap}
+.poste .eur s{display:block;text-decoration:none;font-family:var(--d-mono);font-weight:400;
+  font-size:10px;color:var(--ink-3);letter-spacing:.12em;margin-top:7px}
+.total{display:grid;grid-template-columns:1fr 116px;gap:20px;padding:20px 24px;
+  background:rgba(216,181,102,.07);border-top:1px solid rgba(216,181,102,.28);align-items:center}
+.total .t{font-family:var(--d-cond);font-weight:700;font-size:19px;letter-spacing:.02em}
+.total .eur{font-family:var(--d-cond);font-weight:700;font-size:34px;color:var(--gold);
+  text-align:right;line-height:1;font-variant-numeric:tabular-nums}
+.part{padding:22px 24px 24px;border-top:1px solid var(--rule)}
+.part-bar{display:flex;height:14px;border-radius:3px;overflow:hidden;background:var(--steel-1);gap:2px}
+.part-bar i{display:block;transform-origin:left}
+.mo .part-bar i{transform:scaleX(0)}
+.mo .vu .part-bar i{animation:remplit .8s cubic-bezier(.16,1,.3,1) both;animation-delay:calc(var(--i)*110ms)}
+.part-leg{display:flex;gap:22px;flex-wrap:wrap;margin-top:13px;font-family:var(--d-mono);font-size:11.5px;
+  color:var(--ink-3)}
+.part-leg span{display:flex;align-items:center;gap:7px}
+.part-leg b{width:9px;height:9px;border-radius:2px;flex:0 0 auto}
+.cap{font-size:13.5px;color:var(--ink-3);margin:16px 0 0;max-width:62ch}
+
+/* ── encadrés ── */
+.card{background:var(--plate);border:1px solid var(--rule);border-radius:var(--r);padding:24px 26px;margin:22px 0 0}
+.card.key{border-color:rgba(95,194,126,.32);background:linear-gradient(180deg,rgba(95,194,126,.05),var(--plate))}
+.card .lbl{color:var(--gold)}
+.card.key .lbl{color:var(--live)}
+.card p:last-child{margin-bottom:0}
+@media(min-width:820px){
+  .card{display:grid;grid-template-columns:184px minmax(0,1fr);column-gap:28px;row-gap:0;
+    align-items:start;padding:26px 30px}
+  .card .lbl{margin:0;padding-top:3px;grid-column:1}
+  .card > :not(.lbl){grid-column:2}
+}
+
+/* ── contribuer ── */
+.give{text-align:center;padding:46px 26px;border:1px solid rgba(216,181,102,.34);border-radius:var(--r);
+  background:linear-gradient(180deg,rgba(216,181,102,.07),var(--plate) 70%)}
+.give h2{margin-bottom:10px}
+.give p{color:var(--ink-2);max-width:44ch;margin:0 auto 26px}
+.btn{font-family:var(--d-cond);font-weight:700;font-size:17px;text-decoration:none;padding:0 30px;height:54px;
+  display:inline-flex;align-items:center;justify-content:center;border-radius:var(--r);
+  border:1px solid transparent;position:relative;overflow:hidden;
+  transition:background .16s,transform .16s,color .16s}
+.btn::after{content:"";position:absolute;top:0;bottom:0;width:38%;left:-45%;
+  background:linear-gradient(105deg,transparent,rgba(255,255,255,.5),transparent);
+  transition:left .55s cubic-bezier(.16,1,.3,1)}
+.btn:hover::after{left:118%}
+.btn-go{background:var(--gold);color:#14120c;box-shadow:0 12px 26px -12px rgba(0,0,0,.75)}
+.btn-go:hover{background:var(--gold-hi);transform:translateY(-2px)}
+.give small{display:block;margin-top:16px;color:var(--ink-3);font-family:var(--d-mono);font-size:11.5px}
+
+/* ── cartes ── */
+.aides{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px}
+.aide{background:linear-gradient(180deg,var(--plate),var(--steel-2));border:1px solid var(--rule);
+  border-radius:var(--r);padding:22px 22px 20px;
+  transition:transform .22s cubic-bezier(.16,1,.3,1),border-color .22s}
+.aide:hover{transform:translateY(-4px);border-color:rgba(216,181,102,.32)}
+.aide .n{font-family:var(--d-mono);font-size:11px;color:var(--gold);letter-spacing:.14em;
+  transition:letter-spacing .3s ease;display:block}
+.aide:hover .n{letter-spacing:.22em}
+.aide h3{margin:9px 0 7px;font-size:19px}
+.aide p{color:var(--ink-2);font-size:14.5px;margin:0;max-width:none}
+
+footer{border-top:1px solid var(--rule);padding:36px 0 56px;color:var(--ink-3);font-size:13.5px;margin-top:64px}
+.fnav{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:16px}
+.fnav a{color:var(--ink-2);text-decoration:none;padding:12px 13px;border-radius:var(--r);
+  display:inline-flex;align-items:center;min-height:44px;font-size:13.5px}
+.fnav a:hover{color:var(--ink);background:rgba(255,255,255,.045)}
+footer p{max-width:74ch;line-height:1.7;margin:0}
+
+/* ── motion ── */
+@keyframes marque{from{opacity:0;transform:scale(.7) rotate(-14deg)}to{opacity:1;transform:none}}
+@keyframes monte{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
+@keyframes volet{from{transform:translateY(102%)}to{transform:none}}
+@keyframes trait{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes plaque{from{opacity:0;transform:translateY(28px) scale(.99)}to{opacity:1;transform:none}}
+@keyframes repere{from{opacity:0;transform:translateX(-14px)}to{opacity:1;transform:none}}
+@keyframes remplit{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes lueur{0%,100%{opacity:.55}50%{opacity:1}}
+h1 .ln{display:block;overflow:hidden}
+h1 .ln i{display:block;font-style:normal}
+.mo .mark{animation:marque .8s .05s cubic-bezier(.16,1,.3,1) both}
+.mo .mark::after{content:"";position:absolute;inset:-13px;border-radius:28px;z-index:-1;pointer-events:none;
+  background:radial-gradient(circle,rgba(216,181,102,.22),transparent 70%);
+  animation:lueur 5s 1s ease-in-out infinite}
+.mo .kick{animation:monte .6s .32s cubic-bezier(.16,1,.3,1) both}
+.mo h1 .ln:nth-child(1) i{animation:volet .85s .42s cubic-bezier(.16,1,.3,1) both}
+.mo h1 .ln:nth-child(2) i{animation:volet .85s .54s cubic-bezier(.16,1,.3,1) both}
+.mo .hero .lede{animation:monte .7s .72s cubic-bezier(.16,1,.3,1) both}
+.mo .rv{opacity:0}
+.mo .rv.vu{opacity:1}
+.mo .rv[data-a="up"].vu{animation:monte .75s cubic-bezier(.16,1,.3,1) both;animation-delay:calc(var(--i,0)*90ms)}
+.mo .rv[data-a="plate"].vu{animation:plaque .9s cubic-bezier(.16,1,.3,1) both}
+.mo .rv[data-a="head"]{opacity:1}
+.mo .rv[data-a="head"] .sec-n,.mo .rv[data-a="head"] h2{opacity:0}
+.mo .rv[data-a="head"].vu .sec-n{animation:repere .6s cubic-bezier(.16,1,.3,1) both}
+.mo .rv[data-a="head"].vu h2{animation:monte .8s .1s cubic-bezier(.16,1,.3,1) both}
+@media (prefers-reduced-motion:reduce){
+  .mo .mark,.mo .kick,.mo h1 .ln i,.mo .hero .lede,.mo .rv,.mo .rv.vu,
+  .mo .rv[data-a="head"] .sec-n,.mo .rv[data-a="head"] h2,.mo .part-bar i,.mo .vu .part-bar i,
+  section.vu::before,.mo .mark::after{animation:none!important;opacity:1!important;transform:none!important}
+  section::before{transform:scaleX(1)}
+  .btn,.btn::after,.aide,.aide .n,.logo .mk{transition:none}
+}
+@media(max-width:600px){
+  .hero{padding:46px 0 36px}
+  section{padding:50px 0}
+  .poste,.total{grid-template-columns:1fr;gap:12px}
+  .poste .eur,.total .eur{text-align:left}
+  .poste .eur s{margin-top:4px}
+}
 </style>
 </head>
 <body>
 
-<div class="topbar"><div class="topbar-in">
-  <a class="brand" href="/">Clan<span>Plus</span></a>
-  <a class="back" href="/">← Retour au site</a>
+<a class="skip" href="#main">Aller au contenu</a>
+
+<div class="top"><div class="top-in">
+  <a class="logo" href="/">
+    <span class="mk"><svg viewBox="0 0 240 240" aria-hidden="true"><circle cx="120" cy="120" r="100" fill="none" stroke="#d8b566" stroke-width="7"/><circle cx="120" cy="120" r="88" fill="none" stroke="#d8b566" stroke-width="2.5" opacity=".5"/><rect x="81" y="8" width="18" height="18" fill="#d8b566"/><rect x="111" y="4" width="18" height="18" fill="#d8b566"/><rect x="141" y="8" width="18" height="18" fill="#d8b566"/><circle cx="20" cy="120" r="4.5" fill="#d8b566"/><circle cx="220" cy="120" r="4.5" fill="#d8b566"/><path d="M161,155 A54,54 0 1 1 161,85" fill="none" stroke="#d8b566" stroke-width="20" stroke-linecap="round"/><rect x="112" y="94" width="16" height="52" rx="5" fill="#d8b566"/><rect x="94" y="112" width="52" height="16" rx="5" fill="#d8b566"/></svg></span>
+    <b>Clan <em>Plus</em></b></a>
+  <span class="sp"></span>
+  <a class="lk" href="mod.html">Le mod</a>
+  <a class="lk" href="/">Retour au site</a>
 </div></div>
 
-<div class="wrap">
+<main id="main"><div class="sheet">
+
 <header class="hero">
-  <p class="eyebrow">Soutenir le projet</p>
-  <h1>Clan Plus est gratuit, et le restera</h1>
-  <p class="lede">Pas de publicité, pas de fonctionnalité réservée aux payants, pas de revente de données.
-  Mais l'outil a un coût réel — le voici, en entier.</p>
+  <div class="mark"><svg viewBox="0 0 240 240" aria-hidden="true"><circle cx="120" cy="120" r="100" fill="none" stroke="#d8b566" stroke-width="7"/><circle cx="120" cy="120" r="88" fill="none" stroke="#d8b566" stroke-width="2.5" opacity=".5"/><rect x="81" y="8" width="18" height="18" fill="#d8b566"/><rect x="111" y="4" width="18" height="18" fill="#d8b566"/><rect x="141" y="8" width="18" height="18" fill="#d8b566"/><circle cx="20" cy="120" r="4.5" fill="#d8b566"/><circle cx="220" cy="120" r="4.5" fill="#d8b566"/><path d="M161,155 A54,54 0 1 1 161,85" fill="none" stroke="#d8b566" stroke-width="20" stroke-linecap="round"/><rect x="112" y="94" width="16" height="52" rx="5" fill="#d8b566"/><rect x="94" y="112" width="52" height="16" rx="5" fill="#d8b566"/></svg></div>
+  <p class="kick">Soutenir le projet</p>
+  <h1><span class="ln"><i>Gratuit,</i></span><span class="ln"><i class="dim">et ça le restera.</i></span></h1>
+  <p class="lede">Pas de publicité, pas de fonctionnalité réservée aux payants, pas de revente de
+  données. Mais l'outil a un coût réel. Le voici, en entier.</p>
 </header>
 
-<div class="give">
-  <h2>Contribuer</h2>
-  <p>Ponctuellement ou chaque mois, à partir de quelques euros.</p>
-  <!-- ⚠️ REMPLACER par ta vraie adresse Ko-fi une fois le compte créé -->
-  <a class="cta" href="https://ko-fi.com/clanplus" target="_blank" rel="noopener">Soutenir sur Ko-fi</a>
-  <small>Paiement par carte ou PayPal · aucun compte nécessaire · Ko-fi ne prend aucune commission</small>
-</div>
+<section id="couts">
+  <div class="rv" data-a="head">
+    <div class="sec-h"><span class="sec-n">01</span><h2>Le relevé, chaque mois</h2></div>
+    <p class="sub">Chiffres réels, sans marge ni rémunération. Le temps de développement n'est pas
+    compté.</p>
+  </div>
 
-<h2>Ce que ça coûte, chaque mois</h2>
-<div class="tw"><table>
-  <thead><tr><th>Poste</th><th>À quoi ça sert</th><th class="num">Coût</th></tr></thead>
-  <tbody>
-    <tr><td><strong>Hébergement</strong><br><span style="color:var(--muted);font-size:13px">Supabase</span></td>
-        <td>La base de données : vos batailles, vos replays, vos stratégies. Gratuit aujourd'hui, payant dès que le volume de replays grandira</td>
-        <td class="num">25 €</td></tr>
-    <tr><td><strong>Nom de domaine</strong><br><span style="color:var(--muted);font-size:13px">clanplus.eu</span></td>
-        <td>L'adresse du site</td>
-        <td class="num">~1 €</td></tr>
-    <tr><td><strong>Outils de développement</strong></td>
-        <td>Assistance à la programmation. C'est ce qui permet à une personne seule de tenir un projet de cette taille</td>
-        <td class="num">90 €</td></tr>
-    <tr class="tot"><td colspan="2">Total</td><td class="num">≈ 116 €</td></tr>
-  </tbody>
-</table></div>
-<p class="cap">Chiffres réels, sans marge ni rémunération. Le temps de développement n'est pas compté.</p>
+  <div class="releve rv" data-a="plate">
+    <div class="poste">
+      <div>
+        <h3>Hébergement</h3>
+        <p class="src">SUPABASE</p>
+        <p>La base de données : vos batailles, vos replays, vos stratégies. Gratuit aujourd'hui,
+        payant dès que le volume de replays grandira.</p>
+      </div>
+      <div class="eur">25&nbsp;€<s>À VENIR</s></div>
+    </div>
+    <div class="poste">
+      <div>
+        <h3>Nom de domaine</h3>
+        <p class="src">CLANPLUS.EU</p>
+        <p>L'adresse du site.</p>
+      </div>
+      <div class="eur">~1&nbsp;€<s>EN COURS</s></div>
+    </div>
+    <div class="poste">
+      <div>
+        <h3>Outils de développement</h3>
+        <p class="src">ASSISTANCE À LA PROGRAMMATION</p>
+        <p>C'est ce qui permet à une personne seule de tenir un projet de cette taille.</p>
+      </div>
+      <div class="eur">90&nbsp;€<s>EN COURS</s></div>
+    </div>
+    <div class="total">
+      <div class="t">Total mensuel</div>
+      <div class="eur">≈&nbsp;116&nbsp;€</div>
+    </div>
+    <div class="part">
+      <p class="lbl">Répartition</p>
+      <div class="part-bar" role="img" aria-label="Répartition des coûts : hébergement 22 %, nom de domaine 1 %, outils de développement 77 %.">
+        <i style="width:21.6%;background:var(--sea);--i:0"></i>
+        <i style="width:0.9%;background:var(--live);--i:1"></i>
+        <i style="width:77.5%;background:var(--gold);--i:2"></i>
+      </div>
+      <div class="part-leg">
+        <span><b style="background:var(--sea)"></b>Hébergement 22 %</span>
+        <span><b style="background:var(--live)"></b>Domaine 1 %</span>
+        <span><b style="background:var(--gold)"></b>Outils 77 %</span>
+      </div>
+      <p class="cap">Le plus gros poste est aussi le moins visible. C'est pour ça qu'il est expliqué
+      juste en dessous, plutôt que noyé dans un total.</p>
+    </div>
+  </div>
 
-<div class="note"><span class="lbl">Pourquoi je le détaille</span>
-<p>Beaucoup de projets demandent un soutien sans dire à quoi il sert. Le troisième poste est le plus
-gros et le moins évident : ce ne sont pas des serveurs, ce sont des <strong>outils d'assistance à la
-programmation</strong>. Sans eux, Clan Plus avancerait plusieurs fois moins vite — l'éditeur de
-stratégie, le débriefing de replay et le SR n'existeraient probablement pas encore.</p>
-<p>Tu peux estimer que ça ne relève pas d'un don, et c'est une position tout à fait défendable. C'est
-justement pour que tu puisses en juger que je l'écris.</p></div>
+  <div class="card rv" data-a="up">
+    <p class="lbl">Pourquoi je le détaille</p>
+    <p>Beaucoup de projets demandent un soutien sans dire à quoi il sert. Le troisième poste est le
+    plus gros et le moins évident : ce ne sont pas des serveurs, ce sont des <strong>outils
+    d'assistance à la programmation</strong>. Sans eux, Clan Plus avancerait plusieurs fois moins
+    vite : l'éditeur de stratégie, le débriefing de replay et le SR n'existeraient probablement pas
+    encore.</p>
+    <p>Tu peux estimer que ça ne relève pas d'un don, et c'est une position tout à fait défendable.
+    C'est justement pour que tu puisses en juger que je l'écris.</p>
+  </div>
+</section>
 
-<h2>Ce que ça change concrètement</h2>
-<ul>
-  <li><strong>Les replays restent conservés.</strong> Chaque bataille pèse quelques centaines de kilooctets. C'est ce qui permet de rejouer une partie six mois plus tard — et c'est le poste qui grossit.</li>
-  <li><strong>Le développement continue.</strong> Carte de chaleur des morts, comparaison entre le plan et son exécution, analyse de synergie : tout ça est prévu.</li>
-  <li><strong>Aucune publicité.</strong> C'est un outil qu'on utilise pendant une session de clan, pas un blog. Une bannière n'y a pas sa place.</li>
-</ul>
+<section id="effet">
+  <div class="rv" data-a="head">
+    <div class="sec-h"><span class="sec-n">02</span><h2>Ce que ça change</h2></div>
+    <p class="sub">Concrètement, à quoi sert l'argent qui rentre.</p>
+  </div>
+  <div class="aides">
+    <div class="aide rv" data-a="up" style="--i:0">
+      <span class="n">CONSERVATION</span>
+      <h3>Les replays restent</h3>
+      <p>Chaque bataille pèse quelques centaines de kilooctets. C'est ce qui permet de rejouer une
+      partie six mois plus tard, et c'est le poste qui grossit.</p>
+    </div>
+    <div class="aide rv" data-a="up" style="--i:1">
+      <span class="n">DÉVELOPPEMENT</span>
+      <h3>La suite continue</h3>
+      <p>Carte de chaleur des morts, comparaison entre le plan et son exécution, analyse de
+      synergie : tout ça est prévu.</p>
+    </div>
+    <div class="aide rv" data-a="up" style="--i:2">
+      <span class="n">JAMAIS</span>
+      <h3>Aucune publicité</h3>
+      <p>C'est un outil qu'on utilise pendant une session de clan, pas un blog. Une bannière n'y a
+      pas sa place.</p>
+    </div>
+  </div>
 
-<div class="note free"><span class="lbl">Engagement</span>
-<p>Aucune fonctionnalité ne deviendra payante. Ni l'éditeur, ni les replays, ni le SR, ni les
-statistiques. Si le financement ne suit pas, je réduirai les coûts — je ne mettrai pas de péage sur ce
-qui est déjà là.</p></div>
+  <div class="card key rv" data-a="up">
+    <p class="lbl">Engagement</p>
+    <p>Aucune fonctionnalité ne deviendra payante. Ni l'éditeur, ni les replays, ni le SR, ni les
+    statistiques. Si le financement ne suit pas, je réduirai les coûts : je ne mettrai pas de péage
+    sur ce qui est déjà là.</p>
+  </div>
+</section>
 
-<h2>Et si tu ne peux pas donner</h2>
-<p>Ça n'a rien d'obligatoire, et il y a d'autres façons d'aider :</p>
-<ul>
-  <li><strong>Installer le mod et le faire installer.</strong> Chaque clan qui l'utilise enrichit les données communes — les analyses deviennent meilleures pour tout le monde</li>
-  <li><strong>Signaler ce qui ne va pas.</strong> Un bug décrit précisément vaut beaucoup de temps gagné</li>
-  <li><strong>Dire ce qui manque.</strong> La plupart des fonctionnalités existantes viennent de demandes de joueurs</li>
-</ul>
+<section id="contribuer">
+  <div class="give rv" data-a="plate">
+    <h2>Contribuer</h2>
+    <p>Ponctuellement ou chaque mois, à partir de quelques euros.</p>
+    <!-- ⚠️ REMPLACER par la vraie adresse Ko-fi une fois le compte créé -->
+    <a class="btn btn-go" href="https://ko-fi.com/clanplus" target="_blank" rel="noopener">Soutenir sur Ko-fi</a>
+    <small>Carte ou PayPal · aucun compte nécessaire · Ko-fi ne prend aucune commission</small>
+  </div>
+</section>
 
-<footer>
-  <p>Clan Plus — outils de clan pour World of Tanks EU ·
-  <a href="/">Site</a> · <a href="aide-editeur.html">Manuel de l'éditeur</a> ·
-  <a href="aide-sr.html">Le SR expliqué</a></p>
-</footer>
+<section id="autrement">
+  <div class="rv" data-a="head">
+    <div class="sec-h"><span class="sec-n">03</span><h2>Et si tu ne peux pas donner</h2></div>
+    <p class="sub">Ça n'a rien d'obligatoire, et il y a d'autres façons d'aider. La première vaut
+    sans doute plus qu'un don.</p>
+  </div>
+  <div class="aides">
+    <div class="aide rv" data-a="up" style="--i:0">
+      <span class="n">LE PLUS UTILE</span>
+      <h3>Installer le mod</h3>
+      <p>Et le faire installer. Chaque clan qui l'utilise enrichit les données communes : les
+      analyses deviennent meilleures pour tout le monde.</p>
+    </div>
+    <div class="aide rv" data-a="up" style="--i:1">
+      <span class="n">SIGNALER</span>
+      <h3>Ce qui ne va pas</h3>
+      <p>Un bug décrit précisément vaut beaucoup de temps gagné. Dis où, quand, et ce que tu
+      attendais à la place.</p>
+    </div>
+    <div class="aide rv" data-a="up" style="--i:2">
+      <span class="n">DEMANDER</span>
+      <h3>Ce qui manque</h3>
+      <p>La plupart des fonctionnalités existantes viennent de demandes de joueurs. La prochaine
+      viendra peut-être de toi.</p>
+    </div>
+  </div>
+</section>
 
-</div>
+</div></main>
+
+<footer><div class="sheet">
+  <nav class="fnav" aria-label="Liens du site">
+    <a href="/">Site</a><a href="mod.html">Le mod</a>
+    <a href="aide-editeur.html">Manuel de l'éditeur</a><a href="aide-sr.html">Le SR expliqué</a>
+    <a href="trouver-clan.html">Trouver un clan</a>
+  </nav>
+  <p>Clan Plus est un projet communautaire indépendant, gratuit et sans publicité, développé par un
+  joueur de World of Tanks EU. <strong>Non affilié à Wargaming.</strong> World of Tanks est une
+  marque de Wargaming.net.</p>
+</div></footer>
+
+<script>
+/* Le masquage est posé PAR LE SCRIPT (classe .mo sur la racine) : sans JS, la
+   page reste entièrement lisible. Filet de sécurité à 3 s si un observateur
+   ne se déclenche pas. */
+(function(){
+  var doux = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var blocs = document.querySelectorAll(".rv, section");
+  var tout = function(){
+    Array.prototype.forEach.call(blocs, function(b){ b.classList.add("vu"); });
+  };
+  if (doux || !("IntersectionObserver" in window)) { tout(); return; }
+  document.documentElement.classList.add("mo");
+  var io = new IntersectionObserver(function(es){
+    es.forEach(function(e){
+      if (e.isIntersecting){ e.target.classList.add("vu"); io.unobserve(e.target); }
+    });
+  }, { rootMargin: "0px 0px -12% 0px", threshold: .08 });
+  Array.prototype.forEach.call(blocs, function(b){ io.observe(b); });
+  setTimeout(tout, 3000);
+})();
+</script>
 </body>
 </html>
