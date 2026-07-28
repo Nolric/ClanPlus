@@ -145,8 +145,18 @@ h1 .dim{color:var(--ink-3)}
 .fl-ic svg{width:11px;height:11px;fill:#c7ccd1}
 .repair{margin-left:auto;font-family:var(--d-cond);font-weight:700;font-size:11px;letter-spacing:.09em;
         color:var(--gold);border:1px solid rgba(216,181,102,.55);border-radius:2px;padding:5px 12px;white-space:nowrap}
-.win-head,.win-row{display:grid;grid-template-columns:24px 26px 1fr 26px 46px;align-items:center;gap:9px;
-                   padding:0 12px}
+.win-head,.win-row{display:grid;align-items:center;gap:8px;padding:0 12px}
+/* ordre des colonnes repris du mod : drapeau · tier · véhicule · nom · type · état */
+.win-head,.win-row{grid-template-columns:19px 20px 42px 1fr 26px 46px}
+.win:not(.sim) .win-head,.win:not(.sim) .win-row{grid-template-columns:19px 20px 42px 1fr 26px}
+.veh{display:block;line-height:0}
+.veh svg{width:42px;height:19px;fill:#94a08c;opacity:.92}
+.win-row.ko .veh svg{fill:#6d7268;opacity:.7}
+@media(max-width:620px){
+  .win-head,.win-row{grid-template-columns:16px 17px 34px 1fr 42px}
+  .win:not(.sim) .win-head,.win:not(.sim) .win-row{grid-template-columns:16px 17px 34px 1fr}
+  .veh svg{width:34px;height:16px}
+}
 .win-head{height:26px;background:rgba(0,0,0,.34);font-family:var(--d-mono);font-size:9.5px;
           letter-spacing:.13em;color:#7e8891;text-transform:uppercase}
 .win-head .r{text-align:right}
@@ -155,7 +165,18 @@ h1 .dim{color:var(--ink-3)}
 .win-row.sel{background:rgba(216,181,102,.1);box-shadow:inset 2px 0 0 var(--gold)}
 .win-row.dead{background:rgba(226,104,95,.09);color:#a9a49b}
 .win-row .tier{font-family:var(--d-mono);font-size:11px;color:#b9b4aa}
-.flag{width:17px;height:12px;border-radius:1px;box-shadow:0 0 0 1px rgba(0,0,0,.4)}
+.flag{width:17px;height:12px;border-radius:1px;box-shadow:0 0 0 1px rgba(0,0,0,.4);background-size:cover}
+.flag.pl{background:linear-gradient(#fff 50%,#dc143c 50%)}
+.flag.fr{background:linear-gradient(90deg,#0055a4 33%,#fff 33% 66%,#ef4135 66%)}
+.flag.de{background:linear-gradient(#101010 33%,#dd0000 33% 66%,#ffce00 66%)}
+.flag.uk{background:
+  linear-gradient(0deg,transparent 40%,#c8102e 40% 60%,transparent 60%),
+  linear-gradient(90deg,transparent 37%,#c8102e 37% 63%,transparent 63%),
+  linear-gradient(0deg,transparent 31%,#fff 31% 69%,transparent 69%),
+  linear-gradient(90deg,transparent 28%,#fff 28% 72%,transparent 72%),
+  #012169}
+.flag.cn{background:radial-gradient(circle at 27% 33%,#ffde00 0 21%,transparent 21%),#de2910}
+.flag.su{background:radial-gradient(circle at 28% 32%,#ffd700 0 19%,transparent 19%),#cd0000}
 .nm{font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cls{opacity:.5}.cls svg{width:11px;height:11px;fill:#c7ccd1}
 .badge{font-family:var(--d-mono);font-size:9.5px;font-weight:600;letter-spacing:.06em;text-align:center;
@@ -241,6 +262,44 @@ figcaption b{display:block;color:var(--ink);font-family:var(--d-cond);font-weigh
   .map .shot,.map .boom,.map .kill{opacity:1}
   .scr-ctl .bar span{width:46%}
   .gain-big .scr,.gain-duo .scr{transition:none}
+}
+
+
+/* ── la fenêtre est manipulable : deux états, comme le vrai mod ────── */
+.win-opt .chk{cursor:pointer;font:inherit;padding:0;border:1px solid var(--gold);background:var(--gold);
+  color:#14120c;font-size:10px;font-weight:700;line-height:1;transition:background .16s,border-color .16s}
+.win-opt .chk span{opacity:1;transition:opacity .14s}
+.win:not(.sim) .chk{background:transparent;border-color:#6f7a83}
+.win:not(.sim) .chk span{opacity:0}
+.win-opt .chk:hover{border-color:var(--gold-hi)}
+.win-opt .cnt.off{display:none}
+.win:not(.sim) .cnt.on{display:none}
+.win:not(.sim) .cnt.off{display:inline}
+.win:not(.sim) .repair{visibility:hidden}
+.repair{cursor:pointer;font-family:var(--d-cond);background:none;
+  transition:background .16s,color .16s}
+.repair:hover{background:rgba(216,181,102,.16)}
+.win-row{width:100%;text-align:left;font:inherit;border-left:0;border-right:0;border-top:0;
+  background:transparent;cursor:pointer;transition:background .14s}
+.win-row:hover{background:rgba(255,255,255,.05)}
+.win-row .badge{padding:0;background:none}
+.win-row .badge span{display:none;border-radius:2px;padding:2px 0;font-family:var(--d-mono);
+  font-size:9.5px;font-weight:600;letter-spacing:.06em;text-align:center}
+.win.sim .win-row .badge .ok{display:block;background:#5fa64a;color:#0d1408}
+.win.sim .win-row.ko .badge .ok{display:none}
+.win.sim .win-row.ko .badge .out{display:block;background:#b0413a;color:#fff}
+.win.sim .win-row.ko{background:rgba(226,104,95,.09);color:#a9a49b}
+.win-row.sel{background:rgba(216,181,102,.1);box-shadow:inset 2px 0 0 var(--gold)}
+.win.sim .win-row.ko.sel{box-shadow:inset 2px 0 0 var(--halt)}
+/* sans le mode simulation, la colonne STATUS disparaît */
+.win:not(.sim) .win-head,.win:not(.sim) .win-row{grid-template-columns:24px 26px 1fr 26px}
+.win:not(.sim) .win-head .r,.win:not(.sim) .win-row .badge{display:none}
+.rig-cap .pt{color:var(--gold)}
+@media(max-width:620px){
+  .win:not(.sim) .win-head,.win:not(.sim) .win-row{grid-template-columns:22px 22px 1fr}
+}
+@media (prefers-reduced-motion:reduce){
+  .win-opt .chk,.win-opt .chk span,.repair,.win-row{transition:none}
 }
 
 /* ── sections ────────────────────────────────────────────────────── */
@@ -428,11 +487,45 @@ footer p{max-width:70ch;font-size:13.5px;line-height:1.7}
   <!-- La fenêtre du mod, reconstruite en HTML plutôt qu'en capture : nette à
        toute taille, lisible sur téléphone, et elle ne vieillit pas. -->
   <div class="rig">
-    <div class="win" role="img" aria-label="La fenêtre Clan Plus en jeu : le mode simulation Clan Wars est actif, un char sur soixante-quatre est hors service, et la liste montre les chars avec leur nation, leur tier et leur état.">
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="v-heavy" viewBox="0 0 44 20">
+    <rect x="2" y="13.6" width="32" height="4.4" rx="2.2"/>
+    <path d="M4.5 13.6 6.5 8.6h23l2 5z"/>
+    <path d="M13.5 8.6 15 4.6h10.5l1.5 4z"/>
+    <rect x="26" y="5.9" width="17" height="2.1" rx=".6"/>
+  </symbol>
+  <symbol id="v-medium" viewBox="0 0 44 20">
+    <rect x="3" y="13.8" width="30" height="3.8" rx="1.9"/>
+    <path d="M5.5 13.8 7.5 9.6h21l2 4.2z"/>
+    <path d="M14 9.6 15.4 6.1h9.4l1.2 3.5z"/>
+    <rect x="25.5" y="7.1" width="16.5" height="1.7" rx=".5"/>
+  </symbol>
+  <symbol id="v-light" viewBox="0 0 44 20">
+    <rect x="5" y="13.8" width="25" height="3.4" rx="1.7"/>
+    <path d="M7 13.8 9 10.2h17l1.6 3.6z"/>
+    <path d="M14 10.2 15.2 7.2h8l1 3z"/>
+    <rect x="23.5" y="8.1" width="14" height="1.4" rx=".45"/>
+  </symbol>
+  <symbol id="v-td" viewBox="0 0 44 20">
+    <rect x="3" y="13.8" width="30" height="3.8" rx="1.9"/>
+    <path d="M5.5 13.8 8.5 7.4h19.5l2 6.4z"/>
+    <rect x="27" y="7.6" width="16" height="2" rx=".6"/>
+  </symbol>
+  <symbol id="v-spg" viewBox="0 0 44 20">
+    <rect x="3" y="13.8" width="29" height="3.8" rx="1.9"/>
+    <path d="M5.5 13.8 6.5 9h20l1.5 4.8z"/>
+    <rect x="24" y="8.4" width="17" height="1.9" rx=".6" transform="rotate(-19 24 9.3)"/>
+  </symbol>
+</defs></svg>
+    <div class="win sim" id="win">
       <div class="win-bar"><span class="sep">▌</span><b>CLAN PLUS</b><span class="sep">—</span><b>BASTION</b><span class="min">—</span></div>
       <div class="win-opt">
-        <span class="chk" aria-hidden="true">✓</span><span class="txt" lang="en">Clan Wars simulation mode</span>
-        <span class="cnt" lang="en">Out of commission: <b>1</b> / 64</span>
+        <button type="button" class="chk" id="winSim" role="switch" aria-checked="true"
+                aria-label="Mode simulation Clan Wars"><span aria-hidden="true">✓</span></button>
+        <span class="txt" lang="en">Clan Wars simulation mode</span>
+        <span class="cnt on" lang="en">Out of commission: <b id="winCnt">1</b> / 64</span>
+        <span class="cnt off" lang="en">Click a tank to select it</span>
       </div>
       <div class="win-filters">
         <span class="fl on">ALL</span>
@@ -441,21 +534,84 @@ footer p{max-width:70ch;font-size:13.5px;line-height:1.7}
         <span class="fl-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/></svg></span>
         <span class="fl-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18l-9 13z"/></svg></span>
         <span class="fl-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16v3H4zm0 7h16v3H4z"/></svg></span>
-        <span class="repair" lang="en">REPAIR ALL</span>
+        <button type="button" class="repair" id="winFix" lang="en">REPAIR ALL</button>
       </div>
-      <div class="win-head"><span>TIER</span><span></span><span>NAME</span><span class="h-type">TYPE</span><span class="r">STATUS</span></div>
-      <div class="win-row"><span class="tier">X</span><span class="flag" style="background:linear-gradient(#fff 50%,#dc143c 50%)"></span><span class="nm">60TP Lewandowskiego</span><span class="cls"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9h14v6H5z"/></svg></span><span class="badge ok">OK</span></div>
-      <div class="win-row dead"><span class="tier">X</span><span class="flag" style="background:linear-gradient(90deg,#0055a4 33%,#fff 33% 66%,#ef4135 66%)"></span><span class="nm">AMX 50 B</span><span class="cls"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9h14v6H5z"/></svg></span><span class="badge out">OUT</span></div>
-      <div class="win-row sel"><span class="tier">X</span><span class="flag" style="background:linear-gradient(#fff 50%,#dc143c 50%)"></span><span class="nm">Ashbringer</span><span class="cls"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9h14v6H5z"/></svg></span><span class="badge ok">OK</span></div>
-      <div class="win-row"><span class="tier">X</span><span class="flag" style="background:linear-gradient(#de2910 70%,#ffde00 70%)"></span><span class="nm">BZ-75</span><span class="cls"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9h14v6H5z"/></svg></span><span class="badge ok">OK</span></div>
-      <div class="win-row"><span class="tier">X</span><span class="flag" style="background:linear-gradient(#de2910 70%,#ffde00 70%)"></span><span class="nm">BZT-70</span><span class="cls"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l9 9-9 9-9-9z"/></svg></span><span class="badge ok">OK</span></div>
-      <div class="win-row"><span class="tier">X</span><span class="flag" style="background:linear-gradient(45deg,#012169 42%,#fff 42% 56%,#c8102e 56%)"></span><span class="nm">Chieftain Mk. 6</span><span class="cls"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9h14v6H5z"/></svg></span><span class="badge ok">OK</span></div>
-      <div class="win-row"><span class="tier">X</span><span class="flag" style="background:linear-gradient(#000 33%,#dd0000 33% 66%,#ffce00 66%)"></span><span class="nm">E 100</span><span class="cls"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9h14v6H5z"/></svg></span><span class="badge ok">OK</span></div>
-      <div class="win-row"><span class="tier">X</span><span class="flag" style="background:linear-gradient(45deg,#012169 42%,#fff 42% 56%,#c8102e 56%)"></span><span class="nm">FV215b</span><span class="cls"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9h14v6H5z"/></svg></span><span class="badge ok">OK</span></div>
-      <div class="win-row"><span class="tier">X</span><span class="flag" style="background:linear-gradient(#cd0000 70%,#ffd700 70%)"></span><span class="nm">IS-7</span><span class="cls"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9h14v6H5z"/></svg></span><span class="badge ok">OK</span></div>
+      <div class="win-head"><span></span><span>TIER</span><span></span><span>NAME</span><span class="h-type">TYPE</span><span class="r">STATUS</span></div>
+
+      <button type="button" class="win-row" data-nom="60TP Lewandowskiego">
+        <span class="flag pl"></span><span class="tier">X</span><span class="veh"><svg viewBox="0 0 44 20" aria-hidden="true"><use href="#v-heavy"/></svg></span>
+        
+        <span class="nm">60TP Lewandowskiego</span>
+        <span class="cls"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9h14v6H5z"/></svg></span>
+        <span class="badge"><span class="ok">OK</span><span class="out">OUT</span></span>
+      </button>
+      <button type="button" class="win-row ko" data-nom="AMX 50 B">
+        <span class="flag fr"></span><span class="tier">X</span><span class="veh"><svg viewBox="0 0 44 20" aria-hidden="true"><use href="#v-heavy"/></svg></span>
+        
+        <span class="nm">AMX 50 B</span>
+        <span class="cls"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9h14v6H5z"/></svg></span>
+        <span class="badge"><span class="ok">OK</span><span class="out">OUT</span></span>
+      </button>
+      <button type="button" class="win-row sel" data-nom="Ashbringer">
+        <span class="flag pl"></span><span class="tier">X</span><span class="veh"><svg viewBox="0 0 44 20" aria-hidden="true"><use href="#v-heavy"/></svg></span>
+        
+        <span class="nm">Ashbringer</span>
+        <span class="cls"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9h14v6H5z"/></svg></span>
+        <span class="badge"><span class="ok">OK</span><span class="out">OUT</span></span>
+      </button>
+      <button type="button" class="win-row" data-nom="BZ-75">
+        <span class="flag cn"></span><span class="tier">X</span><span class="veh"><svg viewBox="0 0 44 20" aria-hidden="true"><use href="#v-heavy"/></svg></span>
+        
+        <span class="nm">BZ-75</span>
+        <span class="cls"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9h14v6H5z"/></svg></span>
+        <span class="badge"><span class="ok">OK</span><span class="out">OUT</span></span>
+      </button>
+      <button type="button" class="win-row" data-nom="BZT-70">
+        <span class="flag cn"></span><span class="tier">X</span><span class="veh"><svg viewBox="0 0 44 20" aria-hidden="true"><use href="#v-medium"/></svg></span>
+        
+        <span class="nm">BZT-70</span>
+        <span class="cls"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l9 9-9 9-9-9z"/></svg></span>
+        <span class="badge"><span class="ok">OK</span><span class="out">OUT</span></span>
+      </button>
+      <button type="button" class="win-row" data-nom="Chieftain Mk. 6">
+        <span class="flag uk"></span><span class="tier">X</span><span class="veh"><svg viewBox="0 0 44 20" aria-hidden="true"><use href="#v-heavy"/></svg></span>
+        
+        <span class="nm">Chieftain Mk. 6</span>
+        <span class="cls"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9h14v6H5z"/></svg></span>
+        <span class="badge"><span class="ok">OK</span><span class="out">OUT</span></span>
+      </button>
+      <button type="button" class="win-row" data-nom="E 100">
+        <span class="flag de"></span><span class="tier">X</span><span class="veh"><svg viewBox="0 0 44 20" aria-hidden="true"><use href="#v-heavy"/></svg></span>
+        
+        <span class="nm">E 100</span>
+        <span class="cls"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9h14v6H5z"/></svg></span>
+        <span class="badge"><span class="ok">OK</span><span class="out">OUT</span></span>
+      </button>
+      <button type="button" class="win-row" data-nom="FV215b">
+        <span class="flag uk"></span><span class="tier">X</span><span class="veh"><svg viewBox="0 0 44 20" aria-hidden="true"><use href="#v-heavy"/></svg></span>
+        
+        <span class="nm">FV215b</span>
+        <span class="cls"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9h14v6H5z"/></svg></span>
+        <span class="badge"><span class="ok">OK</span><span class="out">OUT</span></span>
+      </button>
+      <button type="button" class="win-row" data-nom="FV230 Canopener">
+        <span class="flag uk"></span><span class="tier">X</span><span class="veh"><svg viewBox="0 0 44 20" aria-hidden="true"><use href="#v-td"/></svg></span>
+        
+        <span class="nm">FV230 Canopener</span>
+        <span class="cls"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l9 9-9 9-9-9z"/></svg></span>
+        <span class="badge"><span class="ok">OK</span><span class="out">OUT</span></span>
+      </button>
+      <button type="button" class="win-row" data-nom="IS-7">
+        <span class="flag su"></span><span class="tier">X</span><span class="veh"><svg viewBox="0 0 44 20" aria-hidden="true"><use href="#v-heavy"/></svg></span>
+        
+        <span class="nm">IS-7</span>
+        <span class="cls"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9h14v6H5z"/></svg></span>
+        <span class="badge"><span class="ok">OK</span><span class="out">OUT</span></span>
+      </button>
       <div class="win-fade"></div>
     </div>
-    <p class="rig-cap">La fenêtre en jeu · <code style="font-size:11px">F2</code> pour l'ouvrir et la fermer</p>
+    <p class="rig-cap"><span class="pt" aria-hidden="true">▸</span> Coche la case, clique un char :
+    c'est la vraie fenêtre, pas une capture.</p>
   </div>
 </div></div></header>
 
@@ -888,6 +1044,47 @@ footer p{max-width:70ch;font-size:13.5px;line-height:1.7}
   Array.prototype.forEach.call(blocs, function(b){ io.observe(b); });
   setTimeout(tout, 2500);
 })();
+
+/* La fenêtre du mod, réellement manipulable. Reproduit les gestes du vrai
+   mod : cocher le mode simulation, sélectionner un char, corriger son état
+   d'un clic sur le badge, et tout réparer. */
+(function(){
+  var win = document.getElementById("win");
+  if (!win) return;
+  var sim = document.getElementById("winSim");
+  var cnt = document.getElementById("winCnt");
+  var fix = document.getElementById("winFix");
+  var lignes = win.querySelectorAll(".win-row");
+  var TOTAL = 64, horsService = 1;   // 1 sur 64, comme la capture
+
+  var compte = function(){
+    var n = 0;
+    Array.prototype.forEach.call(lignes, function(l){ if (l.classList.contains("ko")) n++; });
+    horsService = n;
+    cnt.textContent = n;
+  };
+  sim.addEventListener("click", function(){
+    var actif = win.classList.toggle("sim");
+    sim.setAttribute("aria-checked", actif ? "true" : "false");
+  });
+  fix.addEventListener("click", function(){
+    Array.prototype.forEach.call(lignes, function(l){ l.classList.remove("ko"); });
+    compte();
+  });
+  Array.prototype.forEach.call(lignes, function(l){
+    l.addEventListener("click", function(e){
+      // en mode simulation, le badge corrige l'état ; ailleurs on sélectionne
+      if (win.classList.contains("sim") && e.target.closest(".badge")) {
+        l.classList.toggle("ko"); compte(); return;
+      }
+      if (win.classList.contains("sim") && l.classList.contains("ko")) return;
+      Array.prototype.forEach.call(lignes, function(x){ x.classList.remove("sel"); });
+      l.classList.add("sel");
+    });
+  });
+  compte();
+})();
+
 </script>
 </body>
 </html>
