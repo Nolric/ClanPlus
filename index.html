@@ -3049,7 +3049,33 @@ async function boot(){
     await connecteWg(idsWg);
     return;
   }
-  if(p.get("status")==="error"){ showLoginError("Connexion Wargaming annulée."); return; }
+  /* Wargaming a refusé AVANT de nous renvoyer un jeton. On arrive ici avec
+     ?status=error&message=…&code=… — par exemple AUTH_ERROR / 410, observé
+     en conditions réelles puis réussi à l'essai suivant.
+
+     ⚠️ Ce code affichait « Connexion Wargaming annulée » pour TOUTES ces
+     erreurs. C'est faux dans presque tous les cas : seul AUTH_CANCEL est
+     une annulation. Dire à quelqu'un qu'il a annulé alors que le serveur a
+     échoué, c'est l'envoyer chercher le problème chez lui.
+
+     On distingue donc l'annulation du reste, on donne un bouton qui
+     relance directement Wargaming, et on écrit le code dans la console
+     pour pouvoir diagnostiquer si ça se répète. */
+  if(p.get("status")==="error"){
+    const msgWg  = (p.get("message") || "").toUpperCase();
+    const codeWg = p.get("code") || "";
+    history.replaceState({}, "", redirectUri());
+    console.warn("[connexion] Wargaming a refusé — message:", msgWg || "?", "| code:", codeWg || "?");
+    if(msgWg === "AUTH_CANCEL"){
+      loginErrAvecReprise("Connexion annulée.", () => { location.href = wgLoginUrl(); }, "Réessayer");
+    }else{
+      const detail = msgWg ? (msgWg + (codeWg ? " " + codeWg : "")) : ("code " + (codeWg || "inconnu"));
+      loginErrAvecReprise(
+        "Wargaming n'a pas pu terminer la connexion (" + detail + "). C'est en général passager.",
+        () => { location.href = wgLoginUrl(); }, "Réessayer");
+    }
+    return;
+  }
 
   // 2) Session déjà présente ?
   if(localStorage.getItem(LS_SESSION)){
@@ -4734,17 +4760,19 @@ const WG_ERREURS = {
   wg_clan_error:   "Wargaming n'a pas pu renvoyer ton clan. Réessaie dans un instant.",
   missing_params:  "Paramètres de connexion incomplets. Reconnecte-toi depuis l'accueil.",
 };
-function loginErrAvecReprise(msg, ids){
+/* Un message d'erreur qui propose une SORTIE, pas seulement un constat.
+   `action` est ce que fait le bouton ; sans action, pas de bouton. */
+function loginErrAvecReprise(msg, action, libelle){
   showLogin();
   const e = document.getElementById("loginErr");
   e.textContent = "";
   e.append(msg + " ");
-  if(ids){
+  if(action){
     const b = document.createElement("button");
-    b.type = "button"; b.textContent = "Réessayer";
+    b.type = "button"; b.textContent = libelle || "Réessayer";
     b.style.cssText = "margin-left:6px;font:inherit;font-weight:600;color:var(--accent);"
       + "background:none;border:0;text-decoration:underline;cursor:pointer;padding:0";
-    b.onclick = () => connecteWg(ids);
+    b.onclick = action;
     e.appendChild(b);
   }
   e.classList.remove("hidden");
@@ -4768,8 +4796,12 @@ async function connecteWg(ids){
   }
   const code = (res && res.j && res.j.error) || (res ? "http_" + res.status : "reseau");
   const msg  = WG_ERREURS[code] || ("La connexion a échoué (" + code + ").");
-  // un jeton expiré ne se rejoue pas : on renvoie vers Wargaming
-  loginErrAvecReprise(msg, code === "invalid_token" ? null : ids);
+  // un jeton expiré ne se rejoue pas : il faut repasser par Wargaming
+  if(code === "invalid_token"){
+    loginErrAvecReprise(msg, () => { location.href = wgLoginUrl(); }, "Se reconnecter");
+  }else{
+    loginErrAvecReprise(msg, () => connecteWg(ids));
+  }
   console.warn("[connexion] échec :", code, res && res.j && res.j.detail);
 }
 
