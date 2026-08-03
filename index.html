@@ -883,7 +883,11 @@
   /* ================= Dashboard "Mon clan" — salle de commandement ================= */
   .dashx{
     --plane:#0b0c0c;--surface-1:#16171a;--surface-2:#1e1f22;--card:#16171a;
-    --ink:#ecebe8;--ink-2:#9b9b96;--muted:#66665f;
+    /* --muted valait #66665f : 3,1:1 sur le fond des cartes, sous le seuil
+       AA de 4,5:1 pour du petit texte. Toutes les étiquettes secondaires du
+       tableau de bord étaient donc à la limite du lisible. #8b8981 garde le
+       même gris chaud et passe à 5,1:1. Mesuré, pas estimé. */
+    --ink:#ecebe8;--ink-2:#9b9b96;--muted:#8b8981;
     --border:rgba(255,255,255,.08);--accent:#e5b95c;--accent-2:#f4d78c;--accent-soft:rgba(229,185,92,.12);
     --good:#4cc077;--good2:#7dd694;--bad:#e8626b;
     --panel:#16171a;--panel-2:#101113;--raised:#1e1f22;--line:rgba(255,255,255,.08);--line-2:rgba(255,255,255,.045);
@@ -1003,6 +1007,12 @@
   #viewClan .d2ttl{display:flex;align-items:center;justify-content:space-between;padding:13px 16px 6px}
   #viewClan .d2ttl h3{font-size:13px;letter-spacing:.5px;margin:0;font-family:var(--fx);font-weight:600} #viewClan .d2ttl .hint{font-size:11px;color:var(--muted)}
   #viewClan .d2tblwrap{overflow-x:auto;padding:2px 8px 8px}
+  /* Un enfant de grille refuse par défaut de passer sous la largeur de son
+     contenu (min-width:auto). Sans ceci, le tableau de classement pousse
+     toute la page à 535 px sur un écran de 420 : c'est la page entière qui
+     défile latéralement au lieu du seul tableau. */
+  #viewClan .d2two > *,#viewClan .d2top3 > *,#viewClan .d2mini4 > *,
+  #viewClan .d2off5 > *{min-width:0}
   #viewClan table.pl{width:100%;border-collapse:collapse;min-width:440px}
   #viewClan table.pl th{text-align:right;font-size:10px;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);font-weight:700;padding:7px 12px;border-bottom:1px solid var(--line);cursor:pointer;white-space:nowrap}
   #viewClan table.pl th.sorted{color:var(--gold-2)}
@@ -2312,6 +2322,99 @@
   #dashTop5 .tk .fl{transition:none}
 }
 
+
+/* ═══ BANDEAU DE VERDICT — jauge, courbe de forme, barres ═══════════ */
+.vd{grid-template-columns:minmax(0,1.05fr) minmax(170px,.75fr) auto;gap:26px}
+.vd-g{min-width:0}
+
+/* la jauge : 260° de balayage, l'ouverture en bas */
+.vd-n{display:grid;justify-items:center;gap:0;text-align:center;position:relative}
+.vd-j{width:132px;height:132px;display:block;fill:none;stroke-linecap:round}
+.vd-j .fond{stroke:var(--surface-2);stroke-width:9}
+.vd-j .plein{stroke:var(--accent);stroke-width:9;
+  transition:stroke-dasharray .95s cubic-bezier(.16,1,.3,1)}
+.vd-v{position:absolute;top:34px;left:0;right:0;pointer-events:none}
+.vd-n b{font-size:clamp(30px,3.5vw,40px) !important;letter-spacing:-.03em}
+.vd-n i{margin-top:2px;font-size:10px}
+.vd-f{margin-top:6px;height:30px}
+
+/* la courbe de forme : la trajectoire, pas seulement le point d'arrivée */
+.vd-c{margin:0;min-width:0;display:flex;flex-direction:column;justify-content:center;position:relative}
+.vd-c figcaption{font-size:11px;color:var(--muted);margin-bottom:8px;letter-spacing:.02em}
+.vd-c svg{width:100%;height:66px;display:block;overflow:visible}
+/* preserveAspectRatio="none" étire le tracé : sans ceci l'épaisseur varie */
+.vd-c path,.vd-c line{vector-effect:non-scaling-stroke}
+.vd-c .ref{stroke:var(--axis);stroke-width:1;stroke-dasharray:3 4;opacity:.75}
+.vd-c .aire{fill:var(--accent);opacity:.13;stroke:none}
+.vd-c .trait{fill:none;stroke:var(--accent-2);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.vd-c50{position:absolute;right:0;bottom:-4px;font-size:9.5px;color:var(--muted);
+  font-variant-numeric:tabular-nums}
+.cin .vd-c .trait{stroke-dasharray:1400;animation:vdTrace 1.4s cubic-bezier(.3,0,.2,1) .45s both}
+@keyframes vdTrace{from{stroke-dashoffset:1400}to{stroke-dashoffset:0}}
+.cin .vd-c .aire{animation:vdFond .8s ease-out .9s both}
+@keyframes vdFond{from{opacity:0}to{opacity:.13}}
+
+@media (max-width:1100px){
+  .vd{grid-template-columns:minmax(0,1fr) auto}
+  .vd-c{grid-column:1/-1;order:3}
+}
+@media (max-width:820px){
+  .vd{grid-template-columns:1fr}
+  .vd-n{justify-items:start}
+  .vd-v{left:0;right:auto;width:132px}
+}
+
+/* ═══ TOP 5 — IMPACT DÉCOMPOSÉ ═════════════════════════════════════ */
+.t5leg{display:flex;flex-wrap:wrap;gap:14px;margin:0 0 14px}
+.t5l{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ink-2)}
+.t5l i{width:10px;height:10px;border-radius:3px;flex:0 0 auto}
+#dashTop5 .t5{position:relative;gap:15px;padding-top:14px}
+#dashTop5 .t5row{align-items:flex-start}
+#dashTop5 .t5rk{margin-top:2px}
+.t5head{margin-bottom:6px}
+/* la barre empilée : 2 px de fond entre les segments, sinon deux séries
+   voisines se touchent et se lisent comme une seule */
+.t5bar{display:flex;height:13px;border-radius:4px;overflow:hidden;background:var(--surface-2);
+  transform-origin:left center}
+.t5s{display:block;height:100%;border-right:2px solid var(--card);
+  transition:filter .16s}
+.t5s:last-child{border-right:0}
+.t5row:hover .t5s{filter:brightness(1.14)}
+.t5foot{display:flex;justify-content:space-between;gap:10px;margin-top:5px;
+  font-size:10.5px;color:var(--muted)}
+.t5e{font-variant-numeric:tabular-nums}
+.t5e.up{color:var(--good)} .t5e.dn{color:var(--bad)} .t5e.eq{color:var(--muted)}
+.t5b{font-variant-numeric:tabular-nums}
+/* Le repère de moyenne vit DANS la géométrie de la barre : aucun calcul
+   d'offset, donc aucun décalage possible quand la largeur change. */
+.t5wrap{position:relative;display:block}
+.t5ref{position:absolute;top:-4px;bottom:-4px;left:var(--moyp);width:0;
+  border-left:1px dashed var(--ink-2);opacity:.55;pointer-events:none}
+.t5reflbl{position:absolute;top:-20px;left:var(--moyp);
+  font-style:normal;font-size:10.5px;color:var(--muted);white-space:nowrap;
+  transform:translateX(-50%)}
+@media (max-width:560px){ .t5reflbl{display:none} }
+
+/* la barre pousse depuis la gauche, une ligne après l'autre */
+.rev #dashTop5 .t5bar{transform:scaleX(0)}
+.rev #dashTop5.vu .t5bar{animation:t5Pousse .75s cubic-bezier(.16,1,.3,1) both;
+  animation-delay:calc(var(--i,0) * .085s)}
+@keyframes t5Pousse{to{transform:scaleX(1)}}
+.rev #dashTop5 .t5ref,.rev #dashTop5 .t5reflbl{opacity:0}
+.rev #dashTop5.vu .t5ref{animation:t5Rep .5s ease-out .6s both}
+.rev #dashTop5.vu .t5reflbl{animation:t5RepL .5s ease-out .7s both}
+@keyframes t5Rep{to{opacity:.55}}
+@keyframes t5RepL{to{opacity:1}}
+
+@media (prefers-reduced-motion:reduce){
+  .cin .vd-c .trait,.cin .vd-c .aire{animation:none;stroke-dasharray:none;opacity:.13}
+  .cin .vd-c .trait{opacity:1}
+  .vd-j .plein{transition:none}
+  .rev #dashTop5 .t5bar{transform:none}
+  .rev #dashTop5.vu .t5bar{animation:none}
+  .rev #dashTop5 .t5ref,.rev #dashTop5.vu .t5ref{opacity:.55;animation:none}
+  .rev #dashTop5 .t5reflbl,.rev #dashTop5.vu .t5reflbl{opacity:1;animation:none}
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" defer></script>
 </head>
@@ -2934,23 +3037,16 @@ async function boot(){
   // 1) Retour de Wargaming ? (l'URL contient status=ok&access_token=…)
   const p = new URLSearchParams(location.search);
   if(p.get("status")==="ok" && p.get("access_token")){
-    showLoginBusy("Connexion en cours…");
-    const res = await fnCall("wg-login", {
+    // Le jeton est gardé EN MÉMOIRE et retiré de l'URL tout de suite : il n'a
+    // rien à faire dans l'historique du navigateur. Le bouton « Réessayer »
+    // rejoue la connexion depuis cette variable, sans repasser par Wargaming.
+    const idsWg = {
       access_token: p.get("access_token"),
       account_id: p.get("account_id"),
       nickname: p.get("nickname"),
-    });
-    // nettoie l'URL (retire les paramètres WG)
+    };
     history.replaceState({}, "", redirectUri());
-    if(res.ok && res.j.session){
-      localStorage.setItem(LS_SESSION, res.j.session);
-      if(res.j.nickname) localStorage.setItem("cp_nick", res.j.nickname);
-      if(res.j.clan){ localStorage.setItem("cp_clan", String(res.j.clan.clan_id)); await openApp(); }
-      else { localStorage.setItem("cp_clan", ""); location.href = "trouver-clan.html"; } // sans clan → page Trouver un clan
-    }else{
-      const msg = res.j.error==="invalid_token" ? "Session Wargaming expirée, réessaie." : ("Erreur : "+(res.j.error||res.status));
-      showLoginError(msg);
-    }
+    await connecteWg(idsWg);
     return;
   }
   if(p.get("status")==="error"){ showLoginError("Connexion Wargaming annulée."); return; }
@@ -2974,11 +3070,39 @@ async function openApp(){
   document.getElementById("subbar").classList.add("hidden");
   ["viewClan","viewBattles","viewPlayer","viewLineups","viewLoadouts","viewStrats","viewRanking","viewSearch","viewRecruit"].forEach(id=>document.getElementById(id).classList.add("hidden"));
 
-  const res = await fnCall("clan-data", { session: localStorage.getItem(LS_SESSION) });
+  /* Même problème que la connexion : un incident passager côté Supabase ou
+     Wargaming laissait l'utilisateur devant un message sec, sans recours.
+     Trois tentatives, puis un bouton. La session expirée (401) reste
+     définitive : on la retire et on renvoie à l'écran de connexion. */
+  let res = null;
+  for(let n = 1; n <= 3; n++){
+    res = await fnCall("clan-data", { session: localStorage.getItem(LS_SESSION) });
+    if(res.ok || res.status === 401) break;
+    if(n === 3) break;            // ne pas attendre après la dernière tentative
+    document.querySelector("#loading .cp-load-txt").textContent =
+      "Le serveur est occupé — nouvelle tentative (" + (n + 1) + "/3)…";
+    await new Promise(r => setTimeout(r, n * 1200));
+  }
   document.getElementById("loading").classList.add("hidden");
   if(!res.ok){
-    if(res.status===401){ localStorage.removeItem(LS_SESSION); showLogin(); return; }
-    showLoginError("Erreur de chargement : "+(res.j.error||res.status)); return;
+    if(res.status===401){
+      // 14 jours écoulés : on le DIT, au lieu de renvoyer sans explication
+      localStorage.removeItem(LS_SESSION);
+      showLoginError("Ta session a expiré. Reconnecte-toi avec ton compte Wargaming.");
+      return;
+    }
+    showLogin();
+    const e = document.getElementById("loginErr");
+    e.textContent = "Impossible de charger les données du clan. ";
+    const b = document.createElement("button");
+    b.type="button"; b.textContent="Réessayer";
+    b.style.cssText="margin-left:6px;font:inherit;font-weight:600;color:var(--accent);"
+      + "background:none;border:0;text-decoration:underline;cursor:pointer;padding:0";
+    b.onclick = () => openApp();
+    e.appendChild(b);
+    e.classList.remove("hidden");
+    console.warn("[clan-data] échec :", res.status, res.j && res.j.error);
+    return;
   }
   buildRaw(res.j);
   srInit(res.j);   // modèle SR figé de la saison + profils joueurs + cotes Bastion
@@ -3510,8 +3634,8 @@ function renderLast(){
   const last=dashBattleList()[0];
   const now=Date.now()/1000;
   const week=RAW.filter(r=>r.isMember&&r.ts&&(now-r.ts)<=7*86400);
-  const per={}; week.forEach(r=>{ const p=per[r.accId]=per[r.accId]||{name:r.name,n:0,s:0}; const _v=srBattle(r); if(_v!=null){ p.n++; p.s+=_v; } });
-  const mvp=Object.values(per).filter(p=>p.n>=2).map(p=>({name:p.name,ce:Math.round(p.s/p.n),n:p.n})).sort((a,b)=>b.ce-a.ce)[0];
+  /* MVP retiré : un seul nom sorti d'une semaine ne dit rien d'utile,
+     et le Top 5 par impact couvre déjà la question « qui porte ». */
   let lb, bg="";
   if(last){
     const foeTag=(typeof BATTLE_ENEMY!=="undefined"&&BATTLE_ENEMY[last.id])||"?";
@@ -3521,9 +3645,7 @@ function renderLast(){
     bg=`<div class="lb-bg">${dashMapThumb(last.map)}</div>`;
     lb=`<div class="lb"><div class="lb-tx"><div class="lb-res">${res} vs [${esc(foeTag)}]</div><div class="lb-sub">📍 ${esc(mapName)} · ${d}</div></div></div>`;
   } else lb=`<div class="lb"><div class="lb-tx"><div class="lb-res" style="color:var(--muted)">—</div><div class="lb-sub">Aucune bataille enregistrée</div></div></div>`;
-  const mvpH=mvp?`<div class="lb-mvp"><div class="ig">👑</div><div style="flex:1"><div class="tl">MVP de la semaine</div><div class="tv">${esc(shortName(mvp.name))} <span class="srpill" style="background:${srColor(mvp.ce)}">${fmt(mvp.ce)} SR</span></div></div><div style="font-size:11px;color:var(--muted)">${mvp.n} bat.</div></div>`
-    :`<div class="lb-mvp"><div class="ig">👑</div><div style="flex:1"><div class="tl">MVP de la semaine</div><div class="tv" style="color:var(--muted);font-size:12.5px">pas assez de batailles cette semaine</div></div></div>`;
-  el.innerHTML=`${bg}<div class="lb-inner"><div class="kpi-h"><svg class="ic"><use href="#i-swords"/></svg>Dernière bataille</div>${lb}${mvpH}</div>`;
+  el.innerHTML=`${bg}<div class="lb-inner"><div class="kpi-h"><svg class="ic"><use href="#i-swords"/></svg>Dernière bataille</div>${lb}</div>`;
 }
 function ratVal(o,pct){ if(!o||o.value==null) return "—"; return pct?(fmt(o.value,2)+" %"):fmt(o.value); }
 function ratRank(o){ if(!o||o.rank==null) return ""; let d=""; if(o.rank_delta){const up=o.rank_delta>0; d=` <span class="${up?'up':'dn'}">${up?'▲':'▼'}${Math.abs(o.rank_delta)}</span>`;} return "Rang "+fmt(o.rank)+d; }
@@ -3565,21 +3687,55 @@ function renderOfficialCards(){
   ];
   el.innerHTML=cards.map((c,i)=>`<div class="off dash-anim" style="--di:${i+2}"><div class="off-h"><span class="off-ic"><svg class="ic"><use href="#${c.ic}"/></svg></span><span class="l">${c.l}</span></div><div class="v">${ratVal(c.o,c.pct)}</div><div class="r">${ratRank(c.o)}</div></div>`).join("");
 }
-let TOP5_MODE="dmg";
+/* Top 5 par IMPACT DÉCOMPOSÉ.
+   Une barre empilée par joueur : dégâts directs + assistance + blocage.
+   La forme de la barre raconte le rôle — un lourd est massif à droite
+   (blocage), un léger l'est au milieu (assistance), un chasseur à gauche.
+   Le trait pointillé marque la moyenne du clan : chacun se situe sans
+   calcul. Palette validée (daltonisme + contraste) ; 2 px de fond entre
+   les segments ; légende et valeurs écrites, donc jamais la couleur seule. */
+const T5_PARTS = [
+  { k:"dmg",    l:"Dégâts",     c:"#bd8a3c" },
+  { k:"assist", l:"Assistance", c:"#4f97ee" },
+  { k:"block",  l:"Blocage",    c:"#c76fa4" },
+];
 function renderTop5(){
   const el=document.getElementById("dashTop5"); if(!el) return;
-  const agg=aggregate(dashFilterRows(state.days,0));
-  const key=TOP5_MODE, f=key==="kills"?(v=>fmt(v,2)):(v=>fmt(v));
-  const top=agg.slice().sort((a,b)=>b[key]-a[key]).slice(0,5);
-  const mx=Math.max(1,...top.map(p=>p[key]));
-  el.innerHTML=`<div class="d2ttl"><h3>Top 5 — ${key==="kills"?"Frags moyens":"Dégâts moyens"}</h3>
-    <span class="toggle"><button data-m="dmg" class="${key==='dmg'?'on':''}">Dégâts</button><button data-m="kills" class="${key==='kills'?'on':''}">Frags</button></span></div>
-    <div class="t5">${top.map((p,i)=>`<div class="t5row">
+  const agg=aggregate(dashFilterRows(state.days,0)).filter(p=>p.battles>=3);
+  const tot=p=>T5_PARTS.reduce((s,x)=>s+(p[x.k]||0),0);
+  const top=agg.slice().sort((a,b)=>tot(b)-tot(a)).slice(0,5);
+  const moy=agg.length? agg.reduce((s,p)=>s+tot(p),0)/agg.length : 0;
+  const mx=Math.max(1,moy*1.06,...top.map(tot));
+
+  const legende=T5_PARTS.map(x=>
+    `<span class="t5l"><i style="background:${x.c}"></i>${x.l}</span>`).join("");
+
+  const lignes=top.map((p,i)=>{
+    const t=tot(p);
+    const seg=T5_PARTS.map(x=>{
+      const w=(p[x.k]||0)/mx*100;
+      return w<0.6?"":`<span class="t5s" style="width:${w.toFixed(2)}%;background:${x.c}" `+
+        `title="${x.l} : ${fmt(Math.round(p[x.k]||0))}"></span>`;
+    }).join("");
+    const ecart=moy? Math.round((t/moy-1)*100) : 0;
+    const tag=Math.abs(ecart)<3?'<span class="t5e eq">= moyenne</span>'
+      :`<span class="t5e ${ecart>0?"up":"dn"}">${ecart>0?"+":"−"}${Math.abs(ecart)} % vs moyenne</span>`;
+    return `<div class="t5row" style="--i:${i}">
       <span class="t5rk r${i+1}">${i+1}</span>
-      <div class="t5main"><div class="t5head"><span class="nm">${esc(shortName(p.name))}</span><span class="vv">${f(p[key])}</span></div>
-      <span class="tk"><span class="fl" style="width:${Math.round(p[key]/mx*100)}%"></span></span></div>
-    </div>`).join("")||'<div style="color:var(--muted);font-size:12px;padding:8px 0">Aucune donnée</div>'}</div>`;
-  el.querySelectorAll(".toggle button").forEach(b=>b.onclick=()=>{ TOP5_MODE=b.dataset.m; renderTop5(); });
+      <div class="t5main">
+        <div class="t5head"><span class="nm">${esc(shortName(p.name))}</span>
+          <span class="vv">${fmt(Math.round(t))}</span></div>
+        <span class="t5wrap"><span class="t5bar">${seg}</span><i class="t5ref"></i>${
+          i===0?'<em class="t5reflbl">moyenne du clan</em>':""}</span>
+        <div class="t5foot">${tag}<span class="t5b">${p.battles} bat.</span></div>
+      </div></div>`;
+  }).join("");
+
+  el.innerHTML=`<div class="d2ttl"><h3><svg class="ic tti"><use href="#i-chart"/></svg>Impact moyen par bataille</h3></div>
+    <div class="t5leg">${legende}</div>
+    <div class="t5" style="--moyp:${(moy/mx*100).toFixed(2)}%">
+      ${lignes||'<div style="color:var(--muted);font-size:12px;padding:8px 0">Aucune donnée</div>'}
+    </div>`;
 }
 function renderDashboard(){ renderHealth(); renderLast(); renderWg(); renderMini(); renderOfficialCards(); renderTop5(); }
 
@@ -4555,6 +4711,66 @@ function showLoginBusy(txt){
 function showLoginError(msg){
   showLogin();
   const e=document.getElementById("loginErr"); e.textContent=msg; e.classList.remove("hidden");
+}
+
+/* ============================================================
+   CONNEXION WARGAMING — reprises et messages parlants
+
+   L'API publique de Wargaming plafonne à 10 requêtes/seconde par
+   application_id, TOUS utilisateurs confondus, et sert régulièrement des
+   504. Une connexion déclenche jusqu'à cinq appels côté serveur. Sans
+   reprise, un simple pic refusait une connexion parfaitement valide —
+   c'est le « parfois ça ne marche pas ».
+
+   On distingue donc trois familles :
+     · 401 invalid_token  → définitif, il faut se reconnecter à Wargaming ;
+     · 503 wg_indisponible → passager, on réessaie tout seul ;
+     · le reste           → on affiche un message clair + un bouton.
+   ============================================================ */
+const WG_ERREURS = {
+  invalid_token:   "Ta session Wargaming a expiré. Reconnecte-toi.",
+  wg_indisponible: "L'API Wargaming est saturée en ce moment. Réessaie dans quelques secondes.",
+  wg_verify_error: "Wargaming n'a pas pu vérifier ton compte. Réessaie dans un instant.",
+  wg_clan_error:   "Wargaming n'a pas pu renvoyer ton clan. Réessaie dans un instant.",
+  missing_params:  "Paramètres de connexion incomplets. Reconnecte-toi depuis l'accueil.",
+};
+function loginErrAvecReprise(msg, ids){
+  showLogin();
+  const e = document.getElementById("loginErr");
+  e.textContent = "";
+  e.append(msg + " ");
+  if(ids){
+    const b = document.createElement("button");
+    b.type = "button"; b.textContent = "Réessayer";
+    b.style.cssText = "margin-left:6px;font:inherit;font-weight:600;color:var(--accent);"
+      + "background:none;border:0;text-decoration:underline;cursor:pointer;padding:0";
+    b.onclick = () => connecteWg(ids);
+    e.appendChild(b);
+  }
+  e.classList.remove("hidden");
+}
+async function connecteWg(ids){
+  let res = null;
+  for(let n = 1; n <= 3; n++){
+    showLoginBusy(n === 1 ? "Connexion en cours…"
+                          : "Wargaming est occupé — nouvelle tentative (" + n + "/3)…");
+    res = await fnCall("wg-login", ids);
+    // succès, ou refus DÉFINITIF : inutile d'insister
+    if(res.ok || res.status === 400 || res.status === 401) break;
+    if(n < 3) await new Promise(r => setTimeout(r, n * 1200));
+  }
+  if(res && res.ok && res.j.session){
+    localStorage.setItem(LS_SESSION, res.j.session);
+    if(res.j.nickname) localStorage.setItem("cp_nick", res.j.nickname);
+    if(res.j.clan){ localStorage.setItem("cp_clan", String(res.j.clan.clan_id)); await openApp(); }
+    else { localStorage.setItem("cp_clan", ""); location.href = "trouver-clan.html"; }
+    return;
+  }
+  const code = (res && res.j && res.j.error) || (res ? "http_" + res.status : "reseau");
+  const msg  = WG_ERREURS[code] || ("La connexion a échoué (" + code + ").");
+  // un jeton expiré ne se rejoue pas : on renvoie vers Wargaming
+  loginErrAvecReprise(msg, code === "invalid_token" ? null : ids);
+  console.warn("[connexion] échec :", code, res && res.j && res.j.detail);
 }
 
 /* ============================================================
@@ -8465,30 +8681,69 @@ boot();
                            : "<b>" + serie + " défaites d'affilée</b> à casser.");
       }
 
-      /* qui porte le clan — nommé, pas anonyme */
-      if(typeof aggregate === "function"){
-        var ag = aggregate(dashFilterRows(state.days, 0))
-                   .filter(function(p){ return p.battles >= 5; })
-                   .sort(function(a,b){ return b.dmg - a.dmg; });
-        if(ag.length){
-          ph += ' <span class="who">' + esc(shortName(ag[0].name)) + "</span> porte l'équipe, à <b>" +
-                fmt(Math.round(ag[0].dmg)) + "</b> de dégâts moyens.";
-        }
-      }
 
       /* la forme récente : dix barres, la plus ancienne à gauche */
       var dix = liste.slice(0, 10).reverse().map(function(b, j){
         return '<i class="' + (b.result===1?"v":"d") + '" style="--i:' + j +
-               ';height:' + (b.result===1?32:17) + 'px"></i>';
+               ';height:' + (b.result===1?30:16) + 'px"></i>';
       }).join("");
+
+      /* ── la courbe de forme : taux de victoire glissant ──
+         Le pourcentage global dit OÙ on en est ; la courbe dit COMMENT on
+         y est arrivé. C'est la seule vue de la trajectoire du clan. */
+      var chrono = liste.slice().reverse().map(function(b){ return b.result === 1 ? 1 : 0; });
+      var courbe = "";
+      if(chrono.length >= 8){
+        /* fenêtre large : sur 80 batailles, 10 donne une dentelle, pas une
+           trajectoire. n/5 borné à [8, 20] lisse sans effacer les inflexions. */
+        var f = Math.max(8, Math.min(20, Math.round(chrono.length / 5))), pts = [];
+        for(var i = f - 1; i < chrono.length; i++){
+          var som = 0; for(var j = i - f + 1; j <= i; j++) som += chrono[j];
+          pts.push(som / f);
+        }
+        var W = 300, H = 66, n = pts.length;
+        var X = function(i){ return n > 1 ? (i / (n - 1)) * W : W / 2; };
+        var Y = function(v){ return H - 4 - v * (H - 12); };
+        var d = pts.map(function(v, i){ return (i ? "L" : "M") + X(i).toFixed(1) + " " + Y(v).toFixed(1); }).join("");
+        courbe =
+          '<figure class="vd-c"><figcaption>Forme sur ' + f + ' batailles glissantes</figcaption>' +
+          '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" role="img" aria-label="' +
+            'Courbe du taux de victoire glissant : de ' + Math.round(pts[0]*100) + ' % à ' +
+            Math.round(pts[n-1]*100) + ' %.">' +
+            '<line class="ref" x1="0" y1="' + Y(0.5).toFixed(1) + '" x2="' + W + '" y2="' + Y(0.5).toFixed(1) + '"/>' +
+            '<path class="aire" d="' + d + 'L' + W + ' ' + H + 'L0 ' + H + 'Z"/>' +
+            '<path class="trait" d="' + d + '"/>' +
+          '</svg>' +
+          '<span class="vd-c50">50 %</span></figure>';
+      }
 
       hote.hidden = false;
       document.getElementById("viewClan").classList.add("cpv");
-      hote.innerHTML =
-        '<div><h2 class="vd-t">' + titre + '</h2><p class="vd-p">' + ph + '</p></div>' +
-        '<div class="vd-n"><b data-n="' + pct + '">' + pct + ' %</b>' +
-          '<i>de victoires</i><div class="vd-f">' + dix + '</div></div>';
+      /* la jauge en arc : 260° de balayage, remplie au prorata */
+      var R = 52, C = 2 * Math.PI * R * (260 / 360);
+      var jauge =
+        '<svg class="vd-j" viewBox="0 0 132 132" aria-hidden="true">' +
+          '<circle class="fond" cx="66" cy="66" r="' + R + '" stroke-dasharray="' + C.toFixed(1) +
+            ' 999" transform="rotate(140 66 66)"/>' +
+          '<circle class="plein" cx="66" cy="66" r="' + R + '" stroke-dasharray="' +
+            (C * pct / 100).toFixed(1) + ' 999" transform="rotate(140 66 66)"/>' +
+        '</svg>';
 
+      hote.innerHTML =
+        '<div class="vd-g"><h2 class="vd-t">' + titre + '</h2><p class="vd-p">' + ph + '</p></div>' +
+        courbe +
+        '<div class="vd-n">' + jauge +
+          '<span class="vd-v"><b data-n="' + pct + '">' + pct + ' %</b><i>de victoires</i></span>' +
+          '<div class="vd-f">' + dix + '</div></div>';
+
+      /* la jauge se remplit : on la pose à zéro, la transition CSS fait le reste */
+      var arc = hote.querySelector(".vd-j .plein");
+      if(arc && !doux){
+        var cible = arc.getAttribute("stroke-dasharray");
+        arc.setAttribute("stroke-dasharray", "0 999");
+        requestAnimationFrame(function(){ requestAnimationFrame(function(){
+          arc.setAttribute("stroke-dasharray", cible); }); });
+      }
       /* le chiffre se compte */
       var n = hote.querySelector(".vd-n b");
       if(n && !doux && typeof animateNum === "function"){
