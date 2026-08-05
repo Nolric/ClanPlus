@@ -975,6 +975,32 @@
   #viewClan #dashLast{position:relative;overflow:hidden}
   #viewClan .lb-inner{position:relative;z-index:1}
   #viewClan .lb-bg{position:absolute;inset:0;z-index:0;pointer-events:none}
+  /* ── Les trois dernières batailles ──────────────────────────────
+     Le retrait du MVP laissait un creux : on le comble avec la même
+     donnée, déjà chargée. Un instantané devient une petite série. */
+  #viewClan .lb-liste{display:flex;flex-direction:column;padding:2px 10px 10px}
+  #viewClan .lb-l{display:grid;grid-template-columns:3px auto 1fr auto auto;
+    align-items:center;gap:10px;width:100%;padding:9px 8px;border:0;background:none;
+    text-align:left;cursor:pointer;border-radius:8px;color:inherit;font:inherit;
+    transition:background .15s}
+  #viewClan .lb-l:hover{background:rgba(255,255,255,.055)}
+  #viewClan .lb-l+.lb-l{box-shadow:inset 0 1px 0 var(--line-2,rgba(255,255,255,.045))}
+  /* l'issue se lit dans la FORME (le filet de gauche) autant que dans la couleur */
+  #viewClan .lb-p{height:19px;border-radius:2px;background:var(--muted)}
+  #viewClan .lb-l.w .lb-p{background:var(--good)}
+  #viewClan .lb-l.l .lb-p{background:var(--bad)}
+  #viewClan .lb-r{font-weight:700;font-size:13.5px}
+  #viewClan .lb-l.w .lb-r{color:var(--good)}
+  #viewClan .lb-l.l .lb-r{color:var(--bad)}
+  #viewClan .lb-vs{font-size:12.5px;color:var(--ink-2);white-space:nowrap;
+    overflow:hidden;text-overflow:ellipsis}
+  #viewClan .lb-m{font-size:12px;color:var(--muted);white-space:nowrap;
+    overflow:hidden;text-overflow:ellipsis;max-width:120px}
+  #viewClan .lb-d{font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums;
+    white-space:nowrap}
+  #viewClan .lb-vide{padding:22px 16px;color:var(--muted);font-size:12.5px}
+  @media (max-width:560px){ #viewClan .lb-m{display:none} }
+
   #viewClan .lb-bg img{width:100%;height:100%;object-fit:cover;opacity:.22;
     -webkit-mask-image:linear-gradient(100deg,transparent 8%,#000 92%);mask-image:linear-gradient(100deg,transparent 8%,#000 92%)}
   #viewClan .lb-mvp{margin:0 15px 14px;border-top:1px solid var(--line);padding-top:10px;display:flex;align-items:center;gap:11px}
@@ -3675,23 +3701,49 @@ function renderHealth(){
       ${streakTxt}
     </div><div class="hbars">${bars||'<span style="color:var(--muted);font-size:12px">Pas de batailles</span>'}</div></div>`;
 }
+/* Le retrait du MVP laissait ~60 px de vide en bas de cette carte, alors
+   que ses deux voisines sont pleines. On comble avec les DEUX batailles
+   précédentes : c'est la même donnée, déjà chargée, et ça transforme un
+   instantané en une petite série — on voit l'enchaînement, pas un point.
+   Un clic mène au débriefing de la bataille. */
 function renderLast(){
   const el=document.getElementById("dashLast"); if(!el) return;
-  const last=dashBattleList()[0];
-  const now=Date.now()/1000;
-  const week=RAW.filter(r=>r.isMember&&r.ts&&(now-r.ts)<=7*86400);
-  /* MVP retiré : un seul nom sorti d'une semaine ne dit rien d'utile,
-     et le Top 5 par impact couvre déjà la question « qui porte ». */
-  let lb, bg="";
-  if(last){
-    const foeTag=(typeof BATTLE_ENEMY!=="undefined"&&BATTLE_ENEMY[last.id])||"?";
-    const d=new Date(last.ts*1000).toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit"});
-    const res=last.result===1?'<span class="pos">Victoire</span>':(last.result===0?'<span class="neg">Défaite</span>':'Égalité');
-    const mapName=cleanMap(last.map||"");
-    bg=`<div class="lb-bg">${dashMapThumb(last.map)}</div>`;
-    lb=`<div class="lb"><div class="lb-tx"><div class="lb-res">${res} vs [${esc(foeTag)}]</div><div class="lb-sub">📍 ${esc(mapName)} · ${d}</div></div></div>`;
-  } else lb=`<div class="lb"><div class="lb-tx"><div class="lb-res" style="color:var(--muted)">—</div><div class="lb-sub">Aucune bataille enregistrée</div></div></div>`;
-  el.innerHTML=`${bg}<div class="lb-inner"><div class="kpi-h"><svg class="ic"><use href="#i-swords"/></svg>Dernière bataille</div>${lb}</div>`;
+  const liste=dashBattleList();
+  const last=liste[0];
+  const ligne=(b)=>{
+    const foeTag=(typeof BATTLE_ENEMY!=="undefined"&&BATTLE_ENEMY[b.id])||"?";
+    const d=new Date(b.ts*1000).toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit"});
+    const gagne=b.result===1, nul=b.result!==1&&b.result!==0;
+    return `<button type="button" class="lb-l${gagne?" w":(nul?"":" l")}" data-bid="${esc(String(b.id))}">
+      <span class="lb-p"></span>
+      <span class="lb-r">${gagne?"Victoire":(nul?"Égalité":"Défaite")}</span>
+      <span class="lb-vs">vs [${esc(foeTag)}]</span>
+      <span class="lb-m">${esc(cleanMap(b.map||""))}</span>
+      <span class="lb-d">${d}</span>
+    </button>`;
+  };
+  if(!last){
+    el.innerHTML=`<div class="lb-inner"><div class="kpi-h"><svg class="ic"><use href="#i-swords"/></svg>Dernières batailles</div>
+      <div class="lb-vide">Aucune bataille enregistrée pour l'instant.</div></div>`;
+    return;
+  }
+  const bg=`<div class="lb-bg">${dashMapThumb(last.map)}</div>`;
+  el.innerHTML=`${bg}<div class="lb-inner">
+    <div class="kpi-h"><svg class="ic"><use href="#i-swords"/></svg>Dernières batailles</div>
+    <div class="lb-liste">${liste.slice(0,3).map(ligne).join("")}</div></div>`;
+  el.querySelectorAll(".lb-l").forEach(b=>b.onclick=()=>{
+    // les trois plus récentes sont toujours en page 1 : on y revient, sinon
+    // la bataille visée pourrait être sur une autre page
+    if(typeof BL_PAGE!=="undefined") BL_PAGE=0;
+    switchView("battles");
+    // la vue se rend juste après : on laisse passer un tour d'horloge
+    setTimeout(()=>{
+      const c=document.querySelector(`.bl-row[data-bid="${CSS.escape(b.dataset.bid)}"]`);
+      if(!c) return;                       // introuvable : on reste sur la vue, sans rien casser
+      c.classList.add("open");             // le débriefing s'ouvre
+      c.scrollIntoView({block:"center",behavior:"smooth"});
+    }, 420);
+  });
 }
 function ratVal(o,pct){ if(!o||o.value==null) return "—"; return pct?(fmt(o.value,2)+" %"):fmt(o.value); }
 function ratRank(o){ if(!o||o.rank==null) return ""; let d=""; if(o.rank_delta){const up=o.rank_delta>0; d=` <span class="${up?'up':'dn'}">${up?'▲':'▼'}${Math.abs(o.rank_delta)}</span>`;} return "Rang "+fmt(o.rank)+d; }
@@ -4110,7 +4162,7 @@ function blRowHTML(g){
   const rz=g.win?"Victoire":(g.draw?"Match nul":"Défaite");
   const mvp=g.mvp?`<div>MVP <span class="mvp">${esc(shortName(g.mvp.name))}</span></div>`:"";
   const sr=g.ce!=null?srPill(g.ce):"";
-  return `<div class="bl-row ${cls}">
+  return `<div class="bl-row ${cls}" data-bid="${esc(String(g.id))}">
     <div class="bl-head" onclick="this.parentNode.classList.toggle('open')">
       ${mapBgHTML(g.mapName)}
       ${mapInfoHTML(g.mapName,g.mode)}
