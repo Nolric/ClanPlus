@@ -703,12 +703,81 @@
   }
 
   /* --- Onglet Batailles (confrontations) --- */
-  .bl-sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:6px 0 16px}
+  /* ── Verdict : une phrase et un chiffre, avant les mesures ──────
+     Même grammaire que la Vue clan : on dit ce que les chiffres veulent
+     dire, puis on montre les chiffres, plus petits. */
+  .bl-verdict{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:26px;align-items:start;
+    background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:22px 24px;margin:6px 0 12px;position:relative;overflow:hidden}
+  .bl-verdict::after{content:"";position:absolute;top:0;bottom:0;width:38%;pointer-events:none;
+    background:linear-gradient(100deg,transparent,rgba(229,185,92,.09) 45%,transparent);
+    transform:translateX(-140%)}
+  .rev .bl-verdict::after{animation:blBalaye 1.4s cubic-bezier(.3,0,.2,1) .2s both}
+  @keyframes blBalaye{to{transform:translateX(360%)}}
+  .bl-vt{font-size:clamp(22px,2.7vw,31px);font-weight:800;letter-spacing:-.02em;margin:0 0 8px;
+    text-wrap:balance}
+  .bl-vp{font-size:14.5px;line-height:1.6;color:var(--ink-2);margin:0;max-width:64ch}
+  .bl-vp b{color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums}
+  .bl-vp .who{color:var(--accent-2);font-weight:700}
+  .bl-vn{text-align:right;line-height:1}
+  .bl-vn b{display:block;font-size:clamp(34px,4.4vw,50px);font-weight:800;letter-spacing:-.035em;
+    font-variant-numeric:tabular-nums;
+    background:linear-gradient(160deg,var(--ink) 30%,var(--accent-2));
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .bl-vn i{display:block;font-style:normal;font-size:10.5px;letter-spacing:.13em;
+    text-transform:uppercase;color:var(--muted);margin-top:6px}
+
+  /* les adversaires : le palmarès que seul cet onglet peut donner */
+  .bl-advs{grid-column:1/-1;border-top:1px solid var(--border);padding-top:15px;margin-top:3px;
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:9px 22px}
+  .bl-advt{grid-column:1/-1;font-size:11px;color:var(--muted);margin-bottom:1px}
+  .bl-adv{display:grid;grid-template-columns:58px 1fr auto;align-items:center;gap:10px;
+    font-size:12.5px}
+  .bl-adv .t{font-weight:700;color:var(--ink-2);white-space:nowrap;overflow:hidden;
+    text-overflow:ellipsis}
+  .bl-adv .b{height:6px;border-radius:3px;background:var(--bad);overflow:hidden;opacity:.9}
+  .bl-adv .b i{display:block;height:100%;background:var(--good);border-radius:3px;
+    transform-origin:left center}
+  .bl-adv .c{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700;font-size:12px}
+  .bl-adv .c .s{color:var(--muted);font-weight:400}
+  .rev .bl-adv .b i,.rev .bl-dom i{animation:blPousse .7s cubic-bezier(.16,1,.3,1) both;
+    animation-delay:calc(.25s + var(--i,0) * .07s)}
+  @keyframes blPousse{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+  @media (max-width:760px){
+    .bl-verdict{grid-template-columns:1fr;gap:16px;padding:18px}
+    .bl-vn{text-align:left}
+  }
+
+  /* les mesures passent APRÈS le verdict, et plus petites */
+  .bl-mes{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:0 0 16px}
+  /* Le conteneur du resume etait lui-meme une grille : le verdict et les
+     mesures devenaient deux colonnes cote a cote, et les tuiles s etiraient
+     a vide pour rattraper la hauteur du verdict. Il redevient un bloc :
+     verdict pleine largeur, mesures en dessous. */
+  .bl-sum{display:block;margin:6px 0 16px}
   .bl-sc{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px}
   .bl-sc .l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;font-weight:700}
   .bl-sc .v{font-size:23px;font-weight:800;margin-top:4px;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
   .bl-sc .u{font-size:13px;color:var(--muted);font-weight:400}
   .bl-list{display:flex;flex-direction:column;gap:10px}
+  /* Les cartes arrivent l'une après l'autre. Le décalage n'est appliqué
+     qu'aux quatorze premières : au-delà, on attendrait pour rien. */
+  .rev #blList .bl-row{animation:blEntre .5s cubic-bezier(.16,1,.3,1) both}
+  @keyframes blEntre{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  .rev #blList .bl-row:nth-child(1){animation-delay:0ms}
+  .rev #blList .bl-row:nth-child(2){animation-delay:45ms}
+  .rev #blList .bl-row:nth-child(3){animation-delay:90ms}
+  .rev #blList .bl-row:nth-child(4){animation-delay:135ms}
+  .rev #blList .bl-row:nth-child(5){animation-delay:180ms}
+  .rev #blList .bl-row:nth-child(6){animation-delay:225ms}
+  .rev #blList .bl-row:nth-child(7){animation-delay:270ms}
+  .rev #blList .bl-row:nth-child(8){animation-delay:315ms}
+  .rev #blList .bl-row:nth-child(9){animation-delay:360ms}
+  .rev #blList .bl-row:nth-child(10){animation-delay:405ms}
+  .rev #blList .bl-row:nth-child(11){animation-delay:450ms}
+  .rev #blList .bl-row:nth-child(12){animation-delay:495ms}
+  .rev #blList .bl-row:nth-child(13){animation-delay:540ms}
+  .rev #blList .bl-row:nth-child(14){animation-delay:585ms}
   .bl-pager{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:16px}
   .bl-pg{min-width:34px;height:34px;padding:0 10px;border:1px solid var(--border);background:var(--card);color:var(--ink-2);font:inherit;font-size:13px;font-weight:600;border-radius:8px;cursor:pointer;transition:.15s}
   .bl-pg:hover:not(:disabled){border-color:var(--accent);color:var(--ink)}
@@ -717,6 +786,11 @@
   .bl-pg-dot{color:var(--muted);padding:0 3px}
   .bl-pg-info{margin-left:10px;font-size:12px;color:var(--muted)}
   .bl-row{position:relative;background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow-sm);overflow:hidden;transition:transform .15s,box-shadow .15s,border-color .15s}
+  @media (prefers-reduced-motion:reduce){
+    .rev #blList .bl-row,.rev .bl-adv .b i,.rev .bl-dom i,.rev .bl-verdict::after,
+    .bl-row.open .bl-din > *{animation:none !important}
+    .bl-detail{transition:none}
+  }
   .bl-row:hover{transform:translateY(-1px);box-shadow:var(--shadow);border-color:var(--axis)}
   .bl-head{position:relative;display:flex;align-items:center;gap:18px;cursor:pointer;min-height:92px;padding:12px 18px;isolation:isolate}
   /* image de la carte = FOND de la ligne, fondue vers la carte */
@@ -740,7 +814,14 @@
   .bl-emblem.ours{box-shadow:0 0 0 2px var(--accent)}
   .bl-team .tag{font-size:15px;font-weight:800;letter-spacing:-.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .bl-team.left .tag{color:var(--accent)}
-  .bl-scorebox{text-align:center;flex:0 0 auto;min-width:86px}
+  .bl-scorebox{text-align:center;flex:0 0 auto;min-width:96px}
+  /* La forme du score, sans avoir à le lire : plein = écrasement,
+     coupé au milieu = partie serrée. */
+  .bl-dom{display:block;height:3px;margin:7px auto 0;width:76px;border-radius:2px;
+    background:var(--bad);overflow:hidden;opacity:.85}
+  .bl-dom i{display:block;height:100%;background:var(--good);border-radius:2px;
+    transform-origin:left center}
+  .bl-draw .bl-dom i{background:var(--muted)}
   .bl-scorebox .sc{font-size:27px;font-weight:800;letter-spacing:2px;line-height:1;font-variant-numeric:tabular-nums}
   .bl-scorebox .rz{display:inline-block;font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;margin-top:5px;padding:2px 8px;border-radius:20px;color:var(--muted);background:var(--surface-2)}
   .bl-win .sc .a{color:var(--good)} .bl-loss .sc .a{color:var(--bad)}
@@ -753,12 +834,27 @@
   .bl-sr .lbl{font-size:9px;font-weight:800;letter-spacing:.9px;opacity:.85}
   .bl-sr .val{font-size:17px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
   .bl-metar{text-align:right;font-size:11px;color:var(--muted);line-height:1.6;min-width:96px}
-  .bl-metar .mvp{color:var(--accent);font-weight:700}
   .bl-chev{color:var(--muted);flex:0 0 auto;transition:transform .15s;font-size:13px}
   .bl-row.open .bl-chev{transform:rotate(180deg)}
   /* détail */
-  .bl-detail{display:none;border-top:1px solid var(--border);background:var(--surface-1);padding:8px 16px 14px;overflow-x:auto}
-  .bl-row.open .bl-detail{display:block}
+  /* display:none ne s'anime pas. Une grille à 0fr → 1fr, si : la hauteur
+     se calcule toute seule, sans la mesurer en JavaScript. */
+  .bl-detail{display:grid;grid-template-rows:0fr;background:var(--surface-1);
+    transition:grid-template-rows .38s cubic-bezier(.16,1,.3,1)}
+  .bl-row.open .bl-detail{grid-template-rows:1fr}
+  /* ⚠️ Ni padding ni bordure ICI. Avec grid-template-rows:0fr la boite de
+     CONTENU fait 0, mais le padding, lui, garde sa hauteur : overflow:hidden
+     clippe alors a la boite de padding et laissait depasser le haut des
+     onglets sous les cartes fermees. On deporte l espacement sur les enfants. */
+  .bl-din{overflow:hidden;min-height:0}
+  .bl-din > .bl-tabs{padding:9px 16px 0}
+  .bl-din > .bl-pane{padding:0 16px 14px}
+  .bl-row.open .bl-detail{border-top:1px solid var(--border)}
+  .bl-din .bl-pane{overflow-x:auto}
+  /* le contenu monte légèrement en apparaissant, au lieu de surgir */
+  .bl-row.open .bl-din > *{animation:blOuvre .4s cubic-bezier(.16,1,.3,1) both}
+  .bl-row.open .bl-din > *:nth-child(2){animation-delay:.06s}
+  @keyframes blOuvre{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
   .bl-tl{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:700;margin:12px 0 5px}
   .bl-tl:first-child{margin-top:2px} .bl-tl.ours{color:var(--accent)} .bl-tl.foe{color:var(--bad)}
   .bl-em{width:34px;height:34px;border-radius:8px;object-fit:cover;background:var(--surface-2);flex:0 0 auto}
@@ -4127,10 +4223,10 @@ function groupBattles(){
     g.ourScore = g.foe.filter(r=>!r.surv).length;         // ennemis détruits
     g.foeScore = g.our.filter(r=>!r.surv).length;         // alliés détruits
     g.enemyTag = BATTLE_ENEMY[g.id] || (g.foe[0]&&g.foe[0].clan) || "?";
-    // MVP = notre meilleur MEMBRE (repli : meilleur de notre équipe)
-    let mvp=null; g.our.forEach(r=>{ if(mine(r) && (!mvp||r.dmg>mvp.dmg)) mvp=r; });
-    if(!mvp) g.our.forEach(r=>{ if(!mvp||r.dmg>mvp.dmg) mvp=r; });
-    g.mvp=mvp;
+    // MVP retiré : désigner un « meilleur joueur » sur les seuls dégâts
+    // récompensait le char qui tire, jamais celui qui éclaire ou qui
+    // encaisse. L'impact décomposé du tableau de bord répond mieux à la
+    // question, et le détail de la bataille donne déjà toutes les lignes.
     // CÉ de la bataille = moyenne des CÉ des membres présents
     const mem=g.our.filter(mine);
     g.ce = srAvg(mem);
@@ -4160,7 +4256,6 @@ function blTeam(rows, ours, tag, url){
 function blRowHTML(g){
   const cls=g.win?"bl-win":(g.draw?"bl-draw":"bl-loss");
   const rz=g.win?"Victoire":(g.draw?"Match nul":"Défaite");
-  const mvp=g.mvp?`<div>MVP <span class="mvp">${esc(shortName(g.mvp.name))}</span></div>`:"";
   const sr=g.ce!=null?srPill(g.ce):"";
   return `<div class="bl-row ${cls}" data-bid="${esc(String(g.id))}">
     <div class="bl-head" onclick="this.parentNode.classList.toggle('open')">
@@ -4168,23 +4263,23 @@ function blRowHTML(g){
       ${mapInfoHTML(g.mapName,g.mode)}
       <div class="bl-match">
         <div class="bl-team left"><span class="tag">[${esc(CLANTAG)}]</span>${emblemOursHTML('bl-emblem')}</div>
-        <div class="bl-scorebox"><div class="sc"><span class="a">${g.ourScore}</span><span class="bl-sep">:</span><span>${g.foeScore}</span></div><div class="rz">${rz}</div></div>
+        <div class="bl-scorebox"><div class="sc"><span class="a">${g.ourScore}</span><span class="bl-sep">:</span><span>${g.foeScore}</span></div><div class="rz">${rz}</div><span class="bl-dom" role="img" aria-label="${g.ourScore} chars adverses détruits, ${g.foeScore} des nôtres"><i style="width:${(g.ourScore+g.foeScore)?Math.round(g.ourScore/(g.ourScore+g.foeScore)*100):50}%"></i></span></div>
         <div class="bl-team right">${emblemFoeHTML(g.enemyTag,'bl-emblem')}<span class="tag">[${esc(g.enemyTag)}]</span></div>
       </div>
       <div class="bl-right">
         ${sr}
-        <div class="bl-metar"><div>${agoFR(g.ts)} · ${durFR(g.dur)}</div>${mvp}</div>
+        <div class="bl-metar"><div>${agoFR(g.ts)} · ${durFR(g.dur)}</div></div>
         <span class="bl-chev">▾</span>
       </div>
     </div>
-    <div class="bl-detail">
+    <div class="bl-detail"><div class="bl-din">
       <div class="bl-tabs">
         <button class="bl-tab on" type="button" data-bt="res" onclick="event.stopPropagation();blTab(this,'res','${g.id}')"><span class="bl-tab-ic">▤</span> Résultat</button>
         <button class="bl-tab" type="button" data-bt="rep" onclick="event.stopPropagation();blTab(this,'rep','${g.id}')"><span class="bl-tab-ic">▶</span> Replay</button>
       </div>
       <div class="bl-pane" data-pane="res"><div class="bl-teams">${blTeam(g.our,true,CLANTAG,ourEmblemUrl())}${blTeam(g.foe,false,g.enemyTag,'')}</div></div>
       <div class="bl-pane" data-pane="rep" hidden><div class="rp-host"></div></div>
-    </div>
+    </div></div>
   </div>`;
 }
 function blSummaryHTML(list){
@@ -4193,12 +4288,51 @@ function blSummaryHTML(list){
   list.forEach(g=>{ g.our.forEach(r=>{dmgSum+=r.dmg;dmgN++;}); survSum+=g.our.filter(r=>r.surv).length;
     if(g.ce!=null){srSum+=g.ce;srN++;} });
   const wr=n?Math.round(wins/n*100):0, dmgAvg=dmgN?Math.round(dmgSum/dmgN):0, survAvg=n?survSum/n:0;
-  const srAvg=srN?Math.round(srSum/srN):null, srCol=srAvg!=null?ceTier(srAvg).c:"var(--ink)";
-  return `<div class="bl-sc"><div class="l">Batailles</div><div class="v">${n}</div></div>
-    <div class="bl-sc"><div class="l">Victoires</div><div class="v" style="color:${wr>=50?'var(--good)':'var(--bad)'}">${wr}%</div></div>
-    <div class="bl-sc"><div class="l">SR moyen du clan</div><div class="v" style="color:${srCol}">${srAvg!=null?fmt(srAvg):"—"}</div></div>
-    <div class="bl-sc"><div class="l">Dégâts moy./joueur</div><div class="v">${fmt(dmgAvg)}</div></div>
-    <div class="bl-sc"><div class="l">Alliés survivants moy.</div><div class="v">${survAvg.toFixed(1)}<span class="u">/7</span></div></div>`;
+  const srMoy=srN?Math.round(srSum/srN):null, srCol=srMoy!=null?ceTier(srMoy).c:"var(--ink)";
+
+  /* ── Les adversaires : ce que SEUL cet onglet peut raconter. La Vue
+     clan donne déjà le taux de victoire ; elle ne dit jamais contre qui. ── */
+  const par={};
+  list.forEach(g=>{ const t=g.enemyTag||"?"; if(t==="?") return;
+    const a=par[t]=par[t]||{tag:t,n:0,v:0}; a.n++; if(g.win) a.v++; });
+  const adv=Object.values(par).sort((a,b)=>b.n-a.n);
+  const habitues=adv.slice(0,5);
+  const durs=adv.filter(a=>a.n>=3).sort((a,b)=>(a.v/a.n)-(b.v/b.n));
+  const noire=durs[0], facile=durs[durs.length-1];
+
+  let titre, ph;
+  if(!n){ titre="Aucune confrontation"; ph="Aucune bataille sur cette période."; }
+  else{
+    titre = wr>=60?"On tient le terrain." : (wr>=50?"Jeu égal." : "Ça résiste en face.");
+    ph = "<b>"+fmt(n)+"</b> confrontation"+(n>1?"s":"")+", <b>"+wins+"</b> gagnée"+(wins>1?"s":"")+".";
+    if(adv.length) ph += " <b>"+fmt(adv.length)+"</b> clan"+(adv.length>1?"s":"")+" affronté"+(adv.length>1?"s":"")+".";
+    if(noire && noire.v/noire.n < .5)
+      ph += ' <span class="who">['+esc(noire.tag)+']</span> est celui qui te résiste le plus — <b>'+
+            noire.v+"</b> victoire"+(noire.v>1?"s":"")+" en <b>"+noire.n+"</b> rencontres.";
+    else if(facile && facile.n>=3)
+      ph += ' Ton meilleur bilan est contre <span class="who">['+esc(facile.tag)+
+            ']</span> : <b>'+facile.v+"</b> sur <b>"+facile.n+"</b>.";
+  }
+
+  const barres = habitues.map((a,i)=>{
+    const p=Math.round(a.v/a.n*100);
+    return '<div class="bl-adv" style="--i:'+i+'" title="['+esc(a.tag)+'] — '+a.v+' victoire'+(a.v>1?"s":"")+' sur '+a.n+' rencontres">'+
+      '<span class="t">['+esc(a.tag)+']</span>'+
+      '<span class="b"><i style="width:'+p+'%"></i></span>'+
+      '<span class="c">'+a.v+'<span class="s">/'+a.n+'</span></span></div>';
+  }).join("");
+
+  return '<section class="bl-verdict">'+
+      '<div class="bl-vg"><h2 class="bl-vt">'+titre+'</h2><p class="bl-vp">'+ph+'</p></div>'+
+      '<div class="bl-vn"><b data-n="'+wr+'">'+wr+' %</b><i>de victoires</i></div>'+
+      (habitues.length?'<div class="bl-advs"><div class="bl-advt">Adversaires les plus fréquents</div>'+barres+'</div>':"")+
+    '</section>'+
+    '<div class="bl-mes">'+
+      '<div class="bl-sc"><div class="l">Batailles</div><div class="v">'+fmt(n)+'</div></div>'+
+      '<div class="bl-sc"><div class="l">SR moyen du clan</div><div class="v" style="color:'+srCol+'">'+(srMoy!=null?fmt(srMoy):"—")+'</div></div>'+
+      '<div class="bl-sc"><div class="l">Dégâts moy./joueur</div><div class="v">'+fmt(dmgAvg)+'</div></div>'+
+      '<div class="bl-sc"><div class="l">Alliés survivants moy.</div><div class="v">'+survAvg.toFixed(1)+'<span class="u">/7</span></div></div>'+
+    '</div>';
 }
 let BL_PAGE=0; const BL_PER_PAGE=50;
 function renderBattles(){
@@ -4207,6 +4341,9 @@ function renderBattles(){
   if(!list.length){ sum.innerHTML=""; wrap.innerHTML='<div class="empty">Aucune bataille sur cette période.</div>'; pg.innerHTML=""; return; }
   BL_BY_ID={}; list.forEach(g=>{ BL_BY_ID[g.id]=g; });
   sum.innerHTML=blSummaryHTML(list);
+  { const nb=sum.querySelector(".bl-vn b");
+    if(nb && typeof animateNum==="function" && !REDUCE_MOTION)
+      animateNum(nb, +nb.dataset.n, v=>Math.round(v)+" %"); }
   const pages=Math.ceil(list.length/BL_PER_PAGE);
   if(BL_PAGE>=pages) BL_PAGE=0;
   const slice=list.slice(BL_PAGE*BL_PER_PAGE,(BL_PAGE+1)*BL_PER_PAGE);
