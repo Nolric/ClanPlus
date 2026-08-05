@@ -2324,48 +2324,65 @@
 
 
 /* ═══ BANDEAU DE VERDICT — jauge, courbe de forme, barres ═══════════ */
-.vd{grid-template-columns:minmax(0,1.05fr) minmax(170px,.75fr) auto;gap:26px}
+/* Deux rangées : le chiffre accompagne le titre, la courbe a la largeur
+   pour elle. Avant, la jauge, la courbe et les dix barres se disputaient
+   la même bande — et le pourcentage était écrit deux fois. */
+.vd{display:block}
+.vd-haut{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:28px;align-items:start}
 .vd-g{min-width:0}
-
-/* la jauge : 260° de balayage, l'ouverture en bas */
-.vd-n{display:grid;justify-items:center;gap:0;text-align:center;position:relative}
-.vd-j{width:132px;height:132px;display:block;fill:none;stroke-linecap:round}
-.vd-j .fond{stroke:var(--surface-2);stroke-width:9}
-.vd-j .plein{stroke:var(--accent);stroke-width:9;
-  transition:stroke-dasharray .95s cubic-bezier(.16,1,.3,1)}
-.vd-v{position:absolute;top:34px;left:0;right:0;pointer-events:none}
-.vd-n b{font-size:clamp(30px,3.5vw,40px) !important;letter-spacing:-.03em}
-.vd-n i{margin-top:2px;font-size:10px}
-.vd-f{margin-top:6px;height:30px}
+.vd-n{text-align:right;line-height:1;flex:0 0 auto}
+.vd-n b{letter-spacing:-.035em}
+.vd-n i{margin-top:6px;font-size:10.5px}
+.vd-f{display:flex;gap:4px;align-items:flex-end;height:26px}
 
 /* la courbe de forme : la trajectoire, pas seulement le point d'arrivée */
-.vd-c{margin:0;min-width:0;display:flex;flex-direction:column;justify-content:center;position:relative}
-.vd-c figcaption{font-size:11px;color:var(--muted);margin-bottom:8px;letter-spacing:.02em}
-.vd-c svg{width:100%;height:66px;display:block;overflow:visible}
+.vd-c{margin:20px 0 0;min-width:0;position:relative;
+  border-top:1px solid var(--border);padding-top:16px}
+.vd-ch{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:10px}
+.vd-c figcaption{font-size:11.5px;color:var(--muted);letter-spacing:.02em}
+.vd-c svg{width:100%;height:78px;display:block;overflow:visible}
 /* preserveAspectRatio="none" étire le tracé : sans ceci l'épaisseur varie */
 .vd-c path,.vd-c line{vector-effect:non-scaling-stroke}
 .vd-c .ref{stroke:var(--axis);stroke-width:1;stroke-dasharray:3 4;opacity:.75}
 .vd-c .aire{fill:var(--accent);opacity:.13;stroke:none}
 .vd-c .trait{fill:none;stroke:var(--accent-2);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
-.vd-c50{position:absolute;right:0;bottom:-4px;font-size:9.5px;color:var(--muted);
-  font-variant-numeric:tabular-nums}
+/* le conteneur épouse exactement le cadre du tracé : l'étiquette peut
+   donc s'aligner sur la ligne de référence au lieu du bas du cadre */
+.vd-cw{position:relative}
+.vd-c50{position:absolute;right:2px;top:var(--y50);transform:translateY(-50%);
+  font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums;
+  background:var(--card);padding:0 4px;line-height:1.3;border-radius:3px}
 .cin .vd-c .trait{stroke-dasharray:1400;animation:vdTrace 1.4s cubic-bezier(.3,0,.2,1) .45s both}
 @keyframes vdTrace{from{stroke-dashoffset:1400}to{stroke-dashoffset:0}}
 .cin .vd-c .aire{animation:vdFond .8s ease-out .9s both}
 @keyframes vdFond{from{opacity:0}to{opacity:.13}}
 
-@media (max-width:1100px){
-  .vd{grid-template-columns:minmax(0,1fr) auto}
-  .vd-c{grid-column:1/-1;order:3}
-}
-@media (max-width:820px){
-  .vd{grid-template-columns:1fr}
-  .vd-n{justify-items:start}
-  .vd-v{left:0;right:auto;width:132px}
+@media (max-width:640px){
+  .vd-haut{grid-template-columns:1fr;gap:14px}
+  .vd-n{text-align:left}
+  .vd-ch{flex-direction:column;align-items:flex-start;gap:8px}
 }
 
 /* ═══ TOP 5 — IMPACT DÉCOMPOSÉ ═════════════════════════════════════ */
+/* ── Infobulle : trois couleurs ne veulent rien dire sans légende, et
+      une légende de trois mots ne suffit pas non plus. Au survol, on
+      donne le nom, la valeur, sa part, et la DÉFINITION. ── */
+.t5bulle{position:fixed;top:0;left:0;z-index:300;max-width:290px;pointer-events:none;
+  background:var(--panel-2,#101113);border:1px solid var(--border);border-radius:10px;
+  padding:11px 13px;box-shadow:0 12px 32px -10px rgba(0,0,0,.75);
+  display:flex;flex-direction:column;gap:4px;
+  font:400 12.5px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.t5bulle[hidden]{display:none}
+.t5bulle b{font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+.t5bulle .v{font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+.t5bulle .d{color:var(--ink-2);font-size:12px;line-height:1.5}
+
 .t5leg{display:flex;flex-wrap:wrap;gap:14px;margin:0 0 14px}
+.t5l{cursor:help;border-radius:4px;padding:2px 4px;margin:-2px -4px;
+  transition:background .14s}
+.t5l:hover{background:rgba(255,255,255,.05)}
+.t5s{cursor:help}
+.t5s:focus-visible,.t5l:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
 .t5l{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ink-2)}
 .t5l i{width:10px;height:10px;border-radius:3px;flex:0 0 auto}
 #dashTop5 .t5{position:relative;gap:15px;padding-top:14px}
@@ -2379,7 +2396,10 @@
 .t5s{display:block;height:100%;border-right:2px solid var(--card);
   transition:filter .16s}
 .t5s:last-child{border-right:0}
-.t5row:hover .t5s{filter:brightness(1.14)}
+.t5row:hover .t5s{filter:brightness(1.1)}
+/* le segment SURVOLÉ ressort, les autres s'effacent : on sait lequel on lit */
+.t5bar:hover .t5s{opacity:.42;transition:opacity .14s,filter .14s}
+.t5bar .t5s:hover{opacity:1;filter:brightness(1.22)}
 .t5foot{display:flex;justify-content:space-between;gap:10px;margin-top:5px;
   font-size:10.5px;color:var(--muted)}
 .t5e{font-variant-numeric:tabular-nums}
@@ -3720,10 +3740,16 @@ function renderOfficialCards(){
    Le trait pointillé marque la moyenne du clan : chacun se situe sans
    calcul. Palette validée (daltonisme + contraste) ; 2 px de fond entre
    les segments ; légende et valeurs écrites, donc jamais la couleur seule. */
+/* Les trois notions que le jeu ne définit nulle part clairement.
+   L'explication est portée par l'infobulle : sans elle, trois couleurs
+   ne veulent rien dire. */
 const T5_PARTS = [
-  { k:"dmg",    l:"Dégâts",     c:"#bd8a3c" },
-  { k:"assist", l:"Assistance", c:"#4f97ee" },
-  { k:"block",  l:"Blocage",    c:"#c76fa4" },
+  { k:"dmg",    l:"Dégâts",     c:"#bd8a3c",
+    d:"Points de vie que tu retires toi-même à l'adversaire, en tirant." },
+  { k:"assist", l:"Assistance", c:"#4f97ee",
+    d:"Dégâts infligés par tes alliés sur une cible que TU as repérée, ou dont tu as brisé les chenilles." },
+  { k:"block",  l:"Blocage",    c:"#c76fa4",
+    d:"Dégâts encaissés par ton blindage sans perdre de points de vie : les obus qui ricochent ou n'percent pas." },
 ];
 function renderTop5(){
   const el=document.getElementById("dashTop5"); if(!el) return;
@@ -3734,14 +3760,17 @@ function renderTop5(){
   const mx=Math.max(1,moy*1.06,...top.map(tot));
 
   const legende=T5_PARTS.map(x=>
-    `<span class="t5l"><i style="background:${x.c}"></i>${x.l}</span>`).join("");
+    `<span class="t5l" data-l="${x.l}" data-d="${esc(x.d)}" data-c="${x.c}">`+
+    `<i style="background:${x.c}"></i>${x.l}</span>`).join("");
 
   const lignes=top.map((p,i)=>{
     const t=tot(p);
     const seg=T5_PARTS.map(x=>{
       const w=(p[x.k]||0)/mx*100;
-      return w<0.6?"":`<span class="t5s" style="width:${w.toFixed(2)}%;background:${x.c}" `+
-        `title="${x.l} : ${fmt(Math.round(p[x.k]||0))}"></span>`;
+      const part=t? Math.round((p[x.k]||0)/t*100) : 0;
+      return w<0.6?"":`<span class="t5s" style="width:${w.toFixed(2)}%;background:${x.c}"`+
+        ` data-l="${x.l}" data-v="${fmt(Math.round(p[x.k]||0))}" data-part="${part}"`+
+        ` data-d="${esc(x.d)}" data-c="${x.c}"></span>`;
     }).join("");
     const ecart=moy? Math.round((t/moy-1)*100) : 0;
     const tag=Math.abs(ecart)<3?'<span class="t5e eq">= moyenne</span>'
@@ -3762,6 +3791,45 @@ function renderTop5(){
     <div class="t5" style="--moyp:${(moy/mx*100).toFixed(2)}%">
       ${lignes||'<div style="color:var(--muted);font-size:12px;padding:8px 0">Aucune donnée</div>'}
     </div>`;
+  brancheBulle(el);
+}
+
+/* ── L'infobulle ────────────────────────────────────────────────────
+   Une seule bulle réutilisée, positionnée au-dessus du segment survolé.
+   Elle sort du cadre de la carte si nécessaire (position:fixed), et se
+   recale quand elle dépasserait le bord de la fenêtre. */
+let T5_BULLE = null;
+function brancheBulle(hote){
+  if(!T5_BULLE){
+    T5_BULLE = document.createElement("div");
+    T5_BULLE.className = "t5bulle"; T5_BULLE.hidden = true;
+    document.body.appendChild(T5_BULLE);
+  }
+  const montre = (el) => {
+    const d = el.dataset;
+    if(!d.l) return;
+    T5_BULLE.innerHTML =
+      '<b style="color:' + (d.c||"var(--ink)") + '">' + esc(d.l) + '</b>' +
+      (d.v ? '<span class="v">' + d.v + (d.part ? ' &middot; ' + d.part + ' % de son impact' : '') + '</span>' : '') +
+      '<span class="d">' + esc(d.d||"") + '</span>';
+    T5_BULLE.hidden = false;
+    const r = el.getBoundingClientRect(), b = T5_BULLE.getBoundingClientRect();
+    let x = r.left + r.width/2 - b.width/2;
+    x = Math.max(8, Math.min(x, innerWidth - b.width - 8));   // jamais hors écran
+    let y = r.top - b.height - 10;
+    if(y < 8) y = r.bottom + 10;                              // pas de place au-dessus
+    T5_BULLE.style.transform = "translate(" + Math.round(x) + "px," + Math.round(y) + "px)";
+  };
+  const cache = () => { if(T5_BULLE) T5_BULLE.hidden = true; };
+  hote.querySelectorAll(".t5s,.t5l").forEach(el=>{
+    el.addEventListener("mouseenter", ()=>montre(el));
+    el.addEventListener("focus", ()=>montre(el));
+    el.addEventListener("mouseleave", cache);
+    el.addEventListener("blur", cache);
+    el.tabIndex = 0;                                          // accessible au clavier
+  });
+  hote.addEventListener("mouseleave", cache);
+  addEventListener("scroll", cache, { passive:true });
 }
 function renderDashboard(){ renderHealth(); renderLast(); renderWg(); renderMini(); renderOfficialCards(); renderTop5(); }
 
@@ -4668,7 +4736,28 @@ function buildRaw(data){
     bmap[b.battle_id] = { ts: b.ts?Math.floor(new Date(b.ts).getTime()/1000):0, mode:b.mode||"",
       result: b.result, mapName: b.map_name || ("Carte "+(b.map_id||"?")) };
   });
-  RAW = (data.players||[]).map(pl=>{
+  /* ── Doublons de bataille ────────────────────────────────────────
+     Quand DEUX membres du clan ont le mod, les deux envoient la même
+     bataille. `ingest` fait DELETE puis INSERT en deux requêtes : si les
+     deux envois se chevauchent, les deux DELETE passent avant les deux
+     INSERT et la bataille finit avec 14 lignes au lieu de 7. D'où
+     l'intermittence — il faut que les envois tombent dans la même
+     fraction de seconde.
+
+     La cause est corrigée côté serveur, mais les batailles déjà en base
+     restent doublées. On filtre donc ici : une ligne par (bataille,
+     joueur, char). Sans ça, les totaux d'équipe sont doublés — 32 620
+     de dégâts affichés pour 16 310 réellement infligés. */
+  const vus = new Set();
+  let doublons = 0;
+  const brut = (data.players||[]).filter(pl=>{
+    const cle = pl.battle_id + "|" + (pl.account_id ?? pl.name ?? "?") + "|" + pl.veh;
+    if(vus.has(cle)){ doublons++; return false; }
+    vus.add(cle); return true;
+  });
+  if(doublons) console.warn("[données] "+doublons+" ligne(s) de joueur en double, ignorée(s)");
+
+  RAW = brut.map(pl=>{
     const b = bmap[pl.battle_id] || {ts:0,mode:"",result:null,mapName:""};
     const vm = VEHMAP[Number(pl.veh)] || null;
     return {
@@ -8714,10 +8803,12 @@ boot();
       }
 
 
-      /* la forme récente : dix barres, la plus ancienne à gauche */
+      /* la forme récente : dix barres, la plus ancienne à gauche.
+         Calculées ici car la courbe les intègre à son en-tête. */
       var dix = liste.slice(0, 10).reverse().map(function(b, j){
         return '<i class="' + (b.result===1?"v":"d") + '" style="--i:' + j +
-               ';height:' + (b.result===1?30:16) + 'px"></i>';
+               ';height:' + (b.result===1?26:14) + 'px" title="' +
+               (b.result===1?"Victoire":"Défaite") + '"></i>';
       }).join("");
 
       /* ── la courbe de forme : taux de victoire glissant ──
@@ -8738,44 +8829,30 @@ boot();
         var Y = function(v){ return H - 4 - v * (H - 12); };
         var d = pts.map(function(v, i){ return (i ? "L" : "M") + X(i).toFixed(1) + " " + Y(v).toFixed(1); }).join("");
         courbe =
-          '<figure class="vd-c"><figcaption>Forme sur ' + f + ' batailles glissantes</figcaption>' +
+          '<figure class="vd-c"><div class="vd-ch">' +
+            '<figcaption>Taux de victoire, lissé sur ' + f + ' batailles</figcaption>' +
+            '<div class="vd-f">' + dix + '</div></div>' +
+          '<div class="vd-cw" style="--y50:' + (Y(0.5) / H * 100).toFixed(2) + '%">' +
           '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" role="img" aria-label="' +
             'Courbe du taux de victoire glissant : de ' + Math.round(pts[0]*100) + ' % à ' +
             Math.round(pts[n-1]*100) + ' %.">' +
             '<line class="ref" x1="0" y1="' + Y(0.5).toFixed(1) + '" x2="' + W + '" y2="' + Y(0.5).toFixed(1) + '"/>' +
             '<path class="aire" d="' + d + 'L' + W + ' ' + H + 'L0 ' + H + 'Z"/>' +
             '<path class="trait" d="' + d + '"/>' +
-          '</svg>' +
-          '<span class="vd-c50">50 %</span></figure>';
+          '</svg><span class="vd-c50">50 %</span></div></figure>';
       }
 
       hote.hidden = false;
       document.getElementById("viewClan").classList.add("cpv");
-      /* la jauge en arc : 260° de balayage, remplie au prorata */
-      var R = 52, C = 2 * Math.PI * R * (260 / 360);
-      var jauge =
-        '<svg class="vd-j" viewBox="0 0 132 132" aria-hidden="true">' +
-          '<circle class="fond" cx="66" cy="66" r="' + R + '" stroke-dasharray="' + C.toFixed(1) +
-            ' 999" transform="rotate(140 66 66)"/>' +
-          '<circle class="plein" cx="66" cy="66" r="' + R + '" stroke-dasharray="' +
-            (C * pct / 100).toFixed(1) + ' 999" transform="rotate(140 66 66)"/>' +
-        '</svg>';
-
+      /* Le chiffre accompagne le titre ; la courbe a sa propre ligne,
+         pleine largeur. Plus rien ne se dispute la place, et le
+         pourcentage n'est plus écrit deux fois. */
       hote.innerHTML =
-        '<div class="vd-g"><h2 class="vd-t">' + titre + '</h2><p class="vd-p">' + ph + '</p></div>' +
-        courbe +
-        '<div class="vd-n">' + jauge +
-          '<span class="vd-v"><b data-n="' + pct + '">' + pct + ' %</b><i>de victoires</i></span>' +
-          '<div class="vd-f">' + dix + '</div></div>';
+        '<div class="vd-haut">' +
+          '<div class="vd-g"><h2 class="vd-t">' + titre + '</h2><p class="vd-p">' + ph + '</p></div>' +
+          '<div class="vd-n"><b data-n="' + pct + '">' + pct + ' %</b><i>de victoires</i></div>' +
+        '</div>' + courbe;
 
-      /* la jauge se remplit : on la pose à zéro, la transition CSS fait le reste */
-      var arc = hote.querySelector(".vd-j .plein");
-      if(arc && !doux){
-        var cible = arc.getAttribute("stroke-dasharray");
-        arc.setAttribute("stroke-dasharray", "0 999");
-        requestAnimationFrame(function(){ requestAnimationFrame(function(){
-          arc.setAttribute("stroke-dasharray", cible); }); });
-      }
       /* le chiffre se compte */
       var n = hote.querySelector(".vd-n b");
       if(n && !doux && typeof animateNum === "function"){
