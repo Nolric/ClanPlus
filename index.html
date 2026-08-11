@@ -1592,6 +1592,60 @@
      l'action, plus l'échantillon sur lequel elle repose : un conseil
      sans son échantillon est une opinion. */
   #viewPlayer .coach{margin:14px 0 24px}
+  /* ══ LES OBJECTIFS ════════════════════════════════════════════════
+     La barre bouge parce que le joueur joue, pas parce qu on l anime :
+     elle se calcule sur ses dix dernieres batailles. */
+  .mss{margin:14px 0 22px}
+  .mss-h h3{font-size:15.5px;margin:0 0 4px}
+  .mss-h p{margin:0 0 13px;font-size:12.5px;color:var(--muted);max-width:74ch;line-height:1.55}
+  .mss-g{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  @media (max-width:1150px){ .mss-g{grid-template-columns:repeat(2,1fr)} }
+  @media (max-width:720px){ .mss-g{grid-template-columns:1fr} }
+  .ms{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+    padding:14px 16px;position:relative;overflow:hidden;min-width:0}
+  .ms::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent)}
+  .ms.ok::before{background:var(--good)}
+  .ms.rec::before{background:var(--bad)}
+  .ms-r{font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--bad);border:1px solid var(--bad);border-radius:20px;padding:1px 8px}
+  .ms header{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+  .ms-n{font-weight:700;font-size:14px}
+  .ms-p{font-family:ui-monospace,Consolas,monospace;font-size:12.5px;font-weight:700;
+    color:var(--accent);font-variant-numeric:tabular-nums}
+  .ms-b{font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+    color:#14120c;background:var(--good);border-radius:20px;padding:2px 9px}
+  .ms-o{font-size:13px;color:var(--ink-2);margin:9px 0 10px}
+  .ms-o b{color:var(--ink);font-variant-numeric:tabular-nums}
+  .ms-j{height:7px;background:var(--surface-2);border-radius:4px;overflow:hidden}
+  .ms-j i{display:block;height:100%;border-radius:4px;background:var(--accent);
+    transform-origin:left center}
+  .ms.ok .ms-j i{background:var(--good)}
+  .ms footer{margin-top:9px;font-size:11px;color:var(--muted)}
+  .ms footer b{color:var(--ink-2);font-variant-numeric:tabular-nums}
+  .rev #viewPlayer .ms{animation:ccEntre .5s cubic-bezier(.16,1,.3,1) both;
+    animation-delay:calc(var(--i,0) * .07s)}
+  .rev #viewPlayer .ms-j i{animation:ccPousse .8s cubic-bezier(.16,1,.3,1) both;
+    animation-delay:calc(.25s + var(--i,0) * .07s)}
+
+  /* ══ LA FICHE, repliee par defaut ═════════════════════════════════ */
+  .cc-f{margin-top:11px;border-top:1px solid var(--border);padding-top:10px}
+  .cc-f summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px;
+    font-size:12.5px;color:var(--accent);font-weight:600;user-select:none}
+  .cc-f summary::-webkit-details-marker{display:none}
+  .cc-fi{width:17px;height:17px;border-radius:50%;display:grid;place-items:center;
+    font-size:11px;font-weight:800;background:var(--accent-soft);color:var(--accent);flex:0 0 auto}
+  .cc-f[open] summary{margin-bottom:9px}
+  .cc-fb{font-size:12.5px;line-height:1.6;color:var(--ink-2);
+    animation:ccOuvre .28s ease-out both}
+  @keyframes ccOuvre{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:none}}
+  .cc-fb p{margin:0 0 8px}
+  .cc-fb b{color:var(--ink)}
+  .cc-fb ul{margin:0 0 8px;padding-left:18px}
+  .cc-fb li{margin:0 0 5px}
+  .cc-fr{border-left:2px solid var(--accent);padding-left:10px;color:var(--ink)}
+  @media (prefers-reduced-motion:reduce){
+    .rev #viewPlayer .ms,.rev #viewPlayer .ms-j i,.cc-fb{animation:none}
+  }
   /* La carte SR poussait la page a 528 px sur un ecran de 420 : ses
      colonnes ne se repliaient jamais. Personne ne l avait vu parce que
      la carte ne rend que si le modele SR de la saison est charge. */
@@ -2980,6 +3034,7 @@
     <p class="pz-title">Quoi travailler</p>
     <!-- Le coach passe AVANT le radar : c'est la partie actionnable.
          Le radar dit où tu te situes, le coach dit quoi faire. -->
+    <div id="pMissions"></div>
     <div id="pCoach"></div>
     <div class="pz-diag">
       <div class="pz-stack">
@@ -6001,12 +6056,68 @@ function pTanks(rows){
     <div class="srd-legend">${verdict}</div></div>`;
 }
 
+/* ── Les fiches pédagogiques ───────────────────────────────────────
+   Une par geste. Le « pourquoi » est toujours ramené au Bastion : en
+   7 contre 7, chaque char pèse un septième de l'équipe, ce qui change
+   complètement la valeur d'une erreur par rapport à une partie
+   aléatoire à 15. */
+const COACH_FICHES = {
+  precis:{
+    quoi:"La part de tes obus qui touchent quelque chose.",
+    pourquoi:"En Bastion tu tires peu : entre deux obus il se passe 8 à 12 secondes. Un obus perdu, c'est un tour de recharge offert à l'adversaire — et à sept, ça se voit tout de suite.",
+    comment:["Arrête-toi complètement avant de tirer : le réticule met 2 à 3 s à se refermer.",
+             "Au-delà de 300 m, passe en vue snipe et attends la fermeture totale.",
+             "Ne tire pas sur une cible qui traverse : laisse-la s'arrêter ou vise où elle va."],
+    repere:"80 % et plus sur un char à bonne précision. En dessous de 70 %, c'est le geste à corriger en premier."
+  },
+  perce:{
+    quoi:"La part de tes obus touchés qui traversent réellement le blindage.",
+    pourquoi:"Un rebond fait zéro. Toucher sans percer coûte exactement autant qu'un raté, mais donne l'illusion d'avoir bien joué.",
+    comment:["Apprends trois points faibles par char adverse fréquent — pas trente.",
+             "Vise les surfaces plates : joues de tourelle, toit de caisse, arrière.",
+             "Contre un blindage frontal que tu ne perces pas, change d'angle plutôt que d'obus."],
+    repere:"75 à 85 % selon le char. Sous 70 %, tu tires trop souvent dans la masse frontale."
+  },
+  blindage:{
+    quoi:"Sur tout ce que l'adversaire t'envoie, la part que ton blindage renvoie.",
+    pourquoi:"Les points de vie que tu ne perds pas restent à ton équipe. À sept, un char qui tient dix secondes de plus, c'est un obus de plus tiré par chacun derrière lui.",
+    comment:["Angle ta caisse entre 30 et 45° : le blindage effectif double presque.",
+             "Cherche les positions en contre-pente : seule la tourelle dépasse.",
+             "Bouge légèrement pendant ta recharge, tu forces l'adversaire à viser une cible mobile."],
+    repere:"40 % et plus pour un lourd, 20 % pour un moyen. Un chasseur bien placé n'a pas besoin de bloquer."
+  },
+  echange:{
+    quoi:"Les dégâts que tu infliges pour chaque point de vie que tu perds.",
+    pourquoi:"C'est la seule mesure qui dit si tes duels valaient le coup. Faire 3 000 en mourant tout de suite vaut moins que 2 000 en restant en vie.",
+    comment:["Ne prends un duel que si tu tires le premier ou si tu peux rebondir.",
+             "Recule derrière ton couvert après ton obus, ne reste pas exposé à recharger.",
+             "Si tu ne peux ni percer ni rebondir, désengage : ce duel est perdu d'avance."],
+    repere:"1,5 et plus, c'est un échange gagnant. Sous 1,0, tu perds plus que tu ne rends."
+  },
+  survie:{
+    quoi:"Le temps que tu tiens en moyenne dans la bataille.",
+    pourquoi:"Un char mort ne tire plus. En 7 contre 7, partir en premier c'est retirer un septième de la puissance de feu de ton équipe pour tout le reste de la partie.",
+    comment:["Laisse le premier contact au char le mieux blindé, arrive en second.",
+             "Garde toujours un chemin de repli en vue avant d'avancer.",
+             "En fin de partie, ta vie vaut plus que 200 dégâts de plus."],
+    repere:"Vise la durée moyenne de l'équipe. Si tu es 60 s en dessous, tu pousses trop tôt."
+  },
+  apport:{
+    quoi:"Ce que tu rapportes par le repérage et l'assistance, rapporté à tes propres dégâts.",
+    pourquoi:"Un char que tu éclaires et que trois alliés arrosent rapporte bien plus que ton seul obus. C'est le geste le plus sous-estimé du format.",
+    comment:["Éclaire avant de tirer : une fois que tu as tiré, tu es repéré.",
+             "Utilise les buissons à plus de 15 m de ta position de tir.",
+             "Casse les chenilles quand tu ne peux pas percer : l'immobilisation vaut des dégâts alliés."],
+    repere:"30 % et plus pour un moyen ou un léger. Un lourd est naturellement plus bas."
+  },
+};
+
 /* ══════════════════════════════════════════════════════════════════
    COACH — six gestes mesurables, comparés au clan
    ══════════════════════════════════════════════════════════════════ */
 const COACH_GESTES = [
   {
-    cle:"precis", nom:"Précision",
+    cle:"precis", nom:"Précision", ech:"obus tirés",
     /* on somme AVANT de diviser : faire la moyenne des ratios par bataille
        donnerait le même poids à une partie de 3 obus qu'à une de 30. */
     calc:rs=>{ const t=rs.reduce((a,r)=>a+(r.shots||0),0), h=rs.reduce((a,r)=>a+(r.hits||0),0);
@@ -6016,7 +6127,7 @@ const COACH_GESTES = [
     action:"Tire moins souvent en mouvement, et attends l'arrêt complet du réticule sur les tirs longs."
   },
   {
-    cle:"perce", nom:"Pénétration",
+    cle:"perce", nom:"Pénétration", ech:"obus touchés",
     calc:rs=>{ const h=rs.reduce((a,r)=>a+(r.hits||0),0), p=rs.reduce((a,r)=>a+(r.pierce||0),0);
       return h>=30 ? {v:p/h, n:h, u:"%"} : null; },
     mieux:"haut",
@@ -6024,7 +6135,7 @@ const COACH_GESTES = [
     action:"Tu tapes trop souvent du blindage frontal. Vise les flancs, les toits de tourelle et les points faibles plutôt que la masse."
   },
   {
-    cle:"blindage", nom:"Usage du blindage",
+    cle:"blindage", nom:"Usage du blindage", ech:"batailles",
     calc:rs=>{ const b=rs.reduce((a,r)=>a+(r.block||0),0), d=rs.reduce((a,r)=>a+(r.dmgr||0),0);
       return (b+d)>=8000 ? {v:b/(b+d), n:rs.length, u:"%"} : null; },
     mieux:"haut",
@@ -6032,7 +6143,7 @@ const COACH_GESTES = [
     action:"Angle davantage ta caisse et expose la tourelle plutôt que les flancs. En Bastion, un char qui rebondit vaut deux chars qui tirent."
   },
   {
-    cle:"echange", nom:"Échange",
+    cle:"echange", nom:"Échange", ech:"batailles",
     /* dégâts rendus par point de vie perdu : la mesure la plus proche de
        « est-ce que ma mort valait le coup » */
     calc:rs=>{ const d=rs.reduce((a,r)=>a+(r.dmg||0),0);
@@ -6043,7 +6154,7 @@ const COACH_GESTES = [
     action:"Ne prends un duel que si tu peux tirer le premier ou rebondir. Recule après ton obus au lieu de rester exposé."
   },
   {
-    cle:"survie", nom:"Survie",
+    cle:"survie", nom:"Survie", ech:"batailles",
     calc:rs=>{ const l=rs.filter(r=>r.life>0); return l.length>=8
       ? {v:l.reduce((a,r)=>a+r.life,0)/l.length, n:l.length, u:"s"} : null; },
     mieux:"haut",
@@ -6051,7 +6162,7 @@ const COACH_GESTES = [
     action:"Tu pars trop tôt au contact. Laisse le premier échange à un char mieux blindé et arrive en second."
   },
   {
-    cle:"apport", nom:"Apport hors dégâts",
+    cle:"apport", nom:"Apport hors dégâts", ech:"batailles",
     /* repérage et assistance, ramenés aux dégâts : distingue le joueur qui
        ne joue QUE le tir de celui qui fait jouer les autres */
     calc:rs=>{ const d=rs.reduce((a,r)=>a+(r.dmg||0),0);
@@ -6063,6 +6174,22 @@ const COACH_GESTES = [
   },
 ];
 function pctf(x){ return Math.round(x*100)+" %"; }
+
+/* La leçon, repliée par défaut : on ne noie pas celui qui veut juste
+   son diagnostic. <details> se replie sans une ligne de JavaScript et
+   reste accessible au clavier et aux lecteurs d'écran. */
+function ficheHTML(cle){
+  const f=COACH_FICHES[cle]; if(!f) return "";
+  return '<details class="cc-f"><summary><span class="cc-fi">?</span>Comprendre ce geste</summary>'+
+    '<div class="cc-fb">'+
+      '<p><b>Ce que c\'est.</b> '+esc(f.quoi)+'</p>'+
+      '<p><b>Pourquoi ça compte en Bastion.</b> '+esc(f.pourquoi)+'</p>'+
+      '<p><b>Comment on le travaille.</b></p><ul>'+
+        f.comment.map(c=>'<li>'+esc(c)+'</li>').join("")+'</ul>'+
+      '<p class="cc-fr"><b>Le repère.</b> '+esc(f.repere)+'</p>'+
+    '</div></details>';
+}
+
 
 /* Renvoie les écarts significatifs, du plus important au moins important. */
 function coachDiag(mesRows, clanRows){
@@ -6081,6 +6208,65 @@ function coachDiag(mesRows, clanRows){
   const retards=res.filter(r=>r.ecart<-0.04).sort((a,b)=>a.ecart-b.ecart);
   const forts  =res.filter(r=>r.ecart> 0.06).sort((a,b)=>b.ecart-a.ecart);
   return { retards, forts, total:res.length };
+}
+
+
+/* ── Les missions ──────────────────────────────────────────────────
+   Chaque point faible devient un objectif chiffré. La cible n'est pas
+   le niveau du clan d'un coup — ce serait décourageant — mais la
+   MOITIÉ du chemin, arrondie. La progression se lit sur les dix
+   dernières batailles : elle bouge parce que le joueur joue, pas parce
+   qu'on l'anime. */
+function pMissions(my, clanRows){
+  const d=coachDiag(my, clanRows);
+  if(!d.retards.length) return "";
+  /* ⚠️ Deux paquets DISJOINTS : les dix dernières batailles, et tout ce
+     qui précède. Comparer les dix dernières à une référence qui les
+     contient condamnait la progression à zéro. */
+  const tri=my.slice().sort((a,b)=>b.ts-a.ts);
+  const recentes=tri.slice(0,10), avant=tri.slice(10);
+
+  /* On ne garde que les gestes dont le niveau ANTÉRIEUR est sous celui du
+     clan : sinon l'objectif calculé peut demander de reculer. */
+  const eligibles=d.retards.map(g=>{
+    const dep=g.calc(avant);
+    return dep && dep.v < g.c ? {...g, base:dep.v} : null;
+  }).filter(Boolean);
+  if(!eligibles.length) return "";
+
+  const cartes=eligibles.slice(0,3).map((g,i)=>{
+    /* base vient du filtre ci-dessus : c'est le niveau du joueur AVANT
+       ses dix dernières batailles, et il est garanti sous celui du clan. */
+    const base=g.base, rec=g.calc(recentes);
+    const cible=base+(g.c-base)/2;                     // la moitié du chemin
+    const now=rec?rec.v:null;
+    const suivi=(now!=null);
+    /* 0 % au départ, 100 % à la cible ; on borne pour éviter les barres
+       négatives quand le joueur régresse. */
+    const av=suivi ? Math.max(0,Math.min(100,(cible-base)?((now-base)/(cible-base))*100:100)) : 0;
+    const fait=suivi && now>=cible;
+    /* 0 % peut vouloir dire « pas encore avancé » OU « reculé ». Le second
+       mérite d'être dit : c'est une information, pas un échec. */
+    const recul=suivi && !fait && now<base;
+    const f=v=>g.u==="%"?pctf(v):(g.u==="s"?Math.round(v)+" s":v.toFixed(2));
+    return '<article class="ms'+(fait?" ok":(recul?" rec":""))+'" style="--i:'+i+'">'+
+      '<header><span class="ms-n">'+esc(g.nom)+'</span>'+
+        (fait?'<span class="ms-b">réussie</span>'
+         :recul?'<span class="ms-r">en recul</span>'
+         :'<span class="ms-p">'+Math.round(av)+' %</span>')+'</header>'+
+      '<div class="ms-o">Passer de <b>'+f(base)+'</b> à <b>'+f(cible)+'</b></div>'+
+      '<div class="ms-j"><i style="width:'+av.toFixed(1)+'%"></i></div>'+
+      '<footer>'+(suivi
+        ? 'Sur tes 10 dernières : <b>'+f(now)+'</b>'+
+          (recul?' — sous ton niveau de départ ('+f(base)+'). Reprends la fiche du geste.':'')
+        : 'Il faut plus de 10 batailles pour mesurer une progression — joue, ça se lancera tout seul.')+'</footer>'+
+    '</article>';
+  }).join("");
+
+  return '<section class="mss"><div class="mss-h">'+
+    '<h3>Tes objectifs</h3>'+
+    '<p>Chaque objectif vise la moitié du chemin vers le niveau du clan — atteignable, pas décourageant. La progression se met à jour sur tes dix dernières batailles.</p>'+
+    '</div><div class="mss-g">'+cartes+'</div></section>';
 }
 
 function pCoach(mesRows, clanRows){
@@ -6107,7 +6293,8 @@ function pCoach(mesRows, clanRows){
         '<b class="r">'+ref+'</b><span>le clan</span></div>'+
       '<p class="cc-t">'+r.constat(r.m,r.c)+'</p>'+
       (r.bon?"":'<p class="cc-a"><span>→</span>'+esc(r.action)+'</p>')+
-      '<footer>sur '+fmt(r.n)+' '+(r.u==="%"&&r.cle!=="blindage"?"obus":"batailles")+'</footer>'+
+      ficheHTML(r.cle)+
+      '<footer>sur '+fmt(r.n)+' '+esc(r.ech||"batailles")+'</footer>'+
     '</article>';
   };
 
@@ -6272,7 +6459,8 @@ function renderPlayerView(){
   // filtre de 7 jours. On garde en revanche le filtre de FORMAT — comparer une
   // performance 7v7 à une 15v15 ne veut rien dire.
   const myTout = RAW.filter(r=>r.accId===SELP && estTierSR(r) && (!state.mode || r.mode===state.mode));
-  { const el=document.getElementById("pCoach"); if(el) el.innerHTML = pCoach(my, clanRows); }
+  { const el=document.getElementById("pCoach"); if(el) el.innerHTML = pCoach(my, clanRows);
+    const em=document.getElementById("pMissions"); if(em) em.innerHTML = pMissions(my, clanRows); }
   document.getElementById("pTanks").innerHTML   = pTanks(my);
   document.getElementById("pDiff").innerHTML    = pDiff30(myTout);
   document.getElementById("pRecords").innerHTML = pRecords(myTout);
