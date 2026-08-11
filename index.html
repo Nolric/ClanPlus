@@ -1587,6 +1587,78 @@
      tromperait de presque une colonne. D'où le conteneur sur la vue elle-même. */
   #viewPlayer{container-type:inline-size}
   /* Diagnostic : le radar (le « où ») et le plan (le « quoi faire ») se lisent ensemble */
+  /* ══ LE COACH ═════════════════════════════════════════════════════
+     Six gestes comparés au clan. Chaque carte porte le constat ET
+     l'action, plus l'échantillon sur lequel elle repose : un conseil
+     sans son échantillon est une opinion. */
+  #viewPlayer .coach{margin:14px 0 24px}
+  /* La carte SR poussait la page a 528 px sur un ecran de 420 : ses
+     colonnes ne se repliaient jamais. Personne ne l avait vu parce que
+     la carte ne rend que si le modele SR de la saison est charge. */
+  @media (max-width:640px){
+    #viewPlayer .sr-hero,#viewPlayer .sr-main{display:block}
+    #viewPlayer .sr-main > *{min-width:0;max-width:100%}
+    #viewPlayer .sr-lab,#viewPlayer .sr-name,#viewPlayer .sr-trend,
+    #viewPlayer .sr-streak,#viewPlayer .hint{max-width:100%;overflow-wrap:anywhere}
+    #viewPlayer .sr-scale,#viewPlayer .sr-ticks{overflow-x:auto}
+  }
+  #viewPlayer .sr-hero *,#viewPlayer .pz-diag > *{min-width:0}
+  #viewPlayer .vd{margin:0 0 16px}
+  .rev #viewPlayer .vd{animation:ccEntre .55s cubic-bezier(.16,1,.3,1) both}
+  .coach-t{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);
+    margin:0 0 10px;font-weight:700}
+  .coach-t2{margin-top:22px}
+  /* auto-FILL et non auto-fit : avec auto-fit, une carte seule s etire sur
+     toute la largeur et donne l impression d un bloc rate. auto-fill garde
+     les colonnes vides, la carte garde sa taille. */
+  /* Trois colonnes fixes sur large : avec auto-fill, les deux groupes
+     prenaient des largeurs differentes selon leur nombre de cartes et
+     rien ne s alignait d un groupe a l autre. */
+  .coach-g{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  @media (max-width:1150px){ .coach-g{grid-template-columns:repeat(2,1fr)} }
+  @media (max-width:720px){ .coach-g{grid-template-columns:1fr} }
+  .coach-c{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+    padding:15px 17px;position:relative;overflow:hidden;min-width:0}
+  /* l'issue se lit dans le filet de gauche autant que dans la couleur */
+  .coach-c::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px}
+  .coach-c.ko::before{background:var(--bad)}
+  .coach-c.ok::before{background:var(--good)}
+  .coach-c header{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+  .cc-n{font-weight:700;font-size:14.5px}
+  .cc-e{font-family:ui-monospace,Consolas,monospace;font-size:13px;font-weight:700;
+    font-variant-numeric:tabular-nums}
+  .coach-c.ko .cc-e{color:var(--bad)} .coach-c.ok .cc-e{color:var(--good)}
+
+  /* la jauge : le clan au centre, toi de part et d'autre */
+  .cc-j{position:relative;height:6px;background:var(--surface-2);border-radius:3px;margin:11px 0 9px}
+  .cc-ref{position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:var(--muted);opacity:.7}
+  .cc-j i{position:absolute;top:0;bottom:0;border-radius:3px;transform-origin:left center}
+  .coach-c.ko .cc-j i{background:var(--bad);transform-origin:right center}
+  .coach-c.ok .cc-j i{background:var(--good)}
+
+  .cc-v{display:flex;align-items:baseline;gap:6px;font-size:11.5px;color:var(--muted);margin-bottom:9px}
+  .cc-v b{font-size:16px;color:var(--ink);font-variant-numeric:tabular-nums}
+  .cc-v b.r{margin-left:10px;font-size:14px;color:var(--ink-2)}
+  .cc-t{margin:0;font-size:13px;line-height:1.55;color:var(--ink-2)}
+  .cc-a{margin:9px 0 0;font-size:13px;line-height:1.55;color:var(--ink);
+    display:flex;gap:8px;padding-top:9px;border-top:1px solid var(--border)}
+  .cc-a span{color:var(--accent);font-weight:700;flex:0 0 auto}
+  .coach-c footer{margin-top:10px;font-size:10.5px;color:var(--muted);
+    font-variant-numeric:tabular-nums}
+  .coach-vide{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+    padding:22px;color:var(--muted);font-size:13.5px}
+
+  /* les cartes arrivent l'une après l'autre, et les jauges poussent */
+  .rev #viewPlayer .coach-c{animation:ccEntre .5s cubic-bezier(.16,1,.3,1) both;
+    animation-delay:calc(var(--i,0) * .07s)}
+  @keyframes ccEntre{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  .rev #viewPlayer .cc-j i{animation:ccPousse .7s cubic-bezier(.16,1,.3,1) both;
+    animation-delay:calc(.2s + var(--i,0) * .07s)}
+  @keyframes ccPousse{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+  @media (prefers-reduced-motion:reduce){
+    .rev #viewPlayer .coach-c,.rev #viewPlayer .cc-j i{animation:none}
+  }
+
   .pz-diag{display:grid;grid-template-columns:minmax(320px,1fr) minmax(300px,.85fr);gap:14px;align-items:start}
   .pz-diag > *{margin:0 !important;container-type:inline-size}
   .pz-stack{display:flex;flex-direction:column;gap:14px}
@@ -2897,6 +2969,7 @@
          a fait du Tier VI verrait moins de batailles que ce qu'il a joué, sans
          comprendre pourquoi. Les rangs non couverts restent visibles, désactivés. -->
     <div class="tiersel" id="pTierSel"></div>
+    <div id="pVerdictHost"></div>
     <div id="pHead"></div>
 
     <!-- ═══ 1. OÙ J'EN SUIS ═══ le chiffre, son palier, sa marge -->
@@ -2905,6 +2978,9 @@
     <!-- ═══ 2. QUOI TRAVAILLER ═══ le diagnostic et le plan, côte à côte.
          C'est la partie utile : elle remonte AVANT les tableaux, pas après. -->
     <p class="pz-title">Quoi travailler</p>
+    <!-- Le coach passe AVANT le radar : c'est la partie actionnable.
+         Le radar dit où tu te situes, le coach dit quoi faire. -->
+    <div id="pCoach"></div>
     <div class="pz-diag">
       <div class="pz-stack">
         <div id="pDiag"></div>
@@ -5924,6 +6000,188 @@ function pTanks(rows){
     <div class="pt-list">${lignes}</div>
     <div class="srd-legend">${verdict}</div></div>`;
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   COACH — six gestes mesurables, comparés au clan
+   ══════════════════════════════════════════════════════════════════ */
+const COACH_GESTES = [
+  {
+    cle:"precis", nom:"Précision",
+    /* on somme AVANT de diviser : faire la moyenne des ratios par bataille
+       donnerait le même poids à une partie de 3 obus qu'à une de 30. */
+    calc:rs=>{ const t=rs.reduce((a,r)=>a+(r.shots||0),0), h=rs.reduce((a,r)=>a+(r.hits||0),0);
+      return t>=40 ? {v:h/t, n:t, u:"%"} : null; },
+    mieux:"haut",
+    constat:(m,c)=>"Tu touches "+pctf(m)+" de tes obus, le clan "+pctf(c)+".",
+    action:"Tire moins souvent en mouvement, et attends l'arrêt complet du réticule sur les tirs longs."
+  },
+  {
+    cle:"perce", nom:"Pénétration",
+    calc:rs=>{ const h=rs.reduce((a,r)=>a+(r.hits||0),0), p=rs.reduce((a,r)=>a+(r.pierce||0),0);
+      return h>=30 ? {v:p/h, n:h, u:"%"} : null; },
+    mieux:"haut",
+    constat:(m,c)=>"Sur tes obus qui touchent, "+pctf(m)+" percent — "+pctf(c)+" pour le clan.",
+    action:"Tu tapes trop souvent du blindage frontal. Vise les flancs, les toits de tourelle et les points faibles plutôt que la masse."
+  },
+  {
+    cle:"blindage", nom:"Usage du blindage",
+    calc:rs=>{ const b=rs.reduce((a,r)=>a+(r.block||0),0), d=rs.reduce((a,r)=>a+(r.dmgr||0),0);
+      return (b+d)>=8000 ? {v:b/(b+d), n:rs.length, u:"%"} : null; },
+    mieux:"haut",
+    constat:(m,c)=>"Sur ce que l'adversaire t'envoie, tu en renvoies "+pctf(m)+" — le clan "+pctf(c)+".",
+    action:"Angle davantage ta caisse et expose la tourelle plutôt que les flancs. En Bastion, un char qui rebondit vaut deux chars qui tirent."
+  },
+  {
+    cle:"echange", nom:"Échange",
+    /* dégâts rendus par point de vie perdu : la mesure la plus proche de
+       « est-ce que ma mort valait le coup » */
+    calc:rs=>{ const d=rs.reduce((a,r)=>a+(r.dmg||0),0);
+      const pv=rs.reduce((a,r)=>a+Math.max(0,(r.maxhp||0)-(r.hpleft||0)),0);
+      return pv>=6000 ? {v:d/pv, n:rs.length, u:"x"} : null; },
+    mieux:"haut",
+    constat:(m,c)=>"Tu rends "+m.toFixed(2)+" de dégâts par point de vie perdu, le clan "+c.toFixed(2)+".",
+    action:"Ne prends un duel que si tu peux tirer le premier ou rebondir. Recule après ton obus au lieu de rester exposé."
+  },
+  {
+    cle:"survie", nom:"Survie",
+    calc:rs=>{ const l=rs.filter(r=>r.life>0); return l.length>=8
+      ? {v:l.reduce((a,r)=>a+r.life,0)/l.length, n:l.length, u:"s"} : null; },
+    mieux:"haut",
+    constat:(m,c)=>"Tu tiens "+Math.round(m)+" s en moyenne, le clan "+Math.round(c)+" s.",
+    action:"Tu pars trop tôt au contact. Laisse le premier échange à un char mieux blindé et arrive en second."
+  },
+  {
+    cle:"apport", nom:"Apport hors dégâts",
+    /* repérage et assistance, ramenés aux dégâts : distingue le joueur qui
+       ne joue QUE le tir de celui qui fait jouer les autres */
+    calc:rs=>{ const d=rs.reduce((a,r)=>a+(r.dmg||0),0);
+      const a2=rs.reduce((a,r)=>a+(r.assist||0)+(r.spot||0)*300,0);
+      return d>=15000 ? {v:a2/d, n:rs.length, u:"%"} : null; },
+    mieux:"haut",
+    constat:(m,c)=>"Pour 100 de dégâts tu apportes "+Math.round(m*100)+" d'assistance, le clan "+Math.round(c*100)+".",
+    action:"Éclaire avant de tirer : un char repéré que trois alliés arrosent rapporte plus que ton seul obus."
+  },
+];
+function pctf(x){ return Math.round(x*100)+" %"; }
+
+/* Renvoie les écarts significatifs, du plus important au moins important. */
+function coachDiag(mesRows, clanRows){
+  const res=[];
+  for(const g of COACH_GESTES){
+    const m=g.calc(mesRows), c=g.calc(clanRows.filter(r=>r.accId!==SELP));
+    if(!m||!c||!c.v) continue;
+    const ecart=(m.v-c.v)/c.v;                       // relatif : comparable d'un geste à l'autre
+    /* u vient du calcul, pas du geste : sans le reporter ici, tous les
+       ratios s affichaient en 0.73 au lieu de 73 %. */
+    res.push({...g, u:m.u, m:m.v, c:c.v, n:m.n, ecart, bon:ecart>=0});
+  }
+  /* on montre d'abord ce qui coûte le plus : les retards, par ampleur.
+     Puis, s'il reste de la place, le point fort — pour ne pas n'énumérer
+     que des reproches. */
+  const retards=res.filter(r=>r.ecart<-0.04).sort((a,b)=>a.ecart-b.ecart);
+  const forts  =res.filter(r=>r.ecart> 0.06).sort((a,b)=>b.ecart-a.ecart);
+  return { retards, forts, total:res.length };
+}
+
+function pCoach(mesRows, clanRows){
+  if(!mesRows.length)
+    return '<div class="coach"><div class="coach-vide">Aucune bataille sur cette période.</div></div>';
+  const d=coachDiag(mesRows, clanRows);
+  if(!d.total)
+    return '<div class="coach"><div class="coach-vide">Pas encore assez de batailles pour comparer '+
+      'quoi que ce soit. Les conseils apparaissent à partir d\'une dizaine de parties.</div></div>';
+
+  const carte=(r,i)=>{
+    const pct=Math.round(Math.abs(r.ecart)*100);
+    const val=r.u==="%"?pctf(r.m):(r.u==="s"?Math.round(r.m)+" s":r.m.toFixed(2));
+    const ref=r.u==="%"?pctf(r.c):(r.u==="s"?Math.round(r.c)+" s":r.c.toFixed(2));
+    /* la barre situe le joueur par rapport au clan, plafonnée à ±50 %
+       pour qu'un écart extrême n'écrase pas les autres */
+    const pos=Math.max(-50,Math.min(50,r.ecart*100));
+    return '<article class="coach-c '+(r.bon?"ok":"ko")+'" style="--i:'+i+'">'+
+      '<header><span class="cc-n">'+esc(r.nom)+'</span>'+
+        '<span class="cc-e">'+(r.bon?"+":"−")+pct+' %</span></header>'+
+      '<div class="cc-j"><span class="cc-ref"></span><i style="'+
+        (pos>=0?"left:50%;width:"+(pos)+"%":"right:50%;width:"+(-pos)+"%")+'"></i></div>'+
+      '<div class="cc-v"><b>'+val+'</b><span>toi</span>'+
+        '<b class="r">'+ref+'</b><span>le clan</span></div>'+
+      '<p class="cc-t">'+r.constat(r.m,r.c)+'</p>'+
+      (r.bon?"":'<p class="cc-a"><span>→</span>'+esc(r.action)+'</p>')+
+      '<footer>sur '+fmt(r.n)+' '+(r.u==="%"&&r.cle!=="blindage"?"obus":"batailles")+'</footer>'+
+    '</article>';
+  };
+
+  let h='<div class="coach">';
+  if(d.retards.length){
+    h+='<div class="coach-t">Ce qui te coûte le plus</div>'+
+       '<div class="coach-g">'+d.retards.slice(0,3).map((r,i)=>carte(r,i)).join("")+'</div>';
+  }
+  if(d.forts.length){
+    h+='<div class="coach-t coach-t2">Ce sur quoi tu peux t\'appuyer</div>'+
+       '<div class="coach-g">'+d.forts.slice(0,2).map((r,i)=>carte(r,i+3)).join("")+'</div>';
+  }
+  if(!d.retards.length && !d.forts.length)
+    h+='<div class="coach-vide">Tu es dans la moyenne du clan sur les six gestes mesurés. '+
+       'Rien de flagrant à corriger — le prochain gain viendra du jeu d\'équipe.</div>';
+  h+='</div>';
+  return h;
+}
+
+/* ── Verdict personnel ────────────────────────────────────────────
+   Même grammaire que la Vue clan et les Batailles : une phrase, un
+   chiffre, une tendance. La tendance compare les 30 derniers jours aux
+   30 précédents — deux fenêtres de MÊME durée, sinon la comparaison ne
+   veut rien dire. Sans fenêtre précédente exploitable, on n'affiche
+   aucune tendance plutôt qu'une fausse. */
+function pVerdict(my, clanRows){
+  if(!my.length) return "";
+  const now=Date.now()/1000;
+  const F=(d,dec)=>my.filter(r=>r.ts && (now-r.ts) > (dec?d*86400:0) && (now-r.ts) <= (dec?2*d*86400:d*86400));
+  const rec=F(30,false), pre=F(30,true);
+  const moy=rs=>rs.length? rs.reduce((a,r)=>a+(r.dmg||0),0)/rs.length : null;
+  const dRec=moy(rec), dPre=moy(pre);
+  const dpts=(dRec!=null && dPre!=null && pre.length>=5) ? Math.round((dRec/dPre-1)*100) : null;
+
+  const bat=new Set(my.map(r=>r.battleId)).size;
+  const vic=new Set(my.filter(r=>r.result===1).map(r=>r.battleId)).size;
+  const tot=new Set(my.filter(r=>r.result===1||r.result===0).map(r=>r.battleId)).size;
+  const wr=tot?Math.round(vic/tot*100):0;
+
+  let titre;
+  if(dpts!=null && dpts>=8)       titre="Tu montes.";
+  else if(dpts!=null && dpts<=-8) titre="Tu redescends.";
+  else if(wr>=55)                 titre="Tu tiens ton niveau.";
+  else                            titre="Tu cherches ton rythme.";
+
+  let ph="<b>"+fmt(bat)+"</b> bataille"+(bat>1?"s":"")+" analysée"+(bat>1?"s":"")+
+    ", <b>"+wr+" %</b> de victoires.";
+  if(dpts!=null)
+    ph+=" Tes dégâts sur 30 jours : <span class=\""+(dpts>=0?"up":"dn")+"\">"+
+        (dpts>=0?"+":"−")+Math.abs(dpts)+" %</span> par rapport aux 30 jours précédents.";
+
+  /* on réutilise le coach : le point fort et le point à travailler */
+  try{
+    const d=coachDiag(my, clanRows);
+    if(d.forts.length)
+      ph+=' Ton point fort : <span class="who">'+esc(d.forts[0].nom.toLowerCase())+"</span>.";
+    if(d.retards.length)
+      ph+=' À travailler en priorité : <span class="who">'+esc(d.retards[0].nom.toLowerCase())+"</span>.";
+  }catch(e){ /* le verdict reste lisible sans */ }
+
+  const dix=my.slice().sort((a,b)=>b.ts-a.ts).slice(0,10).reverse()
+    .filter(r=>r.result===1||r.result===0)
+    .map((r,j)=>'<i class="'+(r.result===1?"v":"d")+'" style="--i:'+j+';height:'+
+         (r.result===1?26:14)+'px" title="'+(r.result===1?"Victoire":"Défaite")+'"></i>').join("");
+
+  return '<section class="vd" id="pVerdict">'+
+    '<div class="vd-haut"><div class="vd-g"><h2 class="vd-t">'+titre+'</h2>'+
+      '<p class="vd-p">'+ph+'</p></div>'+
+      '<div class="vd-n"><b data-n="'+wr+'">'+wr+' %</b><i>de victoires</i></div></div>'+
+    (dix?'<div class="vd-c"><div class="vd-ch"><figcaption>Tes dix dernières batailles</figcaption>'+
+      '<div class="vd-f">'+dix+'</div></div></div>':"")+
+  '</section>';
+}
+
 function renderPlayerView(){
   const f=pfilter();
   const my=RAW.filter(r=>r.accId===SELP && f(r));
@@ -5949,6 +6207,8 @@ function renderPlayerView(){
          ? `${fmt(hors)} bataille${hors>1?"s":""} d'un autre rang ${hors>1?"sont écartées":"est écartée"} — le SR n'est calibré que sur le Tier ${RANGS[0][1]} pour l'instant.`
          : `Les autres rangs seront ouverts dès qu'ils auront assez de batailles pour être calibrés.`}</span>`;
   }
+  { const el=document.getElementById("pVerdictHost");
+    if(el) el.innerHTML = pVerdict(my, clanRows); }
   document.getElementById("pHead").innerHTML=`
     <div class="pcard">
       <div class="pav">${esc(initials)}</div>
@@ -6012,6 +6272,7 @@ function renderPlayerView(){
   // filtre de 7 jours. On garde en revanche le filtre de FORMAT — comparer une
   // performance 7v7 à une 15v15 ne veut rien dire.
   const myTout = RAW.filter(r=>r.accId===SELP && estTierSR(r) && (!state.mode || r.mode===state.mode));
+  { const el=document.getElementById("pCoach"); if(el) el.innerHTML = pCoach(my, clanRows); }
   document.getElementById("pTanks").innerHTML   = pTanks(my);
   document.getElementById("pDiff").innerHTML    = pDiff30(myTout);
   document.getElementById("pRecords").innerHTML = pRecords(myTout);
