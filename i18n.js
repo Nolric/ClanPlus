@@ -131,7 +131,17 @@
 
      Une phrase dont le texte est ambigu (deux entrées différentes, même
      texte nu) est retirée de l'index : mieux vaut ne rien traduire que
-     traduire de travers. */
+     traduire de travers.
+
+     ⚠️ Il ne s'applique QU'AUX éléments sans enfant balise. Sinon il
+     détruit ce qu'il ne comprend pas : pour
+     « <td><span class="grade">Soldat</span></td> », il voyait le texte
+     « Soldat », écrivait « Private » à la place de TOUT le contenu, et
+     le badge de grade disparaissait. Même chose pour la pastille de
+     couleur d'une légende et pour une barre de graphique entière — le
+     texte restait juste, la page perdait ses éléments visuels, et rien
+     ne le signalait. La descente dans les enfants fait ce travail
+     correctement, elle. */
   var SECOURS = null;
   function secours() {
     if (SECOURS) return SECOURS;
@@ -263,7 +273,9 @@
          autre, et l'enfant, lui, a une clé stable. */
       var cle = norm(el.innerHTML);
       var v = DICO[cle], parRegle = false;
-      if (v === undefined) v = secours()[norm(el.textContent)];
+      /* le filet par le texte seul : réservé aux éléments qui n'ont
+         aucune balise à l'intérieur — voir secours() */
+      if (v === undefined && !el.children.length) v = secours()[norm(el.textContent)];
       if (v === undefined) { v = parMotif(cle); parRegle = v !== undefined; }
       if (v === undefined) continue;
 
@@ -373,15 +385,25 @@
     } catch (e) { console.error("[i18n]", e); }
     enCours = false;
 
-    /* ── Le filet ───────────────────────────────────────────────────
-       Pendant qu'on écrit, l'observateur est sourd — il le faut, sinon
-       nos propres écritures relanceraient la traduction sans fin. Mais
-       si l'application redessine JUSTE à ce moment-là, sa modification
-       passe à la trappe et la phrase reste dans la langue du code.
+  }
 
-       Une fois l'agitation retombée, on repasse donc sur toute la page.
-       C'est un balayage complet, mais il n'arrive qu'une fois par
-       rafale : le coût est celui d'un rendu, la garantie est totale. */
+  /* ── Le filet ─────────────────────────────────────────────────────
+     Pendant qu'on écrit, l'observateur est sourd — il le faut, sinon
+     nos propres écritures relanceraient la traduction sans fin. Mais si
+     l'application redessine JUSTE à ce moment-là, sa modification passe
+     à la trappe et la phrase reste dans la langue du code.
+
+     Ce balayage est armé depuis L'OBSERVATEUR, pas depuis la fin d'une
+     rafale. La nuance compte : une modification ignorée n'ajoute rien à
+     la file, donc la rafale ne se déclenche jamais, donc le filet ne se
+     posait pas — c'est exactement ainsi que le bloc verdict restait en
+     français. Désormais tout mouvement du document arme le filet, même
+     celui qu'on vient d'ignorer.
+
+     Une fois l'agitation retombée, on repasse sur toute la page. C'est
+     un balayage complet, mais il n'arrive qu'une fois par accalmie : le
+     coût est celui d'un rendu, la garantie est totale. */
+  function armeFilet() {
     clearTimeout(balayage);
     balayage = setTimeout(function () {
       enCours = true;
@@ -393,6 +415,9 @@
   function surveille() {
     if (!ACTIF || !window.MutationObserver || !document.body) return;
     new MutationObserver(function (muts) {
+      /* armé AVANT toute sortie : même une modification qu'on ignore
+         doit garantir un passage de rattrapage une fois le calme revenu */
+      armeFilet();
       if (enCours) return;
       for (var i = 0; i < muts.length; i++) {
         var ns = muts[i].addedNodes;
