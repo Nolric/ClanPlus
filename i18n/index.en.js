@@ -1,3 +1,9 @@
+/* Filet de sécurité : si i18n.js n'a pas été mis en ligne, t() existe
+   quand même et rend la phrase telle quelle. Le moteur, s'il arrive,
+   remplace cette version par la vraie. Une page sans traduction reste
+   lisible ; une page sans t() s'arrête net. */
+window.t = window.t || function (s) { return s; };
+
 /* index.html — l'application, français → anglais.
 
    L'application est écrite en français dans le fichier : elle vit

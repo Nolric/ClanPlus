@@ -1,3 +1,9 @@
+/* Filet de sécurité : si i18n.js n'a pas été mis en ligne, t() existe
+   quand même et rend la phrase telle quelle. Le moteur, s'il arrive,
+   remplace cette version par la vraie. Une page sans traduction reste
+   lisible ; une page sans t() s'arrête net. */
+window.t = window.t || function (s) { return s; };
+
 /* index.html — français.
    Généré : la clé est la phrase anglaise telle qu'elle est écrite dans
    le HTML. Une phrase absente d'ici reste affichée en anglais. */

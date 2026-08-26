@@ -2455,7 +2455,7 @@
    RÉCIT ET MISE EN SCÈNE DU TABLEAU DE BORD
    Le verdict (#cpVerdict) ouvre la vue clan : une phrase, un chiffre,
    la forme récente. Il reprend le rôle de la carte « Santé du clan »,
-   qui est masquée tant qu'il s'affiche (classe .cpv sur #viewClan).
+   qui est masquée tant qu'il s'affiche (classe .cp-verdict sur #viewClan).
    .cin = ouverture, jouée une seule fois puis retirée.
    .rev = révélation à l'approche, permanente.
    Aucun contenu n'est masqué par le CSS seul : les deux classes sont
@@ -2521,11 +2521,11 @@
 /* ══ 3. la preuve rétrécit : elle appuie le verdict, elle ne le concurrence pas ══ */
 /* Le verdict a repris le rôle exact de « Santé du clan » : même
    pourcentage, mêmes dix barres, même série en cours. Afficher les deux,
-   c'est dire deux fois la même chose à 40 px d'écart. La classe .cpv
+   c'est dire deux fois la même chose à 40 px d'écart. La classe .cp-verdict
    n'est posée QUE si le verdict s'est réellement affiché — sinon la carte
    d'origine reste, et rien n'est perdu. */
-#viewClan.cpv #dashHealth{display:none}
-#viewClan.cpv .d2top3{grid-template-columns:1fr 1fr}
+#viewClan.cp-verdict #dashHealth{display:none}
+#viewClan.cp-verdict .d2top3{grid-template-columns:1fr 1fr}
 #viewClan .d2top3 .d2card .big{font-size:34px}
 #viewClan .d2mini4 .mini .v{font-size:24px}
 #viewClan .d2off5 .off{background:var(--surface-1);box-shadow:none}
@@ -9491,7 +9491,7 @@ boot();
     var b = bloc(false);
     if(b){ b.hidden = true; b.innerHTML = ""; }
     var v = document.getElementById("viewClan");
-    if(v) v.classList.remove("cpv");
+    if(v) v.classList.remove("cp-verdict");
   }
   function ecrisVerdict(){
     if(typeof dashStats !== "function" || !document.getElementById("dashSub")) return;
@@ -9581,7 +9581,7 @@ boot();
       }
 
       hote.hidden = false;
-      document.getElementById("viewClan").classList.add("cpv");
+      document.getElementById("viewClan").classList.add("cp-verdict");
       /* Le chiffre accompagne le titre ; la courbe a sa propre ligne,
          pleine largeur. Plus rien ne se dispute la place, et le
          pourcentage n'est plus écrit deux fois. */
