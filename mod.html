@@ -1,22 +1,24 @@
 <!doctype html>
-<html lang="fr" data-theme="dark">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Le mod Clan Plus — manuel de terrain | Clan Plus</title>
-<meta name="description" content="Le mod qui enregistre tes batailles de clan sur World of Tanks. Rien pendant le combat, tout après. Ce qu'il fait, ce qu'il ne fait pas, et comment l'installer en deux minutes.">
+<title>The Clan Plus mod — field manual | Clan Plus</title>
+<meta name="description" content="The mod that records your clan battles in World of Tanks. Nothing during the fight, everything after. What it does, what it doesn't, and how to install it in two minutes.">
 <link rel="canonical" href="https://clanplus.eu/mod.html">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Clan Plus">
-<meta property="og:locale" content="fr_FR">
+<meta property="og:locale" content="en_GB">
 <meta property="og:url" content="https://clanplus.eu/mod.html">
-<meta property="og:title" content="Le mod Clan Plus pour World of Tanks">
-<meta property="og:description" content="Rien pendant le combat, tout après. Gratuit, sans publicité.">
+<meta property="og:title" content="The Clan Plus mod for World of Tanks">
+<meta property="og:description" content="Nothing during the fight, everything after. Free, no ads.">
 <meta property="og:image" content="https://clanplus.eu/og.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20240%20240%22%3E%3Crect%20width%3D%22240%22%20height%3D%22240%22%20rx%3D%2254%22%20fill%3D%22%23141310%22%2F%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22%23d8b566%22%3E%3Ccircle%20cx%3D%22120%22%20cy%3D%22120%22%20r%3D%22100%22%20stroke-width%3D%227%22%2F%3E%3Cpath%20d%3D%22M161%2C155%20A54%2C54%200%201%201%20161%2C85%22%20stroke-width%3D%2220%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fg%3E%3Cg%20fill%3D%22%23d8b566%22%3E%3Crect%20x%3D%22112%22%20y%3D%2294%22%20width%3D%2216%22%20height%3D%2252%22%20rx%3D%225%22%2F%3E%3Crect%20x%3D%2294%22%20y%3D%22112%22%20width%3D%2252%22%20height%3D%2216%22%20rx%3D%225%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<script src="i18n/mod.fr.js"></script>
+<script src="i18n.js"></script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
 /* ══════════════════════════════════════════════════════════════════
@@ -248,29 +250,72 @@ figcaption b{display:block;color:var(--ink);font-family:var(--d-cond);font-weigh
 @keyframes mort{0%,72%{opacity:0;transform:scale(.5)}78%{opacity:1;transform:scale(1)}100%{opacity:1}}
 @keyframes tete{from{width:2%}to{width:96%}}
 @keyframes pouls{0%,100%{opacity:.45}50%{opacity:1}}
-.map .voie{stroke-dasharray:400;animation:trace 11s linear infinite}
-.map .ch{offset-rotate:0deg;animation:roule 11s linear infinite}
-.map .ch-1{offset-path:path("M92 176C150 190 196 214 236 232")}
-.map .ch-2{offset-path:path("M96 126C154 108 200 86 238 72")}
-.map .ch-3{offset-path:path("M100 150C168 148 214 150 250 152")}
-.map .ch-4{offset-path:path("M92 176C140 184 174 190 196 196")}
-.map .ch-5{offset-path:path("M96 126C120 120 138 116 150 112")}
-.map .ch-6{offset-path:path("M628 124C566 104 512 86 470 74")}
-.map .ch-7{offset-path:path("M624 178C570 200 522 220 486 234")}
-.map .ch-8{offset-path:path("M636 150C592 150 552 150 520 150")}
+/* les marqueurs atteignent leur position à 52 %, le tir part à 58 % :
+   la ligne de tir peut donc viser un point fixe connu, sans aller chercher
+   la position sur la courbe de Bézier. */
+@keyframes rouleV2{0%{offset-distance:0%}52%,100%{offset-distance:100%}}
+@keyframes traceV2{0%{stroke-dashoffset:480}52%,100%{stroke-dashoffset:0}}
+@keyframes surgit{0%,50%{opacity:0}56%,100%{opacity:1}}
+@keyframes barre1{0%{width:0}66%,100%{width:186px}}
+@keyframes barre2{0%{width:0}66%,100%{width:121px}}
+@keyframes barre3{0%{width:0}66%,100%{width:85px}}
+@keyframes barre4{0%{width:0}66%,100%{width:37px}}
+.map text{font-family:var(--d-sans)}
+.map .rep{fill:#69737d;font-family:var(--d-mono);font-size:9px;letter-spacing:.05em}
+.map .pt{fill:#7b848d;font-family:var(--d-mono);font-size:8.5px;letter-spacing:.17em}
+.map .sc{font-family:var(--d-cond);font-weight:700;font-size:28px}
+.map .sc.v{fill:#5fc27e}.map .sc.r{fill:#e2685f}.map .sc.s{fill:#5c646c}
+.map .vic{fill:var(--gold);font-family:var(--d-cond);font-weight:600;font-size:13px;letter-spacing:.13em}
+.map .hor rect{fill:#0e1114;opacity:.82}
+.map .tm{fill:var(--ink-2);font-family:var(--d-mono);font-size:12.5px}
+.map .fil text{font-size:11.5px}
+.map .fil .v{fill:#8fd8a6}.map .fil .r{fill:#f0a09a}.map .fil .s{fill:#69737d}
+.map .nm2{fill:var(--ink-2);font-size:11.5px}
+.map .vl{fill:var(--ink-3);font-family:var(--d-mono);font-size:10.5px}
+.map .lg{fill:var(--ink-3);font-size:11px}
+.map .deg{fill:#e8a13c;font-family:var(--d-mono);font-size:11.5px}
+.map .voie{stroke-width:1.5;opacity:.42;stroke-dasharray:480;animation:traceV2 11s linear infinite}
+.map .voie.amie{stroke:#5fc27e}.map .voie.adv{stroke:#e2685f}
+/* le marqueur pivote avec sa trajectoire : le cône pointe où le char regarde */
+.map .ch{offset-rotate:auto;animation:rouleV2 11s linear infinite}
+.map .ch .pion{fill:#5fc27e}.map .ch .cone{fill:#5fc27e;opacity:.17}
+.map .ch .ico{fill:#0e1a12}
+.map .ch.adv .pion{fill:#e2685f}.map .ch.adv .cone{fill:#e2685f;opacity:.17}
+.map .ch.adv .ico{fill:#1c0f0f}
+.map .v1{offset-path:path("M92 230 L100.0 228.0 Q108 226 108.0 217.8 L108.0 120.0 Q108 108 120.0 108.0 L196 108")}
+.map .v2{offset-path:path("M94 236 L101.0 236.0 Q108 236 108.0 229.0 L108.0 186.0 Q108 174 120.0 174.0 L204 174")}
+.map .v3{offset-path:path("M100 240 L222 240")}
+.map .v4{offset-path:path("M92 248 L100.0 249.0 Q108 250 108.0 258.1 L108.0 292.0 Q108 304 120.0 304.0 L192 304")}
+.map .v5{offset-path:path("M90 254 L97.0 258.0 Q104 262 104.0 270.1 L104.0 358.0 Q104 370 116.0 370.0 L212 370")}
+.map .v6{offset-path:path("M96 244 L162.0 244.0 Q174 244 174.0 256.0 L174.0 288.0 Q174 300 186.0 300.0 L206 300")}
+.map .v7{offset-path:path("M86 258 L92.0 265.0 Q98 272 98.0 281.2 L98 296")}
+.map .r1{offset-path:path("M388 230 L379.0 228.0 Q370 226 370.0 216.8 L370.0 120.0 Q370 108 358.0 108.0 L286 108")}
+.map .r2{offset-path:path("M386 236 L378.0 236.0 Q370 236 370.0 228.0 L370.0 186.0 Q370 174 358.0 174.0 L278 174")}
+.map .r3{offset-path:path("M380 240 L262 240")}
+.map .r4{offset-path:path("M384 248 L377.0 249.0 Q370 250 370.0 257.1 L370.0 292.0 Q370 304 358.0 304.0 L290 304")}
+.map .r5{offset-path:path("M382 254 L374.0 258.0 Q366 262 366.0 270.9 L366.0 358.0 Q366 370 354.0 370.0 L300 370")}
 .map .shot{animation:tir 11s linear infinite}
 .map .boom{transform-box:fill-box;transform-origin:center;animation:impact 11s linear infinite}
 .map .kill{transform-box:fill-box;transform-origin:center;animation:mort 11s linear infinite}
+.map .fil text{opacity:0;animation:surgit 11s linear infinite}
+.map .fil text:nth-of-type(2){animation-delay:1.3s}
+.map .b1,.map .b2,.map .b3,.map .b4{fill:#5fc27e}
+.map .b1{animation:barre1 11s linear infinite}
+.map .b2{animation:barre2 11s linear infinite}
+.map .b3{animation:barre3 11s linear infinite}
+.map .b4{animation:barre4 11s linear infinite}
 .scr-ctl .bar span{animation:tete 11s linear infinite}
 .scr-ctl .pl{animation:pouls 11s linear infinite}
 .gain-big .scr,.gain-duo .scr{transition:transform .3s cubic-bezier(.16,1,.3,1),border-color .3s ease}
 .gain-big:hover .scr,.gain-duo figure:hover .scr{transform:translateY(-4px);border-color:rgba(216,181,102,.34)}
 @media (prefers-reduced-motion:reduce){
-  .map .voie,.map .ch,.map .shot,.map .boom,.map .kill,
+  .map .voie,.map .ch,.map .shot,.map .boom,.map .kill,.map .fil text,
+  .map .b1,.map .b2,.map .b3,.map .b4,
   .scr-ctl .bar span,.scr-ctl .pl{animation:none}
   .map .voie{stroke-dasharray:none}
-  .map .ch{offset-distance:88%}
-  .map .shot,.map .boom,.map .kill{opacity:1}
+  .map .ch{offset-distance:100%}
+  .map .shot,.map .boom,.map .kill,.map .fil text{opacity:1}
+  .map .b1{width:186px}.map .b2{width:121px}.map .b3{width:85px}.map .b4{width:37px}
   .scr-ctl .bar span{width:46%}
   .gain-big .scr,.gain-duo .scr{transition:none}
 }
@@ -362,6 +407,9 @@ p{margin:0 0 14px;max-width:68ch}
 .route h3{margin-bottom:10px;font-size:23px}
 .route p{color:var(--ink-2);margin-bottom:0;font-size:15.5px}
 .step{display:grid;grid-template-columns:64px 1fr;gap:26px;padding:34px 0;border-top:1px solid var(--rule)}
+/* sans ce plancher retiré, l'arborescence de dossiers (white-space:pre)
+   impose sa min-content à la colonne et pousse la page hors de l'écran */
+.step > *{min-width:0}
 .step-n{font-family:var(--d-cond);font-weight:700;font-size:44px;line-height:.8;color:var(--gold);
         opacity:.85;font-variant-numeric:tabular-nums}
 .step p{color:var(--ink-2);font-size:15.5px}
@@ -460,7 +508,7 @@ footer p{max-width:70ch;font-size:13.5px;line-height:1.7}
 </head>
 <body>
 
-<a class="skip" href="#main">Aller au contenu</a>
+<a class="skip" href="#main">Skip to content</a>
 
 <div class="top"><div class="top-in">
   <a class="logo" href="/">
@@ -468,26 +516,24 @@ footer p{max-width:70ch;font-size:13.5px;line-height:1.7}
     <span class="wm">Clan <em>Plus</em></span></a>
   <span class="top-ref">MOD / 1.0.31</span>
   <span class="top-sp"></span>
-  <a class="top-lk" href="soutenir.html">Soutenir</a>
-  <a class="top-lk" href="/">Se connecter</a>
-  <a class="top-cta" href="download/clanplus_1.0.31.wotmod" download>Télécharger</a>
+  <a class="top-lk" href="soutenir.html">Support</a>
+  <a class="top-lk" href="/">Sign in</a>
+  <a class="top-cta" href="download/clanplus_1.0.31.wotmod" download>Download</a>
 </div></div>
 
 <main id="main">
 
 <header class="hero"><div class="sheet"><div class="hero-grid">
   <div>
-    <p class="eyebrow">Manuel de terrain</p>
-    <h1>Rien pendant<br>le combat.<br><span class="dim">Tout après.</span></h1>
-    <p class="lede">Une fenêtre pour armer ta formation en Bastion, et l'enregistrement complet de
-    chaque bataille de clan. Le site fait le reste.</p>
+    <p class="eyebrow">Field manual</p>
+    <h1>Nothing during<br>the fight.<br><span class="dim">Everything after.</span></h1>
+    <p class="lede">A window to set up your Bastion line-up, and a full recording of every clan battle. The site does the rest.</p>
     <div class="acts">
-      <a class="btn btn-go" href="download/clanplus_1.0.31.wotmod" download>Télécharger le mod</a>
-      <a class="btn btn-alt" href="#pose">Comment l'installer</a>
+      <a class="btn btn-go" href="download/clanplus_1.0.31.wotmod" download>Download the mod</a> <a class="btn btn-alt" href="#pose">How to install it</a>
     </div>
     <dl class="spec">
       <div><dt>Version</dt><dd class="mono">1.0.31</dd></div>
-      <div><dt>Poids</dt><dd class="mono">97 Ko</dd></div>
+      <div><dt>Size</dt><dd class="mono">97 KB</dd></div>
       <div><dt>Client</dt><dd class="mono">WoT EU 2.3.1.0</dd></div>
     </dl>
   </div>
@@ -530,18 +576,18 @@ footer p{max-width:70ch;font-size:13.5px;line-height:1.7}
       <div class="win-bar"><span class="sep">▌</span><b>CLAN PLUS</b><span class="sep">—</span><b>BASTION</b><span class="min">—</span></div>
       <div class="win-opt">
         <button type="button" class="chk" id="winSim" role="switch" aria-checked="true"
-                aria-label="Mode simulation Clan Wars"><span aria-hidden="true">✓</span></button>
+                aria-label="Clan Wars simulation mode"><span aria-hidden="true">✓</span></button>
         <span class="txt" lang="en">Clan Wars simulation mode</span>
         <span class="cnt on" lang="en">Out of commission: <b id="winCnt">1</b> / 64</span>
         <span class="cnt off" lang="en">Click a tank to select it</span>
       </div>
       <div class="win-filters">
       <button type="button" class="fl on" data-f="all">ALL</button>
-        <button type="button" class="fl-ic" data-f="heavy" aria-label="Chars lourds"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9h14v6H5z"/></svg></button>
-        <button type="button" class="fl-ic" data-f="medium" aria-label="Chars moyens"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l9 9-9 9-9-9z"/></svg></button>
-        <button type="button" class="fl-ic" data-f="light" aria-label="Chars légers"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/></svg></button>
-        <button type="button" class="fl-ic" data-f="td" aria-label="Chasseurs de chars"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18l-9 13z"/></svg></button>
-        <button type="button" class="fl-ic" data-f="spg" aria-label="Artillerie"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16v3H4zm0 7h16v3H4z"/></svg></button>
+        <button type="button" class="fl-ic" data-f="heavy" aria-label="Heavy tanks"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9h14v6H5z"/></svg></button>
+        <button type="button" class="fl-ic" data-f="medium" aria-label="Medium tanks"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l9 9-9 9-9-9z"/></svg></button>
+        <button type="button" class="fl-ic" data-f="light" aria-label="Light tanks"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/></svg></button>
+        <button type="button" class="fl-ic" data-f="td" aria-label="Tank destroyers"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18l-9 13z"/></svg></button>
+        <button type="button" class="fl-ic" data-f="spg" aria-label="Artillery"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16v3H4zm0 7h16v3H4z"/></svg></button>
         <button type="button" class="repair" id="winFix" lang="en">REPAIR ALL</button>
       </div>
       <div class="win-head"><span></span><span>TIER</span><span></span><span>NAME</span><span class="h-type">TYPE</span><span class="r">STATUS</span></div>
@@ -628,8 +674,7 @@ footer p{max-width:70ch;font-size:13.5px;line-height:1.7}
       </button>
       <div class="win-fade"></div>
     </div>
-    <p class="rig-cap"><span class="pt" aria-hidden="true">▸</span> Coche la case, clique un char :
-    c'est la vraie fenêtre, pas une capture.</p>
+    <p class="rig-cap"><span class="pt" aria-hidden="true">▸</span> Tick the box, click a tank — this is the real window, not a screenshot.</p>
   </div>
 </div></div></header>
 
@@ -637,69 +682,149 @@ footer p{max-width:70ch;font-size:13.5px;line-height:1.7}
      Le mod n'est qu'un moyen — voici ce qu'il débloque. ══ -->
 <section id="gain"><div class="sheet">
   <div class="rv">
-    <div class="sec-h"><span class="sec-n">01</span><h2>Tu joues déjà.<br>Voilà ce que ça devient.</h2></div>
-    <p class="sec-sub">Le mod ne change rien à ta façon de jouer. Il transforme chaque bataille de
-    clan en quelque chose qu'on peut revoir, mesurer et travailler.</p>
+    <div class="sec-h"><span class="sec-n">01</span><h2>You already play.<br>Here's what it turns into.</h2></div>
+    <p class="sec-sub">The mod changes nothing about how you play. It turns every clan battle into something you can review, measure and work on.</p>
   </div>
 
   <figure class="gain-big rv">
     <div class="scr">
-      <div class="scr-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>
-        <span class="scr-t">Himmelsdorf · TIPS_ 7 — 5 RDDT · victoire</span></div>
-      <svg class="map" viewBox="0 0 720 300" role="img" aria-label="La bataille rejouée sur la carte : les chars des deux équipes, leurs trajets, un tir en cours et une élimination.">
+      <div class="scr-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span> <span class="scr-t">Himmelsdorf · TIPS_ 7 — 5 RDDT · victory</span></div>
+      <svg class="map" viewBox="0 0 690 480" role="img"
+        aria-label="The battle replayed on the minimap: the seven friendly tanks and five enemies, their paths, the cone showing where each one is aiming, a shot landing for 1,240 damage, and on the right the score, the kills and the damage ranking.">
         <defs>
-          <pattern id="g" width="30" height="30" patternUnits="userSpaceOnUse">
-            <path d="M30 0H0V30" fill="none" stroke="rgba(255,255,255,.045)" stroke-width="1"/>
-          </pattern>
+          <clipPath id="terr"><rect x="34" y="34" width="412" height="412" rx="2"/></clipPath>
           <filter id="soft"><feGaussianBlur stdDeviation="5"/></filter>
         </defs>
-        <rect width="720" height="300" fill="#12161a"/>
-        <rect width="720" height="300" fill="url(#g)"/>
-        <!-- relief sommaire de la ville -->
-        <g fill="#1b2127">
-          <rect x="248" y="52" width="92" height="58" rx="2"/><rect x="366" y="46" width="74" height="70" rx="2"/>
-          <rect x="252" y="140" width="66" height="52" rx="2"/><rect x="352" y="150" width="98" height="44" rx="2"/>
-          <rect x="268" y="214" width="80" height="50" rx="2"/><rect x="386" y="212" width="62" height="56" rx="2"/>
-          <rect x="120" y="120" width="54" height="66" rx="2"/><rect x="540" y="112" width="58" height="70" rx="2"/>
+        <rect x="34" y="34" width="412" height="412" rx="2" fill="#12161a"/>
+        <g clip-path="url(#terr)">
+          <!-- la butte, en trois paliers -->
+          <path d="M34 34h140c-6 44-34 72-84 86-28 8-42 4-56-8z" fill="#1f272e"/>
+          <path d="M34 34h116c-6 32-28 54-66 64-20 5-34 2-50-8z" fill="#28323a"/>
+          <path d="M34 34h88c-4 22-20 38-46 46-14 4-28 0-42-8z" fill="#343f48"/>
+          <rect x="101" y="34" width="14" height="412" fill="#1f262d"/><rect x="167" y="34" width="14" height="412" fill="#1f262d"/><rect x="225" y="34" width="28" height="412" fill="#252d35"/><rect x="297" y="34" width="14" height="412" fill="#1f262d"/><rect x="363" y="34" width="14" height="412" fill="#1f262d"/><rect x="34" y="101" width="412" height="14" fill="#1f262d"/><rect x="34" y="167" width="412" height="14" fill="#1f262d"/><rect x="34" y="224" width="412" height="28" fill="#252d35"/><rect x="34" y="297" width="412" height="14" fill="#1f262d"/><rect x="34" y="363" width="412" height="14" fill="#1f262d"/>
+          <!-- le dépôt ferroviaire, au sud -->
+          <rect x="34" y="356" width="412" height="56" fill="#2c343d"/>
+          <g stroke="#4b5661" stroke-width="1.4">
+            <path d="M34 368H446M34 382H446M34 396H446"/></g>
+          <rect x="119.0" y="185.0" width="20.2" height="35.0" rx="1.5" fill="#333c46"/><rect x="144.5" y="185.0" width="18.5" height="35.0" rx="1.5" fill="#2c343d"/><rect x="119.0" y="256.0" width="20.2" height="37.0" rx="1.5" fill="#3a434d"/><rect x="144.5" y="256.0" width="18.5" height="37.0" rx="1.5" fill="#333c46"/><rect x="185.0" y="40.0" width="36.0" height="30.8" rx="1.5" fill="#2c343d"/><rect x="185.0" y="76.5" width="36.0" height="20.5" rx="1.5" fill="#3a434d"/><rect x="185.0" y="119.0" width="36.0" height="23.8" rx="1.5" fill="#333c46"/><rect x="185.0" y="147.2" width="36.0" height="15.8" rx="1.5" fill="#2c343d"/><rect x="185.0" y="185.0" width="36.0" height="18.9" rx="1.5" fill="#3a434d"/><rect x="185.0" y="207.4" width="36.0" height="12.6" rx="1.5" fill="#333c46"/><rect x="185.0" y="256.0" width="36.0" height="20.0" rx="1.5" fill="#2c343d"/><rect x="185.0" y="279.7" width="36.0" height="13.3" rx="1.5" fill="#3a434d"/><rect x="185.0" y="315.0" width="36.0" height="23.8" rx="1.5" fill="#333c46"/><rect x="257.0" y="40.0" width="36.0" height="57.0" rx="1.5" fill="#2c343d"/><rect x="257.0" y="119.0" width="36.0" height="44.0" rx="1.5" fill="#3a434d"/><rect x="257.0" y="185.0" width="36.0" height="35.0" rx="1.5" fill="#333c46"/><rect x="257.0" y="256.0" width="36.0" height="37.0" rx="1.5" fill="#2c343d"/><rect x="315.0" y="40.0" width="20.2" height="57.0" rx="1.5" fill="#3a434d"/><rect x="340.5" y="40.0" width="18.5" height="57.0" rx="1.5" fill="#333c46"/><rect x="315.0" y="119.0" width="20.2" height="44.0" rx="1.5" fill="#2c343d"/><rect x="340.5" y="119.0" width="18.5" height="44.0" rx="1.5" fill="#3a434d"/><rect x="315.0" y="185.0" width="20.2" height="35.0" rx="1.5" fill="#333c46"/><rect x="340.5" y="185.0" width="18.5" height="35.0" rx="1.5" fill="#2c343d"/><rect x="315.0" y="256.0" width="20.2" height="37.0" rx="1.5" fill="#3a434d"/><rect x="340.5" y="256.0" width="18.5" height="37.0" rx="1.5" fill="#333c46"/><rect x="381.0" y="40.0" width="59.0" height="30.8" rx="1.5" fill="#2c343d"/><rect x="381.0" y="76.5" width="59.0" height="20.5" rx="1.5" fill="#3a434d"/><rect x="381.0" y="119.0" width="59.0" height="23.8" rx="1.5" fill="#333c46"/><rect x="381.0" y="147.2" width="59.0" height="15.8" rx="1.5" fill="#2c343d"/><rect x="381.0" y="279.7" width="59.0" height="13.3" rx="1.5" fill="#3a434d"/><rect x="381.0" y="315.0" width="59.0" height="23.8" rx="1.5" fill="#333c46"/>
         </g>
-        <!-- bases -->
+        <rect x="34" y="34" width="412" height="412" rx="2" fill="none" stroke="rgba(255,255,255,.13)"/>
+        <path d="M34 34V446M34 34H446" stroke="rgba(255,255,255,.05)"/><path d="M75.2 34V446M34 75.2H446" stroke="rgba(255,255,255,.05)"/><path d="M116.4 34V446M34 116.4H446" stroke="rgba(255,255,255,.05)"/><path d="M157.60000000000002 34V446M34 157.60000000000002H446" stroke="rgba(255,255,255,.05)"/><path d="M198.8 34V446M34 198.8H446" stroke="rgba(255,255,255,.05)"/><path d="M240 34V446M34 240H446" stroke="rgba(255,255,255,.05)"/><path d="M281.20000000000005 34V446M34 281.20000000000005H446" stroke="rgba(255,255,255,.05)"/><path d="M322.40000000000003 34V446M34 322.40000000000003H446" stroke="rgba(255,255,255,.05)"/><path d="M363.6 34V446M34 363.6H446" stroke="rgba(255,255,255,.05)"/><path d="M404.8 34V446M34 404.8H446" stroke="rgba(255,255,255,.05)"/><path d="M446 34V446M34 446H446" stroke="rgba(255,255,255,.05)"/><text x="54.6" y="25" text-anchor="middle" class="rep">A</text><text x="24" y="58.1" text-anchor="end" class="rep">1</text><text x="95.80000000000001" y="25" text-anchor="middle" class="rep">B</text><text x="24" y="99.30000000000001" text-anchor="end" class="rep">2</text><text x="137" y="25" text-anchor="middle" class="rep">C</text><text x="24" y="140.5" text-anchor="end" class="rep">3</text><text x="178.20000000000002" y="25" text-anchor="middle" class="rep">D</text><text x="24" y="181.70000000000002" text-anchor="end" class="rep">4</text><text x="219.4" y="25" text-anchor="middle" class="rep">E</text><text x="24" y="222.9" text-anchor="end" class="rep">5</text><text x="260.6" y="25" text-anchor="middle" class="rep">F</text><text x="24" y="264.1" text-anchor="end" class="rep">6</text><text x="301.80000000000007" y="25" text-anchor="middle" class="rep">G</text><text x="24" y="305.30000000000007" text-anchor="end" class="rep">7</text><text x="343.00000000000006" y="25" text-anchor="middle" class="rep">H</text><text x="24" y="346.50000000000006" text-anchor="end" class="rep">8</text><text x="384.20000000000005" y="25" text-anchor="middle" class="rep">I</text><text x="24" y="387.70000000000005" text-anchor="end" class="rep">9</text><text x="425.40000000000003" y="25" text-anchor="middle" class="rep">J</text><text x="24" y="428.90000000000003" text-anchor="end" class="rep">10</text>
         <g>
-          <circle cx="74" cy="150" r="30" fill="none" stroke="#5fc27e" stroke-width="1" stroke-dasharray="4 5" opacity=".7"/>
-          <path d="M74 132v36" stroke="#5fc27e" stroke-width="2"/><path d="M74 132h16l-4 7 4 7H74z" fill="#5fc27e"/>
-          <circle cx="646" cy="150" r="30" fill="none" stroke="#e2685f" stroke-width="1" stroke-dasharray="4 5" opacity=".7"/>
-          <path d="M646 132v36" stroke="#e2685f" stroke-width="2"/><path d="M646 132h16l-4 7 4 7h-16z" fill="#e2685f"/>
+          <circle cx="86" cy="238" r="33" fill="none" stroke="#5fc27e" stroke-dasharray="5 6" opacity=".7"/>
+          <path d="M86 224v28" stroke="#5fc27e" stroke-width="1.8"/>
+          <path d="M86 224h13l-3.5 5 3.5 5H86z" fill="#5fc27e"/>
+          <circle cx="394" cy="238" r="33" fill="none" stroke="#e2685f" stroke-dasharray="5 6" opacity=".7"/>
+          <path d="M394 224v28" stroke="#e2685f" stroke-width="1.8"/>
+          <path d="M394 224h13l-3.5 5 3.5 5h-13z" fill="#e2685f"/>
         </g>
-        <!-- trajets -->
-        <g fill="none" stroke-linecap="round" opacity=".5">
-          <path class="voie" d="M92 176C150 190 196 214 236 232" stroke="#5fc27e" stroke-width="1.6"/>
-          <path class="voie" d="M96 126C154 108 200 86 238 72" stroke="#5fc27e" stroke-width="1.6"/>
-          <path class="voie" d="M100 150C168 148 214 150 250 152" stroke="#5fc27e" stroke-width="1.6"/>
-          <path class="voie" d="M628 124C566 104 512 86 470 74" stroke="#e2685f" stroke-width="1.6"/>
-          <path class="voie" d="M624 178C570 200 522 220 486 234" stroke="#e2685f" stroke-width="1.6"/>
-          <path class="voie" d="M636 150C592 150 552 150 520 150" stroke="#e2685f" stroke-width="1.6"/>
+        <g fill="none" stroke-linecap="round">
+          <path class="voie amie" d="M92 230 L100.0 228.0 Q108 226 108.0 217.8 L108.0 120.0 Q108 108 120.0 108.0 L196 108"/>
+          <path class="voie amie" d="M94 236 L101.0 236.0 Q108 236 108.0 229.0 L108.0 186.0 Q108 174 120.0 174.0 L204 174"/>
+          <path class="voie amie" d="M100 240 L222 240"/>
+          <path class="voie amie" d="M96 244 L162.0 244.0 Q174 244 174.0 256.0 L174.0 288.0 Q174 300 186.0 300.0 L206 300"/>
+          <path class="voie amie" d="M92 248 L100.0 249.0 Q108 250 108.0 258.1 L108.0 292.0 Q108 304 120.0 304.0 L192 304"/>
+          <path class="voie amie" d="M90 254 L97.0 258.0 Q104 262 104.0 270.1 L104.0 358.0 Q104 370 116.0 370.0 L212 370"/>
+          <path class="voie amie" d="M86 258 L92.0 265.0 Q98 272 98.0 281.2 L98 296"/>
+          <path class="voie adv" d="M388 230 L379.0 228.0 Q370 226 370.0 216.8 L370.0 120.0 Q370 108 358.0 108.0 L286 108"/>
+          <path class="voie adv" d="M386 236 L378.0 236.0 Q370 236 370.0 228.0 L370.0 186.0 Q370 174 358.0 174.0 L278 174"/>
+          <path class="voie adv" d="M380 240 L262 240"/>
+          <path class="voie adv" d="M384 248 L377.0 249.0 Q370 250 370.0 257.1 L370.0 292.0 Q370 304 358.0 304.0 L290 304"/>
+          <path class="voie adv" d="M382 254 L374.0 258.0 Q366 262 366.0 270.9 L366.0 358.0 Q366 370 354.0 370.0 L300 370"/>
         </g>
-        <!-- tir en cours -->
         <g class="shot">
-          <path d="M186 93L529 93" stroke="#e8a13c" stroke-width="1.6" stroke-dasharray="7 5" opacity=".95"/>
-          <text x="357" y="82" fill="#e8a13c" font-family="IBM Plex Mono,monospace" font-size="11" text-anchor="middle">−1 240</text>
+          <path d="M196 108 286 108" stroke="#e8a13c" stroke-width="1.8" stroke-dasharray="7 5"/>
+          <text x="241" y="98" class="deg" text-anchor="middle">−1 240</text>
         </g>
-        <circle class="boom" cx="529" cy="93" r="14" fill="#e8a13c" opacity=".24" filter="url(#soft)"/>
-        <!-- chars alliés -->
-        <g class="ch ch-3"><circle r="8" fill="#5fc27e"/><rect x="-4" y="-2.5" width="8" height="5" rx="1" fill="#0f1a12"/></g>
-        <g class="ch ch-2"><circle r="8" fill="#5fc27e"/><rect x="-4" y="-2.5" width="8" height="5" rx="1" fill="#0f1a12"/></g>
-        <g class="ch ch-1"><circle r="8" fill="#5fc27e"/><path d="M0 -4l4 4-4 4-4-4z" fill="#0f1a12"/></g>
-        <g class="ch ch-4"><circle r="8" fill="#5fc27e"/><circle r="2.6" fill="#0f1a12"/></g>
-        <g class="ch ch-5"><circle r="8" fill="#5fc27e"/><path d="M-4 -3h8l-4 6z" fill="#0f1a12"/></g>
-        <!-- chars adverses -->
-        <g class="ch ch-6"><circle r="8" fill="#e2685f"/><rect x="-4" y="-2.5" width="8" height="5" rx="1" fill="#1a0f0f"/></g>
-        <g class="ch ch-7"><circle r="8" fill="#e2685f"/><rect x="-4" y="-2.5" width="8" height="5" rx="1" fill="#1a0f0f"/></g>
-        <g class="ch ch-8"><circle r="8" fill="#e2685f"/><path d="M0 -4l4 4-4 4-4-4z" fill="#1a0f0f"/></g>
-        <!-- élimination -->
-        <g class="kill" stroke="#c2beb4" stroke-width="2.2" opacity=".9">
-          <path d="M523 87l12 12M535 87l-12 12"/>
+        <circle class="boom" cx="286" cy="108" r="15" fill="#e8a13c" opacity=".24" filter="url(#soft)"/>
+        <g class="ch v1 amie">
+          <path class="cone" d="M0 0 26 -11A28 28 0 0 1 26 11Z"/>
+          <circle class="pion" r="9.2"/>
+          <g class="ico"><rect x="-3.4" y="-2.2" width="6.8" height="4.4" rx="1"/></g></g>
+        <g class="ch v2 amie">
+          <path class="cone" d="M0 0 26 -11A28 28 0 0 1 26 11Z"/>
+          <circle class="pion" r="9.2"/>
+          <g class="ico"><path d="M0 -3.6 3.6 0 0 3.6 -3.6 0z"/></g></g>
+        <g class="ch v3 amie">
+          <path class="cone" d="M0 0 26 -11A28 28 0 0 1 26 11Z"/>
+          <circle class="pion" r="9.2"/>
+          <g class="ico"><rect x="-3.4" y="-2.2" width="6.8" height="4.4" rx="1"/></g></g>
+        <g class="ch v4 amie">
+          <path class="cone" d="M0 0 26 -11A28 28 0 0 1 26 11Z"/>
+          <circle class="pion" r="9.2"/>
+          <g class="ico"><path d="M-3.4 -2.6h6.8L0 3.6z"/></g></g>
+        <g class="ch v5 amie">
+          <path class="cone" d="M0 0 26 -11A28 28 0 0 1 26 11Z"/>
+          <circle class="pion" r="9.2"/>
+          <g class="ico"><circle r="2.8"/></g></g>
+        <g class="ch v6 amie">
+          <path class="cone" d="M0 0 26 -11A28 28 0 0 1 26 11Z"/>
+          <circle class="pion" r="9.2"/>
+          <g class="ico"><rect x="-3.4" y="-2.2" width="6.8" height="4.4" rx="1"/></g></g>
+        <g class="ch v7 amie">
+          <path class="cone" d="M0 0 26 -11A28 28 0 0 1 26 11Z"/>
+          <circle class="pion" r="9.2"/>
+          <g class="ico"><path d="M-3.6 -2.4h7.2v1.6h-7.2zm0 2.9h7.2v1.6h-7.2z"/></g></g>
+        <g class="ch r1 adv">
+          <path class="cone" d="M0 0 26 -11A28 28 0 0 1 26 11Z"/>
+          <circle class="pion" r="9.2"/>
+          <g class="ico"><rect x="-3.4" y="-2.2" width="6.8" height="4.4" rx="1"/></g></g>
+        <g class="ch r2 adv">
+          <path class="cone" d="M0 0 26 -11A28 28 0 0 1 26 11Z"/>
+          <circle class="pion" r="9.2"/>
+          <g class="ico"><path d="M0 -3.6 3.6 0 0 3.6 -3.6 0z"/></g></g>
+        <g class="ch r3 adv">
+          <path class="cone" d="M0 0 26 -11A28 28 0 0 1 26 11Z"/>
+          <circle class="pion" r="9.2"/>
+          <g class="ico"><rect x="-3.4" y="-2.2" width="6.8" height="4.4" rx="1"/></g></g>
+        <g class="ch r4 adv">
+          <path class="cone" d="M0 0 26 -11A28 28 0 0 1 26 11Z"/>
+          <circle class="pion" r="9.2"/>
+          <g class="ico"><circle r="2.8"/></g></g>
+        <g class="ch r5 adv">
+          <path class="cone" d="M0 0 26 -11A28 28 0 0 1 26 11Z"/>
+          <circle class="pion" r="9.2"/>
+          <g class="ico"><path d="M-3.4 -2.6h6.8L0 3.6z"/></g></g>
+        <g class="kill" stroke="#e9e6df" stroke-width="2.3" opacity=".9">
+          <path d="M279 101l14 14M293 101l-14 14"/></g>
+        <g class="hor"><rect x="360" y="420" width="80" height="21" rx="2"/>
+          <text x="432" y="435" class="tm" text-anchor="end">04:12</text></g>
+
+        <g class="pan" transform="translate(470,34)">
+          <text x="0" y="11" class="pt">SCORE</text>
+          <text x="0" y="43" class="sc v">7</text>
+          <text x="27" y="43" class="sc s">—</text>
+          <text x="52" y="43" class="sc r">5</text>
+          <text x="186" y="41" class="vic" text-anchor="end">VICTORY</text>
+          <path d="M0 60h186" stroke="rgba(255,255,255,.1)"/>
+          <text x="0" y="84" class="pt">KILLS</text>
+          <g class="fil">
+            <text x="0" y="106"><tspan class="v">Ashbringer</tspan><tspan class="s"> ▸ </tspan><tspan class="r">RDDT_Vasko</tspan></text>
+            <text x="0" y="125"><tspan class="v">60TP</tspan><tspan class="s"> ▸ </tspan><tspan class="r">RDDT_Kern</tspan></text>
+          </g>
+          <path d="M0 142h186" stroke="rgba(255,255,255,.1)"/>
+          <text x="0" y="166" class="pt">DAMAGE DEALT</text>
+          <g class="bars">
+            <text x="0" y="187" class="nm2">Ashbringer</text><text x="186" y="187" class="vl" text-anchor="end">3 240</text>
+            <rect x="0" y="193" width="186" height="5" rx="2.5" fill="#1b2026"/><rect class="b1" x="0" y="193" height="5" rx="2.5"/>
+            <text x="0" y="217" class="nm2">60TP</text><text x="186" y="217" class="vl" text-anchor="end">2 105</text>
+            <rect x="0" y="223" width="186" height="5" rx="2.5" fill="#1b2026"/><rect class="b2" x="0" y="223" height="5" rx="2.5"/>
+            <text x="0" y="247" class="nm2">E 100</text><text x="186" y="247" class="vl" text-anchor="end">1 480</text>
+            <rect x="0" y="253" width="186" height="5" rx="2.5" fill="#1b2026"/><rect class="b3" x="0" y="253" height="5" rx="2.5"/>
+            <text x="0" y="277" class="nm2">Manticore</text><text x="186" y="277" class="vl" text-anchor="end">640</text>
+            <rect x="0" y="283" width="186" height="5" rx="2.5" fill="#1b2026"/><rect class="b4" x="0" y="283" height="5" rx="2.5"/>
+          </g>
+          <path d="M0 312h186" stroke="rgba(255,255,255,.1)"/>
+          <g transform="translate(0,332)">
+            <g transform="translate(13,11)">
+              <path d="M0 0 22 -9A24 24 0 0 1 22 9Z" fill="#5fc27e" opacity=".18"/>
+              <circle r="7.5" fill="#5fc27e"/><rect x="-2.8" y="-1.8" width="5.6" height="3.6" rx=".8" fill="#0e1a12"/>
+            </g>
+            <text x="52" y="15" class="lg">aiming direction</text>
+            <circle cx="13" cy="45" r="10" fill="none" stroke="#8d8a80" stroke-dasharray="4 5"/>
+            <text x="52" y="49" class="lg">capture zone</text>
+          </g>
         </g>
-        <!-- horodatage -->
-        <text x="20" y="284" fill="#8d8a80" font-family="IBM Plex Mono,monospace" font-size="11">04:12</text>
       </svg>
       <div class="scr-ctl">
         <span class="pl" aria-hidden="true">▶</span>
@@ -707,21 +832,18 @@ footer p{max-width:70ch;font-size:13.5px;line-height:1.7}
         <span class="sp">×2</span>
       </div>
     </div>
-    <figcaption><b>La bataille se rejoue.</b> Chaque char, seconde par seconde : les trajets, les
-    tirs, les dégâts avec leur auteur, les éliminations, et la direction que chacun surveillait.
-    Tu peux la mettre en pause et la commenter — c'est le débriefing.</figcaption>
+    <figcaption><b>The battle replays itself.</b> Every tank, second by second: the paths, the shots, the damage and who dealt it, the kills, and the direction each player was watching. You can pause it and draw on it — that's your debrief.</figcaption>
   </figure>
 
   <div class="gain-duo">
     <figure class="rv">
       <div class="scr scr-sm">
-        <div class="scr-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>
-          <span class="scr-t">Ma progression</span></div>
+        <div class="scr-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span> <span class="scr-t">My progress</span></div>
         <div class="sr-demo">
           <div class="sr-row">
-            <div class="sr-big">1&nbsp;712</div>
-            <div><div class="sr-tier">Bon coéquipier</div>
-              <div class="sr-note">64 batailles · marge ±63</div></div>
+            <div class="sr-big">1,712</div>
+            <div><div class="sr-tier">Solid teammate</div>
+              <div class="sr-note">64 battles · margin ±63</div></div>
           </div>
           <div class="sr-track">
             <span style="left:0;width:5.5%;background:#e2685f"></span>
@@ -735,17 +857,14 @@ footer p{max-width:70ch;font-size:13.5px;line-height:1.7}
           <div class="sr-ticks"><span>1000</span><span>1350</span><span>1650</span><span>2000</span><span>2500</span></div>
         </div>
       </div>
-      <figcaption><b>Une note qui mesure le jeu d'équipe.</b> Pas les dégâts bruts : ta part réelle
-      dans la victoire, pondérée par la force de l'adversaire. Avec sa marge d'erreur affichée, parce
-      qu'un chiffre sans marge ment.</figcaption>
+      <figcaption><b>A rating that measures teamplay.</b> Not raw damage: your actual share of the win, weighted by how strong the opposition was. With its margin of error shown, because a number without a margin lies.</figcaption>
     </figure>
 
     <figure class="rv">
       <div class="scr scr-sm">
-        <div class="scr-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>
-          <span class="scr-t">Quoi travailler</span></div>
+        <div class="scr-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span> <span class="scr-t">What to work on</span></div>
         <div class="rad-demo">
-          <svg viewBox="0 0 320 210" role="img" aria-label="Radar des cinq aptitudes comparées à la médiane du rôle : dégâts au-dessus, encaissé en dessous.">
+          <svg viewBox="0 0 320 210" role="img" aria-label="Radar of the five skills against the median for the role: damage above, damage taken below.">
             <g transform="translate(160,102)">
               <polygon points="0,-72 68,-22 42,58 -42,58 -68,-22" fill="none" stroke="rgba(255,255,255,.09)"/>
               <polygon points="0,-36 34,-11 21,29 -21,29 -34,-11" fill="none" stroke="rgba(255,255,255,.07)"/>
@@ -754,11 +873,11 @@ footer p{max-width:70ch;font-size:13.5px;line-height:1.7}
               <g fill="#d8b566"><circle cx="0" cy="-70" r="3.2"/><circle cx="44" cy="-14" r="3.2"/><circle cx="30" cy="41" r="3.2"/><circle cx="-25" cy="34" r="3.2"/><circle cx="-37" cy="-12" r="3.2"/></g>
             </g>
             <g font-family="IBM Plex Mono,monospace" font-size="9.5" fill="#8d8a80">
-              <text x="160" y="16" text-anchor="middle">DÉGÂTS</text>
-              <text x="252" y="84" text-anchor="middle">ENCAISSÉ</text>
-              <text x="216" y="182" text-anchor="middle">BLINDAGE</text>
-              <text x="104" y="182" text-anchor="middle">VISION</text>
-              <text x="66" y="84" text-anchor="middle">OBJECTIF</text>
+              <text x="160" y="16" text-anchor="middle">DAMAGE</text>
+              <text x="252" y="84" text-anchor="middle">TAKEN</text>
+              <text x="216" y="182" text-anchor="middle">ARMOUR</text>
+              <text x="104" y="182" text-anchor="middle">SPOTTING</text>
+              <text x="66" y="84" text-anchor="middle">OBJECTIVE</text>
             </g>
             <g font-family="IBM Plex Mono,monospace" font-size="10">
               <text x="160" y="30" text-anchor="middle" fill="#5fc27e">▲1,34×</text>
@@ -767,8 +886,7 @@ footer p{max-width:70ch;font-size:13.5px;line-height:1.7}
           </svg>
         </div>
       </div>
-      <figcaption><b>Un plan, pas un tableau.</b> Le site compare tes cinq aptitudes à la médiane de
-      ton rôle et te dit quoi travailler en priorité — avec l'écart chiffré, pas un conseil vague.</figcaption>
+      <figcaption><b>A plan, not a table.</b> The site compares your five skills against the median for your role and tells you what to work on first — with the gap in numbers, not vague advice.</figcaption>
     </figure>
   </div>
 </div></section>
@@ -776,117 +894,96 @@ footer p{max-width:70ch;font-size:13.5px;line-height:1.7}
 <!-- ══ Puis l'objection : elle décide, elle passe avant qu'on demande quoi que ce soit. ══ -->
 <section id="verite"><div class="sheet">
   <div class="rv">
-    <div class="sec-h"><span class="sec-n">02</span><h2>Ce qu'il fait.<br>Ce qu'il ne fait pas.</h2></div>
-    <p class="sec-sub">C'est la question qu'on se pose avant d'installer un mod. Elle est donc
-    traitée ici, avant qu'on te demande quoi que ce soit.</p>
+    <div class="sec-h"><span class="sec-n">02</span><h2>What it does.<br>What it doesn't.</h2></div>
+    <p class="sec-sub">It's the question you ask before installing any mod. So it's answered here, before anything is asked of you.</p>
   </div>
 
   <div class="plates rv">
     <div class="plate yes">
-      <p class="plate-h">Ce qu'il fait</p>
+      <p class="plate-h">What it does</p>
       <ul>
-        <li><i>01</i><span>Affiche une fenêtre sur les écrans de bataille de clan</span></li>
-        <li><i>02</i><span>Sélectionne dans le garage le char sur lequel tu cliques</span></li>
-        <li><i>03</i><span>Relève les chiffres <strong>après</strong> la fin du combat</span></li>
-        <li><i>04</i><span>Envoie ces chiffres au site pour les analyses de clan</span></li>
+        <li><i>01</i><span>Shows a window on the clan battle screens</span></li>
+        <li><i>02</i><span>Selects the tank you click on, right in the garage</span></li>
+        <li><i>03</i><span>Reads the numbers <strong>after</strong> the fight is over</span></li>
+        <li><i>04</i><span>Sends those numbers to the site for the clan's analysis</span></li>
       </ul>
     </div>
     <div class="plate no">
-      <p class="plate-h">Ce qu'il ne fait pas</p>
+      <p class="plate-h">What it doesn't do</p>
       <ul>
-        <li><i>✕</i><span>Rien ne s'affiche <strong>pendant</strong> le combat</span></li>
-        <li><i>✕</i><span>Aucun avantage : ni position ennemie, ni aide à la visée</span></li>
-        <li><i>✕</i><span>Aucune modification côté serveur Wargaming</span></li>
-        <li><i>✕</i><span>Aucun accès à ton mot de passe ni à tes identifiants</span></li>
+        <li><i>✕</i><span>Nothing is displayed <strong>during</strong> the fight</span></li>
+        <li><i>✕</i><span>No advantage: no enemy positions, no aiming assistance</span></li>
+        <li><i>✕</i><span>No changes of any kind on Wargaming's servers</span></li>
+        <li><i>✕</i><span>No access to your password or your login details</span></li>
       </ul>
     </div>
   </div>
 
   <div class="card key rv">
-    <p class="lbl">Est-ce que je risque un bannissement ?</p>
-    <p class="answer">Non.</p>
-    <p>Le mod ne lit que des informations déjà affichées par le jeu, uniquement après la fin du
-    combat, et ne communique jamais avec les serveurs de Wargaming.</p>
-    <p>En toute honnêteté : Wargaming ne publie pas de liste blanche officielle de mods. Ce qu'on
-    peut garantir, c'est que le mod ne fait rien de ce qui est interdit. C'est exactement la liste
-    ci-dessus.</p>
+    <p class="lbl">Could this get me banned?</p>
+    <p class="answer">No.</p>
+    <p>The mod only reads information the game already shows you, only once the fight is over, and it never talks to Wargaming's servers.</p>
+    <p>In all honesty: Wargaming publishes no official whitelist of mods. What can be guaranteed is that this mod does none of the things that are forbidden. That's exactly the list above.</p>
   </div>
 
   <div class="card rv">
-    <p class="lbl">Où vont les données</p>
-    <p>Les chiffres de fin de bataille partent vers le stockage commun de Clan Plus et servent aux
-    analyses de clan. Une copie reste chez toi dans <code>mods/configs/im.robert.clanui/</code>.
-    Si un envoi échoue, la bataille attend et repart plus tard. Rien n'est perdu.</p>
-    <p>Le détail de ce qui est conservé : <a href="/#legal-privacy">politique de confidentialité</a>.</p>
+    <p class="lbl">Where the data goes</p>
+    <p>The end-of-battle numbers go to the shared Clan Plus storage and feed the clan's analysis. A copy stays on your machine in <code>mods/configs/im.robert.clanui/</code>. If an upload fails, the battle waits and goes out later. Nothing is lost.</p>
+    <p>The full detail of what is kept: <a href="/#legal-privacy">privacy policy</a>.</p>
   </div>
 
   <!-- ⚠️ À ACTIVER quand le dépôt public existera, pas avant :
-       <div class="card rv"><p class="lbl">Code source</p>
-       <p>Le code du mod est public : <a href="URL">voir le dépôt</a>.</p></div> -->
+       <div class="card rv"><p class="lbl">Source code</p>
+       <p>The mod's code is public: <a href="URL">view the repository</a>.</p></div> -->
 </div></section>
 
 <section id="fait"><div class="sheet">
   <div class="rv">
-    <div class="sec-h"><span class="sec-n">03</span><h2>Trois choses,<br>et rien d'autre.</h2></div>
-    <p class="sec-sub">Le mod ne remplace pas ton jeu. Il fait trois choses, puis il se tait.</p>
+    <div class="sec-h"><span class="sec-n">03</span><h2>Three things,<br>and nothing else.</h2></div>
+    <p class="sec-sub">The mod doesn't replace your game. It does three things, then it keeps quiet.</p>
   </div>
   <div class="plates rv" style="grid-template-columns:repeat(auto-fit,minmax(268px,1fr))">
     <div class="plate">
-      <p class="lbl">Avant la bataille</p>
-      <h3>Armer sa formation</h3>
-      <p style="color:var(--ink-2);font-size:15px;margin:0">Tous tes chars dans une liste : nation,
-      tier, nom, type. Un clic sélectionne le char dans le garage. Coche
-      <span lang="en" style="color:var(--gold-hi)">Clan Wars simulation mode</span> et les chars
-      indisponibles passent <span lang="en" style="color:var(--halt)">OUT</span>, comme en vraies
-      Manœuvres.</p>
+      <p class="lbl">Before the battle</p>
+      <h3>Set up the line-up</h3>
+      <p style="color:var(--ink-2);font-size:15px;margin:0">Every tank you own in one list: nation, tier, name, type. One click selects the tank in the garage. Tick <span lang="en" style="color:var(--gold-hi)">Clan Wars simulation mode</span> and unavailable tanks switch to <span lang="en" style="color:var(--halt)">OUT</span>, just like in real Advances.</p>
     </div>
     <div class="plate">
-      <p class="lbl">Pendant la bataille</p>
-      <h3>Enregistrer le déroulé</h3>
-      <p style="color:var(--ink-2);font-size:15px;margin:0">Positions seconde par seconde, tirs,
-      dégâts coup par coup, éliminations, et la direction visée par chaque char. De quoi rejouer la
-      bataille sur le site et la débriefer.</p>
+      <p class="lbl">During the battle</p>
+      <h3>Record what happens</h3>
+      <p style="color:var(--ink-2);font-size:15px;margin:0">Positions second by second, shots, damage shot by shot, kills, and where each tank was aiming. Enough to replay the battle on the site and debrief it.</p>
     </div>
     <div class="plate">
-      <p class="lbl">Après la bataille</p>
-      <h3>Relever les chiffres</h3>
-      <p style="color:var(--ink-2);font-size:15px;margin:0">Dégâts, blocage, assistance, repérage,
-      éliminations, survie, carte, résultat. C'est la matière première des statistiques et du
-      Synergy Rating.</p>
+      <p class="lbl">After the battle</p>
+      <h3>Read the numbers</h3>
+      <p style="color:var(--ink-2);font-size:15px;margin:0">Damage, blocked, assisted, spotting, kills, survival, map, result. This is the raw material for the stats and the Synergy Rating.</p>
     </div>
   </div>
 </div></section>
 
 <section id="pose"><div class="sheet">
   <div class="rv">
-    <div class="sec-h"><span class="sec-n">04</span><h2>La pose</h2></div>
-    <p class="sec-sub">Un mod World of Tanks est un fichier qu'on dépose dans un dossier. Il n'y a
-    rien à exécuter. Deux minutes.</p>
+    <div class="sec-h"><span class="sec-n">04</span><h2>Installing it</h2></div>
+    <p class="sec-sub">A World of Tanks mod is a file you drop into a folder. There is nothing to run. Two minutes.</p>
   </div>
 
   <div class="route rv">
-    <p class="lbl">La voie courte</p>
-    <h3>Tu utilises le modpack d'Aslain ?</h3>
-    <p>Coche <strong>Clan Plus</strong> dans la liste au moment de l'installation. Rien d'autre à
-    faire : ni téléchargement, ni dossier à trouver. Si tu n'as jamais installé de mod à la main,
-    prends celle-ci. <strong>Ne le dépose pas aussi manuellement</strong>, tu te retrouverais avec
-    deux copies.</p>
+    <p class="lbl">The short way</p>
+    <h3>Using Aslain's modpack?</h3>
+    <p>Tick <strong>Clan Plus</strong> in the list while installing. Nothing else to do: no download, no folder to hunt for. If you've never installed a mod by hand, take this route. <strong>Don't also drop it in manually</strong> — you'd end up with two copies.</p>
   </div>
 
-  <p class="lbl rv">Sinon, à la main</p>
+  <p class="lbl rv">Otherwise, by hand</p>
   <div>
     <div class="step rv">
       <div class="step-n">01</div>
       <div>
-        <h3>Récupérer le fichier</h3>
-        <p><code>clanplus_1.0.31.wotmod</code>, 97 Ko. Il part dans ton dossier
-        <em>Téléchargements</em> comme n'importe quel fichier.</p>
-        <p style="margin-top:18px"><a class="btn btn-alt" style="height:46px;font-size:15px" href="download/clanplus_1.0.31.wotmod" download>Télécharger</a></p>
+        <h3>Get the file</h3>
+        <p><code>clanplus_1.0.31.wotmod</code>, 97 KB. It lands in your <em>Downloads</em> folder like any other file.</p>
+        <p style="margin-top:18px"><a class="btn btn-alt" style="height:46px;font-size:15px" href="download/clanplus_1.0.31.wotmod" download>Download</a></p>
         <div class="card warn" style="margin-top:20px">
-          <p class="lbl">Si le navigateur bloque</p>
-          <p style="margin:0">Certains navigateurs se méfient d'une extension qu'ils ne connaissent
-          pas. Choisis <strong>« Conserver »</strong>. Ce n'est pas un programme, c'est une archive
-          que seul World of Tanks sait lire, et son contenu est décrit plus haut.</p>
+          <p class="lbl">If the browser blocks it</p>
+          <p style="margin:0">Some browsers are wary of a file extension they don't recognise. Choose <strong>“Keep”</strong>. It isn't a program — it's an archive only World of Tanks knows how to read, and its contents are described above.</p>
         </div>
       </div>
     </div>
@@ -894,22 +991,18 @@ footer p{max-width:70ch;font-size:13.5px;line-height:1.7}
     <div class="step rv">
       <div class="step-n">02</div>
       <div>
-        <h3>Ouvrir le dossier du jeu</h3>
-        <p>Dans le <strong>Wargaming Game Center</strong> : clique sur World of Tanks, puis sur la
-        roue dentée, puis <strong>« Afficher dans l'explorateur »</strong>. Sinon il se trouve en
-        général dans <code>C:\Games\World_of_Tanks_EU\</code>.</p>
-<div class="tree" role="img" aria-label="Dans le dossier du jeu, le fichier du mod se dépose dans le dossier mods, puis dans le sous-dossier portant le numéro de version, par exemple 2.3.1.0.">World_of_Tanks_EU\
-   res\
-   res_mods\
-   <span class="on">mods\</span>
-      <span class="on">2.3.1.0\</span>
-         <span class="hit">clanplus_1.0.31.wotmod</span>   <span class="cm">← ici</span>
-   WorldOfTanks.exe</div>
+        <h3>Open the game folder</h3>
+        <p>In the <strong>Wargaming Game Center</strong>: click World of Tanks, then the cog, then <strong>“Show in Explorer”</strong>. Failing that, it's usually in <code>C:\Games\World_of_Tanks_EU\</code>.</p>
+<div class="tree" role="img" aria-label="Inside the game folder, the mod file goes into the mods folder, then into the subfolder named after the version number, for example 2.3.1.0.">World_of_Tanks_EU\
+               res\
+               res_mods\
+               <span class="on">mods\</span>
+                  <span class="on">2.3.1.0\</span>
+                     <span class="hit">clanplus_1.0.31.wotmod</span>   <span class="cm">← here</span>
+               WorldOfTanks.exe</div>
         <div class="card warn">
-          <p class="lbl">L'erreur la plus fréquente</p>
-          <p style="margin:0">Le dossier s'appelle <code>mods</code>, <strong>pas</strong>
-          <code>res_mods</code>. Les deux existent côte à côte et ne servent pas à la même chose :
-          un fichier déposé dans <code>res_mods</code> ne sera jamais chargé.</p>
+          <p class="lbl">The most common mistake</p>
+          <p style="margin:0">The folder is called <code>mods</code>, <strong>not</strong> <code>res_mods</code>. Both exist side by side and they do different jobs: a file dropped into <code>res_mods</code> will never be loaded.</p>
         </div>
       </div>
     </div>
@@ -917,14 +1010,11 @@ footer p{max-width:70ch;font-size:13.5px;line-height:1.7}
     <div class="step rv">
       <div class="step-n">03</div>
       <div>
-        <h3>Déposer le fichier</h3>
-        <p>Dans <code>mods</code>, ouvre le dossier qui porte le numéro de version du jeu, puis
-        glisse le fichier dedans. Rien à décompresser, rien à renommer.</p>
+        <h3>Drop the file in</h3>
+        <p>Inside <code>mods</code>, open the folder named after the game's version number, then drag the file into it. Nothing to unzip, nothing to rename.</p>
         <div class="card warn">
-          <p class="lbl">Le dossier n'existe pas ?</p>
-          <p style="margin:0">Sur une installation neuve, <code>mods</code> peut être vide. Crée un
-          dossier portant <strong>exactement</strong> le numéro de version affiché par le Game
-          Center, par exemple <code>2.3.1.0</code>, et dépose le fichier dedans.</p>
+          <p class="lbl">The folder isn't there?</p>
+          <p style="margin:0">On a fresh install, <code>mods</code> can be empty. Create a folder named <strong>exactly</strong> after the version number the Game Center shows, for example <code>2.3.1.0</code>, and drop the file inside.</p>
         </div>
       </div>
     </div>
@@ -932,112 +1022,83 @@ footer p{max-width:70ch;font-size:13.5px;line-height:1.7}
     <div class="step rv">
       <div class="step-n">04</div>
       <div>
-        <h3>Vérifier</h3>
-        <p>Lance le jeu et va sur un écran de <strong>Bastion</strong>, de <strong>Manœuvres</strong>
-        ou d'<strong>Incursion</strong>. La fenêtre n'apparaît nulle part ailleurs, c'est voulu. Si
-        tu ne la vois pas, appuie sur <code>F2</code>.</p>
+        <h3>Check it</h3>
+        <p>Launch the game and go to a <strong>Stronghold</strong>, <strong>Advances</strong> or <strong>Skirmish</strong> screen. The window appears nowhere else, and that's deliberate. If you can't see it, press <code>F2</code>.</p>
         <div class="card key">
-          <p class="lbl">Comment savoir que ça marche</p>
-          <p style="margin:0">Tu vois la fenêtre montrée en haut de cette page, avec la liste de tes
-          chars. Joue une bataille de clan : quelques secondes après la fin, elle est enregistrée.
-          Connecte-toi sur <a href="/">clanplus.eu</a> avec ton compte World of Tanks, elle apparaît
-          dans « Batailles ».</p>
+          <p class="lbl">How to know it's working</p>
+          <p style="margin:0">You see the window shown at the top of this page, listing your tanks. Play a clan battle: a few seconds after it ends, it's recorded. Sign in at <a href="/">clanplus.eu</a> with your World of Tanks account and it appears under “Battles”.</p>
         </div>
       </div>
     </div>
   </div>
 
   <div class="card rv" style="margin-top:34px">
-    <p class="lbl">À chaque mise à jour de World of Tanks</p>
-    <p style="margin:0">Le jeu crée un nouveau dossier de version dans <code>mods</code> et les mods
-    de l'ancien ne sont plus chargés. Recopie le fichier dans le nouveau dossier. C'est tout : tes
-    réglages et ton historique sont ailleurs et ne bougent pas.</p>
+    <p class="lbl">Every time World of Tanks updates</p>
+    <p style="margin:0">The game creates a new version folder inside <code>mods</code> and the mods in the old one stop loading. Copy the file into the new folder. That's all: your settings and your history live elsewhere and don't move.</p>
   </div>
 </div></section>
 
 <section id="versions"><div class="sheet">
   <div class="rv">
-    <div class="sec-h"><span class="sec-n">05</span><h2>Le carnet</h2></div>
-    <p class="sec-sub">Le mod se met à jour en remplaçant le fichier. Aucune désinstallation.</p>
+    <div class="sec-h"><span class="sec-n">05</span><h2>The changelog</h2></div>
+    <p class="sec-sub">Updating the mod means replacing the file. Nothing to uninstall.</p>
   </div>
   <div class="rel rv">
-    <div class="rel-v now">1.0.31 · actuelle</div>
+    <div class="rel-v now">1.0.31 · current</div>
     <div class="rel-b now">
-      <h3>On voit où chaque char regarde</h3>
-      <p>Le mod enregistre la direction visée par chaque char : orientation de la caisse, plus angle
-      de la tourelle. Sur le rejeu, un char qui tient un angle se distingue enfin d'un char qui
-      traverse.</p>
+      <h3>You can see where each tank is looking</h3>
+      <p>The mod records where each tank is aiming: hull heading plus turret angle. On the replay, a tank holding an angle is finally distinguishable from one just driving through.</p>
     </div>
     <div class="rel-v">1.0.30</div>
     <div class="rel-b">
-      <h3>Les envois ne se perdent plus</h3>
-      <p>Quand un envoi échoue, la bataille est mise en file d'attente au lieu d'être perdue, puis
-      renvoyée automatiquement. Ajout d'un panneau de réglages accessible depuis le garage.</p>
+      <h3>Uploads no longer get lost</h3>
+      <p>When an upload fails, the battle is queued instead of lost, then sent again automatically. Added a settings panel reachable from the garage.</p>
     </div>
     <div class="rel-v">1.0.29</div>
     <div class="rel-b">
-      <h3>Les vrais drapeaux de base</h3>
-      <p>Les bases ne sont plus des cercles mais les drapeaux d'origine du jeu, y compris la base
-      neutre des batailles en 7 contre 7.</p>
+      <h3>The real base flags</h3>
+      <p>Bases are no longer circles but the game's own flags, including the neutral base in 7-vs-7 battles.</p>
     </div>
     <div class="rel-v">1.0.27</div>
     <div class="rel-b" style="padding-bottom:0">
-      <h3>Le rejeu devient une analyse</h3>
-      <p>Éliminations, dégâts coup par coup avec leur auteur, et tirs enregistrés. La bataille peut
-      être rejouée et débriefée sur le site.</p>
+      <h3>The replay becomes an analysis</h3>
+      <p>Kills, damage shot by shot with who dealt it, and every shot recorded. The battle can be replayed and debriefed on the site.</p>
     </div>
   </div>
 </div></section>
 
 <section id="secours"><div class="sheet">
   <div class="rv">
-    <div class="sec-h"><span class="sec-n">06</span><h2>En cas de panne</h2></div>
-    <p class="sec-sub" style="margin-bottom:28px">Les cinq situations qui reviennent.</p>
+    <div class="sec-h"><span class="sec-n">06</span><h2>When something goes wrong</h2></div>
+    <p class="sec-sub" style="margin-bottom:28px">The five cases that keep coming up.</p>
   </div>
   <div class="rv">
-    <details><summary>La fenêtre n'apparaît pas</summary>
-      <p>Dans l'ordre : appuie sur <code>F2</code>, elle a peut-être simplement été fermée. Vérifie
-      que tu es bien sur un écran de <strong>Bastion, Manœuvres ou Incursion</strong>. Enfin,
-      contrôle que le fichier est dans <code>mods</code> et non <code>res_mods</code>, et que le
-      dossier de version correspond à la version du jeu que tu lances.</p></details>
-    <details><summary>Le jeu a été mis à jour et le mod a disparu</summary>
-      <p>Normal : chaque version du jeu a son propre dossier dans <code>mods</code>. Recopie le
-      fichier dans le nouveau. Tes réglages et ton historique sont conservés.</p></details>
-    <details><summary>Mes batailles n'apparaissent pas sur le site</summary>
-      <p>Seules les <strong>batailles de clan</strong> sont enregistrées, les batailles aléatoires
-      ne comptent jamais. Vérifie aussi que tu es connecté avec le compte World of Tanks
-      <em>avec lequel tu as joué</em>. Si un envoi a échoué, la bataille repartira au prochain
-      lancement.</p></details>
-    <details><summary>J'ai d'autres mods, y a-t-il un risque de conflit ?</summary>
-      <p>Le mod est autonome et n'écrase aucun fichier du jeu. Il utilise ModsSettingsAPI et
-      ModsList s'ils sont présents, mais fonctionne sans. En cas d'erreur il se désactive
-      silencieusement plutôt que de faire planter la partie. Si un autre mod utilise déjà
-      <code>F2</code>, la touche est modifiable dans les réglages.</p></details>
-    <details><summary>Comment le désinstaller ?</summary>
-      <p>Supprime le fichier <code>.wotmod</code> du dossier <code>mods/&lt;version&gt;/</code>.
-      Pour effacer aussi les réglages et l'historique local, supprime le dossier
-      <code>mods/configs/im.robert.clanui/</code>.</p></details>
+    <details><summary>The window doesn't appear</summary>
+      <p>In order: press <code>F2</code> — it may simply have been closed. Check you're actually on a <strong>Stronghold, Advances or Skirmish</strong> screen. Finally, make sure the file is in <code>mods</code> and not <code>res_mods</code>, and that the version folder matches the version of the game you're launching.</p></details>
+    <details><summary>The game updated and the mod vanished</summary>
+      <p>That's expected: each game version has its own folder inside <code>mods</code>. Copy the file into the new one. Your settings and your history are kept.</p></details>
+    <details><summary>My battles don't show up on the site</summary>
+      <p>Only <strong>clan battles</strong> are recorded — random battles never count. Also check you're signed in with the World of Tanks account <em>you actually played on</em>. If an upload failed, the battle will go out again next time you launch.</p></details>
+    <details><summary>I have other mods — could they conflict?</summary>
+      <p>The mod is self-contained and overwrites no game file. It uses ModsSettingsAPI and ModsList when they're there, but works without them. If it errors, it switches itself off quietly rather than crashing your game. If another mod already uses <code>F2</code>, the key can be changed in the settings.</p></details>
+    <details><summary>How do I uninstall it?</summary>
+      <p>Delete the <code>.wotmod</code> file from <code>mods/&lt;version&gt;/</code>. To wipe the settings and local history as well, delete the <code>mods/configs/im.robert.clanui/</code> folder.</p></details>
   </div>
 </div></section>
 
 <div class="end"><div class="sheet rv">
-  <h2>Deux minutes.</h2>
-  <p>Un fichier, un dossier. Et chaque bataille de clan que tu joues nourrit les analyses de tout
-  le clan.</p>
-  <a class="btn btn-go" href="download/clanplus_1.0.31.wotmod" download>Télécharger la version 1.0.31</a>
+  <h2>Two minutes.</h2>
+  <p>One file, one folder. And every clan battle you play feeds the whole clan's analysis.</p>
+  <a class="btn btn-go" href="download/clanplus_1.0.31.wotmod" download>Download version 1.0.31</a>
 </div></div>
 
 </main>
 
 <footer><div class="sheet">
-  <nav class="fnav" aria-label="Liens du site">
-    <a href="/">Site</a><a href="aide-editeur.html">Manuel de l'éditeur</a>
-    <a href="aide-sr.html">Le SR expliqué</a><a href="soutenir.html">Soutenir</a>
-    <a href="/#legal-privacy">Confidentialité</a><a href="/#legal-mentions">Mentions légales</a>
+  <nav class="fnav" aria-label="Site links">
+    <a href="/">Site</a><a href="aide-editeur.html">Editor manual</a> <a href="aide-sr.html">The SR explained</a><a href="soutenir.html">Support</a> <a href="/#legal-privacy">Privacy</a><a href="/#legal-mentions">Legal notice</a>
   </nav>
-  <p>Clan Plus est un projet communautaire indépendant, gratuit et sans publicité, développé par un
-  joueur de World of Tanks EU. <strong>Non affilié à Wargaming.</strong> World of Tanks est une
-  marque de Wargaming.net.</p>
+  <p>Clan Plus is an independent community project, free and ad-free, built by a World of Tanks EU player. <strong>Not affiliated with Wargaming.</strong> World of Tanks is a trademark of Wargaming.net.</p>
 </div></footer>
 
 <script>
@@ -1124,6 +1185,18 @@ footer p{max-width:70ch;font-size:13.5px;line-height:1.7}
   });
 })();
 
+</script>
+<script>
+(function(){
+  // sous 700 px le panneau latéral tomberait à 5 px de haut : on recadre
+  var carte = document.querySelector(".map");
+  if (!carte) return;
+  function cadre(){
+    carte.setAttribute("viewBox", window.innerWidth <= 700 ? "16 16 448 448" : "0 0 690 480");
+  }
+  cadre();
+  addEventListener("resize", cadre, { passive: true });
+})();
 </script>
 </body>
 </html>

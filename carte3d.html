@@ -1,32 +1,51 @@
 <!doctype html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Cartes 3D World of Tanks — relief réel des maps | Clan Plus</title>
-<meta name="description" content="Explore les cartes de World of Tanks en 3D : relief réel extrait du jeu, textures d'origine et bâtiments. Tourne, zoome et repère les positions clés avant tes batailles de clan.">
+<title>World of Tanks 3D maps — real terrain elevation | Clan Plus</title>
+<meta name="description" content="Explore World of Tanks maps in 3D: real elevation pulled from the game, original textures and buildings. Rotate, zoom and scout the key positions before your clan battles.">
 <link rel="canonical" href="https://clanplus.eu/carte3d.html">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Clan Plus">
-<meta property="og:locale" content="fr_FR">
+<meta property="og:locale" content="en_GB">
 <meta property="og:url" content="https://clanplus.eu/carte3d.html">
-<meta property="og:title" content="Cartes 3D World of Tanks — relief réel des maps">
-<meta property="og:description" content="Le relief réel des cartes du jeu en 3D : tourne, zoome, analyse le terrain.">
+<meta property="og:title" content="World of Tanks 3D maps — real terrain elevation">
+<meta property="og:description" content="The game's real map elevation in 3D: rotate, zoom, read the ground.">
 <meta property="og:image" content="https://clanplus.eu/og.jpg">
 <meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<script src="i18n/carte3d.fr.js"></script>
+<script src="i18n.js"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
+  /* ── typographie de la DA publique ──────────────────────────────── */
+  :root{
+    --d-cond:"IBM Plex Sans Condensed",system-ui,sans-serif;
+    --d-sans:"IBM Plex Sans",system-ui,sans-serif;
+    --d-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  }
+  /* Cette page couvre tout l ecran d un rendu 3D : le grain de la DA n a
+     pas de surface visible. On ne pose que la typographie. */
+  h1,h2,h3{font-family:var(--d-cond);letter-spacing:.005em}
+  h1{font-weight:700} h2,h3{font-weight:600}
+  /* toute donnée chiffrée s'aligne en colonne */
+  .num,td.num,code,kbd,.mono{font-family:var(--d-mono);font-variant-numeric:tabular-nums}
+  :focus-visible{outline:2px solid var(--gold,#d8b566);outline-offset:3px}
+
   :root{
     --bg:#0c0d0f; --panel:rgba(18,19,22,.86); --line:#2b2d31;
     --gold:#e5b95c; --gold2:#f4d78c; --gold-soft:rgba(229,185,92,.14);
     --ink:#ece6d6; --muted:#9a9280;
   }
   *{box-sizing:border-box}
-  html,body{margin:0;height:100%;background:radial-gradient(120% 90% at 50% -5%,#16181c 0%,var(--bg) 60%);
-    color:var(--ink);font-family:ui-sans-serif,system-ui,"Segoe UI",Roboto,Arial,sans-serif;overflow:hidden}
+  html,body{margin:0;height:100%;background:radial-gradient(120% 90% at 50% -5%,#171614 0%,var(--bg) 60%);
+    color:var(--ink);font-family:var(--d-sans);overflow:hidden}
   #wrap{position:fixed;inset:0}
   canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
   canvas:active{cursor:grabbing}
-  .glass{background:var(--panel);border:1px solid var(--line);border-radius:12px;
+  .glass{background:var(--panel);border:1px solid var(--line);border-radius:3px;
     box-shadow:0 10px 34px rgba(0,0,0,.5);backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px)}
   #title{position:absolute;top:16px;left:16px;padding:12px 16px 13px;max-width:60vw}
   #title .eyebrow{font-size:10.5px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--gold);display:flex;align-items:center;gap:7px}
@@ -41,12 +60,12 @@
   #hud .grp{display:flex;align-items:center;gap:8px;padding:0 3px}
   #hud label{font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap;letter-spacing:.3px}
   #hud input[type=range]{width:120px;accent-color:var(--gold)}
-  select{appearance:none;background:#191a1e url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M0 0l5 6 5-6z' fill='%23e5b95c'/></svg>") no-repeat right 10px center;
-    border:1px solid var(--line);color:var(--ink);font:inherit;font-size:13px;font-weight:600;padding:8px 28px 8px 12px;border-radius:9px;cursor:pointer;min-width:172px}
+  select{appearance:none;background:#1c1b18 url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M0 0l5 6 5-6z' fill='%23e5b95c'/></svg>") no-repeat right 10px center;
+    border:1px solid var(--line);color:var(--ink);font:inherit;font-size:13px;font-weight:600;padding:8px 28px 8px 12px;border-radius:3px;cursor:pointer;min-width:172px}
   select:hover{border-color:var(--gold)}
   .sep{width:1px;height:24px;background:var(--line)}
-  .btn{appearance:none;border:1px solid var(--line);background:#191a1e;color:var(--ink);font:inherit;font-size:12px;
-    font-weight:700;padding:8px 12px;border-radius:9px;cursor:pointer;transition:.12s;white-space:nowrap}
+  .btn{appearance:none;border:1px solid var(--line);background:#1c1b18;color:var(--ink);font:inherit;font-size:12px;
+    font-weight:700;padding:8px 12px;border-radius:3px;cursor:pointer;transition:.12s;white-space:nowrap}
   .btn:hover{border-color:var(--gold);color:var(--gold2)}
   .btn.on{border-color:var(--gold);color:var(--gold);background:var(--gold-soft)}
   #hint{position:absolute;right:16px;bottom:18px;font-size:11.5px;color:var(--muted);text-align:right;line-height:1.5;pointer-events:none}
@@ -65,38 +84,30 @@
 <div id="wrap">
   <canvas id="c"></canvas>
   <div id="title" class="glass">
-    <div class="eyebrow">World of Tanks · Carte 3D</div>
-    <h1 id="mapName">Chargement…</h1>
-    <div class="sub" id="mapSub">Relief réel extrait du jeu</div>
+    <div class="eyebrow">World of Tanks · 3D map</div>
+    <h1 id="mapName">Loading…</h1>
+    <div class="sub" id="mapSub">Real elevation extracted from the game</div>
   </div>
-  <a id="back" class="glass" href="index.html">← Retour au site</a>
+  <a id="back" class="glass" href="index.html">← Back to the site</a>
   <div id="hud" class="glass">
     <div class="grp"><select id="mapSel"></select></div>
     <div class="sep"></div>
-    <div class="grp"><label>Relief</label><input id="exag" type="range" min="0.35" max="2.6" step="0.05" value="1"></div>
+    <div class="grp" id="cpLang"></div>
+    <div class="sep"></div>
+    <div class="grp"><label>Terrain</label><input id="exag" type="range" min="0.35" max="2.6" step="0.05" value="1"></div>
     <div class="sep"></div>
     <button class="btn on" id="texBtn">Texture</button>
-    <button class="btn" id="wireBtn">Grille</button>
-    <button class="btn" id="bldBtn" style="display:none" title="Aperçu des bâtiments (positions extraites du jeu)">Bâtiments</button>
-    <button class="btn" id="resetBtn">Recadrer</button>
+    <button class="btn" id="wireBtn">Grid</button>
+    <button class="btn" id="bldBtn" style="display:none" title="Building preview (positions extracted from the game)">Buildings</button>
+    <button class="btn" id="resetBtn">Recentre</button>
   </div>
-  <div id="hint"><b>Glisser</b> pour tourner · <b>Molette</b> pour zoomer · <b>Clic droit</b> déplacer</div>
-  <div id="load" class="on"><div class="box glass"><span class="spin"></span>Chargement du relief…</div></div>
-  <div id="err" class="glass">Ton navigateur n'a pas pu démarrer la 3D (WebGL requis).</div>
+  <div id="hint"><b>Drag</b> to rotate · <b>Scroll</b> to zoom · <b>Right-click</b> to pan</div>
+  <div id="load" class="on"><div class="box glass"><span class="spin"></span>Loading the terrain…</div></div>
+  <div id="err" class="glass">Your browser couldn't start 3D (WebGL required).</div>
 </div>
 <script>
-const NAMES={himmelsdorf:"Himmelsdorf",karelia:"Karélie",malinovka:"Malinovka",campaniabig:"Campanie",prohorovka:"Prokhorovka",
-ensk:"Ensk",enskbig:"Ensk (grande)",lakeville:"Lakeville",ruinberg:"Ruinberg",ruinbergsm:"Ruinberg (hiver)",hills:"Mines",
-murovanka:"Murovanka",erlenberg:"Erlenberg",siegfriedline:"Ligne Siegfried",munchen:"Munich",cliff:"Falaise",monastery:"Monastère",
-westfeld:"Westfield",desert:"Sables mouvants",elhallouf:"El Halluf",airfield:"Aérodrome",fjord:"Fjord",redshire:"Comté rouge",
-steppes:"Steppes",fishingbay:"Baie de pêche",caucasus:"Serene Coast",mannerheimline:"Ligne Mannerheim",tundra:"Toundra",
-canadaa:"Highway",asiagreatwall:"Grande Muraille",asiamiao:"Pearl River",northamerica:"Live Oaks",czech:"Ville fortifiée",
-sweden:"Côte rocheuse",poland:"Passe glacée",grafzeppelin:"Graf Zeppelin",japort:"Port pacifique",
-lostcityctf:"Cité perdue",lostparadisev:"Paradis perdu",lastfrontierv:"Dernière frontière",eiffeltowerctf:"Paris",
-dday:"Débarquement",ddaysm:"Débarquement (hiver)",germany:"Berlin",germanysm:"Berlin (hiver)",grafzeppelinscc:"Graf Zeppelin",
-brbattlecity:"Ville",eralaska:"Alaska",bfepicdesert:"Désert (Épique)",bfepicnormandy:"Normandie (Épique)",
-wgepicsuburbia:"Banlieue (Épique)",epicrandomvalleysm:"Vallée (Épique)",normandynom:"Normandie"};
-function pretty(k){ return NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1); }
+const NAMES={himmelsdorf:"Himmelsdorf",karelia:"Karelia",malinovka:"Malinovka",campaniabig:"Campania",prohorovka:"Prokhorovka",ensk:"Ensk",enskbig:"Ensk (large)",lakeville:"Lakeville",ruinberg:"Ruinberg",ruinbergsm:"Ruinberg (winter)",hills:"Mines",murovanka:"Murovanka",erlenberg:"Erlenberg",siegfriedline:"Siegfried Line",munchen:"Munich",cliff:"Cliff",monastery:"Abbey",westfeld:"Westfield",desert:"Sand River",elhallouf:"El Halluf",airfield:"Airfield",fjord:"Fjords",redshire:"Redshire",steppes:"Steppes",fishingbay:"Fisherman's Bay",caucasus:"Serene Coast",mannerheimline:"Mannerheim Line",tundra:"Tundra",canadaa:"Highway",asiagreatwall:"Great Wall",asiamiao:"Pearl River",northamerica:"Live Oaks",czech:"Pilsen",sweden:"Rocky coast",poland:"Icy pass",grafzeppelin:"Graf Zeppelin",japort:"Pacific port",lostcityctf:"Lost city",lostparadisev:"Lost paradise",lastfrontierv:"Last frontier",eiffeltowerctf:"Paris",dday:"D-Day",ddaysm:"D-Day (winter)",germany:"Berlin",germanysm:"Berlin (winter)",grafzeppelinscc:"Graf Zeppelin",brbattlecity:"City",eralaska:"Alaska",bfepicdesert:"Desert (Epic)",bfepicnormandy:"Normandy (Epic)",wgepicsuburbia:"Suburbia (Epic)",epicrandomvalleysm:"Valley (Epic)",normandynom:"Normandy"};
+function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
 
 (function(){
   const cv=document.getElementById("c");
@@ -281,9 +292,9 @@ function pretty(k){ return NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1); }
       loadTex("maps3d/"+key+"/tex.jpg","maps/top/"+key+".jpg");
       loadObjects(key);
       frameCam();
-      document.getElementById("mapSub").textContent="Relief réel · "+WORLD+" m";
+      document.getElementById("mapSub").textContent=t("Real elevation")+" · "+WORLD+" m";
       try{ localStorage.setItem("cp_map3d",key); }catch(_){}
-    }catch(e){ document.getElementById("mapName").textContent="Erreur de chargement"; }
+    }catch(e){ document.getElementById("mapName").textContent=t("Loading error"); }
     loadEl.classList.remove("on");
   }
 
@@ -323,10 +334,10 @@ function pretty(k){ return NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1); }
   }
 
   // ---- init : liste des cartes ----
-  if(!uintExt){ document.getElementById("err").style.display="flex"; document.getElementById("err").textContent="Ce navigateur ne supporte pas le maillage 32 bits requis."; loadEl.classList.remove("on"); return; }
+  if(!uintExt){ document.getElementById("err").style.display="flex"; document.getElementById("err").textContent=t("This browser doesn't support the 32-bit mesh required."); loadEl.classList.remove("on"); return; }
   fetch("maps3d/index.json").then(r=>r.json()).then(list=>{
     const sel=document.getElementById("mapSel");
-    list.map(m=>m.key).sort((a,b)=>pretty(a).localeCompare(pretty(b),'fr')).forEach(k=>{
+    list.map(m=>m.key).sort((a,b)=>pretty(a).localeCompare(pretty(b), window.CP_LANG==="fr"?'fr':'en')).forEach(k=>{
       const o=document.createElement("option"); o.value=k; o.textContent=pretty(k); sel.appendChild(o);
     });
     let start="himmelsdorf"; try{ const s=localStorage.getItem("cp_map3d"); if(s&&list.some(m=>m.key===s)) start=s; }catch(_){}
@@ -335,7 +346,7 @@ function pretty(k){ return NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1); }
     sel.addEventListener("change",()=>loadMap(sel.value));
     loadMap(start);
     requestAnimationFrame(frame);
-  }).catch(()=>{ document.getElementById("err").style.display="flex"; document.getElementById("err").textContent="Impossible de charger la liste des cartes (maps3d/index.json)."; loadEl.classList.remove("on"); });
+  }).catch(()=>{ document.getElementById("err").style.display="flex"; document.getElementById("err").textContent=t("Couldn't load the map list (maps3d/index.json)."); loadEl.classList.remove("on"); });
 })();
 </script>
 <script>
@@ -344,15 +355,15 @@ function pretty(k){ return NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1); }
 (function(){
   if(/[?&]dev/.test(location.search)) return;
   var d=document.createElement("div");
-  d.setAttribute("style","position:fixed;inset:0;z-index:99999;background:#0c0c0b;color:#f6f5f1;"+
+  d.setAttribute("style","position:fixed;inset:0;z-index:99999;background:#0a0a09;color:#f7f6f2;"+
     "display:flex;align-items:center;justify-content:center;padding:24px;"+
-    "font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif");
+    "font-family:var(--d-sans)");
   d.innerHTML="<div style='max-width:520px;text-align:center'>"+
     "<div style='font-size:38px;margin-bottom:14px'>D83dDea7</div>"+
-    "<h1 style='font-size:22px;margin:0 0 10px;font-weight:800'>Cartes 3D 2014 en construction</h1>"+
-    "<p style='margin:0 0 18px;color:#bdb9af;line-height:1.6'>Le relief r00e9el des cartes est en cours de d00e9veloppement. "+
-    "Cette page sera ouverte 00e0 tout le clan d00e8s qu'elle sera pr00eate.</p>"+
-    "<a href='/' style='color:#d8b566;font-weight:700'>2190 Retour au site</a></div>";
+    "<h1 style='font-size:22px;margin:0 0 10px;font-weight:800'>3D maps — under construction</h1>"+
+    "<p style='margin:0 0 18px;color:#c2beb4;line-height:1.6'>The real map elevation is still being built. "+
+    "It will open to the whole clan as soon as it is ready.</p>"+
+    "<a href='/' style='color:#d8b566;font-weight:700'>← Back to the site</a></div>";
   document.addEventListener("DOMContentLoaded",function(){ document.body.appendChild(d); });
   if(document.body) document.body.appendChild(d);
 })();

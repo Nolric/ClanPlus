@@ -1,22 +1,25 @@
 <!doctype html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Clan Plus — Statistiques Bastion & outils de clan World of Tanks</title>
-<meta name="description" content="Clan Plus : statistiques de Bastion, Incursions et Clan Wars pour ton clan World of Tanks. Replays de bataille, line-ups, stratégies et cartes 3D. Gratuit, connexion Wargaming.">
+<title>Clan Plus — Stronghold stats & clan tools for World of Tanks</title>
+<meta name="description" content="Clan Plus: Stronghold, Skirmish and Clan Wars statistics for your World of Tanks clan. Battle replays, line-ups, strategies and 3D maps. Free, sign in with Wargaming.">
 <link rel="canonical" href="https://clanplus.eu/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Clan Plus">
-<meta property="og:locale" content="fr_FR">
+<meta property="og:locale" content="en_GB">
 <meta property="og:url" content="https://clanplus.eu/">
-<meta property="og:title" content="Clan Plus — les outils de ton clan World of Tanks">
-<meta property="og:description" content="Statistiques Bastion, replays de bataille rejouables, line-ups et stratégies. Connecte-toi avec ton compte Wargaming.">
+<meta property="og:title" content="Clan Plus — the tools for your World of Tanks clan">
+<meta property="og:description" content="Stronghold stats, replayable battles, line-ups and strategies. Sign in with your Wargaming account.">
 <meta property="og:image" content="https://clanplus.eu/og.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20240%20240%22%3E%3Crect%20width%3D%22240%22%20height%3D%22240%22%20rx%3D%2254%22%20fill%3D%22%23141310%22%2F%3E%3Cg%20transform%3D%22translate%2830%2030%29%20scale%280.75%29%22%20fill%3D%22%23d8b566%22%3E%3Ccircle%20cx%3D%22120%22%20cy%3D%22120%22%20r%3D%22100%22%20fill%3D%22none%22%20stroke%3D%22%23d8b566%22%20stroke-width%3D%227%22%2F%3E%3Crect%20x%3D%2281%22%20y%3D%228%22%20width%3D%2218%22%20height%3D%2218%22%2F%3E%3Crect%20x%3D%22111%22%20y%3D%224%22%20width%3D%2218%22%20height%3D%2218%22%2F%3E%3Crect%20x%3D%22141%22%20y%3D%228%22%20width%3D%2218%22%20height%3D%2218%22%2F%3E%3Cpath%20d%3D%22M161%2C155%20A54%2C54%200%201%201%20161%2C85%22%20fill%3D%22none%22%20stroke%3D%22%23d8b566%22%20stroke-width%3D%2220%22%20stroke-linecap%3D%22round%22%2F%3E%3Crect%20x%3D%22112%22%20y%3D%2294%22%20width%3D%2216%22%20height%3D%2252%22%20rx%3D%225%22%2F%3E%3Crect%20x%3D%2294%22%20y%3D%22112%22%20width%3D%2252%22%20height%3D%2216%22%20rx%3D%225%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<script src="i18n/index.fr.js"></script>
+<script src="i18n/index.en.js"></script>
+<script src="i18n.js"></script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
   :root{
@@ -1592,6 +1595,26 @@
      l'action, plus l'échantillon sur lequel elle repose : un conseil
      sans son échantillon est une opinion. */
   #viewPlayer .coach{margin:14px 0 24px}
+  /* ══ ÉTATS VIDES ══ un compte à rebours, pas une page morte ══════ */
+  .cpv{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:32px 30px;margin:8px 0 18px;max-width:760px}
+  .cpv-ic{font-size:30px;line-height:1;margin-bottom:14px;opacity:.9}
+  .cpv h3{font-size:19px;font-weight:800;margin:0 0 8px;letter-spacing:-.015em}
+  .cpv p{margin:0;font-size:14.5px;line-height:1.62;color:var(--ink-2);max-width:62ch}
+  .cpv-es{margin-top:20px;display:flex;flex-direction:column;gap:12px;max-width:420px}
+  .cpv-el{display:flex;justify-content:space-between;gap:12px;font-size:12.5px;
+    color:var(--muted);margin-bottom:5px}
+  .cpv-el b{color:var(--ink);font-variant-numeric:tabular-nums}
+  .cpv-eb{height:7px;background:var(--surface-2);border-radius:4px;overflow:hidden}
+  .cpv-eb i{display:block;height:100%;background:var(--accent);border-radius:4px;
+    transform-origin:left center}
+  .cpv-e.ok .cpv-eb i{background:var(--good)}
+  .cpv-a{margin:20px 0 0;padding-left:20px;font-size:14px;line-height:1.65;color:var(--ink-2)}
+  .cpv-a li{margin:0 0 9px}
+  .cpv-a b{color:var(--ink)}
+  .rev .cpv{animation:ccEntre .5s cubic-bezier(.16,1,.3,1) both}
+  .rev .cpv-eb i{animation:ccPousse .8s cubic-bezier(.16,1,.3,1) .2s both}
+  @media (prefers-reduced-motion:reduce){ .rev .cpv,.rev .cpv-eb i{animation:none} }
   /* ══ LES OBJECTIFS ════════════════════════════════════════════════
      La barre bouge parce que le joueur joue, pas parce qu on l anime :
      elle se calcule sur ses dix dernieres batailles. */
@@ -2720,32 +2743,31 @@
   <div class="sh"><header class="lnav">
     <a class="lbrand" href="/"><span class="mk"><svg viewBox="0 0 240 240" aria-hidden="true"><circle cx="120" cy="120" r="100" fill="none" stroke="#d8b566" stroke-width="7"/><circle cx="120" cy="120" r="88" fill="none" stroke="#d8b566" stroke-width="2.5" opacity=".5"/><rect x="81" y="8" width="18" height="18" fill="#d8b566"/><rect x="111" y="4" width="18" height="18" fill="#d8b566"/><rect x="141" y="8" width="18" height="18" fill="#d8b566"/><circle cx="20" cy="120" r="4.5" fill="#d8b566"/><circle cx="220" cy="120" r="4.5" fill="#d8b566"/><path d="M161,155 A54,54 0 1 1 161,85" fill="none" stroke="#d8b566" stroke-width="20" stroke-linecap="round"/><rect x="112" y="94" width="16" height="52" rx="5" fill="#d8b566"/><rect x="94" y="112" width="52" height="16" rx="5" fill="#d8b566"/></svg></span><b>Clan <em>Plus</em></b></a>
     <span class="lsp"></span>
-    <a class="llk" href="mod.html">Le mod</a>
-    <a class="llk" href="soutenir.html">Soutenir</a>
-    <button class="lgo" id="lpLoginTop">Se connecter</button>
+    <a class="llk" href="mod.html">The mod</a>
+    <a class="llk" href="soutenir.html">Support</a>
+    <button class="lgo" id="lpLoginTop">Sign in</button><span class="cp-lang-slot"></span>
   </header></div>
 
   <header class="lhero"><div class="sh">
     <div class="lmark"><svg viewBox="0 0 240 240" aria-hidden="true"><circle cx="120" cy="120" r="100" fill="none" stroke="#d8b566" stroke-width="7"/><circle cx="120" cy="120" r="88" fill="none" stroke="#d8b566" stroke-width="2.5" opacity=".5"/><rect x="81" y="8" width="18" height="18" fill="#d8b566"/><rect x="111" y="4" width="18" height="18" fill="#d8b566"/><rect x="141" y="8" width="18" height="18" fill="#d8b566"/><circle cx="20" cy="120" r="4.5" fill="#d8b566"/><circle cx="220" cy="120" r="4.5" fill="#d8b566"/><path d="M161,155 A54,54 0 1 1 161,85" fill="none" stroke="#d8b566" stroke-width="20" stroke-linecap="round"/><rect x="112" y="94" width="16" height="52" rx="5" fill="#d8b566"/><rect x="94" y="112" width="52" height="16" rx="5" fill="#d8b566"/></svg></div>
-    <p class="lkick">World of Tanks EU · Bastion</p>
-    <h1><span class="ln"><i>Ton clan joue.</i></span><span class="ln"><i class="dim">Le reste se mesure.</i></span></h1>
-    <p class="lled">Le mod enregistre chaque bataille de clan. Le site en tire les statistiques,
-    une note de jeu d'équipe et un plan de progression — pour toi et pour tout le clan.</p>
+    <p class="lkick">World of Tanks EU · Strongholds</p>
+    <h1><span class="ln"><i>Your clan plays.</i></span><span class="ln"><i class="dim">The rest gets measured.</i></span></h1>
+    <p class="lled">The mod records every clan battle. The site turns that into statistics, a teamplay rating and a plan to improve — for you and for the whole clan.</p>
     <div class="lacts">
-      <a class="lbtn lbtn-1" href="mod.html">Découvrir le mod →</a>
-      <button class="lbtn lbtn-2" id="lpLogin">Accéder à mon clan →</button>
+      <a class="lbtn lbtn-1" href="mod.html">See the mod →</a>
+      <button class="lbtn lbtn-2" id="lpLogin">Go to my clan →</button>
     </div>
-    <p class="lspec">Gratuit · sans publicité · World of Tanks EU 2.3.1.0</p>
+    <p class="lspec">Free · ad-free · World of Tanks EU 2.3.1.0</p>
   </div></header>
 
   <section class="lsec"><div class="sh">
-    <div class="lsh rv2" data-a="head"><span class="lsn">01</span><h2>Chaque bataille,<br>rejouable et mesurée.</h2></div>
-    <p class="lsub rv2" data-a="up">Ce que le mod enregistre pendant que tu joues, le site te le rend après.</p>
+    <div class="lsh rv2" data-a="head"><span class="lsn">01</span><h2>Every battle,<br>replayable and measured.</h2></div>
+    <p class="lsub rv2" data-a="up">What the mod records while you play, the site hands back to you afterwards.</p>
 
     <figure class="rv2" data-a="plate">
       <div class="lscr">
-        <div class="lscr-b"><i></i><i></i><i></i><span class="lscr-t">Himmelsdorf · 7 — 5 · victoire</span></div>
-        <svg class="lmap" viewBox="0 0 720 300" role="img" aria-label="La bataille rejouée sur la carte : les chars des deux équipes, leurs trajets, un tir et une élimination.">
+        <div class="lscr-b"><i></i><i></i><i></i><span class="lscr-t">Himmelsdorf · 7 — 5 · victory</span></div>
+        <svg class="lmap" viewBox="0 0 720 300" role="img" aria-label="The battle replayed on the map: both teams' tanks, their paths, a shot and a kill.">
           <defs><pattern id="ldg" width="30" height="30" patternUnits="userSpaceOnUse">
             <path d="M30 0H0V30" fill="none" stroke="rgba(255,255,255,.045)"/></pattern>
             <filter id="ldsoft"><feGaussianBlur stdDeviation="5"/></filter>
@@ -2784,18 +2806,16 @@
         </svg>
         <div class="lctl"><span class="p">▶</span><span class="b"><i></i></span><span class="s">×2</span></div>
       </div>
-      <figcaption><b>La bataille se rejoue.</b> Chaque char seconde par seconde : les trajets, les
-      tirs, les dégâts avec leur auteur, les éliminations. Tu peux mettre en pause et commenter —
-      c'est le débriefing.</figcaption>
+      <figcaption><b>The battle replays itself.</b> Every tank second by second: the paths, the shots, the damage and who dealt it, the kills. You can pause it and draw on it — that's your debrief.</figcaption>
     </figure>
 
     <div class="lduo">
       <figure class="rv2" data-a="plate" style="--i:0">
         <div class="lscr">
-          <div class="lscr-b"><i></i><i></i><i></i><span class="lscr-t">Ma progression</span></div>
+          <div class="lscr-b"><i></i><i></i><i></i><span class="lscr-t">My progress</span></div>
           <div class="lsr">
-            <div class="lsr-r"><div class="lsr-n">1&nbsp;712</div>
-              <div><div class="lsr-t">Bon coéquipier</div><div class="lsr-s">64 batailles · marge ±63</div></div></div>
+            <div class="lsr-r"><div class="lsr-n">1,712</div>
+              <div><div class="lsr-t">Solid teammate</div><div class="lsr-s">64 battles · margin ±63</div></div></div>
             <div class="lsr-k">
               <s style="left:0;width:5.5%;background:#e2685f"></s><s style="left:5.5%;width:19.5%;background:#d8b566"></s>
               <s style="left:25%;width:16.7%;background:#8d8a80"></s><s style="left:41.7%;width:19.4%;background:#4f97ee"></s>
@@ -2804,14 +2824,13 @@
             <div class="lsr-x"><span>1000</span><span>1350</span><span>1650</span><span>2000</span><span>2500</span></div>
           </div>
         </div>
-        <figcaption><b>Une note qui mesure le jeu d'équipe.</b> Pas les dégâts bruts : ta part réelle
-        dans la victoire, pondérée par la force de l'adversaire, avec sa marge d'erreur affichée.</figcaption>
+        <figcaption><b>A rating that measures teamplay.</b> Not raw damage: your actual share of the win, weighted by how strong the opposition was, with its margin of error shown.</figcaption>
       </figure>
       <figure class="rv2" data-a="plate" style="--i:1">
         <div class="lscr">
-          <div class="lscr-b"><i></i><i></i><i></i><span class="lscr-t">Quoi travailler</span></div>
+          <div class="lscr-b"><i></i><i></i><i></i><span class="lscr-t">What to work on</span></div>
           <div class="lrad">
-            <svg viewBox="0 0 320 210" role="img" aria-label="Radar des cinq aptitudes comparées à la médiane du rôle.">
+            <svg viewBox="0 0 320 210" role="img" aria-label="Radar of the five skills against the median for the role.">
               <g transform="translate(160,102)">
                 <polygon points="0,-72 68,-22 42,58 -42,58 -68,-22" fill="none" stroke="rgba(255,255,255,.09)"/>
                 <polygon points="0,-36 34,-11 21,29 -21,29 -34,-11" fill="none" stroke="rgba(255,255,255,.07)"/>
@@ -2819,69 +2838,63 @@
                 <polygon points="0,-70 44,-14 30,41 -25,34 -37,-12" fill="rgba(216,181,102,.2)" stroke="#d8b566" stroke-width="2" stroke-linejoin="round"/>
                 <g fill="#d8b566"><circle cx="0" cy="-70" r="3.2"/><circle cx="44" cy="-14" r="3.2"/><circle cx="30" cy="41" r="3.2"/><circle cx="-25" cy="34" r="3.2"/><circle cx="-37" cy="-12" r="3.2"/></g></g>
               <g font-family="IBM Plex Mono,monospace" font-size="9.5" fill="#8d8a80">
-                <text x="160" y="16" text-anchor="middle">DÉGÂTS</text><text x="252" y="84" text-anchor="middle">ENCAISSÉ</text>
-                <text x="216" y="182" text-anchor="middle">BLINDAGE</text><text x="104" y="182" text-anchor="middle">VISION</text>
-                <text x="66" y="84" text-anchor="middle">OBJECTIF</text></g>
+                <text x="160" y="16" text-anchor="middle">DAMAGE</text><text x="252" y="84" text-anchor="middle">TAKEN</text>
+                <text x="216" y="182" text-anchor="middle">ARMOUR</text><text x="104" y="182" text-anchor="middle">SPOTTING</text>
+                <text x="66" y="84" text-anchor="middle">OBJECTIVE</text></g>
               <g font-family="IBM Plex Mono,monospace" font-size="10">
                 <text x="160" y="30" text-anchor="middle" fill="#5fc27e">▲1,34×</text>
                 <text x="252" y="98" text-anchor="middle" fill="#e2685f">▼0,72×</text></g>
             </svg>
           </div>
         </div>
-        <figcaption><b>Un plan, pas un tableau.</b> Tes cinq aptitudes comparées à la médiane de ton
-        rôle, et ce qu'il faut travailler en priorité — avec l'écart chiffré.</figcaption>
+        <figcaption><b>A plan, not a table.</b> Your five skills against the median for your role, and what to work on first — with the gap in numbers.</figcaption>
       </figure>
     </div>
   </div></section>
 
   <section class="lsec"><div class="sh">
-    <div class="lsh rv2" data-a="head"><span class="lsn">02</span><h2>Et pour l'état-major</h2></div>
-    <p class="lsub rv2" data-a="up">Le clan n'est pas qu'une somme de joueurs. Les officiers ont leurs propres outils.</p>
+    <div class="lsh rv2" data-a="head"><span class="lsn">02</span><h2>And for the command staff</h2></div>
+    <p class="lsub rv2" data-a="up">A clan isn't just a sum of players. Officers get tools of their own.</p>
     <div class="lgrid">
-      <div class="lcard rv2" data-a="up" style="--i:0"><span class="n">STRATÉGIE</span><h3>L'éditeur de plans</h3>
-        <p>Dessine la manœuvre sur la vraie carte, partage-la, et rejoue le replay par-dessus pour
-        comparer ce qui était prévu à ce qui s'est passé.</p></div>
-      <div class="lcard rv2" data-a="up" style="--i:1"><span class="n">FORMATION</span><h3>Line-ups et loadouts</h3>
-        <p>Les compositions par carte et par format, et les équipements recommandés char par char,
-        décidés une fois pour tout le clan.</p></div>
-      <div class="lcard rv2" data-a="up" style="--i:2"><span class="n">ROSTER</span><h3>Qui joue quoi</h3>
-        <p>Les performances de chaque membre en Bastion, l'état de sa formation, et le classement
-        interne — sans avoir à tenir un tableur.</p></div>
+      <div class="lcard rv2" data-a="up" style="--i:0"><span class="n">STRATEGY</span><h3>The plan editor</h3>
+        <p>Draw the manoeuvre on the real map, share it, and run the replay underneath to compare what was planned with what happened.</p></div>
+      <div class="lcard rv2" data-a="up" style="--i:1"><span class="n">LINE-UPS</span><h3>Line-ups and loadouts</h3>
+        <p>Compositions by map and by format, and the recommended equipment tank by tank, decided once for the whole clan.</p></div>
+      <div class="lcard rv2" data-a="up" style="--i:2"><span class="n">ROSTER</span><h3>Who plays what</h3>
+        <p>Every member's Stronghold performance, how their line-up stands, and the internal ranking — without keeping a spreadsheet.</p></div>
     </div>
   </div></section>
 
   <div class="lend"><div class="sh rv2" data-a="up">
-    <h2>Deux minutes pour commencer.</h2>
-    <p>Un fichier à déposer dans un dossier. Ensuite, joue comme d'habitude.</p>
-    <a class="lbtn lbtn-1" href="mod.html">Découvrir le mod →</a>
+    <h2>Two minutes to get started.</h2>
+    <p>One file to drop into a folder. After that, just play as usual.</p>
+    <a class="lbtn lbtn-1" href="mod.html">See the mod →</a>
   </div></div>
 
   <footer class="lfoot"><div class="sh">
     <nav class="lfn">
-      <a href="mod.html">Le mod</a><a href="aide-editeur.html">Manuel de l'éditeur</a>
-      <a href="aide-sr.html">Le SR expliqué</a><a href="soutenir.html">Soutenir</a>
-      <a href="trouver-clan.html">Trouver un clan</a>
-      <button type="button" data-legal="mentions">Mentions légales</button><button type="button" data-legal="privacy">Confidentialité</button>
+      <a href="mod.html">The mod</a><a href="aide-editeur.html">Editor manual</a>
+      <a href="aide-sr.html">The SR explained</a><a href="soutenir.html">Support</a>
+      <a href="trouver-clan.html">Find a clan</a>
+      <button type="button" data-legal="mentions">Legal notice</button><button type="button" data-legal="privacy">Privacy</button>
       <button type="button" data-legal="cookies">Cookies</button>
     </nav>
-    <p>Clan Plus est un projet communautaire indépendant, gratuit et sans publicité, développé par un
-    joueur de World of Tanks EU. <strong>Non affilié à Wargaming.</strong> World of Tanks et Wargaming
-    sont des marques de Wargaming.net.</p>
+    <p>Clan Plus is an independent community project, free and ad-free, built by a World of Tanks EU player. <strong>Not affiliated with Wargaming.</strong> World of Tanks and Wargaming are trademarks of Wargaming.net.</p>
   </div></footer>
 </div>
 
 <!-- ======================= MODALE LÉGALE ======================= -->
 <div id="legalModal" class="lp-modal hidden">
   <div class="lp-modal-box">
-    <button class="lp-modal-x" id="legalClose" aria-label="Fermer">✕</button>
+    <button class="lp-modal-x" id="legalClose" aria-label="Close">✕</button>
     <div id="legalBody"></div>
   </div>
 </div>
 
 <!-- ======================= BANDEAU COOKIES ======================= -->
 <div id="cookieBar" class="cookiebar hidden">
-  <span>Ce site n'utilise que des cookies techniques strictement nécessaires (connexion, thème). Aucun traceur publicitaire. <a href="#" data-legal="cookies">En savoir plus</a></span>
-  <button class="lp-btn lp-btn-primary lp-btn-sm" id="cookieOk">J'ai compris</button>
+  <span>This site uses only strictly necessary technical cookies (sign-in, theme). No advertising trackers. <a href="#" data-legal="cookies">Learn more</a></span>
+  <button class="lp-btn lp-btn-primary lp-btn-sm" id="cookieOk">Got it</button>
 </div>
 
 <!-- ======================= ÉCRAN DE CONNEXION ======================= -->
@@ -2889,11 +2902,11 @@
   <div class="login-card">
     <div class="logo"><svg class="cp-mark" viewBox="0 0 240 240" aria-label="Clan Plus"><circle cx="120" cy="120" r="100" fill="none" stroke="#d8b566" stroke-width="7"/><circle cx="120" cy="120" r="88" fill="none" stroke="#d8b566" stroke-width="2.5" opacity=".5"/><rect x="81" y="8" width="18" height="18" fill="#d8b566"/><rect x="111" y="4" width="18" height="18" fill="#d8b566"/><rect x="141" y="8" width="18" height="18" fill="#d8b566"/><circle cx="20" cy="120" r="4.5" fill="#d8b566"/><circle cx="220" cy="120" r="4.5" fill="#d8b566"/><path d="M161,155 A54,54 0 1 1 161,85" fill="none" stroke="#d8b566" stroke-width="20" stroke-linecap="round"/><g class="cp-plus"><rect x="112" y="94" width="16" height="52" rx="5" fill="#d8b566"/><rect x="94" y="112" width="52" height="16" rx="5" fill="#d8b566"/></g></svg></div>
     <h1>Clan Plus</h1>
-    <p>Statistiques Bastion de ton clan. Connecte-toi avec ton compte World of Tanks pour accéder aux données de ton clan.</p>
-    <button class="wg-btn" id="wgLogin">▶ Se connecter avec World of Tanks</button>
-    <div class="login-note">Connexion sécurisée via le site officiel Wargaming. Nous ne voyons jamais ton mot de passe.</div>
+    <p>Your clan's Stronghold statistics. Sign in with your World of Tanks account to reach your clan's data.</p>
+    <button class="wg-btn" id="wgLogin">▶ Sign in with World of Tanks</button>
+    <div class="login-note">Secure sign-in through the official Wargaming site. We never see your password.</div>
     <div class="login-err hidden" id="loginErr"></div>
-    <a href="#" class="login-back" id="loginBack">← Retour à l'accueil</a>
+    <a href="#" class="login-back" id="loginBack">← Back to the homepage</a>
   </div>
 </div>
 
@@ -2932,6 +2945,7 @@
           <div class="tb-sub" id="clanSub">Statistiques Bastion</div>
         </div>
         <div class="tb-right">
+          <span class="cp-lang-slot"></span>
           <button class="icon-btn" id="themeBtn" title="Thème clair / sombre">◑</button>
         </div>
       </header>
@@ -3578,14 +3592,14 @@ function renderCalendar(){
   for(let i=0;i<start;i++) cells+='<div class="cal-cell empty"></div>';
   for(let d=1;d<=dim;d++){
     const k=y+"-"+m+"-"+d, evs=(byDay[k]||[]).sort((a,b)=>a.event_ts-b.event_ts);
-    const evHtml=evs.map(e=>{ const kd=EV_KINDS[e.kind]||EV_KINDS.autre; const tm=new Date(e.event_ts*1000).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
+    const evHtml=evs.map(e=>{ const kd=EV_KINDS[e.kind]||EV_KINDS.autre; const tm=new Date(e.event_ts*1000).toLocaleTimeString(window.CP_LOC,{hour:"2-digit",minute:"2-digit"});
       return `<div class="cal-ev" data-id="${e.id}" style="--evc:${kd[1]}" title="${esc(e.title)} · ${tm}"><b>${tm}</b> ${esc(e.title)}</div>`; }).join("");
     cells+=`<div class="cal-cell${k===todayK?' today':''}" data-day="${d}"><div class="cal-d">${d}</div><div class="cal-evs">${evHtml}</div></div>`;
   }
   const wd=["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"];
   cal.innerHTML=`
     <div class="cal-head">
-      <div class="cal-nav"><button class="cal-arrow" id="calPrev">‹</button><h3>${capFirst(CAL_MONTH.toLocaleDateString("fr-FR",{month:"long",year:"numeric"}))}</h3><button class="cal-arrow" id="calNext">›</button><button class="cal-today-btn" id="calToday">Aujourd'hui</button></div>
+      <div class="cal-nav"><button class="cal-arrow" id="calPrev">‹</button><h3>${capFirst(CAL_MONTH.toLocaleDateString(window.CP_LOC,{month:"long",year:"numeric"}))}</h3><button class="cal-arrow" id="calNext">›</button><button class="cal-today-btn" id="calToday">Aujourd'hui</button></div>
       ${CAL_CANEDIT?'<button class="cal-add" id="calAdd">＋ Programmer un événement</button>':'<span class="cal-ro">Consultation — réservé aux officiers du personnel et +</span>'}
     </div>
     ${CAL_LOAD_ERR?`<div class="d2card" style="padding:14px;margin-bottom:12px;color:var(--bad)">Calendrier indisponible (${esc(CAL_LOAD_ERR)}) — la fonction « clan-events » est-elle déployée ?</div>`:""}
@@ -3606,7 +3620,7 @@ function renderCalUpcoming(){
   const up=CLAN_EVENTS.filter(e=>e.event_ts>now-3600).sort((a,b)=>a.event_ts-b.event_ts).slice(0,6);
   if(!up.length){ el.innerHTML='<div class="cal-up-h">À venir</div><div class="cal-up-empty">Aucun événement programmé.</div>'; return; }
   el.innerHTML='<div class="cal-up-h">À venir</div>'+up.map(e=>{ const kd=EV_KINDS[e.kind]||EV_KINDS.autre; const d=new Date(e.event_ts*1000);
-    const ds=capFirst(d.toLocaleDateString("fr-FR",{weekday:"short",day:"numeric",month:"short"}))+" · "+d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
+    const ds=capFirst(d.toLocaleDateString(window.CP_LOC,{weekday:"short",day:"numeric",month:"short"}))+" · "+d.toLocaleTimeString(window.CP_LOC,{hour:"2-digit",minute:"2-digit"});
     return `<div class="cal-up-row" data-id="${e.id}"><span class="cal-dot" style="background:${kd[1]}"></span><span class="cal-up-t">${esc(e.title)}</span><span class="cal-up-k" style="color:${kd[1]}">${kd[0]}</span><span class="cal-up-d">${ds}</span></div>`; }).join("");
   el.querySelectorAll(".cal-up-row").forEach(r=>r.onclick=()=>openEventEditor(CLAN_EVENTS.find(e=>String(e.id)===r.dataset.id)||null,null));
 }
@@ -3619,7 +3633,7 @@ function openEventEditor(ev, preset){
   if(ro){
     const kd=EV_KINDS[e.kind]||EV_KINDS.autre;
     body=`<div class="ev-ro"><span class="cal-dot" style="background:${kd[1]}"></span> ${kd[0]}</div>
-      <div class="ev-when">📅 ${capFirst(d.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long",year:"numeric"}))} à ${d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})}</div>
+      <div class="ev-when">📅 ${capFirst(d.toLocaleDateString(window.CP_LOC,{weekday:"long",day:"numeric",month:"long",year:"numeric"}))} ${window.CP_LANG==="fr"?"à":"at"} ${d.toLocaleTimeString(window.CP_LOC,{hour:"2-digit",minute:"2-digit"})}</div>
       ${e.notes?`<div class="ev-notes">${esc(e.notes)}</div>`:""}
       ${e.created_by_name?`<div class="ev-by">Programmé par ${esc(e.created_by_name)}</div>`:""}`;
   }else{
@@ -3664,7 +3678,7 @@ function renderDashHero(){
   const el=document.getElementById("dashHero");
   const info=CLANINFO;
   if(!info){ el.innerHTML=""; return; }
-  const created=info.created_at? new Date(info.created_at*1000).toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit",year:"numeric"}):"?";
+  const created=info.created_at? new Date(info.created_at*1000).toLocaleDateString(window.CP_LOC,{day:"2-digit",month:"2-digit",year:"numeric"}):"?";
   const emb=(info.emblems&&(info.emblems.x64&&(info.emblems.x64.wot||info.emblems.x64.portal)||info.emblems.x32&&info.emblems.x32.portal))||"";
   const emHtml=emb?`<img class="h2-em" src="${esc(emb)}" alt="${esc(info.tag||'')}">`:`<div class="h2-em h2-em-ph">${esc(info.tag||"")}</div>`;
   const langs=((CLANPROFILE&&CLANPROFILE.langs)||[]).map(langOf).filter(Boolean);
@@ -3675,7 +3689,7 @@ function renderDashHero(){
   let opHtml;
   if(nx){
     const d=new Date(nx.event_ts*1000);
-    const dstr=capFirst(d.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"}))+" à "+d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
+    const dstr=capFirst(d.toLocaleDateString(window.CP_LOC,{weekday:"long",day:"numeric",month:"long"}))+(window.CP_LANG==="fr"?" à ":" at ")+d.toLocaleTimeString(window.CP_LOC,{hour:"2-digit",minute:"2-digit"});
     const dh=nx.event_ts-now, days=Math.floor(dh/86400);
     const inTxt=days>0?("dans "+days+" j"):(dh>3600?("dans "+Math.floor(dh/3600)+" h"):"bientôt !");
     opHtml=`<div class="h2-op cal-link" id="opGo">
@@ -3856,7 +3870,7 @@ function renderDashEvo(){
   g+=`<path class="area" d="${area}"/><path class="line" id="evoLine" d="${path}"/>`;
   days.forEach((d,i)=>{ g+=`<circle class="dot" cx="${x(i)}" cy="${y(d.wr)}" r="3"><title>${d.k} : ${Math.round(d.wr*100)} % (${d.n} bataille${d.n>1?"s":""})</title></circle>`; });
   [0,Math.floor((days.length-1)/2),days.length-1].forEach(i=>{
-    g+=`<text x="${x(i)}" y="${H-8}" text-anchor="middle">${new Date(days[i].t).toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit"})}</text>`; });
+    g+=`<text x="${x(i)}" y="${H-8}" text-anchor="middle">${new Date(days[i].t).toLocaleDateString(window.CP_LOC,{day:"2-digit",month:"2-digit"})}</text>`; });
   g+=`<line class="axis-line" x1="${padL}" y1="${H-padB}" x2="${W-padR}" y2="${H-padB}"/>`;
   svg.innerHTML=g;
   const line=svg.querySelector("#evoLine");
@@ -3892,7 +3906,7 @@ function renderDashSpot(){
         : row("👑","MVP de la semaine","— <span class='hint'>pas assez de batailles cette semaine</span>");
   if(last){
     const foeTag=(typeof BATTLE_ENEMY!=="undefined"&&BATTLE_ENEMY[last.id])||"?";
-    const d=new Date(last.ts*1000).toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit"});
+    const d=new Date(last.ts*1000).toLocaleDateString(window.CP_LOC,{day:"2-digit",month:"2-digit"});
     const res=last.result===1?'<b class="pos">Victoire</b>':(last.result===0?'<b class="neg">Défaite</b>':"Égalité");
     h+=row("⚔️","Dernière bataille",res+" vs ["+esc(foeTag)+"]",esc(cleanMap(last.map||""))+" · "+d);
   } else h+=row("⚔️","Dernière bataille","—");
@@ -3939,7 +3953,7 @@ function renderLast(){
   const last=liste[0];
   const ligne=(b)=>{
     const foeTag=(typeof BATTLE_ENEMY!=="undefined"&&BATTLE_ENEMY[b.id])||"?";
-    const d=new Date(b.ts*1000).toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit"});
+    const d=new Date(b.ts*1000).toLocaleDateString(window.CP_LOC,{day:"2-digit",month:"2-digit"});
     const gagne=b.result===1, nul=b.result!==1&&b.result!==0;
     return `<button type="button" class="lb-l${gagne?" w":(nul?"":" l")}" data-bid="${esc(String(b.id))}">
       <span class="lb-p"></span>
@@ -4110,7 +4124,21 @@ function brancheBulle(hote){
   hote.addEventListener("mouseleave", cache);
   addEventListener("scroll", cache, { passive:true });
 }
-function renderDashboard(){ renderHealth(); renderLast(); renderWg(); renderMini(); renderOfficialCards(); renderTop5(); }
+function renderDashboard(){
+  /* Rien à montrer : on remplace le tableau de bord entier plutôt que
+     d'afficher huit cartes à zéro. */
+  const vide = !RAW.some(r=>r.isMember);
+  const dash = document.getElementById("clanDash");
+  let host = document.getElementById("cpVideClan");
+  if(vide){
+    if(!host){ host=document.createElement("div"); host.id="cpVideClan"; dash.parentNode.insertBefore(host, dash); }
+    host.innerHTML = cpVideClan();
+    dash.style.display = "none";
+    return;
+  }
+  if(host) host.innerHTML = "";
+  dash.style.display = "";
+  renderHealth(); renderLast(); renderWg(); renderMini(); renderOfficialCards(); renderTop5(); }
 
 let SELP=null;   // account_id du joueur sélectionné dans "Ma progression"
 function populatePlayerSel(){
@@ -4469,7 +4497,17 @@ let BL_PAGE=0; const BL_PER_PAGE=50;
 function renderBattles(){
   const list=groupBattles();
   const sum=document.getElementById("blSummary"), wrap=document.getElementById("blList"), pg=document.getElementById("blPager");
-  if(!list.length){ sum.innerHTML=""; wrap.innerHTML='<div class="empty">Aucune bataille sur cette période.</div>'; pg.innerHTML=""; return; }
+  if(!list.length){
+    sum.innerHTML="";
+    /* Distinguer « le clan n'a rien » de « rien sur CETTE période » :
+       le premier appelle la marche à suivre, le second un simple filtre
+       à élargir. */
+    const jamais = !RAW.some(r=>r.isMember);
+    wrap.innerHTML = jamais ? cpVideClan()
+      : cpVide("🔍","Aucune bataille sur cette période",
+          "Élargis la période avec les boutons <b>7 j / 30 j / 90 j / Tout</b> en haut, "+
+          "ou change de mode.", null, "");
+    pg.innerHTML=""; return; }
   BL_BY_ID={}; list.forEach(g=>{ BL_BY_ID[g.id]=g; });
   sum.innerHTML=blSummaryHTML(list);
   { const nb=sum.querySelector(".bl-vn b");
@@ -5034,7 +5072,7 @@ function renderMembers(){
         ? `<span class="av rav" title="${esc(m.role)}"><img src="${m.icon}" alt="${esc(m.role)}" onerror="this.parentNode.textContent='${esc(String(m.name)[0].toUpperCase())}';this.parentNode.classList.remove('rav')"></span>`
         : `<span class="av">${esc(String(m.name)[0].toUpperCase())}</span>`;
       const sr=m.sr!=null?`<span class="pr" style="color:${srColor(m.sr)}">${fmt(m.sr)}</span>`:'<span style="color:var(--muted)">—</span>';
-      const vu=m.ts?new Date(m.ts*1000).toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit"}):'<span style="color:var(--muted)">—</span>';
+      const vu=m.ts?new Date(m.ts*1000).toLocaleDateString(window.CP_LOC,{day:"2-digit",month:"2-digit"}):'<span style="color:var(--muted)">—</span>';
       return `<tr${m.me?' style="background:rgba(229,185,92,.06)"':''}><td><span class="pn">${av}${esc(m.name)}</span></td><td><span class="grade ${gCls(m.ord)}">${esc(m.role)}</span></td><td>${sr}</td><td>${m.bat||'<span style="color:var(--muted)">—</span>'}</td><td style="color:var(--ink-2)">${vu}</td></tr>`;
     }).join("")+`</tbody></table>`;
   el.querySelectorAll("thead th[data-k]").forEach(th=>th.onclick=()=>{
@@ -5331,7 +5369,7 @@ function ceForRow(r,C){
    ============================================================ */
 // Marqueur de version : `srVersion()` dans la console dit si le fichier servi
 // est bien le dernier. Évite de confondre « pas déployé » et « ne marche pas ».
-const SR_SITE_VERSION="sr-4.3-verdict";
+const SR_SITE_VERSION="sr-4.4-vides";
 function srVersion(){ return SR_SITE_VERSION; }
 let SR_MODEL=null, SR_SKILL=null, SR_ELO_TAG=null, SR_ELO_ID=null, SR_ROWS=null;
 const SR_CLS={heavyTank:"heavy",mediumTank:"medium",lightTank:"light","AT-SPG":"td",SPG:"spg"};
@@ -5514,7 +5552,7 @@ const SR_TIER=10;
 const estTierSR=r=>(BATTLE_TIER[r.battleId] ?? (Number((VEHMAP[r.veh]||{}).tier)>=10?10:0))===SR_TIER;
 const SR_AXES=[["deg","Dégâts"],["enc","Encaissé"],["bli","Blindage"],["vis","Vision"],["obj","Objectif"]];
 /* Virgule décimale : toFixed rend « 0.72 », illisible au milieu d'un texte français. */
-const nb2=v=>Number(v||0).toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2});
+const nb2=v=>Number(v||0).toLocaleString(window.CP_LOC,{minimumFractionDigits:2,maximumFractionDigits:2});
 let SR_MED={};
 /* ⚠️ La référence EXCLUT les batailles du joueur mesuré. Avec une vingtaine de
    joueurs seulement, un habitué tire la médiane vers lui et finirait par se
@@ -5635,7 +5673,7 @@ function srCurve(accId,largeur){
   const ref=py(1500);
   const dernier=pts[pts.length-1], premier=pts[0];
   const delta=Math.round(dernier.y-premier.y);
-  const dateFR=t=>{ try{ return new Date(t*1000).toLocaleDateString("fr-FR",{day:"2-digit",month:"short"}); }catch(_){ return ""; } };
+  const dateFR=t=>{ try{ return new Date(t*1000).toLocaleDateString(window.CP_LOC,{day:"2-digit",month:"short"}); }catch(_){ return ""; } };
   return `<div class="sr-curve">
     <div class="srd-head">Progression <span class="srd-tag">moyenne sur ${SR_FENETRE} batailles</span>
       <span class="srd-marge" style="color:${delta>=0?"var(--dv-plus)":"var(--dv-minus)"}">${delta>=0?"+":""}${delta} depuis le début</span></div>
@@ -5759,7 +5797,7 @@ function ceTier(v){
 function ceBadge(v){ const t=ceTier(v);
   if(v==null) return `<span class="ce-badge" style="color:${t.c}" title="${esc(t.l)}">—</span>`;
   return `<span class="ce-badge" style="color:${t.c}" title="${esc(t.l)}">${fmt(v)}</span>`; }
-function fmt(n,d=0){ return (n||0).toLocaleString("fr-FR",{maximumFractionDigits:d,minimumFractionDigits:d}); }
+function fmt(n,d=0){ return (n||0).toLocaleString(window.CP_LOC,{maximumFractionDigits:d,minimumFractionDigits:d}); }
 function pct(x){ return Math.round((x||0)*100)+"%"; }
 function esc(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 const CP_EMBLEM='<circle cx="120" cy="120" r="100" fill="none" stroke="#d8b566" stroke-width="7"/><circle cx="120" cy="120" r="88" fill="none" stroke="#d8b566" stroke-width="2.5" opacity=".5"/><rect x="81" y="8" width="18" height="18" fill="#d8b566"/><rect x="111" y="4" width="18" height="18" fill="#d8b566"/><rect x="141" y="8" width="18" height="18" fill="#d8b566"/><path d="M161,155 A54,54 0 1 1 161,85" fill="none" stroke="#d8b566" stroke-width="20" stroke-linecap="round"/><rect x="112" y="94" width="16" height="52" rx="5" fill="#d8b566"/><rect x="94" y="112" width="52" height="16" rx="5" fill="#d8b566"/>';
@@ -5813,7 +5851,7 @@ function renderTrend(rows){
   g+=`<path class="area" d="${area}"/><path class="line" d="${path}"/>`;
   days.forEach((d,i)=>{ g+=`<circle class="dot" cx="${x(i)}" cy="${y(d.n)}" r="3"><title>${d.k} : ${d.n}</title></circle>`; });
   [0,Math.floor((days.length-1)/2),days.length-1].forEach(i=>{
-    const lab=new Date(days[i].t).toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit"});
+    const lab=new Date(days[i].t).toLocaleDateString(window.CP_LOC,{day:"2-digit",month:"2-digit"});
     g+=`<text x="${x(i)}" y="${H-8}" text-anchor="middle">${lab}</text>`; });
   g+=`<line class="axis-line" x1="${padL}" y1="${H-padB}" x2="${W-padR}" y2="${H-padB}"/>`;
   svg.innerHTML=g;
@@ -5993,7 +6031,7 @@ function pRecords(rows){
       if(v!=null && v>0 && (!best||v>best.v)) best={v,r}; });
     if(!best) return "";
     const r=best.r, frais=now-r.ts<=30*PD_J;
-    const d=new Date(r.ts*1000).toLocaleDateString("fr-FR",{day:"2-digit",month:"short",year:"2-digit"});
+    const d=new Date(r.ts*1000).toLocaleDateString(window.CP_LOC,{day:"2-digit",month:"short",year:"2-digit"});
     return `<div class="pr-t${frais?" pr-new":""}">
       <div class="pr-l">${nom}${frais?`<span class="pr-tag">nouveau</span>`:""}</div>
       <div class="pr-v">${form?form(best.v):fmt(best.v)}</div>
@@ -6111,6 +6149,44 @@ const COACH_FICHES = {
     repere:"30 % et plus pour un moyen ou un léger. Un lourd est naturellement plus bas."
   },
 };
+
+
+/* ══════════════════════════════════════════════════════════════════
+   ÉTATS VIDES — un compte à rebours, pas une page morte
+   ══════════════════════════════════════════════════════════════════ */
+/* @param etapes  [{fait, total, quoi}] — la progression vers le seuil */
+function cpVide(icone, titre, texte, etapes, action){
+  const barres=(etapes||[]).map(e=>{
+    const p=Math.min(100, e.total? e.fait/e.total*100 : 0);
+    const ok=e.fait>=e.total;
+    return '<div class="cpv-e'+(ok?" ok":"")+'">'+
+      '<div class="cpv-el"><span>'+esc(e.quoi)+'</span>'+
+        '<b>'+fmt(e.fait)+' / '+fmt(e.total)+'</b></div>'+
+      '<div class="cpv-eb"><i style="width:'+p.toFixed(0)+'%"></i></div></div>';
+  }).join("");
+  return '<div class="cpv">'+
+    '<div class="cpv-ic">'+icone+'</div>'+
+    '<h3>'+esc(titre)+'</h3>'+
+    '<p>'+texte+'</p>'+
+    (barres?'<div class="cpv-es">'+barres+'</div>':"")+
+    (action||"")+
+  '</div>';
+}
+
+/* Le clan n'a encore rien enregistré : le même message partout, avec la
+   marche à suivre. C'est le premier écran d'un nouveau clan. */
+function cpVideClan(){
+  return cpVide("🛰",
+    "Aucune bataille enregistrée pour l'instant",
+    "Le site se remplit tout seul dès qu'un membre joue une bataille Bastion "+
+    "avec le mod installé. Rien à faire de plus.",
+    null,
+    '<ol class="cpv-a">'+
+      '<li><b>Installe le mod</b> — <a href="mod.html">la page de téléchargement</a> explique la manœuvre en trois étapes.</li>'+
+      '<li><b>Fais-le installer par tes officiers.</b> Plus il y a de membres équipés, plus vite le clan est calibré.</li>'+
+      '<li><b>Joue une bataille Bastion.</b> Elle apparaît ici dans la minute qui suit.</li>'+
+    '</ol>');
+}
 
 /* ══════════════════════════════════════════════════════════════════
    COACH — six gestes mesurables, comparés au clan
@@ -6396,6 +6472,30 @@ function renderPlayerView(){
   }
   { const el=document.getElementById("pVerdictHost");
     if(el) el.innerHTML = pVerdict(my, clanRows); }
+  /* Sections qui ne peuvent rien dire : on les masque au lieu de les
+     laisser en titres orphelins au-dessus du vide. */
+  {
+    const nBat = new Set(my.map(r=>r.battleId)).size;
+    const assez = nBat >= 5;
+    document.querySelectorAll("#viewPlayer .pz-title, #viewPlayer .pz-diag, #viewPlayer .pz-evo, " +
+      "#viewPlayer #pTanks, #viewPlayer #pDiff, #viewPlayer #pRecords, #viewPlayer #pCoach, " +
+      "#viewPlayer #pMissions, #viewPlayer .pz-more, #viewPlayer #pSR")
+      .forEach(e=>{ e.style.display = assez ? "" : "none"; });
+    /* la carte d identite affiche « 0 % de victoire » en rouge quand il n y
+       a rien : on la retire tant qu aucune bataille n est enregistree. */
+    { const t=document.getElementById("pHead"); if(t) t.style.display = nBat ? "" : "none"; }
+    let h = document.getElementById("pVideHost");
+    if(!h){ h=document.createElement("div"); h.id="pVideHost";
+      const a=document.getElementById("pVerdictHost"); a.parentNode.insertBefore(h, a.nextSibling); }
+    h.innerHTML = assez ? "" : (nBat===0
+      ? cpVide("🎯","Ton bilan personnel arrive",
+          "Il se calcule sur tes batailles Bastion enregistrées par le mod. Joue-en quelques-unes et cette page se remplit toute seule.",
+          [{fait:0,total:5,quoi:"batailles enregistrées"}])
+      : cpVide("🎯","Encore quelques batailles",
+          "Sous cinq batailles, une moyenne ne veut rien dire : un seul mauvais tour la fait basculer. "+
+          "On préfère se taire plutôt que t'induire en erreur.",
+          [{fait:nBat,total:5,quoi:"batailles enregistrées"}]));
+  }
   document.getElementById("pHead").innerHTML=`
     <div class="pcard">
       <div class="pav">${esc(initials)}</div>
@@ -6727,7 +6827,7 @@ function luMonday(value){
 }
 function luWeekLabel(value){
   const a=luMonday(value),b=new Date(a); b.setDate(a.getDate()+6);
-  const short=d=>d.toLocaleDateString("fr-FR",{day:"numeric",month:"short"}).replace(".","");
+  const short=d=>d.toLocaleDateString(window.CP_LOC,{day:"numeric",month:"short"}).replace(".","");
   return `Semaine du ${short(a)} au ${short(b)} ${b.getFullYear()}`;
 }
 function luAvailability(slot){
@@ -6989,7 +7089,7 @@ function renderLineupMonthPicker(){
     const cls=["lu-month-day",inWeek?"in-week":"",inWeek&&d.getDay()===1?"week-start":"",inWeek&&d.getDay()===0?"week-end":"",d.toDateString()===today.toDateString()?"today":""].filter(Boolean).join(" ");
     cells+=`<button type="button" class="${cls}" data-week-date="${iso}" title="Choisir la semaine du ${day}">${day}</button>`;
   }
-  box.innerHTML=`<div class="lu-month-head"><button type="button" class="lu-month-nav" id="luMonthPrev">‹</button><div class="lu-month-title">${esc(capFirst(LU_MONTH_CURSOR.toLocaleDateString("fr-FR",{month:"long",year:"numeric"})))}</div><button type="button" class="lu-month-nav" id="luMonthNext">›</button></div><div class="lu-month-grid">${wd.map(d=>`<span class="lu-month-wd">${d}</span>`).join("")}${cells}</div>`;
+  box.innerHTML=`<div class="lu-month-head"><button type="button" class="lu-month-nav" id="luMonthPrev">‹</button><div class="lu-month-title">${esc(capFirst(LU_MONTH_CURSOR.toLocaleDateString(window.CP_LOC,{month:"long",year:"numeric"})))}</div><button type="button" class="lu-month-nav" id="luMonthNext">›</button></div><div class="lu-month-grid">${wd.map(d=>`<span class="lu-month-wd">${d}</span>`).join("")}${cells}</div>`;
   document.getElementById("luMonthPrev").onclick=()=>{LU_MONTH_CURSOR=new Date(y,m-1,1);renderLineupMonthPicker();};
   document.getElementById("luMonthNext").onclick=()=>{LU_MONTH_CURSOR=new Date(y,m+1,1);renderLineupMonthPicker();};
   box.querySelectorAll("[data-week-date]").forEach(b=>b.onclick=()=>{selectLineupWeek(b.dataset.weekDate);box.classList.add("hidden");});
@@ -8950,7 +9050,7 @@ async function stChatLoad(scroll){ const sid=ST_CHAT_SID; if(!sid) return;
   if(scroll||atBottom||msgs.length>ST_CHAT_SEEN) box.scrollTop=box.scrollHeight;
   ST_CHAT_SEEN=msgs.length;
 }
-function stChatTime(iso){ try{ const d=new Date(iso); return d.toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}); }catch(_){ return ''; } }
+function stChatTime(iso){ try{ const d=new Date(iso); return d.toLocaleString(window.CP_LOC,{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}); }catch(_){ return ''; } }
 // Sélecteur de collaborateurs (rôles fins) : membres autorisés à éditer cette stratégie
 function stCollabPicker(){
   if(!ST_EDIT) return;
@@ -9142,7 +9242,7 @@ function initClanRanking(clanIdIn, clanTagIn){
     side:root.querySelector("#crSide"), mine:root.querySelector("#crMyClan") };
 
   const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-  const fmt = (v,d=0) => { const n=Number(v); return Number.isFinite(n) ? n.toLocaleString("fr-FR",{minimumFractionDigits:d,maximumFractionDigits:d}) : "—"; };
+  const fmt = (v,d=0) => { const n=Number(v); return Number.isFinite(n) ? n.toLocaleString(window.CP_LOC,{minimumFractionDigits:d,maximumFractionDigits:d}) : "—"; };
   const metricLabel = () => METRICS.find(([k])=>k===state.metric)?.[1] || "Classement";
   const score = v => state.metric==="wins_ratio_avg" ? `${fmt(v,2)} %` : fmt(v);
 

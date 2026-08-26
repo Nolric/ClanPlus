@@ -1,22 +1,24 @@
 <!doctype html>
-<html lang="fr" data-theme="dark">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Soutenir Clan Plus — ce que coûte le projet | Clan Plus</title>
-<meta name="description" content="Clan Plus est gratuit et le restera. Voici en toute transparence ce que coûte le projet chaque mois, à quoi sert chaque euro, et comment y contribuer si l'outil te sert.">
+<title>Support Clan Plus — what the project costs | Clan Plus</title>
+<meta name="description" content="Clan Plus is free and will stay free. Here, in full, is what the project costs each month, what every euro pays for, and how to chip in if the tool is useful to you.">
 <link rel="canonical" href="https://clanplus.eu/soutenir.html">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Clan Plus">
-<meta property="og:locale" content="fr_FR">
+<meta property="og:locale" content="en_GB">
 <meta property="og:url" content="https://clanplus.eu/soutenir.html">
-<meta property="og:title" content="Soutenir Clan Plus">
-<meta property="og:description" content="Gratuit et sans publicité. Voici ce que coûte le projet, en toute transparence.">
+<meta property="og:title" content="Support Clan Plus">
+<meta property="og:description" content="Free and ad-free. Here's what the project costs, in full.">
 <meta property="og:image" content="https://clanplus.eu/og.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20240%20240%22%3E%3Crect%20width%3D%22240%22%20height%3D%22240%22%20rx%3D%2254%22%20fill%3D%22%23141310%22%2F%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22%23d8b566%22%3E%3Ccircle%20cx%3D%22120%22%20cy%3D%22120%22%20r%3D%22100%22%20stroke-width%3D%227%22%2F%3E%3Cpath%20d%3D%22M161%2C155%20A54%2C54%200%201%201%20161%2C85%22%20stroke-width%3D%2220%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fg%3E%3Cg%20fill%3D%22%23d8b566%22%3E%3Crect%20x%3D%22112%22%20y%3D%2294%22%20width%3D%2216%22%20height%3D%2252%22%20rx%3D%225%22%2F%3E%3Crect%20x%3D%2294%22%20y%3D%22112%22%20width%3D%2252%22%20height%3D%2216%22%20rx%3D%225%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<script src="i18n/soutenir.fr.js"></script>
+<script src="i18n.js"></script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
 /* ══════════════════════════════════════════════════════════════════
@@ -220,165 +222,178 @@ h1 .ln i{display:block;font-style:normal}
   .poste .eur,.total .eur{text-align:left}
   .poste .eur s{margin-top:4px}
 }
+
+/* ── Ils soutiennent ─────────────────────────────────────────────── */
+.sout-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin-top:22px}
+.sout{display:flex;align-items:center;gap:13px;background:var(--plate);
+  border:1px solid var(--rule);border-radius:var(--r);padding:13px 15px}
+.sout .em{width:42px;height:42px;flex:0 0 auto;border-radius:var(--r);background:var(--steel-2);
+  display:grid;place-items:center;font-family:var(--d-cond);font-weight:700;font-size:13px;
+  color:var(--gold);box-shadow:inset 0 0 0 1px var(--rule-2);overflow:hidden}
+.sout .em img{width:100%;height:100%;object-fit:contain}
+.sout .nm{font-weight:600;font-size:14.5px;line-height:1.25}
+.sout .pa{display:block;font-family:var(--d-mono);font-size:10px;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--ink-3);margin-top:3px}
+.sout.p3{border-color:rgba(216,181,102,.34)}
+.sout.p3 .pa{color:var(--gold)}
+.sout-t{font-family:var(--d-mono);font-size:10px;letter-spacing:.18em;color:var(--ink-3);text-transform:uppercase;
+  margin:26px 0 10px}
+.sout-vide{background:var(--plate);border:1px dashed var(--rule-2);border-radius:var(--r);
+  padding:30px 28px;max-width:640px;margin-top:22px}
+.sout-vide h3{font-family:var(--d-cond);font-weight:600;font-size:19px;margin:0 0 8px}
+.sout-vide p{margin:0;color:var(--ink-2);font-size:15px;line-height:1.62}
+.sout-vide .btn{margin-top:18px;display:inline-block}
 </style>
 </head>
 <body>
 
-<a class="skip" href="#main">Aller au contenu</a>
+<a class="skip" href="#main">Skip to content</a>
 
 <div class="top"><div class="top-in">
   <a class="logo" href="/">
     <span class="mk"><svg viewBox="0 0 240 240" aria-hidden="true"><circle cx="120" cy="120" r="100" fill="none" stroke="#d8b566" stroke-width="7"/><circle cx="120" cy="120" r="88" fill="none" stroke="#d8b566" stroke-width="2.5" opacity=".5"/><rect x="81" y="8" width="18" height="18" fill="#d8b566"/><rect x="111" y="4" width="18" height="18" fill="#d8b566"/><rect x="141" y="8" width="18" height="18" fill="#d8b566"/><circle cx="20" cy="120" r="4.5" fill="#d8b566"/><circle cx="220" cy="120" r="4.5" fill="#d8b566"/><path d="M161,155 A54,54 0 1 1 161,85" fill="none" stroke="#d8b566" stroke-width="20" stroke-linecap="round"/><rect x="112" y="94" width="16" height="52" rx="5" fill="#d8b566"/><rect x="94" y="112" width="52" height="16" rx="5" fill="#d8b566"/></svg></span>
     <b>Clan <em>Plus</em></b></a>
   <span class="sp"></span>
-  <a class="lk" href="mod.html">Le mod</a>
-  <a class="lk" href="/">Retour au site</a>
+  <a class="lk" href="mod.html">The mod</a>
+  <a class="lk" href="/">Back to the site</a>
 </div></div>
 
 <main id="main"><div class="sheet">
 
 <header class="hero">
   <div class="mark"><svg viewBox="0 0 240 240" aria-hidden="true"><circle cx="120" cy="120" r="100" fill="none" stroke="#d8b566" stroke-width="7"/><circle cx="120" cy="120" r="88" fill="none" stroke="#d8b566" stroke-width="2.5" opacity=".5"/><rect x="81" y="8" width="18" height="18" fill="#d8b566"/><rect x="111" y="4" width="18" height="18" fill="#d8b566"/><rect x="141" y="8" width="18" height="18" fill="#d8b566"/><circle cx="20" cy="120" r="4.5" fill="#d8b566"/><circle cx="220" cy="120" r="4.5" fill="#d8b566"/><path d="M161,155 A54,54 0 1 1 161,85" fill="none" stroke="#d8b566" stroke-width="20" stroke-linecap="round"/><rect x="112" y="94" width="16" height="52" rx="5" fill="#d8b566"/><rect x="94" y="112" width="52" height="16" rx="5" fill="#d8b566"/></svg></div>
-  <p class="kick">Soutenir le projet</p>
-  <h1><span class="ln"><i>Gratuit,</i></span><span class="ln"><i class="dim">et ça le restera.</i></span></h1>
-  <p class="lede">Pas de publicité, pas de fonctionnalité réservée aux payants, pas de revente de
-  données. Mais l'outil a un coût réel. Le voici, en entier.</p>
+  <p class="kick">Support the project</p>
+  <h1><span class="ln"><i>Free,</i></span><span class="ln"><i class="dim">and staying that way.</i></span></h1>
+  <p class="lede">No ads, no features locked behind payment, no selling your data. But the tool costs real money. Here it is, all of it.</p>
 </header>
 
 <section id="couts">
   <div class="rv" data-a="head">
-    <div class="sec-h"><span class="sec-n">01</span><h2>Le relevé, chaque mois</h2></div>
-    <p class="sub">Chiffres réels, sans marge ni rémunération. Le temps de développement n'est pas
-    compté.</p>
+    <div class="sec-h"><span class="sec-n">01</span><h2>The monthly statement</h2></div>
+    <p class="sub">Real figures, with no markup and no salary. Development time isn't counted.</p>
   </div>
 
   <div class="releve rv" data-a="plate">
     <div class="poste">
       <div>
-        <h3>Hébergement</h3>
+        <h3>Hosting</h3>
         <p class="src">SUPABASE</p>
-        <p>La base de données : vos batailles, vos replays, vos stratégies. Gratuit aujourd'hui,
-        payant dès que le volume de replays grandira.</p>
+        <p>The database: your battles, your replays, your strategies. Free today, paid as soon as the volume of replays grows.</p>
       </div>
-      <div class="eur">25&nbsp;€<s>À VENIR</s></div>
+      <div class="eur">€25<s>COMING</s></div>
     </div>
     <div class="poste">
       <div>
-        <h3>Nom de domaine</h3>
+        <h3>Domain name</h3>
         <p class="src">CLANPLUS.EU</p>
-        <p>L'adresse du site.</p>
+        <p>The site's address.</p>
       </div>
-      <div class="eur">~1&nbsp;€<s>EN COURS</s></div>
+      <div class="eur">~€1<s>ACTIVE</s></div>
     </div>
     <div class="poste">
       <div>
-        <h3>Outils de développement</h3>
-        <p class="src">ASSISTANCE À LA PROGRAMMATION</p>
-        <p>C'est ce qui permet à une personne seule de tenir un projet de cette taille.</p>
+        <h3>Development tools</h3>
+        <p class="src">CODING ASSISTANCE</p>
+        <p>This is what lets one person keep a project this size going.</p>
       </div>
-      <div class="eur">90&nbsp;€<s>EN COURS</s></div>
+      <div class="eur">€90<s>ACTIVE</s></div>
     </div>
     <div class="total">
-      <div class="t">Total mensuel</div>
-      <div class="eur">≈&nbsp;116&nbsp;€</div>
+      <div class="t">Monthly total</div>
+      <div class="eur">≈ €116</div>
     </div>
     <div class="part">
-      <p class="lbl">Répartition</p>
-      <div class="part-bar" role="img" aria-label="Répartition des coûts : hébergement 22 %, nom de domaine 1 %, outils de développement 77 %.">
+      <p class="lbl">Breakdown</p>
+      <div class="part-bar" role="img" aria-label="Cost breakdown: hosting 22%, domain name 1%, development tools 77%.">
         <i style="width:21.6%;background:var(--sea);--i:0"></i>
         <i style="width:0.9%;background:var(--live);--i:1"></i>
         <i style="width:77.5%;background:var(--gold);--i:2"></i>
       </div>
       <div class="part-leg">
-        <span><b style="background:var(--sea)"></b>Hébergement 22 %</span>
-        <span><b style="background:var(--live)"></b>Domaine 1 %</span>
-        <span><b style="background:var(--gold)"></b>Outils 77 %</span>
+        <span><b style="background:var(--sea)"></b>Hosting 22%</span> <span><b style="background:var(--live)"></b>Domain 1%</span> <span><b style="background:var(--gold)"></b>Tools 77%</span>
       </div>
-      <p class="cap">Le plus gros poste est aussi le moins visible. C'est pour ça qu'il est expliqué
-      juste en dessous, plutôt que noyé dans un total.</p>
+      <p class="cap">The biggest line is also the least visible. That's why it's explained just below, rather than buried in a total.</p>
     </div>
   </div>
 
   <div class="card rv" data-a="up">
-    <p class="lbl">Pourquoi je le détaille</p>
-    <p>Beaucoup de projets demandent un soutien sans dire à quoi il sert. Le troisième poste est le
-    plus gros et le moins évident : ce ne sont pas des serveurs, ce sont des <strong>outils
-    d'assistance à la programmation</strong>. Sans eux, Clan Plus avancerait plusieurs fois moins
-    vite : l'éditeur de stratégie, le débriefing de replay et le SR n'existeraient probablement pas
-    encore.</p>
-    <p>Tu peux estimer que ça ne relève pas d'un don, et c'est une position tout à fait défendable.
-    C'est justement pour que tu puisses en juger que je l'écris.</p>
+    <p class="lbl">Why I spell it out</p>
+    <p>Plenty of projects ask for support without saying what it pays for. The third line is the largest and the least obvious: these aren't servers, they're <strong>coding assistance tools</strong>. Without them Clan Plus would move several times slower: the strategy editor, the replay debrief and the SR probably wouldn't exist yet.</p>
+    <p>You may well decide that isn't what a donation is for, and that's an entirely fair position. It's precisely so you can judge for yourself that I'm writing it down.</p>
   </div>
 </section>
 
 <section id="effet">
   <div class="rv" data-a="head">
-    <div class="sec-h"><span class="sec-n">02</span><h2>Ce que ça change</h2></div>
-    <p class="sub">Concrètement, à quoi sert l'argent qui rentre.</p>
+    <div class="sec-h"><span class="sec-n">02</span><h2>What it changes</h2></div>
+    <p class="sub">In concrete terms, what the money goes to.</p>
   </div>
   <div class="aides">
     <div class="aide rv" data-a="up" style="--i:0">
-      <span class="n">CONSERVATION</span>
-      <h3>Les replays restent</h3>
-      <p>Chaque bataille pèse quelques centaines de kilooctets. C'est ce qui permet de rejouer une
-      partie six mois plus tard, et c'est le poste qui grossit.</p>
+      <span class="n">STORAGE</span>
+      <h3>Replays stay</h3>
+      <p>Each battle weighs a few hundred kilobytes. That's what lets you replay a game six months later, and it's the line that keeps growing.</p>
     </div>
     <div class="aide rv" data-a="up" style="--i:1">
-      <span class="n">DÉVELOPPEMENT</span>
-      <h3>La suite continue</h3>
-      <p>Carte de chaleur des morts, comparaison entre le plan et son exécution, analyse de
-      synergie : tout ça est prévu.</p>
+      <span class="n">DEVELOPMENT</span>
+      <h3>The work carries on</h3>
+      <p>A heatmap of where players die, plan versus execution, synergy analysis: all of it is planned.</p>
     </div>
     <div class="aide rv" data-a="up" style="--i:2">
-      <span class="n">JAMAIS</span>
-      <h3>Aucune publicité</h3>
-      <p>C'est un outil qu'on utilise pendant une session de clan, pas un blog. Une bannière n'y a
-      pas sa place.</p>
+      <span class="n">NEVER</span>
+      <h3>No advertising</h3>
+      <p>This is a tool you use during a clan session, not a blog. A banner has no place in it.</p>
     </div>
   </div>
 
   <div class="card key rv" data-a="up">
-    <p class="lbl">Engagement</p>
-    <p>Aucune fonctionnalité ne deviendra payante. Ni l'éditeur, ni les replays, ni le SR, ni les
-    statistiques. Si le financement ne suit pas, je réduirai les coûts : je ne mettrai pas de péage
-    sur ce qui est déjà là.</p>
+    <p class="lbl">The commitment</p>
+    <p>No feature will ever become paid. Not the editor, not the replays, not the SR, not the stats. If the funding doesn't follow, I'll cut costs: I won't put a toll gate on what's already there.</p>
   </div>
 </section>
 
 <section id="contribuer">
   <div class="give rv" data-a="plate">
-    <h2>Contribuer</h2>
-    <p>Ponctuellement ou chaque mois, à partir de quelques euros.</p>
+    <h2>Contribute</h2>
+    <p>One-off or monthly, from a few euros.</p>
     <!-- ⚠️ REMPLACER par la vraie adresse Ko-fi une fois le compte créé -->
-    <a class="btn btn-go" href="https://ko-fi.com/clanplus" target="_blank" rel="noopener">Soutenir sur Ko-fi</a>
-    <small>Carte ou PayPal · aucun compte nécessaire · Ko-fi ne prend aucune commission</small>
+    <a class="btn btn-go" href="https://ko-fi.com/clanplus" target="_blank" rel="noopener">Support on Ko-fi</a>
+    <small>Card or PayPal · no account needed · Ko-fi takes no commission</small>
+  </div>
+</section>
+
+
+<!-- ═══ ILS SOUTIENNENT ═══ la contrepartie des paliers Ko-fi.
+     Pour ajouter quelqu'un : une ligne dans le tableau SOUTIENS ci-dessous,
+     dans le <script> en bas de page. Rien d'autre. -->
+<section id="soutiens">
+  <div class="sheet">
+    <div class="sec-h"><span class="sec-n">04</span><h2>They support it</h2></div>
+    <p class="sec-sub">The clans and players funding the hosting, the domain name and the tools. Without them, it'd come out of my pocket.</p>
+    <div id="listeSoutiens"></div>
   </div>
 </section>
 
 <section id="autrement">
   <div class="rv" data-a="head">
-    <div class="sec-h"><span class="sec-n">03</span><h2>Et si tu ne peux pas donner</h2></div>
-    <p class="sub">Ça n'a rien d'obligatoire, et il y a d'autres façons d'aider. La première vaut
-    sans doute plus qu'un don.</p>
+    <div class="sec-h"><span class="sec-n">03</span><h2>And if you can't give</h2></div>
+    <p class="sub">None of this is required, and there are other ways to help. The first one is probably worth more than a donation.</p>
   </div>
   <div class="aides">
     <div class="aide rv" data-a="up" style="--i:0">
-      <span class="n">LE PLUS UTILE</span>
-      <h3>Installer le mod</h3>
-      <p>Et le faire installer. Chaque clan qui l'utilise enrichit les données communes : les
-      analyses deviennent meilleures pour tout le monde.</p>
+      <span class="n">MOST USEFUL</span>
+      <h3>Install the mod</h3>
+      <p>And get others to install it. Every clan using it enriches the shared data: the analysis gets better for everyone.</p>
     </div>
     <div class="aide rv" data-a="up" style="--i:1">
-      <span class="n">SIGNALER</span>
-      <h3>Ce qui ne va pas</h3>
-      <p>Un bug décrit précisément vaut beaucoup de temps gagné. Dis où, quand, et ce que tu
-      attendais à la place.</p>
+      <span class="n">REPORT</span>
+      <h3>What's broken</h3>
+      <p>A precisely described bug saves a great deal of time. Say where, when, and what you expected instead.</p>
     </div>
     <div class="aide rv" data-a="up" style="--i:2">
-      <span class="n">DEMANDER</span>
-      <h3>Ce qui manque</h3>
-      <p>La plupart des fonctionnalités existantes viennent de demandes de joueurs. La prochaine
-      viendra peut-être de toi.</p>
+      <span class="n">ASK</span>
+      <h3>What's missing</h3>
+      <p>Most of the features that exist came from players asking. The next one might come from you.</p>
     </div>
   </div>
 </section>
@@ -386,14 +401,10 @@ h1 .ln i{display:block;font-style:normal}
 </div></main>
 
 <footer><div class="sheet">
-  <nav class="fnav" aria-label="Liens du site">
-    <a href="/">Site</a><a href="mod.html">Le mod</a>
-    <a href="aide-editeur.html">Manuel de l'éditeur</a><a href="aide-sr.html">Le SR expliqué</a>
-    <a href="trouver-clan.html">Trouver un clan</a>
+  <nav class="fnav" aria-label="Site links">
+    <a href="/">Site</a><a href="mod.html">The mod</a> <a href="aide-editeur.html">Editor manual</a><a href="aide-sr.html">The SR explained</a> <a href="trouver-clan.html">Find a clan</a>
   </nav>
-  <p>Clan Plus est un projet communautaire indépendant, gratuit et sans publicité, développé par un
-  joueur de World of Tanks EU. <strong>Non affilié à Wargaming.</strong> World of Tanks est une
-  marque de Wargaming.net.</p>
+  <p>Clan Plus is an independent community project, free and ad-free, built by a World of Tanks EU player. <strong>Not affiliated with Wargaming.</strong> World of Tanks is a trademark of Wargaming.net.</p>
 </div></footer>
 
 <script>
@@ -415,6 +426,62 @@ h1 .ln i{display:block;font-style:normal}
   }, { rootMargin: "0px 0px -12% 0px", threshold: .08 });
   Array.prototype.forEach.call(blocs, function(b){ io.observe(b); });
   setTimeout(tout, 3000);
+})();
+</script>
+
+<script>
+/* ── Les soutiens ───────────────────────────────────────────────────
+   Une ligne par contributeur. `palier` : 1, 2 ou 3 — dans l'ordre des
+   paliers Ko-fi. `clan` sert à récupérer l'emblème officiel ; laisse-le
+   vide pour un joueur sans clan, ses initiales s'afficheront.
+   Pour ajouter quelqu'un, ajoute une ligne. C'est tout. */
+const SOUTIENS = [
+  // { nom:"[A-T-O] Ancients of Time", clan:"A-T-O", clanId:null, palier:3 },
+  // { nom:"BeNoBaX",                  clan:"",      clanId:null, palier:1 },
+];
+
+const PALIERS = { 1:"Supporter", 2:"Regular supporter", 3:"Patron" };
+
+(function(){
+  const hote = document.getElementById("listeSoutiens");
+  if(!hote) return;
+
+  if(!SOUTIENS.length){
+    hote.innerHTML =
+      '<div class="sout-vide">' +
+        '<h3>Nobody yet.</h3>' +
+        '<p>The project runs on my own money. If you want to be the first name here, ' +
+        'it goes through the button above — and your clan will appear on this page ' +
+        'with its emblem.</p>' +
+        '<a class="btn btn-go" href="https://ko-fi.com/clanplus" target="_blank" rel="noopener">Support on Ko-fi</a>' +
+      '</div>';
+    if (window.cpTraduit) cpTraduit(hote);
+    return;
+  }
+
+  const carte = (x) => {
+    const ini = (x.clan || x.nom || "?").replace(/[^A-Za-z0-9]/g, "").slice(0, 4).toUpperCase();
+    /* l'emblème officiel du clan, quand on connaît son identifiant ;
+       sinon les initiales, qui ne dépendent d'aucun service distant */
+    const em = x.clanId
+      ? '<img src="https://api.worldoftanks.eu/wot/clans/info/?application_id=afd929f43761db6b5061b70d44b9f9b7&clan_id=' +
+        encodeURIComponent(x.clanId) + '" alt="" onerror="this.parentNode.textContent=\'' + ini + '\'">'
+      : ini;
+    return '<div class="sout p' + (x.palier || 1) + '">' +
+      '<span class="em">' + em + '</span>' +
+      '<span><span class="nm">' + x.nom + '</span>' +
+      '<span class="pa">' + (PALIERS[x.palier] || PALIERS[1]) + '</span></span></div>';
+  };
+
+  let h = "";
+  for(const p of [3, 2, 1]){
+    const g = SOUTIENS.filter(x => (x.palier || 1) === p);
+    if(!g.length) continue;
+    h += '<div class="sout-t">' + PALIERS[p] + '</div>' +
+         '<div class="sout-g">' + g.map(carte).join("") + '</div>';
+  }
+  hote.innerHTML = h;
+  if (window.cpTraduit) cpTraduit(hote);
 })();
 </script>
 </body>
