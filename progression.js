@@ -54,10 +54,35 @@
     CLANRATINGS = res.j.clanRatings || null;
 
     const clan = res.j.clan || {};
+    /* La hauteur reelle de la barre du haut : le bandeau plein ecran la
+       retranche. Mesuree plutot que codee en dur, elle suit la langue et
+       la taille de police du systeme. */
+    const mesureBarre = () => {
+      const h = document.querySelector(".pg-top");
+      if (h) document.documentElement.style.setProperty(
+        "--pg-top", Math.ceil(h.getBoundingClientRect().height) + "px");
+      /* ceil et non round : arrondir vers le bas fait retrancher moins que
+         la hauteur reelle, et le bandeau depasse de la difference. Mieux
+         vaut un pixel de trop en moins qu un pixel de trop en plus. */
+    };
+addEventListener("resize", mesureBarre, { passive: true });;
+
     const t = document.getElementById("pgClan");
     if (t) t.textContent = clan.tag ? ("[" + clan.tag + "] " + (clan.name || "")) : "Ton clan";
 
     montre("pgApp");
+    /* APRÈS l'affichage : un élément caché mesure zéro, et le bandeau
+       plein écran aurait retranché zéro — donc dépassé de la hauteur de
+       la barre, poussant la barre d'étapes sous la ligne de flottaison. */
+    mesureBarre();
+    /* Une mesure unique ne suffit pas : la barre change de hauteur APRÈS
+       le premier rendu — les polices finissent de charger, et sous 620 px
+       le nom du clan disparaît. Mesurée à 43 px puis devenue 47, elle
+       laissait le bandeau dépasser de quatre pixels. On l'observe donc
+       au lieu de la mesurer une fois. */
+    if (window.ResizeObserver) new ResizeObserver(mesureBarre)
+      .observe(document.querySelector(".pg-top"));
+    
     populatePlayerSel();
     const sel = document.getElementById("playerSel");
     if (sel) sel.onchange = e => { SELP = Number(e.target.value); renderPlayerView(); };

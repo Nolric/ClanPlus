@@ -54,9 +54,18 @@
 /* ══ LE BANDEAU, BORD À BORD ═══════════════════════════════════════
    Sans arrondi ni bordure latérale : un cadre arrondi au milieu d'un
    écran dit « composant », un bandeau bord à bord dit « page ». */
-.pg-main .dk{margin:0 0 clamp(24px,3vw,40px);border-radius:0;
-  border-left:0;border-right:0}
-.pg-main .dk-vp{height:clamp(560px,82vh,860px)}
+/* Aucune bordure : un bandeau bord a bord n en a pas besoin, et ses deux
+   pixels suffisaient a pousser la barre d etapes sous la ligne de
+   flottaison sur un ecran de telephone. */
+.pg-main .dk{margin:0 0 clamp(24px,3vw,40px);border-radius:0;border:0}
+/* Plein ecran : la hauteur de la fenetre moins la barre du haut, qui est
+   collante et occuperait sinon un bandeau de trop. --pg-top est mesure au
+   rendu (voir progression.js) : cette hauteur change avec la langue et la
+   taille de police du systeme.
+   Le plancher a 520 px protege les fenetres tres basses, ou un bandeau
+   plein ecran ne laisserait plus la place au titre. */
+.pg-main .dk-vp{height:calc(100vh - var(--pg-top,56px));
+  height:calc(100svh - var(--pg-top,56px));min-height:520px}
 
 /* Le contenu, lui, reste borné et centré. La marge latérale vaut le plus
    grand des deux : le retrait normal, ou ce qu'il faut pour recentrer un
