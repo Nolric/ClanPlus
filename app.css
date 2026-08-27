@@ -1574,6 +1574,9 @@
 .dk-s b{display:block;font-size:clamp(23px,2.4vw,34px);font-weight:800;line-height:1;
   letter-spacing:-.028em;font-variant-numeric:tabular-nums;color:var(--ink)}
 .dk-s b.up{color:var(--good)} .dk-s b.dn{color:var(--bad)}
+/* Le dénominateur du rang — le « /47 » de « 12/47 » — passe en retrait :
+   le numérateur porte l information, le total ne fait que la situer. */
+.dk-s b i{font-style:normal;font-size:.55em;font-weight:700;color:var(--muted);letter-spacing:0}
 .dk-s span{display:block;margin-top:6px;font-size:10px;letter-spacing:.13em;
   text-transform:uppercase;color:var(--muted)}
 
@@ -1679,13 +1682,10 @@
 @keyframes dkEtale{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 @keyframes dkParait{from{opacity:0}to{opacity:1}}
 
-/* L'ordre d'apparition EST l'ordre de lecture. */
-.dk-p.vif .dk-eb  {animation:dkMonte .55s cubic-bezier(.22,.61,.36,1) both}
-.dk-p.vif .dk-t   {animation:dkMonte .66s cubic-bezier(.22,.61,.36,1) .07s both}
-.dk-p.vif .dk-l   {animation:dkMonte .6s  cubic-bezier(.22,.61,.36,1) .15s both}
-.dk-p.vif .dk-s li{animation:dkMonte .58s cubic-bezier(.22,.61,.36,1) both;
-                   animation-delay:calc(.22s + var(--j,0) * .07s)}
-.dk-p.vif .dk-more{animation:dkMonte .55s cubic-bezier(.22,.61,.36,1) .38s both}
+/* L'ordre d'apparition EST l'ordre de lecture. Les regles sont plus bas,
+   avec dkEntre : elles tiennent compte du SENS du deplacement, ce que
+   dkMonte ne savait pas faire. Deux definitions concurrentes du meme
+   effet auraient fini par diverger. */
 
 /* Chaque figure se construit comme elle se lit. */
 .dk-p.vif .dkf-b i{transform-origin:bottom;
@@ -1705,6 +1705,48 @@
    la mesure et lance la transition. */
 .dkc-l{transition:stroke-dashoffset 1.1s cubic-bezier(.32,.72,.32,1) .2s}
 .dk-p.vif .dkf-c svg>path:first-child{animation:dkParait .8s ease .5s both}
+
+
+/* ── L'entree suit le sens du geste ───────────────────────────────
+   --sens vaut 1 quand on avance, -1 quand on recule. Le contenu entre
+   donc par la ou l'on vient. Une seule serie de keyframes suffit. */
+@keyframes dkEntre{
+  from{opacity:0;transform:translate3d(calc(var(--sens,1) * 34px), 14px, 0)}
+  to  {opacity:1;transform:none}
+}
+.dk-p.vif .dk-eb  {animation:dkEntre .55s cubic-bezier(.22,.61,.36,1) both}
+.dk-p.vif .dk-t   {animation:dkEntre .68s cubic-bezier(.22,.61,.36,1) .07s both}
+.dk-p.vif .dk-l   {animation:dkEntre .62s cubic-bezier(.22,.61,.36,1) .15s both}
+.dk-p.vif .dk-s li{animation:dkEntre .6s  cubic-bezier(.22,.61,.36,1) both;
+                   animation-delay:calc(.22s + var(--j,0) * .07s)}
+.dk-p.vif .dk-more{animation:dkEntre .56s cubic-bezier(.22,.61,.36,1) .38s both}
+
+/* ── Le fond vit ──────────────────────────────────────────────────
+   Une derive tres lente, sur l'image INTERIEURE : le calque exterieur
+   porte deja la parallaxe, et deux transformations sur le meme element
+   se remplaceraient au lieu de s'ajouter.
+   Vingt-huit secondes : assez lent pour ne jamais attirer l'oeil, assez
+   present pour qu'une image figee se remarque par son absence. */
+@keyframes dkDerive{
+  0%  {transform:scale(1.06) translate3d(-1.2%, 0.6%, 0)}
+  50% {transform:scale(1.11) translate3d(1.2%, -0.6%, 0)}
+  100%{transform:scale(1.06) translate3d(-1.2%, 0.6%, 0)}
+}
+.dk-map img{animation:dkDerive 28s ease-in-out infinite}
+
+/* ── La carte repond a la main ────────────────────────────────────
+   Elle se redresse et se souleve : un objet qu'on peut prendre, pas une
+   vignette collee au fond. */
+.dkf-m{transition:transform .45s cubic-bezier(.22,.61,.36,1),
+                  box-shadow .45s cubic-bezier(.22,.61,.36,1)}
+.dkf-m:hover{transform:rotate(-1deg) translateY(-6px) scale(1.02);
+  box-shadow:0 36px 80px rgba(0,0,0,.6)}
+
+@media(prefers-reduced-motion:reduce){
+  .dk-map img{animation:none}
+  .dkf-m{transition:none}
+  .dkf-m:hover{transform:rotate(-3deg)}
+}
 
 @media(prefers-reduced-motion:reduce){
   .dk-p.vif *{animation:none !important}

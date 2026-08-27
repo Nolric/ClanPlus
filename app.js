@@ -3411,11 +3411,65 @@ function dkJauge(sr){
   '</div>';
 }
 
+
+/* ── Le rang dans le clan ───────────────────────────────────────────
+   « 1 557 de SR » ne dit rien à qui ne connaît pas l'échelle ; « 12ᵉ sur
+   47 » se comprend sans explication.
+   On n'y fait figurer que les joueurs ayant assez de batailles : classer
+   quelqu'un sur trois parties le place au hasard, et fausse le rang de
+   tous les autres au passage. */
+function dkRang(clanRows, moi){
+  const par=new Map();
+  for(const r of clanRows){
+    if(r.accId==null) continue;
+    if(!par.has(r.accId)) par.set(r.accId,[]);
+    par.get(r.accId).push(r);
+  }
+  const l=[];
+  for(const [id,rs] of par){
+    if(rs.length<8) continue;
+    const v=srAvg(rs);
+    if(v!=null) l.push({id, sr:v});
+  }
+  if(l.length<5) return null;
+  l.sort((a,b)=>b.sr-a.sr);
+  const i=l.findIndex(x=>Number(x.id)===Number(moi));
+  return i<0 ? null : {rang:i+1, total:l.length};
+}
+
+/* ── L'étendue dans le temps ────────────────────────────────────────
+   Vingt-cinq batailles en une semaine et vingt-cinq en six mois ne
+   racontent pas la même chose. Le nombre seul cache cette différence. */
+function dkEtendue(my){
+  const t=my.map(r=>r.ts).filter(Boolean);
+  if(t.length<2) return null;
+  const j=Math.round((Math.max(...t)-Math.min(...t))/86400);
+  return j<2 ? null : j;
+}
+
+/* ── La marche suivante ─────────────────────────────────────────────
+   Un classement se contemple ; un objectif chiffré se vise. */
+function dkProchain(sr){
+  if(sr==null) return null;
+  const p=DK_PALIERS.map(x=>x[0]).filter(v=>v>sr).sort((a,b)=>a-b)[0];
+  return p==null ? null : {cible:p, reste:Math.round(p-sr), nom:ceTier(p).l};
+}
+
+/* ── L'écart de dégâts sur une carte ────────────────────────────────
+   Perdre sur une carte est un fait. Y faire moins de dégâts qu'ailleurs
+   dit POURQUOI, et oriente vers le placement plutôt que vers le tir. */
+function dkEcartCarte(c, my){
+  if(!c || !my.length) return null;
+  const moy=my.reduce((a,r)=>a+(r.dmg||0),0)/my.length;
+  if(!moy) return null;
+  return Math.round(((c.dmg/c.n)/moy-1)*100);
+}
+
 /* ── Un panneau ─────────────────────────────────────────────────────
    Repère, titre, UNE ligne, deux chiffres, un bouton. Rien de plus :
    c'est la contrainte qui fait la lisibilité, pas le style. */
 function dkPanneau(o){
-  const st=(o.stats||[]).filter(Boolean).slice(0,2).map((f,i)=>
+  const st=(o.stats||[]).filter(Boolean).slice(0,3).map((f,i)=>
     '<li style="--j:'+i+'"><b'+(f.ton?' class="'+f.ton+'"':"")+' data-v="'+f.v+'">'+
       f.v+'</b><span>'+f.l+'</span></li>').join("");
   return ''+
@@ -3466,6 +3520,12 @@ function dkDonnees(my, clanRows){
   const sr=srAvg(my), tier=ceTier(sr), tr=pSRTrend(my), st=pStreak(my);
   const g=d.retards[0]||null;
   const vg=v=>g? (g.u==="%"?pctf(v):(g.u==="s"?Math.round(v)+" s":v.toFixed(2))) : "—";
+  /* Ce que ce geste vaut en DÉGÂTS, mesuré sur les joueurs du clan.
+     Renvoie null quand la corrélation est trop faible ou l'échantillon
+     trop mince : mieux vaut se taire qu'affirmer au hasard. */
+  const va = g ? gesteValeur(g, clanRows) : null;
+  const rang = dkRang(clanRows, SELP);
+  const jours = dkEtendue(my);
 
   /* ── 01 ── le rythme */
   let t1;
@@ -3474,23 +3534,38 @@ function dkDonnees(my, clanRows){
   else if(bw.wr>=0.55)            t1=t("Tu tiens ton niveau.");
   else                            t1=t("Tu cherches ton rythme.");
   const h1={ n:1, etape:t("Où tu en es"), titre:t1,
-    ligne:t("{n} batailles, {p} de victoires.").replace("{n}",fmt(bw.battles))
-            .replace("{p}",Math.round(bw.wr*100)+" %"),
+    ligne: jours
+      ? t("{n} batailles sur {j} jours.").replace("{n}",fmt(bw.battles)).replace("{j}",fmt(jours))
+      : t("{n} batailles analysées.").replace("{n}",fmt(bw.battles)),
     fond:(F(0)||{}).k, fig:dkBandes(my),
+    /* Le rang situe mieux que le taux : « 52 % » ne se compare à rien,
+       « 12ᵉ sur 47 » se comprend d'un coup. */
     stats:[
       {v:Math.round(bw.wr*100)+" %", l:t("de victoires"), ton:bw.wr>=0.5?"up":"dn"},
+      rang?{v:rang.rang+"<i>/"+rang.total+"</i>", l:t("dans le clan"),
+            ton:rang.rang<=Math.ceil(rang.total/3)?"up":""}:null,
       dpts!=null?{v:(dpts>=0?"+":"−")+Math.abs(dpts)+" %", l:t("dégâts sur 30 j"), ton:dpts>=0?"up":"dn"}:null,
     ]};
 
   /* ── 02 ── le geste */
   const h2 = g
     ? { n:2, etape:t("Ce qui te freine"), titre:esc(g.nom),
-        ligne:t("Le geste qui te coûte le plus, sur les six mesurés."),
+        /* « Ta pénétration est à 73 % » ne fait rien faire. « Ces points
+           valent 180 dégâts par bataille » si. Quand le calcul aboutit,
+           c'est LUI qu'on met en avant. */
+        ligne: va
+          ? t("Dans ton clan, ceux qui réussissent le mieux ce geste font {n} de dégâts en plus par bataille.")
+              .replace("{n}", fmt(Math.round(va.ecart)))
+          : (g.u==="%" && g.ecart<0
+              ? t("Il te manque {n} points sur cent pour rejoindre le niveau du clan.")
+                  .replace("{n}", Math.max(1,Math.round(Math.abs(g.c-g.m)*100)))
+              : t("Le geste qui te coûte le plus, sur les six mesurés.")),
         fond:(F(1)||{}).k,
         fig:dkAnneau(g.u==="%"?g.m:null, g.u==="%"?g.c:null, vg(g.m), t("toi"),
                      g.ecart>=0?"up":"dn"),
         stats:[
           {v:vg(g.c), l:t("le clan")},
+          va ? {v:"+"+fmt(Math.round(va.ecart)), l:t("dégâts en jeu"), ton:"up"} : null,
           {v:(g.ecart>=0?"+":"−")+Math.round(Math.abs(g.ecart)*100)+" %", l:t("d'écart"),
            ton:g.ecart>=0?"up":"dn"},
         ]}
@@ -3505,9 +3580,15 @@ function dkDonnees(my, clanRows){
         /* Le fond prend une AUTRE carte : la même en fond et en figure
            faisait doublon, et la figure perdait son statut d'objet. */
         fond:(F(2)||{}).k, fig:dkCarte(dure.k, prettyMap(dure.nom), t("la plus difficile")),
+        /* L'écart de dégâts dit POURQUOI. Des dégâts normaux et des
+           défaites orientent vers le placement ; des dégâts en baisse
+           vers le duel. Deux conseils opposés — seul ce chiffre tranche. */
         stats:[
           {v:Math.round(dure.v/dure.n*100)+" %", l:t("de victoires"),
            ton:(dure.v/dure.n)>=0.5?"up":"dn"},
+          (()=>{ const e=dkEcartCarte(dure,my);
+            return e==null?null:{v:(e>=0?"+":"−")+Math.abs(e)+" %",
+              l:t("de dégâts vs ta moyenne"), ton:e>=0?"up":"dn"}; })(),
           {v:dure.n, l:t("batailles")},
         ]}
     : { n:3, etape:t("Où ça se joue"), titre:t("Pas encore de terrain qui ressorte."),
@@ -3528,19 +3609,32 @@ function dkDonnees(my, clanRows){
   for(let i=k;i<=suite.length;i++){ const v=srAvg(suite.slice(i-k,i)); if(v!=null) pts.push(v); }
   const h4={ n:4, etape:t("Est-ce que ça marche"), titre:t4, ligne:l4,
     fond:(F(2)||{}).k, fig:dkCourbe(pts),
+    /* Le point de depart compte autant que l'arrivee : « 1 573 » seul ne
+       dit pas si l'on monte. Les trois ensemble racontent le trajet. */
     stats: tr?[
       {v:(tr.delta>=0?"+":"−")+Math.abs(tr.delta), l:t("de SR"), ton:tr.delta>=0?"up":"dn"},
+      {v:fmt(tr.older), l:t("au départ")},
       {v:fmt(tr.recent), l:t("aujourd'hui")},
     ]:[] };
 
   /* ── 05 ── le bilan */
   const h5={ n:5, etape:t("Le bilan"), titre: sr!=null?fmt(sr):t("Pas encore de SR"),
-    ligne: sr!=null? esc(tier.l) : t("Le SR se calcule à partir d'une dizaine de batailles."),
+    ligne: sr!=null
+      ? (()=>{ const p=dkProchain(sr);
+          return p ? esc(tier.l)+" — "+t("encore {n} pour « {s} ».")
+                       .replace("{n}", fmt(p.reste)).replace("{s}", esc(p.nom))
+                   : esc(tier.l); })()
+      : t("Le SR se calcule à partir d'une dizaine de batailles."),
     fond:(F(3)||{}).k, fig:dkJauge(sr),
+    /* Un classement se contemple, un objectif se vise : le rang pour
+       situer, la marche suivante pour agir. */
     stats: sr!=null?[
+      rang?{v:rang.rang+"<i>/"+rang.total+"</i>", l:t("dans le clan"),
+            ton:rang.rang<=Math.ceil(rang.total/3)?"up":""}:null,
+      (()=>{ const p=dkProchain(sr);
+        return p?{v:"+"+fmt(p.reste), l:t("pour le palier suivant")}:null; })(),
       st?{v:st.n, l:st.res===1?t("victoires d'affilée"):t("défaites d'affilée"),
           ton:st.res===1?"up":"dn"}:null,
-      {v:fmt(bw.battles), l:t("batailles pesées")},
     ]:[] };
 
   return [h1,h2,h3,h4,h5];
@@ -3550,6 +3644,7 @@ function dkDonnees(my, clanRows){
    LE MOTEUR DU PONT
    ═══════════════════════════════════════════════════════════════════ */
 let dkN=1;          // l'étape affichée
+let dkSens=1;       // 1 : on avance · −1 : on recule
 let dkVu=false;     // l'entrée a-t-elle déjà été jouée une fois ?
 let dkPos=0;        // la position de la piste, en pixels — la vérité
 let dkRaf=0, dkPret=false;
@@ -3591,7 +3686,12 @@ function dkApplique(){
       if(m) m.style.transform="translate3d("+(x*-170).toFixed(1)+"px,0,0) scale(1.22)";
       if(g) g.style.transform="translate3d("+(x*300).toFixed(1)+"px,0,0)";
       if(c){
-        c.style.transform="translate3d("+(x*110).toFixed(1)+"px,0,0)";
+        /* Le panneau qui s'eloigne RECULE aussi : une translation seule
+           fait glisser deux surfaces cote a cote, une reduction les met a
+           deux profondeurs. C'est ce qui fait la difference entre un
+           carrousel et un empilement. */
+        const k=Math.min(1,Math.abs(x));
+        c.style.transform="translate3d("+(x*110).toFixed(1)+"px,0,0) scale("+(1-k*0.055).toFixed(4)+")";
         c.style.opacity=String(Math.max(0,1-Math.abs(x)*1.45));
       }
     }
@@ -3622,6 +3722,8 @@ function dkAnime(vers){
 
 function dkVa(n, sec){
   n=Math.max(1,Math.min(5,n));
+  /* Le sens du geste : le contenu entrera par la ou l'on vient. */
+  dkSens = n>dkN ? 1 : (n<dkN ? -1 : dkSens);
   const vers=(n-1)*dkL();
   if(sec){ cancelAnimationFrame(dkRaf); dkPos=vers; dkApplique(); }
   else dkAnime(vers);
@@ -3723,6 +3825,9 @@ function dkArme(){
 function dkEntree(n){
   const p=document.getElementById("dkP"+n);
   if(!p || dkDoux()) return;
+  /* Le sens passe au style : c'est lui qui decide de quel cote le
+     contenu entre. Une variable CSS evite deux jeux de keyframes. */
+  p.style.setProperty("--sens", dkSens>=0 ? "1" : "-1");
   /* Un seul panneau porte « vif » à la fois : sinon les quatre autres
      gardent leurs animations en fin de course et rien ne dit plus lequel
      est en scène. */
@@ -3754,7 +3859,11 @@ function dkCompte(el){
   /* On retient la valeur d'arrivée au premier passage : sans cela, un
      second comptage sur la même étape partirait d'un nombre en cours
      de route et n'atteindrait jamais la bonne valeur. */
-  const brut=el.dataset.v||(el.dataset.v=el.textContent);
+  const brut=el.dataset.v||(el.dataset.v=el.innerHTML);
+  /* Un nombre qui porte du balisage — « 18<i>/47</i> » — ne se compte pas :
+     l'ecriture par textContent transformerait ses balises en texte
+     litteral, et le lecteur verrait le code. On l'affiche tel quel. */
+  if(brut.indexOf("<")>=0) return;
   /* Les séparateurs de milliers : espace, espace insécable, espace
      insécable étroite. fmt() emploie la dernière. On les nomme par
      leur point de code — écrites en clair, elles sont invisibles à la
