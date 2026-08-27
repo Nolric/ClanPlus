@@ -1523,6 +1523,147 @@
   .st-present-x.on{border-color:var(--gold);color:var(--gold);background:var(--gold-soft)}
   .st-present-stage{flex:1;min-height:0;display:flex;justify-content:center;align-items:center;width:100%;position:relative}
   .st-present-stage svg{height:100%;max-height:100%;max-width:100%;aspect-ratio:1;border-radius:10px;background:#000;border:1px solid #2b2d31}
+  
+
+/* ══ LE FIL ═════════════════════════════════════════════════════════
+   Une ligne verticale et cinq pastilles numérotées. Ce n'est pas un
+   ornement : elle dit qu'il y a un ORDRE de lecture, et qu'on peut
+   s'arrêter en chemin sans perdre le fil — au sens propre. */
+.fil{list-style:none;margin:20px 0 0;padding:0;position:relative}
+.fil::before{content:"";position:absolute;left:19px;top:20px;bottom:40px;width:1px;
+  background:linear-gradient(180deg,var(--accent) 0,var(--border) 6%,var(--border) 92%,transparent)}
+.fil-e{position:relative;padding:0 0 40px 56px;list-style:none}
+.fil-e:last-child{padding-bottom:8px}
+.fil-e::before{content:attr(data-n);position:absolute;left:0;top:-2px;
+  width:39px;height:39px;border-radius:50%;display:grid;place-items:center;
+  font:700 12px/1 ui-monospace,Consolas,monospace;letter-spacing:.05em;
+  color:var(--accent);background:var(--surface-1);border:1px solid var(--border);
+  box-shadow:0 0 0 5px var(--plane)}
+/* la station en cours de lecture s'éclaire : un repère discret quand on
+   fait défiler une page longue */
+.fil-e:hover::before{border-color:var(--accent);background:var(--accent-soft)}
+.fil-t{margin:0 0 16px}
+.fil-t h2{margin:0 0 7px;font-size:20px;font-weight:800;letter-spacing:-.015em;line-height:1.25}
+.fil-t p{margin:0 0 8px;font-size:13.5px;line-height:1.62;color:var(--muted);max-width:76ch}
+.fil-t p:last-child{margin-bottom:0}
+
+/* ══ L'ANNEAU ═══════════════════════════════════════════════════════ */
+.an{position:relative;width:82px;height:82px;flex:0 0 auto}
+.an svg{width:100%;height:100%;display:block}
+.an-c{position:absolute;inset:0;display:grid;place-content:center;text-align:center;line-height:1.05}
+.an-c b{font-size:18px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--ink)}
+.an-c span{display:block;font-size:9px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--muted);margin-top:3px}
+
+/* ══ LE TERRAIN ═════════════════════════════════════════════════════
+   La vue du dessus de la carte, pas une photo d'ambiance : c'est la
+   minimap sur laquelle le joueur raisonne pendant la partie. Le dégradé
+   sombre en bas n'est pas un effet — il rend le libellé lisible quelle
+   que soit la carte. */
+.tr{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.tr-c{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+  overflow:hidden;display:flex;flex-direction:column}
+.tr-dure{border-color:rgba(236,106,106,.28)}
+.tr-facile{border-color:rgba(46,194,110,.24)}
+.tr-img{position:relative;aspect-ratio:16/10;background:var(--surface-2);overflow:hidden}
+.tr-img img{width:100%;height:100%;object-fit:cover;display:block;
+  filter:saturate(.8) contrast(1.06) brightness(.92)}
+.tr-img::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(180deg,rgba(12,12,11,.15) 0,transparent 34%,rgba(12,12,11,.82) 100%)}
+.tr-img.tr-noimg{aspect-ratio:auto;height:8px}
+.tr-img.tr-noimg img,.tr-img.tr-noimg .tr-tag{display:none}
+.tr-tag{position:absolute;left:12px;bottom:11px;z-index:1;
+  font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;
+  padding:4px 10px;border-radius:20px;background:rgba(12,12,11,.72);
+  border:1px solid var(--border);color:var(--ink-2)}
+.tr-dure .tr-tag{color:#ec6a6a;border-color:rgba(236,106,106,.42)}
+.tr-facile .tr-tag{color:#2ec26e;border-color:rgba(46,194,110,.42)}
+.tr-b{padding:15px 17px 17px}
+.tr-b h4{margin:0 0 11px;font-size:17px;font-weight:700;letter-spacing:-.01em}
+.tr-k{display:flex;gap:20px;margin-bottom:11px;flex-wrap:wrap}
+.tr-k > span{display:flex;flex-direction:column;gap:2px;font-size:10px;
+  letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.tr-k > span > b{font-size:17px;font-weight:800;letter-spacing:0;text-transform:none;
+  color:var(--ink);font-variant-numeric:tabular-nums}
+.tr-p{margin:0;font-size:13.5px;line-height:1.62;color:var(--ink-2)}
+.tr-vide{padding:16px 18px;border:1px dashed var(--border);border-radius:var(--radius);
+  color:var(--muted);font-size:13.5px;line-height:1.6}
+
+@media(max-width:900px){ .tr{grid-template-columns:1fr} }
+@media(max-width:620px){
+  .fil::before{left:14px}
+  .fil-e{padding-left:42px}
+  .fil-e::before{width:29px;height:29px;font-size:10.5px}
+  .fil-t h2{font-size:18px}
+}
+
+/* ══ « Ce que je travaille » ════════════════════════════════════════
+   Une seule carte, large. Le contraste de taille avec le reste de la
+   page EST le message : voilà ce qu'on fait, le reste peut attendre. */
+.tv{margin:4px 0 22px}
+.tv-h{display:flex;align-items:baseline;gap:12px;margin:0 2px 10px}
+.tv-lbl{font-size:12px;letter-spacing:1px;text-transform:uppercase;font-weight:700;color:var(--accent)}
+.tv-sub{font-size:12px;color:var(--muted)}
+.tv-card{background:linear-gradient(180deg,var(--panel,var(--card)),var(--panel-2,var(--card)));
+  border:1px solid var(--line,var(--border));border-left:3px solid var(--accent);
+  border-radius:13px;padding:20px 22px}
+.tv-top{display:flex;gap:22px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+.tv-top h3{margin:0 0 6px;font-size:23px;font-weight:800;letter-spacing:-.02em}
+.tv-constat{margin:0;font-size:14.5px;line-height:1.6;color:var(--ink-2,var(--muted));max-width:56ch}
+.tv-chiffres{display:flex;align-items:center;gap:16px;flex:0 0 auto}
+.tv-moi,.tv-clan{text-align:center}
+.tv-moi b,.tv-clan b{display:block;font-size:22px;font-weight:800;font-variant-numeric:tabular-nums}
+.tv-clan b{color:var(--muted);font-weight:700}
+.tv-moi span,.tv-clan span{display:block;font-size:10.5px;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--muted);margin-top:2px}
+.tv-ecart{font-size:13px;font-weight:800;padding:3px 9px;border-radius:20px;
+  background:rgba(226,104,95,.14);color:var(--dv-moins,#e2685f);font-variant-numeric:tabular-nums}
+/* la jauge situe le joueur autour du repère du clan, plafonnée à ±50 %
+   pour qu'un écart extrême n'écrase pas la lecture */
+.tv-jauge{position:relative;height:6px;margin:16px 0 4px;border-radius:4px;
+  background:var(--steel-2,rgba(255,255,255,.05));overflow:hidden}
+.tv-jauge .tv-ref{position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--muted);opacity:.55}
+.tv-jauge i{position:absolute;top:0;bottom:0;background:var(--dv-moins,#e2685f);border-radius:4px}
+.tv-evo{margin:18px 0 6px}
+.tv-evo-h{display:flex;align-items:baseline;gap:10px;font-size:12px;font-weight:700;
+  letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2,var(--muted));margin-bottom:8px}
+.tv-evo-h .hint{font-weight:400;text-transform:none;letter-spacing:0;font-size:11.5px}
+.tv-spark{display:block;width:100%;height:96px}
+.tv-evo-non{margin:16px 0 4px;font-size:13px;color:var(--muted);
+  padding:12px 14px;border:1px dashed var(--line,var(--border));border-radius:9px}
+/* « ce que ça vaut » : la seule phrase qui transforme un pourcentage
+   en raison d'agir */
+.tv-vaut{margin:16px 0 4px;padding:14px 16px;border-radius:10px;
+  background:rgba(216,181,102,.07);border:1px solid rgba(216,181,102,.22)}
+.tv-vaut-h{font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  font-weight:700;color:var(--accent);margin-bottom:6px}
+.tv-vaut p{margin:0;font-size:14px;line-height:1.65}
+.tv-gain{color:var(--dv-plus,#5fc27e);white-space:nowrap}
+.tv-vaut footer{margin-top:7px;font-size:11px;color:var(--muted)}
+.tv-action{display:flex;gap:9px;margin:16px 0 0;padding-top:14px;
+  border-top:1px solid var(--line,var(--border));font-size:14.5px;line-height:1.6}
+.tv-action span{color:var(--accent);font-weight:800;flex:0 0 auto}
+.tv-f{margin-top:12px;font-size:11px;color:var(--muted)}
+.tv-next{margin-top:12px;border:1px solid var(--line,var(--border));border-radius:10px;
+  padding:11px 14px;background:var(--card)}
+.tv-next summary{cursor:pointer;font-size:13.5px;color:var(--ink-2,var(--muted));list-style:none}
+.tv-next summary::-webkit-details-marker{display:none}
+.tv-next summary::before{content:"▸ ";color:var(--accent)}
+.tv-next[open] summary::before{content:"▾ "}
+.tv-next-e{color:var(--muted);font-variant-numeric:tabular-nums}
+.tv-p{margin:10px 0 0;font-size:14px;line-height:1.6;color:var(--ink-2,var(--muted))}
+.tv-fort{color:var(--dv-plus,#5fc27e)}
+.tv-ok .tv-card{border-left-color:var(--dv-plus,#5fc27e)}
+.tv-vide{padding:16px 18px;border:1px dashed var(--line,var(--border));border-radius:11px;color:var(--muted)}
+/* la note qui réconcilie les deux lectures du bilan */
+.pz-note{max-width:78ch;margin:-2px 2px 14px;font-size:13px;line-height:1.6;color:var(--muted)}
+@media(max-width:760px){
+  .tv-top{flex-direction:column;gap:14px}
+  .tv-chiffres{align-self:stretch;justify-content:space-between}
+  .tv-card{padding:16px 15px}
+  .tv-top h3{font-size:20px}
+}
+
   /* Sections en construction : visibles de tous, contenu réservé au mode test */
   .wip-msg{max-width:560px;margin:48px auto;padding:26px 28px;background:var(--card);
     border:1px solid var(--border);border-radius:var(--radius);text-align:center}
@@ -3037,66 +3178,93 @@
          a fait du Tier VI verrait moins de batailles que ce qu'il a joué, sans
          comprendre pourquoi. Les rangs non couverts restent visibles, désactivés. -->
     <div class="tiersel" id="pTierSel"></div>
-    <div id="pVerdictHost"></div>
-    <div id="pHead"></div>
 
-    <!-- ═══ 1. OÙ J'EN SUIS ═══ le chiffre, son palier, sa marge -->
-    <div id="pSR"></div>
+    <!-- ═══════════════════════════════════════════════════════════════
+         LE FIL — cinq stations, dans l'ordre où l'on raisonne quand on
+         veut progresser. Chaque station annonce ce qu'elle apporte : la
+         page ne se contente plus d'empiler des cartes justes, elle mène
+         quelque part.
+         ═══════════════════════════════════════════════════════════════ -->
+    <ol class="fil">
 
-    <!-- ═══ 2. QUOI TRAVAILLER ═══ le diagnostic et le plan, côte à côte.
-         C'est la partie utile : elle remonte AVANT les tableaux, pas après. -->
-    <p class="pz-title">Quoi travailler</p>
-    <!-- Le coach passe AVANT le radar : c'est la partie actionnable.
-         Le radar dit où tu te situes, le coach dit quoi faire. -->
-    <div id="pMissions"></div>
-    <div id="pCoach"></div>
-    <div class="pz-diag">
-      <div class="pz-stack">
-        <div id="pDiag"></div>
-        <div id="pDecomp"></div>
-      </div>
-      <div class="card plan" id="pPlanCard"><h2>🎯 Plan de progression</h2><div id="pPlan"></div></div>
-    </div>
+      <li class="fil-e" data-n="01">
+        <div class="fil-t"><h2>Où tu en es</h2>
+          <p>Ton niveau du moment, et ce qu'il vaut par rapport au clan. C'est le point de
+             départ : tout ce qui suit s'y rapporte.</p></div>
+        <div id="pHead"></div>
+        <div id="pVerdictHost"></div>
+      </li>
 
-    <!-- ═══ 3. AVEC QUOI JE JOUE ═══ la décision d'avant-bataille. -->
-    <p class="pz-title">Avec quoi je joue</p>
-    <div id="pTanks"></div>
+      <li class="fil-e" data-n="02">
+        <div class="fil-t"><h2>Ce qui te freine</h2>
+          <p>Un seul geste, celui qui te coûte le plus. Avec ce qu'il vaut en dégâts, sa
+             courbe sur tes dernières batailles, et comment le travailler.</p></div>
+        <div id="pTravail"></div>
+      </li>
 
-    <!-- ═══ 4. EST-CE QUE JE PROGRESSE ═══ deux lectures de la même question,
-         côte à côte : le SR lissé, et les dégâts bruts qui en sont une composante. -->
-    <p class="pz-title">Est-ce que je progresse</p>
-    <div class="pz-evo">
-      <div id="pEvo"></div>
-      <div class="card">
-        <h2>Dégâts par bataille <span class="hint">valeur brute, sans lissage</span></h2>
-        <svg class="trend" id="pTrend" preserveAspectRatio="none"></svg>
-      </div>
-    </div>
-    <div id="pDiff"></div>
-    <div id="pRecords"></div>
+      <li class="fil-e" data-n="03">
+        <div class="fil-t"><h2>Où ça se joue</h2>
+          <p>Un geste se travaille quelque part. Voici les cartes où tu gagnes le moins et
+             le plus — la première mérite un débriefing, la seconde une explication.</p></div>
+        <div id="pTerrain"></div>
+      </li>
 
-    <!-- ═══ 5. LE DÉTAIL ═══ données de consultation, repliées par défaut : elles
-         ne doivent pas s'interposer entre le joueur et son diagnostic. -->
-    <details class="pz-more">
-      <summary><span class="pz-sum">Toutes mes statistiques</span>
-        <span class="pz-hint">chars, cartes, adversaires, détails de combat</span></summary>
-      <section class="kpis" id="pKpis"></section>
-      <div class="card" style="margin-bottom:16px">
-        <h2>Toi vs le clan <span class="hint">moyenne · meilleur membre</span></h2><div id="pCompare"></div>
-      </div>
-      <div class="grid2">
-        <div class="card"><h2>Top chars joués <span class="hint">les plus joués</span></h2><div id="pByTank"></div></div>
-        <div class="card"><h2>Par carte <span class="hint">dégâts moy · % vict.</span></h2><div id="pByMap"></div></div>
-      </div>
-      <div class="grid2">
-        <div class="card"><h2>Clans adverses <span class="hint">🔴 dangereux · 🟢 facile</span></h2><div id="pEnemies"></div></div>
-        <div class="card"><h2>Détails de combat <span class="hint">tes moyennes</span></h2><div id="pHidden"></div></div>
-      </div>
-      <div class="grid2">
-        <div class="card"><h2>Par classe de char <span class="hint">dégâts moy · % vict.</span></h2><div id="pByClass"></div></div>
-        <div class="card"><h2>Par tier <span class="hint">dégâts moy · % vict.</span></h2><div id="pByTier"></div></div>
-      </div>
-    </details>
+      <li class="fil-e" data-n="04">
+        <div class="fil-t"><h2>Est-ce que ça marche</h2>
+          <p>La preuve. On travaille d'abord, on regarde ensuite si ça bouge — jamais
+             l'inverse.</p></div>
+        <div id="pMissions"></div>
+        <div class="pz-evo">
+          <div id="pEvo"></div>
+          <div class="card">
+            <h2>Dégâts par bataille <span class="hint">valeur brute, sans lissage</span></h2>
+            <svg class="trend" id="pTrend" preserveAspectRatio="none"></svg>
+          </div>
+        </div>
+        <div id="pDiff"></div>
+        <div id="pRecords"></div>
+      </li>
+
+      <li class="fil-e" data-n="05">
+        <div class="fil-t"><h2>Le bilan</h2>
+          <p>Le SR, tes cinq aptitudes, tes chars. Ce sont des constats — ils se lisent
+             après le travail, pas avant.</p>
+          <p class="pz-note"><b>Deux lectures différentes :</b> le geste travaillé à l'étape 02
+            te compare <b>au clan</b>, le radar ci-dessous te compare <b>à ta classe de char</b>.
+            On peut être au niveau attendu de son rôle et perdre des obus quand même — les deux
+            sont vraies en même temps.</p></div>
+        <div id="pSR"></div>
+        <div class="pz-diag">
+          <div class="pz-stack">
+            <div id="pDiag"></div>
+            <div id="pDecomp"></div>
+          </div>
+          <div class="card plan" id="pPlanCard"><h2>🎯 Plan de progression</h2><div id="pPlan"></div></div>
+        </div>
+        <div id="pTanks"></div>
+
+        <details class="pz-more">
+          <summary><span class="pz-sum">Toutes mes statistiques</span>
+            <span class="pz-hint">chars, cartes, adversaires, détails de combat</span></summary>
+          <section class="kpis" id="pKpis"></section>
+          <div class="card" style="margin-bottom:16px">
+            <h2>Toi vs le clan <span class="hint">moyenne · meilleur membre</span></h2><div id="pCompare"></div>
+          </div>
+          <div class="grid2">
+            <div class="card"><h2>Top chars joués <span class="hint">les plus joués</span></h2><div id="pByTank"></div></div>
+            <div class="card"><h2>Par carte <span class="hint">dégâts moy · % vict.</span></h2><div id="pByMap"></div></div>
+          </div>
+          <div class="grid2">
+            <div class="card"><h2>Détails de combat <span class="hint">tes moyennes</span></h2><div id="pHidden"></div></div>
+          </div>
+          <!-- Conteneurs conservés, vides : « Clans adverses », « Par classe » et
+               « Par tier » reposaient sur trop peu de batailles pour dire quoi que
+               ce soit. Ils reviendront quand le volume le justifiera. -->
+          <div hidden><div id="pEnemies"></div><div id="pByClass"></div><div id="pByTier"></div></div>
+        </details>
+      </li>
+
+    </ol>
   </div>
 
   <div id="viewLineups" class="hidden dashx">
@@ -4042,7 +4210,7 @@ const T5_PARTS = [
   { k:"assist", l:"Assistance", c:"#4f97ee",
     d:"Dégâts infligés par tes alliés sur une cible que TU as repérée, ou dont tu as brisé les chenilles." },
   { k:"block",  l:"Blocage",    c:"#c76fa4",
-    d:"Dégâts encaissés par ton blindage sans perdre de points de vie : les obus qui ricochent ou n'percent pas." },
+    d:"Dégâts encaissés par ton blindage sans perdre de points de vie : les obus qui ricochent ou ne percent pas." },
 ];
 function renderTop5(){
   const el=document.getElementById("dashTop5"); if(!el) return;
@@ -5935,6 +6103,14 @@ function wireUI(){
    ============================================================ */
 function fmtTime(sec){ sec=Math.round(sec||0); const m=Math.floor(sec/60),s=sec%60; return m+":"+(s<10?"0":"")+s; }
 function prettyMap(s){ s=String(s||""); if(!s) return "?";
+  /* La table du jeu d'abord : « prohorovka » est un nom de fichier,
+     « Prokhorovka » est le nom de la carte. Onze cartes y ont en plus
+     leur nom français — Toundra, Falaise, Carélie.
+     Le try/catch n'est pas de la superstition : LU_MAPS est déclaré plus
+     bas dans le même script. Il est atteignable au moment où l'on rend
+     une vue, mais un nom de carte n'a pas à faire tomber la page. */
+  try{ const k=s.toLowerCase().replace(/[^a-z]/g,"");
+       const e=LU_MAPS.find(x=>x[0]===k); if(e && e[1]) return e[1]; }catch(_){}
   s=s.replace(/^\d+_/,"").replace(/_/g," ");
   return s.replace(/\b\w/g,c=>c.toUpperCase()); }
 function clsFR(c){ return ({heavyTank:"Lourd",mediumTank:"Moyen",lightTank:"Léger","AT-SPG":"Chasseur (TD)",SPG:"Artillerie"})[c]||c||"—"; }
@@ -6207,7 +6383,7 @@ const COACH_GESTES = [
     calc:rs=>{ const h=rs.reduce((a,r)=>a+(r.hits||0),0), p=rs.reduce((a,r)=>a+(r.pierce||0),0);
       return h>=30 ? {v:p/h, n:h, u:"%"} : null; },
     mieux:"haut",
-    constat:(m,c)=>"Sur tes obus qui touchent, "+pctf(m)+" percent — "+pctf(c)+" pour le clan.",
+    constat:(m,c)=>"Sur tes obus qui touchent, "+pctf(m)+" traversent le blindage — "+pctf(c)+" pour le clan.",
     action:"Tu tapes trop souvent du blindage frontal. Vise les flancs, les toits de tourelle et les points faibles plutôt que la masse."
   },
   {
@@ -6268,6 +6444,267 @@ function ficheHTML(cle){
 
 
 /* Renvoie les écarts significatifs, du plus important au moins important. */
+
+/* ── La courbe d'un geste ───────────────────────────────────────────
+   Une valeur par bataille serait du bruit : sur dix obus, un rebond
+   déplace le taux de dix points. On calcule donc sur une fenêtre
+   glissante — c'est la tendance qui se travaille, pas la partie. */
+function gesteCourbe(g, rs, k){
+  const tri = rs.filter(r=>r.ts).slice().sort((a,b)=>a.ts-b.ts);
+  if(tri.length < k) return [];
+  const out=[];
+  for(let i=k-1;i<tri.length;i++){
+    const v=g.calc(tri.slice(i-k+1,i+1));
+    if(v) out.push({ts:tri[i].ts, v:v.v});
+  }
+  return out;
+}
+
+/* ── Ce qu'un geste vaut, mesuré sur le clan ────────────────────────
+   « 73 % au lieu de 77 % » : et alors ? On répond en regardant les
+   joueurs du clan — ceux qui font ce geste le mieux font-ils plus de
+   dégâts, et combien ?
+
+   ⚠️ Seulement pour les gestes dont la formule NE CONTIENT PAS les
+   dégâts. « Échange » vaut dégâts ÷ PV perdus, « Apport » vaut
+   assistance ÷ dégâts : les relier aux dégâts revient à comparer une
+   grandeur à elle-même. Mesuré sur le banc, ça donnait « progresser en
+   apport te coûte 827 dégâts » — faux, et décourageant. */
+const GESTE_VALEUR_OK = {precis:1, perce:1, blindage:1, survie:1};
+
+function gesteValeur(g, clanRows){
+  if(!GESTE_VALEUR_OK[g.cle]) return null;
+  const parJoueur=new Map();
+  for(const r of clanRows){
+    if(!parJoueur.has(r.accId)) parJoueur.set(r.accId, []);
+    parJoueur.get(r.accId).push(r);
+  }
+  const pts=[];
+  for(const [id,l] of parJoueur){
+    if(l.length<8) continue;                       // sous huit parties, c'est du hasard
+    const v=g.calc(l); if(!v) continue;
+    pts.push({g:v.v, dmg:l.reduce((a,r)=>a+(r.dmg||0),0)/l.length});
+  }
+  if(pts.length<12) return null;                   // trop peu de joueurs pour conclure
+  pts.sort((a,b)=>a.g-b.g);
+  const t=Math.max(3,Math.floor(pts.length/3));
+  const bas=pts.slice(0,t), haut=pts.slice(-t);
+  const moy=(l,c)=>l.reduce((a,x)=>a+x[c],0)/l.length;
+  /* la corrélation dit si le lien est réel ou une coïncidence */
+  const mg=moy(pts,"g"), md=moy(pts,"dmg");
+  let sgd=0,sgg=0,sdd=0;
+  for(const p of pts){ const a=p.g-mg, b=p.dmg-md; sgd+=a*b; sgg+=a*a; sdd+=b*b; }
+  const cor=(sgg&&sdd)?sgd/Math.sqrt(sgg*sdd):0;
+  const ecart=moy(haut,"dmg")-moy(bas,"dmg");
+  /* on se tait plutôt que d'affirmer un lien qu'on ne voit pas */
+  if(cor<0.3 || ecart<80) return null;
+  return {n:pts.length, gBas:moy(bas,"g"), gHaut:moy(haut,"g"),
+          dBas:moy(bas,"dmg"), dHaut:moy(haut,"dmg"), ecart, cor};
+}
+
+/* ── La courbe, dessinée ────────────────────────────────────────────
+   Le repère du clan en pointillé : sans lui, une courbe qui monte ne
+   dit pas si elle a rattrapé quoi que ce soit. */
+function gesteSpark(pts, ref, u){
+  if(pts.length<3) return "";
+  const W=520, H=96, P=8;
+  const vs=pts.map(p=>p.v).concat([ref]);
+  let lo=Math.min(...vs), hi=Math.max(...vs);
+  const marge=(hi-lo)*0.18 || (hi*0.06)||1; lo-=marge; hi+=marge;
+  const x=i=>P+i*(W-2*P)/(pts.length-1);
+  const y=v=>H-P-((v-lo)/(hi-lo))*(H-2*P);
+  const d=pts.map((p,i)=>(i?"L":"M")+x(i).toFixed(1)+" "+y(p.v).toFixed(1)).join(" ");
+  const aire=d+" L"+x(pts.length-1).toFixed(1)+" "+(H-P)+" L"+x(0).toFixed(1)+" "+(H-P)+" Z";
+  const dernier=pts[pts.length-1];
+  return '<svg class="tv-spark" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" role="img" '+
+    'aria-label="'+esc(t("Évolution de ce geste sur tes dernières batailles"))+'">'+
+    '<path d="'+aire+'" fill="url(#tvg)"/>'+
+    '<defs><linearGradient id="tvg" x1="0" y1="0" x2="0" y2="1">'+
+      '<stop offset="0" stop-color="var(--accent)" stop-opacity=".22"/>'+
+      '<stop offset="1" stop-color="var(--accent)" stop-opacity="0"/>'+
+    '</linearGradient></defs>'+
+    '<line x1="'+P+'" x2="'+(W-P)+'" y1="'+y(ref).toFixed(1)+'" y2="'+y(ref).toFixed(1)+'" '+
+      'stroke="var(--muted)" stroke-width="1" stroke-dasharray="4 4" opacity=".7"/>'+
+    '<path d="'+d+'" fill="none" stroke="var(--accent)" stroke-width="2" '+
+      'stroke-linejoin="round" stroke-linecap="round"/>'+
+    '<circle cx="'+x(pts.length-1).toFixed(1)+'" cy="'+y(dernier.v).toFixed(1)+'" r="3.5" fill="var(--accent)"/>'+
+  '</svg>';
+}
+
+/* ── Ce que je travaille ────────────────────────────────────────────
+   UN geste, en grand. Pas trois cartes côte à côte : on ne travaille
+   pas trois choses à la fois, et en proposer trois, c'est n'en faire
+   travailler aucune. Le suivant reste accessible, replié. */
+function pTravail(mesRows, clanRows){
+  if(!mesRows.length) return "";
+  const d=coachDiag(mesRows, clanRows);
+  if(!d.total)
+    return '<section class="tv tv-vide"><p>'+
+      t("Pas encore assez de batailles pour comparer quoi que ce soit. Les conseils apparaissent à partir d'une dizaine de parties.")+
+      '</p></section>';
+
+  /* rien à corriger : on le dit, et on montre le point d'appui */
+  if(!d.retards.length){
+    const f=d.forts[0];
+    return '<section class="tv tv-ok">'+
+      '<div class="tv-card">'+
+        '<h3>'+t("Rien ne décroche")+'</h3>'+
+        '<p class="tv-p">'+t("Tu es dans la moyenne du clan sur les six gestes mesurés. Le prochain gain viendra du jeu d'équipe plutôt que de la technique individuelle.")+'</p>'+
+        (f?'<p class="tv-p tv-fort">'+t("Ton point d'appui")+' : <b>'+esc(f.nom)+'</b> — '+
+            f.constat(f.m,f.c)+'</p>':"")+
+      '</div></section>';
+  }
+
+  const g=d.retards[0], suivant=d.retards[1];
+  const u=g.u;
+  const val=v=>u==="%"?pctf(v):(u==="s"?Math.round(v)+" s":v.toFixed(2));
+  const pct=Math.round(Math.abs(g.ecart)*100);
+
+  /* la courbe de CE geste : la seule qui dise si le travail paie */
+  const k=Math.max(5, Math.min(10, Math.round(mesRows.length/4)));
+  const pts=gesteCourbe(g, mesRows, k);
+  const spark=pts.length>=3
+    ? '<div class="tv-evo">'+
+        '<div class="tv-evo-h">'+t("Ce geste, sur tes dernières batailles")+
+          '<span class="hint">'+t("moyenne glissante sur {n} batailles").replace("{n}",k)+' · '+
+          t("pointillé = le clan")+'</span></div>'+
+        gesteSpark(pts, g.c, u)+
+      '</div>'
+    : '<div class="tv-evo tv-evo-non">'+t("La courbe de ce geste apparaîtra vers la vingtième bataille — en dessous, elle bougerait au hasard.")+'</div>';
+
+  /* ce que ça vaut, quand le clan permet de le mesurer */
+  const va=gesteValeur(g, clanRows);
+  const vaut=va
+    ? '<div class="tv-vaut">'+
+        '<div class="tv-vaut-h">'+t("Ce que ça vaut")+'</div>'+
+        '<p>'+t("Dans ton clan, les joueurs qui réussissent le mieux ce geste ({a}) font <b>{d1}</b> de dégâts par bataille, contre <b>{d2}</b> pour les autres ({b}).")
+              .replace("{a}", val(va.gHaut)).replace("{b}", val(va.gBas))
+              .replace("{d1}", fmt(Math.round(va.dHaut))).replace("{d2}", fmt(Math.round(va.dBas)))+
+        ' <b class="tv-gain">'+t("Soit {n} de dégâts par bataille.").replace("{n}","+"+fmt(Math.round(va.ecart)))+'</b></p>'+
+        '<footer>'+t("mesuré sur {n} joueurs du clan").replace("{n}",va.n)+'</footer>'+
+      '</div>'
+    : "";
+
+  const pos=Math.max(-50,Math.min(50,g.ecart*100));
+
+  /* Plus d'en-tête ici : la station 02 du fil l'annonce déjà. */
+  return '<section class="tv">'+
+    '<article class="tv-card">'+
+      '<header class="tv-top">'+
+        '<div><h3>'+esc(g.nom)+'</h3>'+
+          '<p class="tv-constat">'+g.constat(g.m,g.c)+'</p></div>'+
+        '<div class="tv-chiffres">'+
+          /* L'anneau plutôt que le chiffre seul : la part remplie se voit
+           avant d'être lue, et le trait doré du repère dit d'un coup
+           d'œil si l'on est au-dessus ou en dessous du clan. */
+        (u==="%"
+          ? anneauHTML(g.m, val(g.m), t("toi"), g.ecart>=0?"var(--good)":"var(--accent)")
+          : '<div class="tv-moi"><b>'+val(g.m)+'</b><span>'+t("toi")+'</span></div>')+
+          '<div class="tv-ecart">'+(g.ecart>=0?"+":"−")+pct+' %</div>'+
+          '<div class="tv-clan"><b>'+val(g.c)+'</b><span>'+t("le clan")+'</span></div>'+
+        '</div>'+
+      '</header>'+
+      '<div class="tv-jauge"><span class="tv-ref"></span><i style="'+
+        (pos>=0?"left:50%;width:"+pos+"%":"right:50%;width:"+(-pos)+"%")+'"></i></div>'+
+      spark+
+      vaut+
+      '<p class="tv-action"><span>→</span>'+esc(g.action)+'</p>'+
+      ficheHTML(g.cle)+
+      '<footer class="tv-f">'+t("mesuré sur")+' '+fmt(g.n)+' '+esc(t(g.ech||"batailles"))+'</footer>'+
+    '</article>'+
+    (suivant
+      ? '<details class="tv-next"><summary>'+t("Le geste suivant")+' : <b>'+esc(suivant.nom)+'</b> '+
+          '<span class="tv-next-e">'+(suivant.ecart>=0?"+":"−")+Math.round(Math.abs(suivant.ecart)*100)+' %</span></summary>'+
+          '<p class="tv-p">'+suivant.constat(suivant.m,suivant.c)+'</p>'+
+          '<p class="tv-action"><span>→</span>'+esc(suivant.action)+'</p>'+
+        '</details>'
+      : "")+
+  '</section>';
+}
+
+
+/* ── L'anneau de progression ────────────────────────────────────────
+   Un pourcentage ne se voit pas ; un arc, si. L'anneau montre où l'on
+   se situe entre son point de départ et le repère du clan — la part
+   parcourue, pas la valeur brute, parce que c'est le chemin qui se
+   travaille.
+
+   Deux arcs superposés : la piste (ce qu'il reste) et l'arc doré (ce
+   qui est fait). Le trait est fin : la DA du site ne crie pas. */
+function anneauHTML(part, gros, petit, teinte){
+  const R=34, C=2*Math.PI*R;
+  const p=Math.max(0,Math.min(1,part||0));
+  const col=teinte||"var(--accent)";
+  return '<div class="an">'+
+    '<svg viewBox="0 0 80 80" aria-hidden="true">'+
+      '<circle cx="40" cy="40" r="'+R+'" fill="none" stroke="var(--grid)" stroke-width="6"/>'+
+      '<circle cx="40" cy="40" r="'+R+'" fill="none" stroke="'+col+'" stroke-width="6" '+
+        'stroke-linecap="round" stroke-dasharray="'+C.toFixed(1)+'" '+
+        'stroke-dashoffset="'+(C*(1-p)).toFixed(1)+'" transform="rotate(-90 40 40)"/>'+
+    '</svg>'+
+    '<div class="an-c"><b>'+gros+'</b>'+(petit?'<span>'+petit+'</span>':"")+'</div>'+
+  '</div>';
+}
+
+/* ── Le terrain ─────────────────────────────────────────────────────
+   La carte où l'on perd le plus, en image. Un nom de carte écrit ne
+   dit rien à l'œil ; sa vue du dessus, si — c'est celle que le joueur
+   a devant lui pendant la partie.
+
+   On ne montre une carte que si elle a assez de batailles pour vouloir
+   dire quelque chose : sur deux parties, 0 % de victoire est du
+   hasard, pas un enseignement. */
+function pTerrain(my, clanRows){
+  if(!my.length) return "";
+  const parCarte=new Map();
+  for(const b of my){
+    if(!b.mapName) continue;
+    const k=mapKey(b.mapName);
+    if(!k) continue;
+    if(!parCarte.has(k)) parCarte.set(k, {k, nom:b.mapName, n:0, v:0, dmg:0});
+    const c=parCarte.get(k);
+    c.n++; if(b.result===1) c.v++; c.dmg+=(b.dmg||0);
+  }
+  const MIN=4;                                   // sous quatre parties, on se tait
+  const cartes=[...parCarte.values()].filter(c=>c.n>=MIN);
+  if(!cartes.length){
+    return '<div class="tr-vide">'+
+      t("Pas encore assez de batailles sur une même carte pour en tirer quelque chose. Il en faut au moins {n} sur la même — en dessous, un mauvais soir suffit à tout fausser.").replace("{n}",MIN)+
+      '</div>';
+  }
+  cartes.sort((a,b)=>(a.v/a.n)-(b.v/b.n));
+  const dure=cartes[0], facile=cartes[cartes.length-1];
+  const moyGlobale=my.reduce((a,b)=>a+(b.dmg||0),0)/my.length;
+
+  const vignette=(c,role)=>{
+    const wr=c.v/c.n, dmg=c.dmg/c.n;
+    const ecart=moyGlobale? (dmg-moyGlobale)/moyGlobale : 0;
+    return '<article class="tr-c tr-'+role+'">'+
+      '<div class="tr-img">'+
+        '<img src="maps/top/'+esc(c.k)+'.jpg" alt="'+esc(t("Vue du dessus de {s}").replace("{s}", prettyMap(c.nom)))+'" '+
+          'loading="lazy" onerror="this.closest(\'.tr-img\').classList.add(\'tr-noimg\')">'+
+        '<span class="tr-tag">'+(role==="dure"?t("la plus difficile"):t("la plus favorable"))+'</span>'+
+      '</div>'+
+      '<div class="tr-b">'+
+        '<h4>'+esc(prettyMap(c.nom))+'</h4>'+
+        '<div class="tr-k">'+
+          '<span><b class="'+(wr>=0.5?"tagpos":"tagneg")+'">'+Math.round(wr*100)+' %</b>'+t("de victoires")+'</span>'+
+          '<span><b>'+fmt(Math.round(dmg))+'</b>'+t("dégâts moyens")+'</span>'+
+          '<span><b>'+c.n+'</b>'+t("batailles")+'</span>'+
+        '</div>'+
+        '<p class="tr-p">'+(role==="dure"
+          ? (ecart<-0.12
+             ? t("Tes dégâts y tombent de {n} % sous ta moyenne. C'est la carte à revoir en débriefing — le replay d'une défaite y apprendra plus qu'ailleurs.").replace("{n}",Math.round(-ecart*100))
+             : t("Tu y fais tes dégâts habituels mais tu la perds quand même : le problème est dans le placement ou le tempo, pas dans le tir."))
+          : t("C'est là que tu joues le mieux. Regarde ce que tu y fais différemment — c'est souvent transposable ailleurs."))+'</p>'+
+      '</div>'+
+    '</article>';
+  };
+
+  return '<div class="tr">'+vignette(dure,"dure")+
+    (facile!==dure? vignette(facile,"facile") : "")+'</div>';
+}
+
 function coachDiag(mesRows, clanRows){
   const res=[];
   for(const g of COACH_GESTES){
@@ -6477,10 +6914,29 @@ function renderPlayerView(){
   {
     const nBat = new Set(my.map(r=>r.battleId)).size;
     const assez = nBat >= 5;
-    document.querySelectorAll("#viewPlayer .pz-title, #viewPlayer .pz-diag, #viewPlayer .pz-evo, " +
-      "#viewPlayer #pTanks, #viewPlayer #pDiff, #viewPlayer #pRecords, #viewPlayer #pCoach, " +
-      "#viewPlayer #pMissions, #viewPlayer .pz-more, #viewPlayer #pSR")
+    /* ⚠️ On ne touche à rien tant que la vue est verrouillée par
+       wipGate() : les deux mécanismes se partagent `style.display`, et
+       celui-ci réaffichait ce que l'autre venait de masquer — le membre
+       voyait le bandeau « en construction » ET la moitié de la page. */
+    const wipBloque = !!document.querySelector("#viewPlayer > .wip-msg");
+    if(!wipBloque)
+    /* Les en-têtes du fil (.fil-t) partent avec le reste : sinon un joueur
+       sans assez de batailles verrait cinq titres et cinq promesses
+       — « Ce qui te freine », « Où ça se joue » — au-dessus du vide.
+       La station 01 garde le sien : c'est elle qui porte le message
+       d'attente. */
+    document.querySelectorAll("#viewPlayer .pz-title, #viewPlayer .pz-note, #viewPlayer .pz-diag, " +
+      "#viewPlayer .pz-evo, #viewPlayer #pTanks, #viewPlayer #pDiff, #viewPlayer #pRecords, " +
+      "#viewPlayer #pTravail, #viewPlayer #pTerrain, #viewPlayer #pMissions, " +
+      "#viewPlayer .fil-e:not(:first-child) .fil-t, #viewPlayer .pz-more, #viewPlayer #pSR")
       .forEach(e=>{ e.style.display = assez ? "" : "none"; });
+    /* Une station dont tout le contenu est masqué ne doit pas laisser sa
+       pastille numérotée seule sur le fil. */
+    document.querySelectorAll("#viewPlayer .fil-e").forEach(e=>{
+      const vivant = [...e.children].some(c=>c.style.display!=="none" &&
+        (c.children.length || c.textContent.trim()));
+      e.style.display = vivant ? "" : "none";
+    });
     /* la carte d identite affiche « 0 % de victoire » en rouge quand il n y
        a rien : on la retire tant qu aucune bataille n est enregistree. */
     { const t=document.getElementById("pHead"); if(t) t.style.display = nBat ? "" : "none"; }
@@ -6501,7 +6957,9 @@ function renderPlayerView(){
       <div class="pav">${esc(initials)}</div>
       <div class="pci">
         <h2>${esc(name)}${role?` <span class="role-badge">${esc(role)}</span>`:""}</h2>
-        <div class="pmeta">${bw.battles} batailles Bastion analysées · <b class="${bw.wr>=0.5?"tagpos":"tagneg"}">${pct(bw.wr)}</b> de victoire</div>
+        <!-- Le nombre de batailles et le taux de victoire sont dits par le
+             verdict juste au-dessus, qui en tire une phrase. Les répéter ici
+             n'apprenait rien et repoussait le travail vers le bas. -->
       </div>
     </div>`;
 
@@ -6559,9 +7017,21 @@ function renderPlayerView(){
   // filtre de 7 jours. On garde en revanche le filtre de FORMAT — comparer une
   // performance 7v7 à une 15v15 ne veut rien dire.
   const myTout = RAW.filter(r=>r.accId===SELP && estTierSR(r) && (!state.mode || r.mode===state.mode));
-  { const el=document.getElementById("pCoach"); if(el) el.innerHTML = pCoach(my, clanRows);
+  { const el=document.getElementById("pTravail"); if(el) el.innerHTML = pTravail(my, clanRows);
+    const et=document.getElementById("pTerrain"); if(et) et.innerHTML = pTerrain(my, clanRows);
     const em=document.getElementById("pMissions"); if(em) em.innerHTML = pMissions(my, clanRows); }
-  document.getElementById("pTanks").innerHTML   = pTanks(my);
+  {
+    /* Un titre orphelin au-dessus d'un « pas encore assez de données »
+       occupe la page sans rien apprendre. La section s'efface entière
+       et reviendra d'elle-même dès qu'un char atteindra le seuil. */
+    const ht = pTanks(my);
+    const el = document.getElementById("pTanks");
+    el.innerHTML = ht;
+    const vide = /class="[^"]*pt-vide|Aucun char n'atteint/.test(ht);
+    const titre = el.previousElementSibling;
+    el.style.display = vide ? "none" : "";
+    if(titre && titre.classList.contains("pz-title")) titre.style.display = vide ? "none" : "";
+  }
   document.getElementById("pDiff").innerHTML    = pDiff30(myTout);
   document.getElementById("pRecords").innerHTML = pRecords(myTout);
 
@@ -6741,10 +7211,12 @@ function renderPlan(name,my,byClass,byMap,elist,prec,survrate,myDmg,clanDmg,obj)
   if(byClass.length>1){ const best=byClass[0], worst=byClass[byClass.length-1];
     if(worst.dmg < best.dmg*0.7)
       b.push(`En <b>${clsFR(worst.key)}</b> tes dégâts tombent à ${fmt(worst.dmg)}, contre ${fmt(best.dmg)} en <b>${clsFR(best.key)}</b>. Privilégie le second en compétition.`); }
-  if(byMap.length>1){ const bm=byMap.slice().sort((a,b)=>b.wr-a.wr), pire=bm[bm.length-1];
-    if(pire.wr<0.45) b.push(`<b>${prettyMap(pire.key)}</b> est ta carte la plus difficile (${pct(pire.wr)} de victoire) — celle à revoir en débriefing.`); }
-  if(elist.length){ const dang=elist[0];
-    if(dang.wr<0.4) b.push(`Contre <b>${esc(dang.tag)}</b> tu tombes à ${pct(dang.wr)} de victoire. Un adversaire qui mérite une stratégie préparée.`); }
+  /* La carte la plus difficile est traitée par la station « Où ça se
+     joue », avec sa vue du dessus et un seuil de quatre batailles. La
+     répéter ici sans seuil produisait une contradiction : la station
+     disait Steppes à 40 %, le plan Karelia à 0 % sur deux parties. */
+  if(elist.length){ const dang=elist.filter(e=>e.n>=3)[0];
+    if(dang && dang.wr<0.4) b.push(`Contre <b>${esc(dang.tag)}</b> tu tombes à ${pct(dang.wr)} de victoire. Un adversaire qui mérite une stratégie préparée.`); }
   if(prec<0.6) b.push(`Précision à ${pct(prec)} : tirs à l'arrêt et points faibles convertiraient plus d'obus en dégâts.`);
   if(survrate<0.4) b.push(`Tu ne survis qu'à ${pct(survrate)} des batailles — beaucoup d'impact perdu en fin de partie.`);
 
