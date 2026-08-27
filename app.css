@@ -1531,17 +1531,48 @@
    un calque décalé laisse voir le vide au bord. */
 .dk-bg{position:absolute;inset:0;z-index:0;overflow:hidden}
 .dk-map{position:absolute;inset:-14%;will-change:transform}
-.dk-map img{width:100%;height:100%;object-fit:cover;display:block;
-  filter:grayscale(.4) contrast(1.18) brightness(.4)}
-.dk-grid{position:absolute;inset:-34% -42%;will-change:transform;opacity:.28;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='140'%3E%3Cg fill='none' stroke='%23d8b566' stroke-width='1'%3E%3Cpath d='M0 92H180'/%3E%3Cpath d='M.5 62V92M36.5 80V92M72.5 80V92M108.5 80V92M144.5 80V92'/%3E%3Ccircle cx='90' cy='30' r='2.5'/%3E%3C/g%3E%3C/svg%3E");background-repeat:repeat}
+/* Le relief est du TRAIT, pas de la photo : l'assombrir le ferait
+   disparaitre. On le laisse tel quel et c'est le voile qui gere le
+   contraste avec le texte. */
+.dk-map img{width:100%;height:100%;object-fit:cover;display:block;opacity:.62}
+/* ── (5) Les instruments : reticule, echelle, equerres ─────────────
+   Dessines en SVG, donc nets a n'importe quelle taille. Poses a droite :
+   la moitie gauche appartient au texte. */
+/* Cale sur la moitie droite : la gauche appartient au texte. */
+/* Décalé vers le bas et la droite : le réticule encadre la figure au
+   lieu de passer derrière elle. */
+.dk-inst{position:absolute;inset:6% -10% -6% 30%;will-change:transform;opacity:.85;
+  display:grid;place-items:center}
+.dk-inst svg{width:100%;height:100%;display:block}
+
+/* ── (3) L'embleme du clan ────────────────────────────────────────
+   Tres grand et tres discret : a 6 % il ne se voit pas, il se sent. Plus
+   opaque, il deviendrait un logo colle sur une page. */
+/* En haut à droite, hors du passage de la figure : le fond entoure le
+   contenu, il ne passe pas dessous. */
+.dk-em{position:absolute;top:-6%;right:-2%;transform-origin:center;
+  width:clamp(240px,26vw,460px);aspect-ratio:1;
+  will-change:transform;opacity:.05;pointer-events:none}
+.dk-em img{width:100%;height:100%;object-fit:contain;display:block;
+  filter:grayscale(1) brightness(2.4)}
+
+/* ── (4) Le char le plus joue ─────────────────────────────────────
+   En silhouette, au premier plan a droite. C'est SON char : le reconnaitre
+   fait plus pour l'attachement que n'importe quelle illustration. */
+/* En bas à droite, hors du passage de la figure. La largeur est bornée
+   à 420 px : au-delà, une image de référence commence à se voir grossie. */
+.dk-char{position:absolute;right:-1%;bottom:2%;width:clamp(200px,24vw,420px);
+  will-change:transform;opacity:.3;pointer-events:none}
+.dk-char img{width:100%;height:auto;display:block;
+  filter:grayscale(.65) contrast(1.15) brightness(.85)
+         drop-shadow(0 24px 40px rgba(0,0,0,.7))}
 /* La lueur dorée à droite donne un foyer au panneau : l'œil s'y pose,
    puis remonte vers le titre. Sans elle, le fond est un aplat. */
 .dk-veil{position:absolute;inset:0;
   background:
-    radial-gradient(110% 78% at 76% 44%, rgba(216,181,102,.17), transparent 60%),
-    linear-gradient(96deg, var(--plane) 3%, rgba(12,12,11,.95) 32%,
-                    rgba(12,12,11,.46) 68%, rgba(12,12,11,.74) 100%),
+    radial-gradient(110% 78% at 76% 44%, rgba(216,181,102,.15), transparent 60%),
+    linear-gradient(96deg, var(--plane) 6%, rgba(12,12,11,.93) 36%,
+                    rgba(12,12,11,.40) 70%, rgba(12,12,11,.70) 100%),
     linear-gradient(0deg, rgba(12,12,11,.92) 0, transparent 44%)}
 
 /* ── le contenu : mots à gauche, figure à droite ────────────────── */
@@ -1732,7 +1763,10 @@
   50% {transform:scale(1.11) translate3d(1.2%, -0.6%, 0)}
   100%{transform:scale(1.06) translate3d(-1.2%, 0.6%, 0)}
 }
-.dk-map img{animation:dkDerive 28s ease-in-out infinite}
+/* La derive lente animait une PHOTO. Un reseau de courbes de niveau qui
+   respire donne le mal de mer : on la reserve a l'embleme, dont la forme
+   pleine supporte le mouvement. */
+.dk-em{animation:dkDerive 34s ease-in-out infinite}
 
 /* ── La carte repond a la main ────────────────────────────────────
    Elle se redresse et se souleve : un objet qu'on peut prendre, pas une

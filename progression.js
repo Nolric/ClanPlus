@@ -62,6 +62,15 @@
     const sel = document.getElementById("playerSel");
     if (sel) sel.onchange = e => { SELP = Number(e.target.value); renderPlayerView(); };
     renderPlayerView();
+
+    /* La référence des véhicules arrive APRÈS, sans bloquer : elle ne sert
+       qu à un calque de fond, et faire attendre toute la page pour une
+       silhouette serait un mauvais échange. Quand elle arrive, on
+       redessine. */
+    try{
+      const rf = await fnCall("reference", { session: jeton });
+      if (rf.ok && rf.j && rf.j.tanks) { LO_REF = rf.j; renderPlayerView(); }
+    }catch(_){ /* le bandeau vit très bien sans */ }
   }
 
   demarre().catch(e => {

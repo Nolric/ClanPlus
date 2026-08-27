@@ -3465,6 +3465,82 @@ function dkEcartCarte(c, my){
   return Math.round(((c.dmg/c.n)/moy-1)*100);
 }
 
+
+/* ── ⑤ Les instruments ──────────────────────────────────────────────
+   Dessinés plutôt qu'empruntés : nets à n'importe quelle taille, quelques
+   centaines d'octets, et ce sont des objets du sujet — un réticule et une
+   échelle télémétrique, pas un motif décoratif pris ailleurs.
+
+   Ils sont posés à DROITE : la moitié gauche appartient au texte, et un
+   réticule derrière un titre ne fait que le salir. */
+function dkInstruments(){
+  const L=[];
+  /* le réticule : trois cercles et une croix graduée */
+  L.push('<g transform="translate(760 300)">');
+  [150,238,300].forEach((r,i)=>L.push('<circle r="'+r+'" fill="none" stroke="#d8b566" '+
+    'stroke-opacity="'+(0.3-i*0.07).toFixed(2)+'" stroke-width="'+(1.6-i*0.35).toFixed(2)+'"/>'));
+  L.push('<path d="M-330 0h150M180 0h150M0 -330v150M0 180v150" stroke="#d8b566" '+
+    'stroke-opacity=".26" stroke-width="1.4"/>');
+  /* les graduations du réticule : longues tous les cinq crans */
+  for(let i=-9;i<=9;i++){ if(!i) continue;
+    const x=i*16, h=(i%5===0)?13:6;
+    L.push('<path d="M'+x+' '+(-h)+'V'+h+'" stroke="#d8b566" stroke-opacity=".3" stroke-width="1.2"/>');
+  }
+  L.push('</g>');
+  /* l'échelle télémétrique, en pied de cadre */
+  L.push('<g transform="translate(430 560)">');
+  L.push('<path d="M0 0h660" stroke="#d8b566" stroke-opacity=".22" stroke-width="1.2"/>');
+  for(let i=0;i<=22;i++){ const x=i*30, h=(i%5===0)?16:7;
+    L.push('<path d="M'+x+' 0V'+(-h)+'" stroke="#d8b566" stroke-opacity="'+((i%5===0)?".3":".18")+'" stroke-width="1.2"/>');
+  }
+  L.push('</g>');
+  /* les équerres de cadrage */
+  const eq=(x,y,sx,sy)=>'<path d="M'+(x+40*sx)+' '+y+'H'+x+'V'+(y+40*sy)+'" fill="none" '+
+    'stroke="#d8b566" stroke-opacity=".28" stroke-width="1.6"/>';
+  L.push(eq(60,60,1,1)+eq(1140,60,-1,1)+eq(60,640,1,-1)+eq(1140,640,-1,-1));
+  /* « meet » et non « slice » : ce dessin doit etre VU en entier, pas
+     couvrir le cadre. Avec slice, sur un bandeau large, le reticule
+     sortait de l'ecran par le haut et par le bas. */
+  return '<svg viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid meet" aria-hidden="true">'+
+    L.join("")+'</svg>';
+}
+
+/* ── ③ L'emblème du clan ────────────────────────────────────────────
+   Wargaming le fournit en plusieurs tailles. On prend la plus grande
+   disponible : à 6 % d'opacité et 500 px de large, la différence entre
+   256 et 64 se voit encore. */
+function dkEmbleme(){
+  try{
+    const e=(CLANINFO&&CLANINFO.emblems)||null;
+    if(!e) return "";
+    for(const t of ["x256","x195","x128","x64","x32"]){
+      const v=e[t]; if(!v) continue;
+      const u=v.wot||v.portal; if(u) return u;
+    }
+  }catch(_){}
+  return "";
+}
+
+/* ── ④ Le char le plus joué ─────────────────────────────────────────
+   La référence des véhicules arrive de la fonction serveur, en arrière-
+   plan et sans bloquer. Tant qu'elle n'est pas là, le calque n'existe
+   pas — le bandeau tient sans lui. */
+function dkChar(my){
+  try{
+    if(!LO_REF || !(LO_REF.tanks||[]).length) return "";
+    const n={};
+    for(const r of my){ if(r.veh!=null) n[r.veh]=(n[r.veh]||0)+1; }
+    const ids=Object.keys(n).sort((a,b)=>n[b]-n[a]);
+    if(!ids.length) return "";
+    const par={}; (LO_REF.tanks||[]).forEach(x=>par[x.tank_id]=x);
+    for(const id of ids){
+      const t=par[id] || par[Number(id)];
+      if(t && t.icon) return t.icon;
+    }
+  }catch(_){}
+  return "";
+}
+
 /* ── Un panneau ─────────────────────────────────────────────────────
    Repère, titre, UNE ligne, deux chiffres, un bouton. Rien de plus :
    c'est la contrainte qui fait la lisibilité, pas le style. */
@@ -3473,10 +3549,24 @@ function dkPanneau(o){
     '<li style="--j:'+i+'"><b'+(f.ton?' class="'+f.ton+'"':"")+' data-v="'+f.v+'">'+
       f.v+'</b><span>'+f.l+'</span></li>').join("");
   return ''+
+    /* Quatre calques, quatre vitesses. Chacun se retire proprement s'il
+       manque : pas de relief pour cette carte, pas d'emblème pour ce clan,
+       pas encore de référence des chars. Un fond incomplet reste un fond. */
     '<div class="dk-bg" aria-hidden="true">'+
-      (o.fond?'<div class="dk-map"><img src="maps/top/'+esc(o.fond)+'.jpg" alt="" '+
+      (o.fond?'<div class="dk-map"><img src="relief/'+esc(o.fond)+'.svg" alt="" '+
         'loading="lazy" onerror="this.closest(\'.dk-map\').remove()"></div>':"")+
-      '<div class="dk-grid"></div><div class="dk-veil"></div>'+
+      /* onload autant qu'onerror : la référence ne garantit aucune
+         résolution, et une icône de 64 px étirée sur 560 est le défaut
+         même qu'on cherchait à corriger. Sous 240 px de large, le calque
+         se retire. Trois calques nets valent mieux que quatre dont un
+         flou. */
+      (o.char?'<div class="dk-char"><img src="'+esc(o.char)+'" alt="" loading="lazy" '+
+        'onerror="this.closest(\'.dk-char\').remove()" '+
+        'onload="if(this.naturalWidth<240)this.closest(\'.dk-char\').remove()"></div>':"")+
+      (o.emb?'<div class="dk-em"><img src="'+esc(o.emb)+'" alt="" loading="lazy" '+
+        'onerror="this.closest(\'.dk-em\').remove()"></div>':"")+
+      '<div class="dk-inst">'+dkInstruments()+'</div>'+
+      '<div class="dk-veil"></div>'+
     '</div>'+
     '<div class="dk-c">'+
       '<div class="dk-w">'+
@@ -3518,6 +3608,9 @@ function dkDonnees(my, clanRows){
   const F=(i)=>(pool[i]||pool[0]||dure||null);
 
   const sr=srAvg(my), tier=ceTier(sr), tr=pSRTrend(my), st=pStreak(my);
+  /* L'emblème et le char sont les mêmes pour les cinq panneaux : on les
+     cherche une fois. */
+  const emb=dkEmbleme(), chr=dkChar(my);
   const g=d.retards[0]||null;
   const vg=v=>g? (g.u==="%"?pctf(v):(g.u==="s"?Math.round(v)+" s":v.toFixed(2))) : "—";
   /* Ce que ce geste vaut en DÉGÂTS, mesuré sur les joueurs du clan.
@@ -3637,6 +3730,11 @@ function dkDonnees(my, clanRows){
           ton:st.res===1?"up":"dn"}:null,
     ]:[] };
 
+  /* L'emblème va sur les cinq. Le char seulement là où la figure lui
+     laisse la place : sur l'étape 03 la carte occupe déjà la droite, et
+     deux objets superposés ne font qu'une bouillie. */
+  [h1,h2,h3,h4,h5].forEach(h=>{ h.emb=emb; });
+  [h1,h2,h4,h5].forEach(h=>{ h.char=chr; });
   return [h1,h2,h3,h4,h5];
 }
 
@@ -3679,12 +3777,18 @@ function dkApplique(){
     const x=Math.max(-1.4,Math.min(1.4,(i*L-dkPos)/L));
     const c=p.querySelector(".dk-c");
     if(doux){
-      p.querySelectorAll(".dk-map,.dk-grid").forEach(e=>e.style.transform="");
+      p.querySelectorAll(".dk-map,.dk-inst,.dk-em,.dk-char").forEach(e=>e.style.transform="");
       if(c){ c.style.transform=""; c.style.opacity=Math.abs(x)<.5?"1":"0"; }
     } else {
-      const m=p.querySelector(".dk-map"), g=p.querySelector(".dk-grid");
-      if(m) m.style.transform="translate3d("+(x*-170).toFixed(1)+"px,0,0) scale(1.22)";
-      if(g) g.style.transform="translate3d("+(x*300).toFixed(1)+"px,0,0)";
+      /* Quatre vitesses, donc quatre profondeurs. L'ordre n'est pas
+         arbitraire : ce qui est loin bouge peu, ce qui est près bouge
+         beaucoup — c'est ce que fait le paysage vu d'un train. */
+      const bouge=(s,v,ech)=>{ const e=p.querySelector(s); if(!e) return;
+        e.style.transform="translate3d("+(x*v).toFixed(1)+"px,0,0)"+(ech?" scale("+ech+")":""); };
+      bouge(".dk-em", -60);          // l'emblème, au fond
+      bouge(".dk-map", -170, 1.22);  // le relief
+      bouge(".dk-inst", 240);        // les instruments
+      bouge(".dk-char", 130);        // le char, au premier plan
       if(c){
         /* Le panneau qui s'eloigne RECULE aussi : une translation seule
            fait glisser deux surfaces cote a cote, une reduction les met a
