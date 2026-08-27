@@ -25,6 +25,9 @@
      qu'une version des calculs et des composants. -->
 <link rel="stylesheet" href="app.css">
 <style>
+/* Le titre monte avec la largeur, mais reste borne par la HAUTEUR :
+   calcule sur la seule largeur, il deborde d'un ecran large et bas. */
+.pg-main .dk-t{font-size:clamp(36px,min(5.8vw,11.5vh),108px)}
 /* Le peu de style propre à cette page : sa barre du haut. Tout le reste
    vient d'app.css. */
 .pg-top{position:sticky;top:0;z-index:60;display:flex;align-items:center;gap:16px;
@@ -42,8 +45,58 @@
 .pg-tools{display:flex;align-items:center;gap:12px}
 .pg-tools label{font-size:11px;letter-spacing:.08em;text-transform:uppercase;
   color:var(--muted);margin-right:6px}
-.pg-main{padding:clamp(14px,2.4vw,26px) clamp(14px,3vw,28px) 60px;
-  max-width:1560px;margin:0 auto}
+/* ── Le corps de la page ──────────────────────────────────────────
+   Plus de largeur maximale ni de marge latérale : le bandeau doit
+   toucher les deux bords. Ce sont les blocs INTÉRIEURS qui se bornent
+   eux-mêmes, chacun selon ce qu'il a à faire lire. */
+.pg-main{padding:0 0 70px}
+
+/* ══ LE BANDEAU, BORD À BORD ═══════════════════════════════════════
+   Sans arrondi ni bordure latérale : un cadre arrondi au milieu d'un
+   écran dit « composant », un bandeau bord à bord dit « page ». */
+.pg-main .dk{margin:0 0 clamp(24px,3vw,40px);border-radius:0;
+  border-left:0;border-right:0}
+.pg-main .dk-vp{height:clamp(560px,82vh,860px)}
+
+/* Le contenu, lui, reste borné et centré. La marge latérale vaut le plus
+   grand des deux : le retrait normal, ou ce qu'il faut pour recentrer un
+   bloc de 1 680 px. C'est ce qui empêche le titre et sa figure de se
+   retrouver aux deux bouts d'un écran de 2 560 px. */
+.pg-main .dk-c{padding-left:max(clamp(22px,4vw,64px), calc((100% - 1680px)/2));
+  padding-right:max(clamp(22px,4vw,64px), calc((100% - 1680px)/2))}
+.pg-main .dk-nav{padding-left:max(clamp(18px,3.4vw,28px), calc((100% - 1680px)/2));
+  padding-right:max(clamp(18px,3.4vw,28px), calc((100% - 1680px)/2))}
+/* Les flèches suivent le contenu plutôt que le bord de l'écran : à
+   2 560 px, une flèche collée au bord est à un geste de souris du texte
+   qu'elle commande. */
+.pg-main .dk-prev{left:max(16px, calc((100% - 1680px)/2 - 60px))}
+.pg-main .dk-next{right:max(16px, calc((100% - 1680px)/2 - 60px))}
+
+/* Les figures respirent davantage quand la place existe. */
+.pg-main .dkf-m{width:clamp(200px,24vw,400px)}
+.pg-main .dkf-a{width:clamp(190px,22vw,320px)}
+.pg-main .dkf-b,.pg-main .dkf-c,.pg-main .dkf-j{max-width:540px}
+
+/* ── Le détail garde sa largeur de lecture ───────────────────────
+   Une ligne de texte de deux mille pixels ne se lit pas : on perd le
+   début de la phrase avant d'arriver à sa fin. */
+/* MEME largeur et MEME retrait que le contenu du bandeau : c'est ce qui
+   aligne le bord gauche du detail sur celui du titre. Deux bornes
+   differentes donnaient deux bords, decales de 88 px. */
+.pg-main .dk-dets,
+.pg-main .tiersel{
+  padding-left:max(clamp(22px,4vw,64px), calc((100% - 1680px)/2));
+  padding-right:max(clamp(22px,4vw,64px), calc((100% - 1680px)/2))}
+/* Le paragraphe d'introduction, lui, s'aligne par la MARGE et non par le
+   retrait : avec box-sizing:border-box, max-width engloberait le retrait
+   et il ne resterait qu'un tiers de la largeur au texte. La marge vit
+   hors de la boite ; max-width ne mesure alors que la ligne. */
+.pg-main .sec-desc{margin-left:max(clamp(22px,4vw,64px), calc((100vw - 1680px)/2));
+  margin-right:clamp(22px,4vw,64px)}
+/* Une ligne de plus de quatre-vingts caracteres se relit mal : l'oeil
+   perd le debut de la suivante en revenant a la ligne. */
+.pg-main .sec-desc,.pg-main .et-lead{max-width:82ch}
+.pg-main .sec-desc{margin-bottom:14px}
 /* L'écran d'attente : sans session, on ne montre pas une page vide. */
 .pg-porte{max-width:520px;margin:16vh auto;padding:0 20px;text-align:center}
 .pg-porte h1{font-size:clamp(26px,4vw,38px);font-weight:800;letter-spacing:-.03em;margin:0 0 12px}
