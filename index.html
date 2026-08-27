@@ -1525,27 +1525,110 @@
   .st-present-stage svg{height:100%;max-height:100%;max-width:100%;aspect-ratio:1;border-radius:10px;background:#000;border:1px solid #2b2d31}
   
 
+/* ══ LA BARRE D'ÉTAPES ══════════════════════════════════════════════
+   Elle remplace le trait vertical du fil : une page faite de bandeaux
+   pleine largeur est longue, et il faut pouvoir y revenir. Collée sous
+   la barre du haut, dont la hauteur est mesurée au rendu (--tb-h). */
+.etnav{position:sticky;top:var(--tb-h,56px);z-index:25;display:flex;gap:5px;
+  margin:0 0 20px;padding:9px 0;overflow-x:auto;scrollbar-width:none;
+  background:var(--plane);border-bottom:1px solid var(--border)}
+.etnav::-webkit-scrollbar{display:none}
+.etnav a{display:flex;align-items:center;gap:9px;padding:7px 13px;border-radius:22px;
+  text-decoration:none;color:var(--muted);font-size:12.5px;white-space:nowrap;
+  border:1px solid transparent;transition:background .18s,color .18s,border-color .18s}
+.etnav a b{font:700 10px/1 ui-monospace,Consolas,monospace;letter-spacing:.08em;
+  color:var(--muted);transition:color .18s}
+.etnav a:hover{color:var(--ink-2);background:var(--surface-2)}
+.etnav a.on{color:var(--ink);background:var(--surface-2);border-color:var(--border)}
+.etnav a.on b{color:var(--accent)}
+
 /* ══ LE FIL ═════════════════════════════════════════════════════════
-   Une ligne verticale et cinq pastilles numérotées. Ce n'est pas un
-   ornement : elle dit qu'il y a un ORDRE de lecture, et qu'on peut
-   s'arrêter en chemin sans perdre le fil — au sens propre. */
-.fil{list-style:none;margin:20px 0 0;padding:0;position:relative}
-.fil::before{content:"";position:absolute;left:19px;top:20px;bottom:40px;width:1px;
-  background:linear-gradient(180deg,var(--accent) 0,var(--border) 6%,var(--border) 92%,transparent)}
-.fil-e{position:relative;padding:0 0 40px 56px;list-style:none}
-.fil-e:last-child{padding-bottom:8px}
-.fil-e::before{content:attr(data-n);position:absolute;left:0;top:-2px;
-  width:39px;height:39px;border-radius:50%;display:grid;place-items:center;
-  font:700 12px/1 ui-monospace,Consolas,monospace;letter-spacing:.05em;
-  color:var(--accent);background:var(--surface-1);border:1px solid var(--border);
-  box-shadow:0 0 0 5px var(--plane)}
-/* la station en cours de lecture s'éclaire : un repère discret quand on
-   fait défiler une page longue */
-.fil-e:hover::before{border-color:var(--accent);background:var(--accent-soft)}
-.fil-t{margin:0 0 16px}
-.fil-t h2{margin:0 0 7px;font-size:20px;font-weight:800;letter-spacing:-.015em;line-height:1.25}
-.fil-t p{margin:0 0 8px;font-size:13.5px;line-height:1.62;color:var(--muted);max-width:76ch}
-.fil-t p:last-child{margin-bottom:0}
+   Il ne dessine plus : les bandeaux portent la structure eux-mêmes, et
+   le retrait de 56 px qu'imposait le trait vertical était incompatible
+   avec une image pleine largeur. */
+.fil{list-style:none;margin:0;padding:0}
+.fil::before{content:none}
+.fil-e{position:relative;padding:0 0 54px;list-style:none;
+  scroll-margin-top:calc(var(--tb-h,56px) + 58px)}
+.fil-e::before{content:none}
+.fil-e:last-child{padding-bottom:10px}
+
+/* ══ LE BANDEAU ═════════════════════════════════════════════════════ */
+.et{position:relative;overflow:hidden;border-radius:var(--radius);
+  border:1px solid var(--border);background:var(--surface-1);
+  min-height:clamp(300px,46vh,420px);display:grid;align-content:center;
+  isolation:isolate}
+
+/* Les deux calques mobiles débordent volontairement de leur cadre : la
+   parallaxe les décale de ±70 px et de ±190 px, il leur faut cette
+   marge sous peine de laisser apparaître un bord vide. */
+.et-bg{position:absolute;inset:0;overflow:hidden;z-index:0}
+.et-ph{position:absolute;inset:0 -9%;will-change:transform}
+.et-ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.et-map{filter:saturate(.52) contrast(1.06) brightness(.62)}
+.et-shot{filter:saturate(.62) contrast(1.07) brightness(.58)}
+.et-mire{position:absolute;inset:0 -22%;will-change:transform;opacity:.22;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='90'%3E%3Cg fill='none' stroke='%23d8b566' stroke-width='1'%3E%3Cpath d='M0 60H120'/%3E%3Cpath d='M.5 40V60M24.5 51V60M48.5 51V60M72.5 51V60M96.5 51V60'/%3E%3C/g%3E%3C/svg%3E");background-repeat:repeat}
+/* Le voile : dense à gauche sous le texte, ouvert à droite sur l'image,
+   et un pied sombre pour détacher le bandeau du contenu qui suit. */
+.et-voile{position:absolute;inset:0;
+  background:
+    linear-gradient(90deg,var(--plane) 0,rgba(12,12,11,.9) 32%,rgba(12,12,11,.3) 74%,rgba(12,12,11,.44) 100%),
+    linear-gradient(0deg,rgba(12,12,11,.7) 0,transparent 46%)}
+
+/* ── le texte, en quatre niveaux ───────────────────────────────────── */
+.et-in{position:relative;z-index:2;padding:clamp(26px,3.4vw,40px) clamp(20px,3.6vw,46px) clamp(28px,3.4vw,38px);
+  max-width:min(700px,66%)}
+.et-eb{display:flex;align-items:center;gap:11px;margin:0 0 15px;
+  font:700 10.5px/1 ui-monospace,Consolas,monospace;letter-spacing:.17em;
+  text-transform:uppercase;color:var(--accent)}
+.et-num{font-size:11px;padding:5px 8px;border:1px solid rgba(216,181,102,.38);
+  border-radius:5px;background:var(--accent-soft);letter-spacing:.1em}
+.et-t{margin:0 0 11px;font-size:clamp(29px,4.3vw,50px);font-weight:800;
+  letter-spacing:-.032em;line-height:1.03;color:var(--ink);text-wrap:balance}
+.et-s{margin:0 0 clamp(20px,2.4vw,26px);font-size:clamp(13.5px,1.15vw,15.5px);
+  line-height:1.55;color:var(--ink-2);max-width:54ch}
+.et-f{list-style:none;display:flex;flex-wrap:wrap;gap:clamp(18px,2.8vw,38px);margin:0;padding:0}
+.et-f li{display:flex;flex-direction:column;gap:4px;min-width:0}
+.et-f b{font-size:clamp(21px,2.3vw,30px);font-weight:800;line-height:1;
+  letter-spacing:-.022em;font-variant-numeric:tabular-nums;color:var(--ink)}
+.et-f b.up{color:var(--good)} .et-f b.dn{color:var(--bad)}
+/* Un palier est un mot, pas un nombre : en corps 30 il passerait à la
+   ligne et déséquilibrerait toute la rangée. */
+.et-f b.txt{font-size:clamp(15px,1.5vw,19px);letter-spacing:-.008em;
+  font-weight:700;color:var(--accent-2)}
+.et-f span{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+
+/* ── l'invite à faire défiler ──────────────────────────────────────── */
+.et-cue{position:absolute;z-index:2;right:clamp(20px,3.6vw,46px);bottom:20px;
+  display:flex;align-items:center;gap:9px;
+  font:600 9.5px/1 ui-monospace,Consolas,monospace;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--muted)}
+.et-cue i{width:1px;height:20px;
+  background:linear-gradient(180deg,transparent,var(--accent));
+  animation:etcue 2.4s ease-in-out infinite}
+@keyframes etcue{0%,100%{opacity:.25;transform:translateY(-3px)}50%{opacity:1;transform:translateY(3px)}}
+
+/* ── le détail, sous le bandeau ────────────────────────────────────── */
+.et-det{padding:24px 0 0}
+.et-lead{margin:0 0 20px;font-size:14.5px;line-height:1.62;color:var(--muted);max-width:80ch}
+
+@media(max-width:900px){ .tr{grid-template-columns:1fr} }
+@media(max-width:760px){
+  /* Sous 760 px l'image n'a plus la place de vivre à droite du texte :
+     le voile devient vertical, l'image passe en fond de bandeau. */
+  .et{min-height:clamp(280px,54vh,360px)}
+  .et-in{max-width:100%}
+  .et-voile{background:
+    linear-gradient(180deg,rgba(12,12,11,.55) 0,rgba(12,12,11,.86) 45%,var(--plane) 100%)}
+  /* L invite à défiler est masquée sur mobile : sa marge basse n a
+     plus lieu d être et laissait un vide au pied du bandeau. */
+  .et-in{padding-bottom:clamp(22px,3vw,26px)}
+  .etnav a span{display:none}
+  .etnav a{padding:7px 11px}
+  .et-cue{display:none}
+}
+@media(prefers-reduced-motion:reduce){ .et-cue i{animation:none} }
 
 /* ══ L'ANNEAU ═══════════════════════════════════════════════════════ */
 .an{position:relative;width:82px;height:82px;flex:0 0 auto}
@@ -1589,13 +1672,6 @@
 .tr-vide{padding:16px 18px;border:1px dashed var(--border);border-radius:var(--radius);
   color:var(--muted);font-size:13.5px;line-height:1.6}
 
-@media(max-width:900px){ .tr{grid-template-columns:1fr} }
-@media(max-width:620px){
-  .fil::before{left:14px}
-  .fil-e{padding-left:42px}
-  .fil-e::before{width:29px;height:29px;font-size:10.5px}
-  .fil-t h2{font-size:18px}
-}
 
 /* ══ « Ce que je travaille » ════════════════════════════════════════
    Une seule carte, large. Le contraste de taille avec le reste de la
@@ -3185,34 +3261,47 @@
          page ne se contente plus d'empiler des cartes justes, elle mène
          quelque part.
          ═══════════════════════════════════════════════════════════════ -->
+    <!-- La barre d'étapes : elle dit où l'on est dans le parcours et
+         permet d'y revenir. Elle remplace le trait vertical du fil, que
+         des bandeaux pleine largeur ne pouvaient plus accueillir. -->
+    <nav class="etnav" id="etNav" aria-label="Les étapes">
+      <a href="#et1" data-e="1"><b>01</b><span>Où tu en es</span></a>
+      <a href="#et2" data-e="2"><b>02</b><span>Ce qui te freine</span></a>
+      <a href="#et3" data-e="3"><b>03</b><span>Où ça se joue</span></a>
+      <a href="#et4" data-e="4"><b>04</b><span>Est-ce que ça marche</span></a>
+      <a href="#et5" data-e="5"><b>05</b><span>Le bilan</span></a>
+    </nav>
     <ol class="fil">
 
-      <li class="fil-e" data-n="01">
-        <div class="fil-t"><h2>Où tu en es</h2>
-          <p>Ton niveau du moment, et ce qu'il vaut par rapport au clan. C'est le point de
-             départ : tout ce qui suit s'y rapporte.</p></div>
+      <li class="fil-e" id="et1" data-n="01">
+        <header class="et" id="etH1"></header>
+        <div class="et-det">
+          <p class="et-lead">C'est le point de départ : tout ce qui suit s'y rapporte.</p>
         <div id="pHead"></div>
         <div id="pVerdictHost"></div>
+        </div>
       </li>
 
-      <li class="fil-e" data-n="02">
-        <div class="fil-t"><h2>Ce qui te freine</h2>
-          <p>Un seul geste, celui qui te coûte le plus. Avec ce qu'il vaut en dégâts, sa
-             courbe sur tes dernières batailles, et comment le travailler.</p></div>
+      <li class="fil-e" id="et2" data-n="02">
+        <header class="et" id="etH2"></header>
+        <div class="et-det">
+          <p class="et-lead">Ce que ce geste vaut en dégâts, sa courbe sur tes dernières batailles, et comment le travailler.</p>
         <div id="pTravail"></div>
+        </div>
       </li>
 
-      <li class="fil-e" data-n="03">
-        <div class="fil-t"><h2>Où ça se joue</h2>
-          <p>Un geste se travaille quelque part. Voici les cartes où tu gagnes le moins et
-             le plus — la première mérite un débriefing, la seconde une explication.</p></div>
+      <li class="fil-e" id="et3" data-n="03">
+        <header class="et" id="etH3"></header>
+        <div class="et-det">
+          <p class="et-lead">Un geste se travaille quelque part. Voici les cartes où tu gagnes le moins et le plus — la première mérite un débriefing, la seconde une explication.</p>
         <div id="pTerrain"></div>
+        </div>
       </li>
 
-      <li class="fil-e" data-n="04">
-        <div class="fil-t"><h2>Est-ce que ça marche</h2>
-          <p>La preuve. On travaille d'abord, on regarde ensuite si ça bouge — jamais
-             l'inverse.</p></div>
+      <li class="fil-e" id="et4" data-n="04">
+        <header class="et" id="etH4"></header>
+        <div class="et-det">
+          <p class="et-lead">La preuve. On travaille d'abord, on regarde ensuite si ça bouge — jamais l'inverse.</p>
         <div id="pMissions"></div>
         <div class="pz-evo">
           <div id="pEvo"></div>
@@ -3223,16 +3312,17 @@
         </div>
         <div id="pDiff"></div>
         <div id="pRecords"></div>
+        </div>
       </li>
 
-      <li class="fil-e" data-n="05">
-        <div class="fil-t"><h2>Le bilan</h2>
-          <p>Le SR, tes cinq aptitudes, tes chars. Ce sont des constats — ils se lisent
-             après le travail, pas avant.</p>
+      <li class="fil-e" id="et5" data-n="05">
+        <header class="et" id="etH5"></header>
+        <div class="et-det">
+          <p class="et-lead">Le SR, tes cinq aptitudes, tes chars. Ce sont des constats — ils se lisent après le travail, pas avant.</p>
           <p class="pz-note"><b>Deux lectures différentes :</b> le geste travaillé à l'étape 02
             te compare <b>au clan</b>, le radar ci-dessous te compare <b>à ta classe de char</b>.
             On peut être au niveau attendu de son rôle et perdre des obus quand même — les deux
-            sont vraies en même temps.</p></div>
+            sont vraies en même temps.</p>
         <div id="pSR"></div>
         <div class="pz-diag">
           <div class="pz-stack">
@@ -3262,6 +3352,7 @@
                ce soit. Ils reviendront quand le volume le justifiera. -->
           <div hidden><div id="pEnemies"></div><div id="pByClass"></div><div id="pByTier"></div></div>
         </details>
+        </div>
       </li>
 
     </ol>
@@ -6705,6 +6796,240 @@ function pTerrain(my, clanRows){
     (facile!==dure? vignette(facile,"facile") : "")+'</div>';
 }
 
+
+/* ── Un bandeau ─────────────────────────────────────────────────────
+   o = {n, etape, titre, sous, faits:[{v,l,ton}], carte, ton} */
+function heroBande(o){
+  const photo = 'heroes/'+o.n+'.jpg';
+  /* La photo peut ne pas exister : onerror retire le calque et la mire
+     reste seule. Aucun cadre vide, aucune icône cassée. */
+  /* Deux images empilées, la carte DESSOUS et la photo DESSUS. Chacune
+     ne retire qu'elle-même en cas d'échec : si la photo n'existe pas
+     encore, la vue du dessus de la carte reste ; si les deux manquent,
+     la mire tient le bandeau seule. Aucun cadre vide possible. */
+  const fond =
+    '<div class="et-bg" aria-hidden="true">'+
+      '<div class="et-ph">'+
+        (o.carte?'<img class="et-map" src="maps/top/'+esc(o.carte)+'.jpg" alt="" '+
+          'loading="lazy" onerror="this.remove()">':"")+
+        '<img class="et-shot" src="'+photo+'" alt="" loading="lazy" '+
+          'onerror="this.remove()">'+
+      '</div>'+
+      '<div class="et-mire"></div>'+
+      '<div class="et-voile"></div>'+
+    '</div>';
+
+  const faits = (o.faits||[]).filter(Boolean).map(f=>
+    '<li><b'+(f.ton?' class="'+f.ton+'"':"")+'>'+f.v+'</b><span>'+f.l+'</span></li>'
+  ).join("");
+
+  return fond+
+    '<div class="et-in">'+
+      '<p class="et-eb"><span class="et-num">'+o.n+'</span>'+esc(o.etape)+'</p>'+
+      '<h2 class="et-t">'+o.titre+'</h2>'+
+      (o.sous?'<p class="et-s">'+o.sous+'</p>':"")+
+      (faits?'<ul class="et-f">'+faits+'</ul>':"")+
+    '</div>'+
+    '<span class="et-cue" aria-hidden="true">'+t("le détail")+'<i></i></span>';
+}
+
+/* ── Ce que les cinq bandeaux racontent ─────────────────────────────
+   Tout est tiré des batailles du joueur. Quand une donnée manque, le
+   bandeau le dit au lieu d'inventer : « pas encore assez de batailles »
+   est une information, un chiffre inventé n'en est pas une. */
+function heroDonnees(my, clanRows){
+  const now=Date.now()/1000;
+  const bw=battlesWinrate(my);
+  const d=coachDiag(my, clanRows);
+
+  /* dégâts sur 30 jours, comparés aux 30 jours d'avant — deux paquets
+     disjoints, sinon la progression se compare à elle-même */
+  const F=(dj,dec)=>my.filter(r=>r.ts && (now-r.ts)>(dec?dj*86400:0) && (now-r.ts)<=(dec?2*dj*86400:dj*86400));
+  const moy=rs=>rs.length? rs.reduce((a,r)=>a+(r.dmg||0),0)/rs.length : null;
+  const dRec=moy(F(30,false)), dPre=moy(F(30,true));
+  const dpts=(dRec!=null && dPre!=null && F(30,true).length>=5) ? Math.round((dRec/dPre-1)*100) : null;
+
+  /* les cartes du joueur, seuil de quatre batailles — le même que la
+     station « Où ça se joue », pour que les deux ne se contredisent pas */
+  const pc=new Map();
+  for(const b of my){ if(!b.mapName) continue; const k=mapKey(b.mapName); if(!k) continue;
+    if(!pc.has(k)) pc.set(k,{k,nom:b.mapName,n:0,v:0,dmg:0});
+    const c=pc.get(k); c.n++; if(b.result===1) c.v++; c.dmg+=(b.dmg||0); }
+  const cartes=[...pc.values()].filter(c=>c.n>=4).sort((a,b)=>(a.v/a.n)-(b.v/b.n));
+  const dure=cartes[0]||null;
+  const facile=cartes.length?cartes[cartes.length-1]:null;
+  /* On évite de reprendre la carte de l'étape 03 ailleurs : cinq fois la
+     même image ferait décor, pas parcours. */
+  const pool=[...pc.values()].sort((a,b)=>b.n-a.n).filter(c=>!dure||c.k!==dure.k);
+  const choixFond=(i,repli)=>(pool[i]||repli||pool[0]||dure||null);
+  const fond1=choixFond(0), fond2=choixFond(1),
+        fond4=choixFond(2), fond5=choixFond(3,facile);
+
+  const sr=srAvg(my), tier=ceTier(sr), tr=pSRTrend(my), st=pStreak(my);
+  const g=d.retards[0]||null;
+  const valG=v=>g? (g.u==="%"?pctf(v):(g.u==="s"?Math.round(v)+" s":v.toFixed(2))) : "—";
+
+  /* ── 01 · Où tu en es ─────────────────────────────────────────── */
+  let t1;
+  if(dpts!=null && dpts>=8)       t1=t("Tu montes.");
+  else if(dpts!=null && dpts<=-8) t1=t("Tu redescends.");
+  else if(bw.wr>=0.55)            t1=t("Tu tiens ton niveau.");
+  else                            t1=t("Tu cherches ton rythme.");
+
+  const h1={ n:"01", etape:t("Où tu en es"), titre:t1,
+    sous:t("Ton niveau du moment, et ce qu'il vaut par rapport au clan."),
+    carte: fond1?fond1.k:null,
+    faits:[
+      {v:fmt(bw.battles), l:t("batailles")},
+      {v:Math.round(bw.wr*100)+" %", l:t("de victoires"), ton:bw.wr>=0.5?"up":"dn"},
+      dpts!=null?{v:(dpts>=0?"+":"−")+Math.abs(dpts)+" %", l:t("dégâts sur 30 j"), ton:dpts>=0?"up":"dn"}:null,
+    ]};
+
+  /* ── 02 · Ce qui te freine ────────────────────────────────────── */
+  const h2 = g
+    ? { n:"02", etape:t("Ce qui te freine"), titre:esc(g.nom),
+        sous:t("Le geste qui te coûte le plus, sur les six mesurés."),
+        carte: fond2?fond2.k:null,
+        faits:[
+          {v:valG(g.m), l:t("toi"), ton:"dn"},
+          {v:valG(g.c), l:t("le clan")},
+          {v:(g.ecart>=0?"+":"−")+Math.round(Math.abs(g.ecart)*100)+" %", l:t("d'écart"), ton:g.ecart>=0?"up":"dn"},
+        ]}
+    : { n:"02", etape:t("Ce qui te freine"), titre:t("Rien ne décroche."),
+        sous:t("Tu es dans la moyenne du clan sur les six gestes mesurés."),
+        faits:[] };
+
+  /* ── 03 · Où ça se joue ───────────────────────────────────────── */
+  const h3 = dure
+    ? { n:"03", etape:t("Où ça se joue"), titre:esc(prettyMap(dure.nom)),
+        sous:t("Ta carte la plus difficile — celle qui mérite un débriefing."),
+        carte:dure.k,
+        faits:[
+          {v:Math.round(dure.v/dure.n*100)+" %", l:t("de victoires"), ton:(dure.v/dure.n)>=0.5?"up":"dn"},
+          {v:fmt(Math.round(dure.dmg/dure.n)), l:t("dégâts moyens")},
+          {v:dure.n, l:t("batailles")},
+        ]}
+    : { n:"03", etape:t("Où ça se joue"), titre:t("Pas encore de terrain qui ressorte."),
+        sous:t("Il faut au moins quatre batailles sur une même carte pour en tirer quelque chose."),
+        faits:[] };
+
+  /* ── 04 · Est-ce que ça marche ────────────────────────────────── */
+  let t4, s4;
+  if(tr && tr.delta>=15){ t4=t("Ça monte."); s4=t("Ton SR sur la seconde moitié de tes batailles dépasse la première."); }
+  else if(tr && tr.delta<=-15){ t4=t("Ça recule."); s4=t("Ton SR sur la seconde moitié de tes batailles est sous la première."); }
+  else if(tr){ t4=t("Ça tient."); s4=t("Ton niveau ne bouge pas franchement dans un sens ni dans l'autre."); }
+  else { t4=t("Trop tôt pour le dire."); s4=t("La progression se lit à partir d'une dizaine de batailles."); }
+  const h4={ n:"04", etape:t("Est-ce que ça marche"), titre:t4, sous:s4,
+    carte: fond4?fond4.k:null,
+    faits: tr?[
+      {v:(tr.delta>=0?"+":"−")+Math.abs(tr.delta), l:t("de SR"), ton:tr.delta>=0?"up":"dn"},
+      {v:fmt(tr.older), l:t("au départ")},
+      {v:fmt(tr.recent), l:t("aujourd'hui")},
+    ]:[] };
+
+  /* ── 05 · Le bilan ────────────────────────────────────────────── */
+  /* Le palier est un mot, pas un nombre : il porte la marque « txt » pour
+     que le style ne l'affiche pas en corps 30, où il passerait à la
+     ligne et déséquilibrerait la rangée. */
+  const h5={ n:"05", etape:t("Le bilan"), titre: sr!=null?fmt(sr):t("Pas encore de SR"),
+    sous: sr!=null? t("Ton Synergy Rating — saison 1, calculé sur les batailles de ce clan.")
+                  : t("Le SR se calcule à partir d'une dizaine de batailles."),
+    carte: fond5?fond5.k:null,
+    faits: sr!=null?[
+      {v:esc(tier.l), l:t("palier"), ton:"txt"},
+      st?{v:st.n, l:st.res===1?t("victoires d'affilée"):t("défaites d'affilée"), ton:st.res===1?"up":"dn"}:null,
+      {v:fmt(bw.battles), l:t("batailles pesées")},
+    ]:[] };
+
+  return [h1,h2,h3,h4,h5];
+}
+
+/* ── Le remplissage ─────────────────────────────────────────────── */
+function remplitHeros(my, clanRows){
+  const h=heroDonnees(my, clanRows);
+  h.forEach((o,i)=>{
+    const el=document.getElementById("etH"+(i+1));
+    if(el) el.innerHTML=heroBande(o);
+  });
+  parallaxeArme();
+}
+
+/* ── La parallaxe ───────────────────────────────────────────────────
+   Un seul écouteur de défilement pour toute la page, étranglé par
+   requestAnimationFrame : le navigateur ne calcule qu'une fois par
+   image affichée, jamais une fois par pixel parcouru.
+
+   Un IntersectionObserver tient la liste des bandeaux VISIBLES. Sans
+   lui on recalculerait la position des cinq à chaque image, dont quatre
+   hors de l'écran — du travail jeté.
+
+   Les deux calques partent dans des sens opposés : c'est ce qui crée la
+   profondeur. Un seul calque qui glisse ne se remarque même pas. */
+let parVus=new Set(), parPose=false, parObs=null, parEcoute=false;
+/* Le mouvement s'éteint si le système le demande — mais le suivi de la
+   barre d'étapes, lui, continue : ce n'est pas une animation, c'est un
+   repère de navigation. On arme donc toujours, et on ne saute que les
+   transformations. */
+const parDoux=()=>matchMedia("(prefers-reduced-motion: reduce)").matches;
+function parallaxeArme(){
+  const bandes=[...document.querySelectorAll("#viewPlayer .et")];
+  if(!bandes.length) return;
+
+  if(!parObs) parObs=new IntersectionObserver(es=>{
+    es.forEach(e=>{ e.isIntersecting?parVus.add(e.target):parVus.delete(e.target); });
+    parDemande();
+  }, {rootMargin:"120px 0px"});
+
+  parVus.clear(); parObs.disconnect();
+  bandes.forEach(b=>parObs.observe(b));
+
+  /* La barre d'étapes se colle SOUS la barre du haut de l'application.
+     On mesure celle-ci au lieu de coder sa hauteur en dur : elle change
+     avec la langue, la taille de police du système, et la largeur. */
+  { const tb=document.querySelector(".topbar");
+    if(tb) document.documentElement.style.setProperty(
+      "--tb-h", Math.round(tb.getBoundingClientRect().height)+"px"); }
+
+  if(!parEcoute){
+    addEventListener("scroll", parDemande, {passive:true});
+    addEventListener("resize", parDemande, {passive:true});
+    parEcoute=true;
+  }
+  parDemande();
+}
+function parDemande(){
+  if(parPose) return;
+  parPose=true;
+  requestAnimationFrame(()=>{ parPose=false; parDessine(); });
+}
+function parDessine(){
+  const vh=innerHeight, doux=parDoux();
+  if(!doux) parVus.forEach(b=>{
+    const r=b.getBoundingClientRect();
+    /* p vaut −0,5 quand le bandeau entre par le bas, +0,5 quand il sort
+       par le haut. Zéro quand son centre est au centre de l'écran. */
+    const p=((vh/2)-(r.top+r.height/2))/(vh+r.height);
+    const ph=b.querySelector(".et-ph"), mi=b.querySelector(".et-mire");
+    if(ph) ph.style.transform="translate3d("+(p*72).toFixed(1)+"px,0,0)";
+    if(mi) mi.style.transform="translate3d("+(p*-190).toFixed(1)+"px,0,0)";
+  });
+
+  /* L'étape en cours : celle dont le bandeau a franchi le haut de
+     l'écran en dernier. On prend la DERNIÈRE qui commence au-dessus du
+     tiers haut, pas la plus proche du centre — sinon la barre repart en
+     arrière quand une étape longue défile. */
+  const nav=document.getElementById("etNav");
+  if(!nav) return;
+  const seuil=vh*0.34;
+  let cur=1;
+  document.querySelectorAll("#viewPlayer .fil-e").forEach((e,i)=>{
+    if(e.offsetParent!==null && e.getBoundingClientRect().top<=seuil) cur=i+1;
+  });
+  nav.querySelectorAll("a").forEach(a=>{
+    a.classList.toggle("on", Number(a.dataset.e)===cur);
+  });
+}
+
 function coachDiag(mesRows, clanRows){
   const res=[];
   for(const g of COACH_GESTES){
@@ -6873,10 +7198,13 @@ function pVerdict(my, clanRows){
     .map((r,j)=>'<i class="'+(r.result===1?"v":"d")+'" style="--i:'+j+';height:'+
          (r.result===1?26:14)+'px" title="'+(r.result===1?"Victoire":"Défaite")+'"></i>').join("");
 
+  /* Le titre et le taux de victoire sont portés par le bandeau de
+     l'étape 01, juste au-dessus. Les répéter ici doublait la page au
+     lieu de la hiérarchiser. Reste ce que cette carte seule apporte :
+     la phrase détaillée, et les dix dernières batailles. */
   return '<section class="vd" id="pVerdict">'+
-    '<div class="vd-haut"><div class="vd-g"><h2 class="vd-t">'+titre+'</h2>'+
-      '<p class="vd-p">'+ph+'</p></div>'+
-      '<div class="vd-n"><b data-n="'+wr+'">'+wr+' %</b><i>de victoires</i></div></div>'+
+    '<div class="vd-haut"><div class="vd-g">'+
+      '<p class="vd-p">'+ph+'</p></div></div>'+
     (dix?'<div class="vd-c"><div class="vd-ch"><figcaption>Tes dix dernières batailles</figcaption>'+
       '<div class="vd-f">'+dix+'</div></div></div>':"")+
   '</section>';
@@ -6928,7 +7256,8 @@ function renderPlayerView(){
     document.querySelectorAll("#viewPlayer .pz-title, #viewPlayer .pz-note, #viewPlayer .pz-diag, " +
       "#viewPlayer .pz-evo, #viewPlayer #pTanks, #viewPlayer #pDiff, #viewPlayer #pRecords, " +
       "#viewPlayer #pTravail, #viewPlayer #pTerrain, #viewPlayer #pMissions, " +
-      "#viewPlayer .fil-e:not(:first-child) .fil-t, #viewPlayer .pz-more, #viewPlayer #pSR")
+      "#viewPlayer .fil-e:not(:first-child) .et, #viewPlayer .et-lead, " +
+      "#viewPlayer .pz-more, #viewPlayer #pSR")
       .forEach(e=>{ e.style.display = assez ? "" : "none"; });
     /* Une station dont tout le contenu est masqué ne doit pas laisser sa
        pastille numérotée seule sur le fil. */
@@ -7019,6 +7348,7 @@ function renderPlayerView(){
   const myTout = RAW.filter(r=>r.accId===SELP && estTierSR(r) && (!state.mode || r.mode===state.mode));
   { const el=document.getElementById("pTravail"); if(el) el.innerHTML = pTravail(my, clanRows);
     const et=document.getElementById("pTerrain"); if(et) et.innerHTML = pTerrain(my, clanRows);
+    remplitHeros(my, clanRows);
     const em=document.getElementById("pMissions"); if(em) em.innerHTML = pMissions(my, clanRows); }
   {
     /* Un titre orphelin au-dessus d'un « pas encore assez de données »
