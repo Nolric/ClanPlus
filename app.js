@@ -2975,7 +2975,7 @@ function cpVideClan(){
    ══════════════════════════════════════════════════════════════════ */
 const COACH_GESTES = [
   {
-    cle:"precis", nom:"Précision", ech:"obus tirés",
+    cle:"precis", role:"inflige", nom:"Précision", ech:"obus tirés",
     /* on somme AVANT de diviser : faire la moyenne des ratios par bataille
        donnerait le même poids à une partie de 3 obus qu'à une de 30. */
     calc:rs=>{ const t=rs.reduce((a,r)=>a+(r.shots||0),0), h=rs.reduce((a,r)=>a+(r.hits||0),0);
@@ -2985,7 +2985,7 @@ const COACH_GESTES = [
     action:"Tire moins souvent en mouvement, et attends l'arrêt complet du réticule sur les tirs longs."
   },
   {
-    cle:"perce", nom:"Pénétration", ech:"obus touchés",
+    cle:"perce", role:"inflige", nom:"Pénétration", ech:"obus touchés",
     calc:rs=>{ const h=rs.reduce((a,r)=>a+(r.hits||0),0), p=rs.reduce((a,r)=>a+(r.pierce||0),0);
       return h>=30 ? {v:p/h, n:h, u:"%"} : null; },
     mieux:"haut",
@@ -2993,7 +2993,7 @@ const COACH_GESTES = [
     action:"Tu tapes trop souvent du blindage frontal. Vise les flancs, les toits de tourelle et les points faibles plutôt que la masse."
   },
   {
-    cle:"blindage", nom:"Usage du blindage", ech:"batailles",
+    cle:"blindage", role:"evite", nom:"Usage du blindage", ech:"batailles",
     calc:rs=>{ const b=rs.reduce((a,r)=>a+(r.block||0),0), d=rs.reduce((a,r)=>a+(r.dmgr||0),0);
       return (b+d)>=8000 ? {v:b/(b+d), n:rs.length, u:"%"} : null; },
     mieux:"haut",
@@ -3001,7 +3001,7 @@ const COACH_GESTES = [
     action:"Angle davantage ta caisse et expose la tourelle plutôt que les flancs. En Bastion, un char qui rebondit vaut deux chars qui tirent."
   },
   {
-    cle:"echange", nom:"Échange", ech:"batailles",
+    cle:"echange", role:null, nom:"Échange", ech:"batailles",
     /* dégâts rendus par point de vie perdu : la mesure la plus proche de
        « est-ce que ma mort valait le coup » */
     calc:rs=>{ const d=rs.reduce((a,r)=>a+(r.dmg||0),0);
@@ -3012,7 +3012,7 @@ const COACH_GESTES = [
     action:"Ne prends un duel que si tu peux tirer le premier ou rebondir. Recule après ton obus au lieu de rester exposé."
   },
   {
-    cle:"survie", nom:"Survie", ech:"batailles",
+    cle:"survie", role:null, nom:"Survie", ech:"batailles",
     calc:rs=>{ const l=rs.filter(r=>r.life>0); return l.length>=8
       ? {v:l.reduce((a,r)=>a+r.life,0)/l.length, n:l.length, u:"s"} : null; },
     mieux:"haut",
@@ -3020,7 +3020,7 @@ const COACH_GESTES = [
     action:"Tu pars trop tôt au contact. Laisse le premier échange à un char mieux blindé et arrive en second."
   },
   {
-    cle:"apport", nom:"Apport hors dégâts", ech:"batailles",
+    cle:"apport", role:"permis", nom:"Apport hors dégâts", ech:"batailles",
     /* repérage et assistance, ramenés aux dégâts : distingue le joueur qui
        ne joue QUE le tir de celui qui fait jouer les autres */
     calc:rs=>{ const d=rs.reduce((a,r)=>a+(r.dmg||0),0);
@@ -3155,12 +3155,18 @@ function pTravail(mesRows, clanRows){
     return '<section class="tv tv-ok">'+
       '<div class="tv-card">'+
         '<h3>'+t("Rien ne décroche")+'</h3>'+
-        '<p class="tv-p">'+t("Tu es dans la moyenne du clan sur les six gestes mesurés. Le prochain gain viendra du jeu d'équipe plutôt que de la technique individuelle.")+'</p>'+
+        '<p class="tv-p">'+t("Tu es dans la moyenne de ta classe, dans le clan, sur les six gestes mesurés. Le prochain gain viendra du jeu d'équipe plutôt que de la technique individuelle.")+'</p>'+
         (f?'<p class="tv-p tv-fort">'+t("Ton point d'appui")+' : <b>'+esc(f.nom)+'</b> — '+
             f.constat(f.m,f.c)+'</p>':"")+
       '</div></section>';
   }
 
+  /* Ce qu'on a mesuré mais qu'on ne prescrira pas : le taire laisserait
+     croire à un oubli, alors que c'est une décision. */
+  const ecarte=(d.ecartes||[]).length
+    ? '<p class="tv-hors">'+t("Mesuré aussi, mais hors du métier de ta classe : {s}. Ces gestes ne te seront pas proposés — ce n'est pas ton travail.")
+        .replace("{s}", d.ecartes.map(function(x){ return esc(t(x.nom)); }).join(", "))+'</p>'
+    : "";
   const g=d.retards[0], suivant=d.retards[1];
   const u=g.u;
   const val=v=>u==="%"?pctf(v):(u==="s"?Math.round(v)+" s":v.toFixed(2));
@@ -3225,6 +3231,7 @@ function pTravail(mesRows, clanRows){
           '<p class="tv-action"><span>→</span>'+esc(suivant.action)+'</p>'+
         '</details>'
       : "")+
+    ecarte+
   '</section>';
 }
 
@@ -5909,22 +5916,63 @@ function dkActive(n){
   if(change) dkEntree(n);
 }
 
+/* La référence d'un geste, pondérée par le mélange de classes du joueur.
+   Même principe que dkRefPond : chaque classe se compare à elle-même,
+   puis on recombine dans SES proportions à lui. Sans cela, un lourd est
+   comparé à des légers sur l'apport hors dégâts — dont c'est le métier —
+   et le conseil « éclaire avant de tirer » devient inévitable.
+
+   Vingt lignes par classe et soixante pour cent du mélange couvert : les
+   mêmes seuils qu'ailleurs, pour la même raison. Sous cette barre on
+   renonce à la référence par classe plutôt que d'en fabriquer une
+   fausse. */
+function coachRef(autres, part, g){
+  const parCls={};
+  for(const x of autres){ if(!x.cls) continue; (parCls[x.cls]=parCls[x.cls]||[]).push(x); }
+  let acc=0, pds=0;
+  for(const [cls,poids] of Object.entries(part||{})){
+    const l=parCls[cls];
+    if(!l || l.length<20) continue;
+    const v=g.calc(l);
+    if(!v || v.v==null) continue;
+    acc+=v.v*poids; pds+=poids;
+  }
+  return pds>=0.6 ? {v:acc/pds, couvert:pds} : null;
+}
+
 function coachDiag(mesRows, clanRows){
+  const autres=clanRows.filter(r=>r.accId!==SELP);
+  const part={};
+  for(const x of mesRows) if(x.cls) part[x.cls]=(part[x.cls]||0)+1/mesRows.length;
   const res=[];
   for(const g of COACH_GESTES){
-    const m=g.calc(mesRows), c=g.calc(clanRows.filter(r=>r.accId!==SELP));
-    if(!m||!c||!c.v) continue;
-    const ecart=(m.v-c.v)/c.v;                       // relatif : comparable d'un geste à l'autre
+    const m=g.calc(mesRows);
+    if(!m) continue;
+    /* Par classe si possible ; à défaut le clan entier, mais on le note :
+       une comparaison hors classe ne vaut pas la même chose et le lecteur
+       doit pouvoir le savoir. */
+    const parC=coachRef(autres, part, g);
+    const c=parC || g.calc(autres);
+    if(!c||!c.v) continue;
+    const ecart=(m.v-c.v)/c.v;                       // relatif : les unités diffèrent
     /* u vient du calcul, pas du geste : sans le reporter ici, tous les
        ratios s affichaient en 0.73 au lieu de 73 %. */
-    res.push({...g, u:m.u, m:m.v, c:c.v, n:m.n, ecart, bon:ecart>=0});
+    res.push({...g, u:m.u, m:m.v, c:c.v, n:m.n, ecart, bon:ecart>=0,
+              parClasse:!!parC, poids:dkPoids(part, g.role, null)});
   }
   /* on montre d'abord ce qui coûte le plus : les retards, par ampleur.
      Puis, s'il reste de la place, le point fort — pour ne pas n'énumérer
      que des reproches. */
-  const retards=res.filter(r=>r.ecart<-0.04).sort((a,b)=>a.ecart-b.ecart);
+  /* Le métier ne filtre QUE ce qu'on prescrit. Un lourd voit toujours
+     son apport hors dégâts mesuré et affiché — on ne lui demande
+     simplement plus de l'améliorer, parce que ce n'est pas son travail.
+     Les points forts, eux, ne sont pas filtrés : un lourd qui éclaire
+     mieux que les autres lourds mérite qu'on le lui dise. */
+  const retards=res.filter(r=>r.ecart<-0.04 && r.poids>=1).sort((a,b)=>a.ecart-b.ecart);
+  const ecartes=res.filter(r=>r.ecart<-0.04 && r.poids<1);
   const forts  =res.filter(r=>r.ecart> 0.06).sort((a,b)=>b.ecart-a.ecart);
-  return { retards, forts, total:res.length };
+  return { retards, forts, ecartes, total:res.length,
+           horsClasse:res.some(r=>!r.parClasse) };
 }
 
 

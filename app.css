@@ -3335,3 +3335,8 @@ i.pm-eq{width:8px;height:8px;background:var(--accent);opacity:.55;
 #pClsSel .ts-b:disabled{opacity:.34;cursor:not-allowed;border-style:dashed}
 #pClsSel .ts-b:not(:disabled){cursor:pointer}
 #pClsSel .ts-b:not(:disabled):not(.on):hover{color:var(--ink);border-color:var(--accent)}
+
+/* Ce qui est mesuré mais jamais prescrit : présent, en retrait, et
+   expliqué — un chiffre en retard sans conseil passerait pour un oubli. */
+.tv-hors{margin:14px 0 0;font-size:12.5px;color:var(--muted);line-height:1.5;
+  padding-left:11px;border-left:2px solid var(--border)}
