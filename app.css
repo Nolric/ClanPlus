@@ -1675,6 +1675,10 @@
 .dke-f{margin-top:7px;font:500 10.5px/1 ui-monospace,Consolas,monospace;
   letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
 /* L etage qui fuit porte la seule couleur vive de la figure. */
+/* L axe simplement DESIGNE, sans deficit : or, pas rouge. */
+.dke-vise .dke-h b{color:var(--accent-2)}
+.dke-vise .dke-moi{background:linear-gradient(90deg,rgba(216,181,102,.35),var(--accent-2))}
+.dke-vise .dke-f{color:var(--accent)}
 .dke-fuit .dke-h b{color:var(--bad)}
 .dke-fuit .dke-moi{background:linear-gradient(90deg,rgba(236,106,106,.45),var(--bad))}
 .dke-fuit .dke-f{color:var(--bad)}

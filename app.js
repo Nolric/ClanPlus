@@ -3542,180 +3542,284 @@ function dkChar(my){
 }
 
 
-/* ── Les quatre étages d'un paquet de lignes ────────────────────── */
-function dkEtages(rows){
-  let s=0,h=0,p=0,d=0;
-  for(const r of rows){ s+=r.shots||0; h+=r.hits||0; p+=r.pierce||0; d+=r.dmg||0; }
-  const n=rows.length;
-  return { n, tirs:s,
-    obus:    n? s/n : null,   // combien tu tires
-    touche:  s? h/s : null,   // ta visée
-    perce:   h? p/h : null,   // ton choix de cible
-    parObus: p? d/p : null,   // ce que porte un coup qui passe
-    dmg:     n? d/n : null };
+/* ── Les sommes brutes d'un paquet de lignes ─────────────────────
+   On somme AVANT de diviser : une moyenne de ratios n'est pas le ratio
+   des moyennes, et sur des batailles de longueurs différentes l'écart
+   n'est pas négligeable. */
+const DK_COLS=["shots","hits","pierce","dmg","pot","block","assist",
+               "aradio","atrack","astun","hitsr","piercer"];
+function dkSommes(rows){
+  const S={n:rows.length};
+  DK_COLS.forEach(k=>S[k]=0);
+  for(const r of rows) for(const k of DK_COLS) S[k]+=r[k]||0;
+  return S;
 }
 
+/* ── Les trois axes, et ce qui les compose ───────────────────────────
+   Chaque étage sait se calculer à partir des sommes. Le mode dit comment
+   se calcule le gain : produit ou composante additive. */
+const DK_AXES=[
+  { cle:"inflige", nom:"Dégâts infligés", avec:"les dégâts que tu infliges",
+    sous:"ce que tu retires à l'adversaire",
+    total:S=>S.n?S.dmg/S.n:null, mode:"produit",
+    manque:"Tu infliges moins que les autres.",
+    etages:[
+      { cle:"obus", nom:"Obus tirés", sous:"par bataille", unite:"n",
+        val:S=>S.n?S.shots/S.n:null,
+        quand:"Tu ne tires pas assez : exposition, placement, ou tu meurs trop tôt.",
+        quoi:"Cherche des angles où tu peux tirer plus longtemps, et vérifie ta durée de vie." },
+      { cle:"touche", nom:"Obus qui touchent", sous:"sur les obus tirés", unite:"%",
+        val:S=>S.shots?S.hits/S.shots:null,
+        quand:"Ta visée décroche : tu tires en roulant, ou de trop loin.",
+        quoi:"Attends l'arrêt complet du réticule sur les tirs longs, et rapproche-toi." },
+      { cle:"perce", nom:"Obus qui percent", sous:"sur les obus qui touchent", unite:"%",
+        val:S=>S.hits?S.pierce/S.hits:null,
+        quand:"Ce n'est pas ta visée, c'est ton choix de cible.",
+        quoi:"Vise les flancs, les toits de tourelle et les points faibles plutôt que la masse." },
+      { cle:"parObus", nom:"Dégâts par perforation", sous:"quand un obus passe", unite:"n",
+        val:S=>S.pierce?S.dmg/S.pierce:null,
+        quand:"Tes coups portent peu : canon, munition, ou tu tapes trop haut en tier.",
+        quoi:"Regarde ta configuration, et choisis des cibles à ta portée." },
+    ]},
+  { cle:"evite", nom:"Dégâts évités", avec:"les dégâts que tu évites",
+    sous:"ce que ton blindage absorbe",
+    total:S=>S.n?S.block/S.n:null, mode:"produit",
+    manque:"Ton blindage travaille moins.",
+    etages:[
+      { cle:"feu", nom:"Feu encaissé", sous:"dégâts potentiels par bataille", unite:"n",
+        val:S=>S.n?S.pot/S.n:null,
+        quand:"Tu attires peu de feu : un blindage ne sert à personne s'il ne tient pas la ligne.",
+        quoi:"Prends la première ligne quand ton blindage le permet — c'est du feu que tes alliés ne prennent pas." },
+      { cle:"bloque", nom:"Part bloquée", sous:"sur le feu encaissé", unite:"%",
+        val:S=>S.pot?S.block/S.pot:null,
+        quand:"Ton blindage encaisse au lieu de renvoyer : c'est une question d'angle.",
+        quoi:"Présente ton flanc en biais plutôt que de face, et cache tes points faibles." },
+    ]},
+  { cle:"permis", nom:"Dégâts permis", avec:"les dégâts que tu permets",
+    sous:"ce que tes alliés infligent grâce à toi",
+    total:S=>S.n?S.assist/S.n:null, mode:"composantes",
+    manque:"Tes alliés profitent peu de toi.",
+    etages:[
+      { cle:"radio", nom:"Repérage", sous:"dégâts sur les cibles que tu éclaires", unite:"n",
+        val:S=>S.n?S.aradio/S.n:null,
+        quand:"Tu éclaires peu : tes alliés tirent sur ce qu'ils voient eux-mêmes.",
+        quoi:"Avance ta vue là où l'équipe regarde, et reste en vie pour la tenir." },
+      { cle:"chenilles", nom:"Immobilisation", sous:"dégâts sur les cibles que tu chenilles", unite:"n",
+        val:S=>S.n?S.atrack/S.n:null,
+        quand:"Tu immobilises peu : une cible arrêtée est une cible que toute l'équipe touche.",
+        quoi:"Vise les chenilles quand tu ne peux pas percer le blindage." },
+      { cle:"stun", nom:"Étourdissement", sous:"dégâts sur les cibles que tu étourdis", unite:"n",
+        val:S=>S.n?S.astun/S.n:null,
+        quand:"Tes tirs d'artillerie étourdissent peu.",
+        quoi:"Privilégie les obus explosifs à proximité des cibles plutôt que le coup direct." },
+    ]},
+];
+
 /* ── Une référence pondérée par le mélange de classes du joueur ────
-   Chaque classe est comparée à elle-même, puis recombinée dans les
-   proportions du joueur. Une classe dont la référence compte moins de
-   vingt lignes est écartée et son poids redistribué : vingt lignes,
-   c'est le minimum pour qu'une moyenne veuille dire quelque chose.
-   Si moins de 60 % du mélange est couvert, on renonce — une référence
-   bâtie sur un tiers des batailles comparerait deux choses
-   différentes. */
+   Les dégâts d'un léger et d'un lourd ne se comparent pas. Mais filtrer
+   sur la seule classe la plus jouée jetterait la moitié des batailles
+   d'un joueur qui alterne. Chaque classe est donc comparée à elle-même,
+   puis recombinée dans SES proportions à lui.
+
+   Vingt lignes minimum par classe : en dessous, une moyenne ne veut rien
+   dire et fausserait la recombinaison. Si moins de 60 % du mélange est
+   couvert, on renonce — une référence bâtie sur un tiers des batailles
+   comparerait deux choses différentes. */
 function dkRefPond(rows, part){
   const parCls=new Map();
   for(const r of rows){
     if(!parCls.has(r.cls)) parCls.set(r.cls,[]);
     parCls.get(r.cls).push(r);
   }
-  const champs=["obus","touche","perce","parObus","dmg"];
-  const acc={}, poids={};
-  champs.forEach(k=>{ acc[k]=0; poids[k]=0; });
+  const acc=new Map(), pds=new Map();
   let couvert=0;
-  for(const [cls,pds] of Object.entries(part)){
+  for(const [cls,poids] of Object.entries(part)){
     const l=parCls.get(cls);
     if(!l || l.length<20) continue;
-    const e=dkEtages(l);
-    couvert+=pds;
-    champs.forEach(k=>{ if(e[k]!=null){ acc[k]+=e[k]*pds; poids[k]+=pds; } });
+    const S=dkSommes(l);
+    couvert+=poids;
+    for(const ax of DK_AXES){
+      const t=ax.total(S);
+      if(t!=null){ acc.set(ax.cle,(acc.get(ax.cle)||0)+t*poids); pds.set(ax.cle,(pds.get(ax.cle)||0)+poids); }
+      for(const e of ax.etages){
+        const k=ax.cle+"."+e.cle, v=e.val(S);
+        if(v!=null){ acc.set(k,(acc.get(k)||0)+v*poids); pds.set(k,(pds.get(k)||0)+poids); }
+      }
+    }
   }
   if(couvert<0.6) return null;
-  const out={n:rows.length, couvert};
-  champs.forEach(k=>{ out[k]= poids[k]? acc[k]/poids[k] : null; });
+  const out={couvert, n:rows.length, get:(k)=>pds.get(k)?acc.get(k)/pds.get(k):null};
   return out;
 }
 
-/* ── L'entonnoir complet ────────────────────────────────────────── */
-const DK_ETAGES=[
-  { cle:"obus",    nom:"Obus tirés",     unite:"n",
-    sous:"par bataille",
-    quand:"Tu ne tires pas assez : exposition, placement, ou tu meurs trop tôt.",
-    quoi:"Cherche des angles où tu peux tirer plus longtemps, et vérifie ta durée de vie." },
-  { cle:"touche",  nom:"Obus qui touchent", unite:"%",
-    sous:"sur les obus tirés",
-    quand:"Ta visée décroche : tu tires en roulant, ou de trop loin.",
-    quoi:"Attends l'arrêt complet du réticule sur les tirs longs, et rapproche-toi." },
-  { cle:"perce",   nom:"Obus qui percent", unite:"%",
-    sous:"sur les obus qui touchent",
-    quand:"Ce n'est pas ta visée, c'est ton choix de cible.",
-    quoi:"Vise les flancs, les toits de tourelle et les points faibles plutôt que la masse." },
-  { cle:"parObus", nom:"Dégâts par perforation", unite:"n",
-    sous:"quand un obus passe",
-    quand:"Tes coups portent peu : canon, munition, ou tu tapes trop haut en tier.",
-    quoi:"Regarde ta configuration, et choisis des cibles à ta portée." },
-];
-
-function dkEntonnoir(my, clanRows){
+/* ── L'analyse complète ──────────────────────────────────────────────
+   Trois axes, chacun avec ses étages, chacun comparé au clan ET aux
+   adversaires réellement affrontés. On vise le MEILLEUR des deux : tous
+   deux sont atteints par de vrais joueurs, dans la même classe et les
+   mêmes batailles — ce n'est donc pas un objectif théorique. */
+function dkAnalyse(my, clanRows){
   if(!my.length) return null;
-  const moi=dkEtages(my);
-  /* Trente obus : en dessous, un taux de pénétration bouge de dix points
-     sur un seul tir. C'est le seuil affiché dans l'audit. */
-  if(moi.tirs<30 || moi.n<8) return null;
+  const S=dkSommes(my);
+  /* Trente obus et huit batailles : en dessous, un seul tir déplace un
+     taux de plusieurs points. Le seuil est dit, pas subi. */
+  if(S.n<8 || S.shots<30) return null;
 
-  /* le mélange de classes du joueur */
   const part={};
   for(const r of my){ part[r.cls]=(part[r.cls]||0)+1/my.length; }
 
   const f=pfilter();
-  const clanAutres=clanRows.filter(r=>r.accId!==SELP);
-  const adverses=(typeof RAW!=="undefined"?RAW:[]).filter(r=>!r.isMember && f(r));
-  const clan=dkRefPond(clanAutres, part);
-  const adv =dkRefPond(adverses, part);
+  const clan=dkRefPond(clanRows.filter(r=>r.accId!==SELP), part);
+  const adv =dkRefPond((typeof RAW!=="undefined"?RAW:[]).filter(r=>!r.isMember && f(r)), part);
   if(!clan && !adv) return null;
 
-  const etages=DK_ETAGES.map(e=>{
-    const m=moi[e.cle];
-    const c=clan?clan[e.cle]:null, a=adv?adv[e.cle]:null;
-    /* On vise le MEILLEUR des deux : les deux sont atteints par de vrais
-       joueurs, dans la même classe et les mêmes batailles. */
-    let ref=null, qui=null;
-    if(c!=null && (a==null || c>=a)){ ref=c; qui="clan"; }
-    if(a!=null && (c==null || a>c)){ ref=a; qui="adv"; }
-    /* Le gain, en dégâts : amener cet étage à la référence multiplie les
-       dégâts par (réf/moi). C'est la seule mesure qui rende les quatre
-       étages comparables entre eux. */
-    const gain=(ref!=null && m) ? moi.dmg*(ref/m-1) : 0;
-    return {...e, moi:m, clan:c, adv:a, ref, qui, gain:Math.max(0,gain)};
+  const mieux=(c,a)=>{
+    if(c==null && a==null) return {ref:null,qui:null};
+    if(a==null || (c!=null && c>=a)) return {ref:c,qui:"clan"};
+    return {ref:a,qui:"adv"};
+  };
+
+  const axes=DK_AXES.map(ax=>{
+    const moi=ax.total(S);
+    const c=clan?clan.get(ax.cle):null, a=adv?adv.get(ax.cle):null;
+    const {ref,qui}=mieux(c,a);
+    /* La marge est RELATIVE : les trois axes n'ont pas les mêmes ordres
+       de grandeur, et un écart de 200 ne pèse pas pareil sur 2 400 que
+       sur 800. */
+    const marge=(ref && moi!=null)?(ref-moi)/ref:null;
+    const etages=ax.etages.map(e=>{
+      const m=e.val(S);
+      const ec=clan?clan.get(ax.cle+"."+e.cle):null, ea=adv?adv.get(ax.cle+"."+e.cle):null;
+      const r2=mieux(ec,ea);
+      /* Produit : amener cet étage à la référence multiplie le total par
+         (réf/moi). Composante : le gain est l'écart, tout simplement —
+         on ne suppose alors aucune identité. */
+      let gain=0;
+      if(r2.ref!=null && m!=null){
+        gain = ax.mode==="produit"
+          ? (m? moi*(r2.ref/m-1) : 0)
+          : (r2.ref-m);
+      }
+      return {...e, axe:ax.cle, moi:m, clan:ec, adv:ea, ref:r2.ref, qui:r2.qui,
+              gain:Math.max(0,gain), vide:(!m && !r2.ref)};
+    }).filter(e=>!e.vide);   /* l'étourdissement n'existe pas hors artillerie */
+    return {...ax, moi, clan:c, adv:a, ref, qui, marge, etages};
   });
 
-  const tri=etages.slice().sort((x,y)=>y.gain-x.gain);
-  /* Sous cinquante dégâts par bataille, l'écart ne vaut pas qu'on
-     dérange le joueur : on dit alors que rien ne fuit. */
-  const fuite = tri[0] && tri[0].gain>=50 ? tri[0] : null;
-  return { moi, clan, adv, etages, fuite, mix:part };
+  /* L'axe désigné est celui qui a la plus grande marge — même quand elle
+     est négative. Ce n'est pas « où tu es mauvais » mais « où il te reste
+     le plus à prendre », et c'est vrai dans les deux cas. */
+  const avecMarge=axes.filter(a=>a.marge!=null);
+  const faible=avecMarge.length
+    ? avecMarge.slice().sort((x,y)=>y.marge-x.marge)[0] : null;
+  const tousBons = faible ? faible.marge<0.02 : false;
+
+  /* Dans l'axe désigné, l'étage qui fuit : celui dont le gain est le plus
+     gros. Sous cinquante dégâts, l'écart ne vaut pas qu'on dérange. */
+  let fuite=null;
+  if(faible && faible.etages.length){
+    const t=faible.etages.slice().sort((x,y)=>y.gain-x.gain)[0];
+    if(t && t.gain>=50) fuite=t;
+  }
+  return {S, axes, faible, fuite, tousBons, mix:part};
 }
 
-/* ── La figure : les quatre étages, empilés ──────────────────────────
-   Chaque étage porte deux barres — toi et la référence — sur la même
-   échelle. C'est la seule façon de voir en un coup d'œil lequel
-   décroche : quatre nombres nus demanderaient de calculer. */
-function dkFunnel(E){
-  if(!E) return "";
-  const val=(e,v)=>v==null?"—":(e.unite==="%"?pctf(v):fmt(Math.round(v)));
-  return '<div class="dkf dkf-e">'+E.etages.map(e=>{
+/* ── La figure : des barres comparées à leur référence ───────────────
+   Deux barres par ligne sur la MÊME échelle, et la référence en trait
+   plutôt qu'en seconde barre : deux barres pleines superposées rendent
+   le dépassement illisible. Le lecteur voit qui décroche sans calculer —
+   c'est précisément ce qu'on lui reproche de ne pas faire. */
+function dkBarres(lignes, marque, ton){
+  if(!lignes || !lignes.length) return "";
+  return '<div class="dkf dkf-e">'+lignes.map(e=>{
+    const val=v=>v==null?"—":(e.unite==="%"?pctf(v):fmt(Math.round(v)));
     const m=e.moi||0, r=e.ref||0, max=Math.max(m,r)||1;
-    const fuit = E.fuite && E.fuite.cle===e.cle;
-    return '<div class="dke'+(fuit?" dke-fuit":"")+'">'+
-      '<div class="dke-h"><span>'+esc(e.nom)+'</span>'+
-        '<b>'+val(e,e.moi)+'</b></div>'+
+    /* Rouge quand ca fuit, or quand c est simplement la ou il reste le
+       plus a prendre. Le rouge promet un probleme : le reserver. */
+    const vif = marque && marque===e.cle;
+    return '<div class="dke'+(vif?(ton==="vise"?" dke-vise":" dke-fuit"):"")+'">'+
+      '<div class="dke-h"><span>'+t(e.nom)+'</span><b>'+val(e.moi)+'</b></div>'+
       '<div class="dke-b">'+
         '<i class="dke-moi" style="width:'+(m/max*100).toFixed(1)+'%"></i>'+
         (e.ref!=null?'<i class="dke-ref" style="left:'+(r/max*100).toFixed(1)+'%"></i>':"")+
       '</div>'+
       '<div class="dke-f">'+(e.ref!=null
-        ? t("référence {n}").replace("{n}", val(e,e.ref))
+        ? t("référence {n}").replace("{n}", val(e.ref))
         : t("pas de référence"))+'</div>'+
     '</div>';
   }).join("")+'</div>';
 }
 
-
-/* Le titre du bandeau 03 : une phrase, pas un libellé. Chaque étage a la
-   sienne, parce que les quatre problèmes n'ont rien à voir entre eux. */
+/* Les titres du bandeau 03 : une phrase par étage, parce que les
+   problèmes qu'ils désignent n'ont rien à voir entre eux. */
 const DK_FUITE_TITRE={
-  obus:    "Tu ne tires pas assez.",
-  touche:  "Tu tires trop souvent à côté.",
-  perce:   "Tes obus ne percent pas.",
-  parObus: "Tes coups portent peu.",
+  obus:"Tu ne tires pas assez.", touche:"Tu tires trop souvent à côté.",
+  perce:"Tes obus ne percent pas.", parObus:"Tes coups portent peu.",
+  feu:"Tu ne prends pas assez de feu.", bloque:"Ton blindage ne renvoie pas.",
+  radio:"Tu éclaires peu.", chenilles:"Tu immobilises peu.", stun:"Tu étourdis peu.",
 };
 
-/* ── Le détail de l'entonnoir ───────────────────────────────────────
-   Le bandeau ne montre que la fuite ; ici on montre les quatre étages,
-   les deux références, et ce que chacun vaut en dégâts. C'est le tableau
-   qu'on regarde quand on veut vérifier, pas quand on veut agir. */
+/* ── Le détail des trois contributions ─────────────────────────────── */
+function pContributions(my, clanRows){
+  const A=dkAnalyse(my, clanRows);
+  if(!A) return '<section class="card"><div class="empty">'+
+    t("Il faut au moins trente obus tirés et huit batailles pour comparer tes contributions.")+'</div></section>';
+  const lignes=A.axes.map(a=>{
+    const vif=A.faible&&A.faible.cle===a.cle;
+    return '<tr'+(vif?' class="ent-fuit"':"")+'>'+
+      '<td><b>'+t(a.nom)+'</b><div class="hint">'+t(a.sous)+'</div></td>'+
+      '<td class="num">'+fmt(Math.round(a.moi||0))+'</td>'+
+      '<td class="num hint">'+(a.clan!=null?fmt(Math.round(a.clan)):"—")+'</td>'+
+      '<td class="num hint">'+(a.adv!=null?fmt(Math.round(a.adv)):"—")+'</td>'+
+      '<td class="num">'+(a.marge!=null
+        ? '<b class="'+(a.marge>0?"tagneg":"tagpos")+'">'+(a.marge>0?"−":"+")+
+          Math.round(Math.abs(a.marge)*100)+' %</b>' : '<span class="hint">—</span>')+'</td>'+
+    '</tr>';
+  }).join("");
+  return '<section class="card">'+
+    '<h2>'+t("Tes trois contributions")+' <span class="hint">'+
+      t("moyenne par bataille, comparée à ta classe de char")+'</span></h2>'+
+    '<div class="tw"><table class="mini"><thead><tr>'+
+      '<th>'+t("Contribution")+'</th><th class="num">'+t("Toi")+'</th>'+
+      '<th class="num">'+t("Clan")+'</th><th class="num">'+t("Adversaires")+'</th>'+
+      '<th class="num">'+t("Marge")+'</th>'+
+    '</tr></thead><tbody>'+lignes+'</tbody></table></div>'+
+    '<footer class="hint">'+t("La marge est l'écart au meilleur des deux références, en pourcentage. C'est elle qui désigne la contribution à travailler — pas la valeur brute, qui ne se compare pas d'un axe à l'autre.")+'</footer>'+
+  '</section>';
+}
+
+/* ── Le détail de la décomposition ─────────────────────────────────── */
 function pEntonnoir(my, clanRows){
-  const E=dkEntonnoir(my, clanRows);
-  if(!E){
-    return '<section class="card"><div class="empty">'+
-      t("Il faut au moins trente obus tirés et huit batailles pour décomposer tes dégâts. En dessous, un seul tir déplace un taux de plusieurs points.")+
-      '</div></section>';
-  }
+  const A=dkAnalyse(my, clanRows);
+  if(!A || !A.faible) return '<section class="card"><div class="empty">'+
+    t("Il faut au moins trente obus tirés et huit batailles pour décomposer tes contributions.")+'</div></section>';
+  const ax=A.faible;
   const val=(e,v)=>v==null?"—":(e.unite==="%"?pctf(v):fmt(Math.round(v)));
-  const lignes=E.etages.map(e=>{
-    const fuit=E.fuite&&E.fuite.cle===e.cle;
-    const gain=e.gain>=25? '<b class="tagpos">+'+fmt(Math.round(e.gain))+'</b>' : '<span class="hint">—</span>';
-    return '<tr'+(fuit?' class="ent-fuit"':"")+'>'+
+  const lignes=ax.etages.map(e=>{
+    const vif=A.fuite&&A.fuite.cle===e.cle;
+    return '<tr'+(vif?' class="ent-fuit"':"")+'>'+
       '<td><b>'+t(e.nom)+'</b><div class="hint">'+t(e.sous)+'</div></td>'+
       '<td class="num">'+val(e,e.moi)+'</td>'+
       '<td class="num hint">'+val(e,e.clan)+'</td>'+
       '<td class="num hint">'+val(e,e.adv)+'</td>'+
-      '<td class="num">'+gain+'</td>'+
+      '<td class="num">'+(e.gain>=25?'<b class="tagpos">+'+fmt(Math.round(e.gain))+'</b>':'<span class="hint">—</span>')+'</td>'+
     '</tr>';
   }).join("");
-
+  const form = ax.mode==="produit"
+    ? t("Une identité exacte : le produit des étages redonne le total, sans reste.")
+    : t("Des composantes, pas une somme : le total enregistré par le mod et le détail de ses trois postes ne se recoupent pas exactement. On ne suppose donc aucune identité — chaque poste est comparé pour lui-même.");
   return '<section class="card">'+
-    '<h2>'+t("La décomposition de tes dégâts")+
-      ' <span class="hint">'+t("dégâts = obus tirés × touchés × percés × dégâts par perforation")+'</span></h2>'+
+    '<h2>'+t("D'où viennent {s}").replace("{s}", t(ax.avec))+
+      ' <span class="hint">'+t(ax.sous)+'</span></h2>'+
     '<div class="tw"><table class="mini"><thead><tr>'+
       '<th>'+t("Étage")+'</th><th class="num">'+t("Toi")+'</th>'+
       '<th class="num">'+t("Clan")+'</th><th class="num">'+t("Adversaires")+'</th>'+
       '<th class="num">'+t("Dégâts en jeu")+'</th>'+
     '</tr></thead><tbody>'+lignes+'</tbody></table></div>'+
-    (E.fuite
-      ? '<p class="ent-quoi"><b>'+t(E.fuite.quand)+'</b> '+t(E.fuite.quoi)+'</p>'
-      : '<p class="ent-quoi">'+t("Aucun étage ne décroche assez pour valoir un changement. Le prochain gain viendra d'ailleurs que du tir.")+'</p>')+
-    '<footer class="hint">'+t("Références calculées sur ta classe de char, pondérées par les classes que tu joues. La colonne « dégâts en jeu » est ce que tu gagnerais par bataille en amenant cet étage seul au niveau du meilleur des deux.")+'</footer>'+
+    (A.fuite
+      ? '<p class="ent-quoi"><b>'+t(A.fuite.quand)+'</b> '+t(A.fuite.quoi)+'</p>'
+      : '<p class="ent-quoi">'+t("Aucun étage ne décroche assez pour valoir un changement.")+'</p>')+
+    '<footer class="hint">'+form+' '+
+      t("Références calculées sur ta classe de char, pondérées par les classes que tu joues.")+'</footer>'+
   '</section>';
 }
 
@@ -3819,71 +3923,64 @@ function dkDonnees(my, clanRows){
     ]};
 
   /* ── 02 ── le geste */
-  const h2 = g
-    ? { n:2, etape:t("Ce qui te freine"), titre:esc(g.nom),
-        /* « Ta pénétration est à 73 % » ne fait rien faire. « Ces points
-           valent 180 dégâts par bataille » si. Quand le calcul aboutit,
-           c'est LUI qu'on met en avant. */
-        ligne: va
-          ? t("Dans ton clan, ceux qui réussissent le mieux ce geste font {n} de dégâts en plus par bataille.")
-              .replace("{n}", fmt(Math.round(va.ecart)))
-          : (g.u==="%" && g.ecart<0
-              ? t("Il te manque {n} points sur cent pour rejoindre le niveau du clan.")
-                  .replace("{n}", Math.max(1,Math.round(Math.abs(g.c-g.m)*100)))
-              : t("Le geste qui te coûte le plus, sur les six mesurés.")),
+  /* ── 02 ── LES TROIS CONTRIBUTIONS ───────────────────────────────
+     Tout ce que le joueur fait se range en trois. On désigne celle qui a
+     la plus grande MARGE — pas forcément celle où il est mauvais, mais
+     celle où il lui reste le plus à prendre. C'est vrai qu'il soit
+     au-dessus ou en dessous, et c'est l'axe que l'étape 03 décomposera. */
+  const AN=dkAnalyse(my, clanRows);
+  const h2 = AN
+    ? { n:2, etape:t("Ce qui te freine"),
+        titre: AN.tousBons ? t("Tes trois contributions tiennent.")
+                           : t(AN.faible.manque),
+        ligne: AN.faible && AN.faible.marge>0
+          ? t("Au niveau {s}, cette seule contribution te rapporterait {n} par bataille.")
+              .replace("{s}", AN.faible.qui==="adv"?t("des adversaires"):t("du clan"))
+              .replace("{n}", fmt(Math.round(AN.faible.ref-AN.faible.moi)))
+          : t("Ta plus petite avance est sur {s} — c'est là qu'il reste le plus à prendre.")
+              .replace("{s}", t(AN.faible.avec)),
         fond:(F(1)||{}).k,
-        fig:dkAnneau(g.u==="%"?g.m:null, g.u==="%"?g.c:null, vg(g.m), t("toi"),
-                     g.ecart>=0?"up":"dn"),
-        stats:[
-          {v:vg(g.c), l:t("le clan")},
-          va ? {v:"+"+fmt(Math.round(va.ecart)), l:t("dégâts en jeu"), ton:"up"} : null,
-          {v:(g.ecart>=0?"+":"−")+Math.round(Math.abs(g.ecart)*100)+" %", l:t("d'écart"),
-           ton:g.ecart>=0?"up":"dn"},
-        ]}
-    : { n:2, etape:t("Ce qui te freine"), titre:t("Rien ne décroche."),
-        ligne:t("Tu es dans la moyenne du clan sur les six gestes mesurés."),
+        fig:dkBarres(AN.axes.map(a=>({cle:a.cle, nom:a.nom, unite:"n", moi:a.moi, ref:a.ref})),
+                     AN.faible?AN.faible.cle:null,
+                     (AN.faible && AN.faible.marge>0)?"fuite":"vise"),
+        stats: AN.faible ? [
+          {v:fmt(Math.round(AN.faible.moi)), l:t("toi"), ton:AN.faible.marge>0?"dn":"up"},
+          {v:AN.faible.ref!=null?fmt(Math.round(AN.faible.ref)):"—",
+           l:AN.faible.qui==="adv"?t("les adversaires"):t("le clan")},
+          /* Retard ou avance : le mot suit le signe. « Marge » disait
+             l inverse de la verite quand le joueur etait au-dessus. */
+          AN.faible.marge!=null?{v:Math.round(Math.abs(AN.faible.marge)*100)+" %",
+           l:AN.faible.marge>0?t("de retard"):t("d'avance"),
+           ton:AN.faible.marge>0?"dn":"up"}:null,
+        ] : [] }
+    : { n:2, etape:t("Ce qui te freine"), titre:t("Pas encore assez de batailles."),
+        ligne:t("Il faut trente obus tirés et huit batailles pour comparer tes contributions."),
         fond:(F(1)||{}).k, stats:[] };
 
-  /* ── 03 ── le terrain */
-  /* ── 03 ── POURQUOI : la décomposition des dégâts ────────────────
-     Le panneau ne dit plus OÙ mais POURQUOI. « Ta pénétration décroche »
-     ne distinguait pas tirer peu, tirer mal et tirer sur les mauvaises
-     cibles — trois conseils incompatibles. */
-  const ent=dkEntonnoir(my, clanRows);
-  const h3 = (ent && ent.fuite)
-    ? { n:3, etape:t("Pourquoi"), titre:t(DK_FUITE_TITRE[ent.fuite.cle]||"Ce qui fuit."),
-        ligne:t("Au niveau {s} sur ce seul point, tu ferais {n} de dégâts en plus par bataille.")
-                .replace("{s}", ent.fuite.qui==="adv"?t("des adversaires"):t("du clan"))
-                .replace("{n}", fmt(Math.round(ent.fuite.gain))),
-        fond:(F(2)||{}).k, fig:dkFunnel(ent),
+  /* ── 03 ── POURQUOI : la décomposition de l'axe désigné ───────────
+     Le panneau ne dit plus OÙ mais POURQUOI, et il décompose l'axe que
+     le 02 vient de désigner. « Ta pénétration décroche » ne distinguait
+     pas tirer peu, tirer mal et tirer sur les mauvaises cibles — trois
+     conseils incompatibles. */
+  const h3 = (AN && AN.fuite)
+    ? { n:3, etape:t("Pourquoi"), titre:t(DK_FUITE_TITRE[AN.fuite.cle]||"Ce qui fuit."),
+        ligne:t("Au niveau {s} sur ce seul point, tu gagnerais {n} par bataille.")
+                .replace("{s}", AN.fuite.qui==="adv"?t("des adversaires"):t("du clan"))
+                .replace("{n}", fmt(Math.round(AN.fuite.gain))),
+        fond:(F(2)||{}).k, fig:dkBarres(AN.faible.etages, AN.fuite.cle),
         stats:[
-          {v:(ent.fuite.unite==="%"?pctf(ent.fuite.moi):fmt(Math.round(ent.fuite.moi))),
+          {v:(AN.fuite.unite==="%"?pctf(AN.fuite.moi):fmt(Math.round(AN.fuite.moi))),
            l:t("toi"), ton:"dn"},
-          {v:(ent.fuite.unite==="%"?pctf(ent.fuite.ref):fmt(Math.round(ent.fuite.ref))),
-           l:ent.fuite.qui==="adv"?t("les adversaires"):t("le clan")},
-          {v:"+"+fmt(Math.round(ent.fuite.gain)), l:t("dégâts en jeu"), ton:"up"},
+          {v:(AN.fuite.unite==="%"?pctf(AN.fuite.ref):fmt(Math.round(AN.fuite.ref))),
+           l:AN.fuite.qui==="adv"?t("les adversaires"):t("le clan")},
+          {v:"+"+fmt(Math.round(AN.fuite.gain)), l:t("dégâts en jeu"), ton:"up"},
         ]}
-    : ent
+    : AN && AN.faible
     ? { n:3, etape:t("Pourquoi"), titre:t("Rien ne fuit."),
-        ligne:t("Aucun étage de tes dégâts ne décroche assez pour valoir un changement."),
-        fond:(F(2)||{}).k, fig:dkFunnel(ent), stats:[] }
-    : dure
-    ? { n:3, etape:t("Pourquoi"), titre:t("Pas encore assez d'obus."),
-        ligne:t("Il faut trente obus tirés et huit batailles pour décomposer tes dégâts."),
-        fond:(F(2)||{}).k, fig:dkCarte(dure.k, prettyMap(dure.nom), t("la plus difficile")),
-        /* L'écart de dégâts dit POURQUOI. Des dégâts normaux et des
-           défaites orientent vers le placement ; des dégâts en baisse
-           vers le duel. Deux conseils opposés — seul ce chiffre tranche. */
-        stats:[
-          {v:Math.round(dure.v/dure.n*100)+" %", l:t("de victoires"),
-           ton:(dure.v/dure.n)>=0.5?"up":"dn"},
-          (()=>{ const e=dkEcartCarte(dure,my);
-            return e==null?null:{v:(e>=0?"+":"−")+Math.abs(e)+" %",
-              l:t("de dégâts vs ta moyenne"), ton:e>=0?"up":"dn"}; })(),
-          {v:dure.n, l:t("batailles")},
-        ]}
+        ligne:t("Aucun étage ne décroche assez pour valoir un changement."),
+        fond:(F(2)||{}).k, fig:dkBarres(AN.faible.etages, null), stats:[] }
     : { n:3, etape:t("Pourquoi"), titre:t("Pas encore assez d'obus."),
-        ligne:t("Il faut trente obus tirés et huit batailles pour décomposer tes dégâts."),
+        ligne:t("Il faut trente obus tirés et huit batailles pour décomposer tes contributions."),
         fond:(F(2)||{}).k, stats:[] };
 
   /* ── 04 ── la preuve */
@@ -4530,6 +4627,7 @@ function renderPlayerView(){
   { const el=document.getElementById("pTravail"); if(el) el.innerHTML = pTravail(my, clanRows);
     const et=document.getElementById("pTerrain"); if(et) et.innerHTML = pTerrain(my, clanRows);
     const en=document.getElementById("pEntonnoir"); if(en) en.innerHTML = pEntonnoir(my, clanRows);
+    const co=document.getElementById("pContrib"); if(co) co.innerHTML = pContributions(my, clanRows);
     dkRemplit(my, clanRows);
     const em=document.getElementById("pMissions"); if(em) em.innerHTML = pMissions(my, clanRows); }
   {
