@@ -4132,7 +4132,7 @@ let dkRepCarte={}, dkRepRes={};
    plus que la passe personnelle : c'est là qu'est tout le gain, et le
    seuil corrigé demande environ cinquante batailles pour trancher. */
 const DK_REP_CARTE=60;
-let dkCarteEnCours=false, dkCarteFaite="";
+let dkCarteEnCours=false, dkCarteFaite="", dkCartesFaites={};
 
 /* ── La carte à creuser ─────────────────────────────────────────────
    La statistique vient du clan, le tracé personnel vient du joueur : il
@@ -4163,7 +4163,10 @@ function dkCarteCible(){
    requêtes séquentielles font une bonne dizaine de secondes, et une
    carte qui se remplit sous les yeux vaut mieux qu'un vide patient. */
 function dkChargeCarte(cible, avance){
-  if(!cible || dkCarteEnCours || dkCarteFaite===cible.cle) return;
+  /* dkCarteFaite ne retient qu'UNE carte : avec un sélecteur, revenir
+     sur une carte déjà lue relancerait soixante requêtes pour rien. On
+     retient donc l'ensemble des cartes déjà chargées. */
+  if(!cible || dkCarteEnCours || dkCartesFaites[cible.cle]) return;
   const vus={}, ids=[];
   for(const x of RAW.slice().sort(function(a,b){ return (b.ts||0)-(a.ts||0); })){
     if((x.mapName||"")!==cible.cle) continue;
@@ -4176,11 +4179,11 @@ function dkChargeCarte(cible, avance){
     }
     if(ids.length>=DK_REP_CARTE) break;
   }
-  if(!ids.length){ dkCarteFaite=cible.cle; if(avance) avance(); return; }
+  if(!ids.length){ dkCarteFaite=cible.cle; dkCartesFaites[cible.cle]=1; if(avance) avance(); return; }
   dkCarteEnCours=true;
   (function suite(i){
     if(i>=ids.length){
-      dkCarteEnCours=false; dkCarteFaite=cible.cle;
+      dkCarteEnCours=false; dkCarteFaite=cible.cle; dkCartesFaites[cible.cle]=1;
       if(avance) avance();
       return;
     }
@@ -4516,6 +4519,178 @@ function pMorts(my){
 }
 
 
+
+
+/* Les couleurs viennent de la charte, lues sur le document : un canevas
+   ne connaît pas les variables CSS, et recopier « #2ec26e » ici créerait
+   un second endroit à changer le jour où la charte bouge. */
+function dkRGB(v){
+  v=String(v||"").trim();
+  let m=/^#([0-9a-f]{6})$/i.exec(v);
+  if(m) return [parseInt(m[1].slice(0,2),16),parseInt(m[1].slice(2,4),16),parseInt(m[1].slice(4,6),16)];
+  m=/^#([0-9a-f]{3})$/i.exec(v);
+  if(m) return [17*parseInt(m[1][0],16),17*parseInt(m[1][1],16),17*parseInt(m[1][2],16)];
+  m=/rgba?\(\s*(\d+)[ ,]+(\d+)[ ,]+(\d+)/i.exec(v);
+  if(m) return [+m[1],+m[2],+m[3]];
+  return null;
+}
+
+let dkHeat=null;
+function dkPeintPoses(){
+  const c=document.getElementById("tjHeat"), D=dkHeat;
+  if(!c || !D) return;
+  const N=D.N;
+  c.width=N; c.height=N;
+  const ctx=c.getContext("2d");
+  if(!ctx) return;
+  const cs=getComputedStyle(document.documentElement);
+  const OR=dkRGB(cs.getPropertyValue("--accent"))||[216,181,102];
+  const VE=dkRGB(cs.getPropertyValue("--good"))||[46,194,110];
+  const RO=dkRGB(cs.getPropertyValue("--bad"))||[236,106,106];
+
+  let max=0;
+  for(let k=0;k<N*N;k++){ const t=D.G[k]+D.P[k]; if(t>max) max=t; }
+  if(!max) return;
+
+  const im=ctx.createImageData(N,N), px=im.data;
+  for(let k=0;k<N*N;k++){
+    const g=D.G[k], p=D.P[k], t=g+p;
+    if(t<=0) continue;
+    /* Gamma 0,55 : sans lui, deux ou trois poses très tenues écrasent
+       tout le reste et la carte n'a plus qu'un point chaud. */
+    const f=Math.pow(t/max, 0.55);
+    if(f<0.05) continue;
+    /* L'écart entre les deux issues, ramené entre −1 et 1. Bridé sous
+       douze pour cent : à ce grain, un écart faible n'est que du bruit
+       et ne doit pas se voir comme un jugement. */
+    const d=(g-p)/t;
+    const force=Math.max(0, Math.min(1, (Math.abs(d)-0.12)/0.5));
+    const cib = d>0 ? VE : RO;
+    const i4=k*4;
+    px[i4]   = Math.round(OR[0]+(cib[0]-OR[0])*force);
+    px[i4+1] = Math.round(OR[1]+(cib[1]-OR[1])*force);
+    px[i4+2] = Math.round(OR[2]+(cib[2]-OR[2])*force);
+    px[i4+3] = Math.round(f*225);
+  }
+  ctx.putImageData(im,0,0);
+}
+function dkPeintPlusTard(){
+  if(typeof requestAnimationFrame==="function") requestAnimationFrame(dkPeintPoses);
+  else setTimeout(dkPeintPoses,0);
+}
+
+/* ── Le champ des poses ──────────────────────────────────────────────
+   Dix mètres par case : la taille d'un rocher, pas celle d'un flanc.
+   On peut se le permettre parce que ce champ DÉCRIT — il ne prétend
+   rien démontrer, et n'a donc pas besoin de survivre à un test. */
+const DK_FIN=96;
+/* Au-delà de cette vitesse, le char passe : il ne se poste pas.
+   7,5 m/s ≈ 27 km/h, l'allure d'un repositionnement. La pondération est
+   une rampe et non un seuil : à mi-vitesse on compte pour moitié. */
+const DK_V_POSE=7.5;
+
+/* Un flou gaussien séparable. Ce n'est pas un maquillage : un char
+   occupe une dizaine de mètres et son relevé est ponctuel, donc étaler
+   chaque point sur son voisinage est plus fidèle que de le laisser dans
+   une seule case. Deux passes à une dimension au lieu d'une à deux :
+   même résultat, cent fois moins d'opérations. */
+function dkFlou(A, N, sig){
+  const rad=Math.max(1,Math.ceil(sig*2.5)), noy=[];
+  let som=0;
+  for(let i=-rad;i<=rad;i++){ const v=Math.exp(-(i*i)/(2*sig*sig)); noy.push(v); som+=v; }
+  for(let i=0;i<noy.length;i++) noy[i]/=som;
+  const T=new Float32Array(N*N), S=new Float32Array(N*N);
+  for(let y=0;y<N;y++) for(let x=0;x<N;x++){
+    let v=0;
+    for(let k=-rad;k<=rad;k++){ const xx=x+k; if(xx<0||xx>=N) continue; v+=A[y*N+xx]*noy[k+rad]; }
+    T[y*N+x]=v;
+  }
+  for(let y=0;y<N;y++) for(let x=0;x<N;x++){
+    let v=0;
+    for(let k=-rad;k<=rad;k++){ const yy=y+k; if(yy<0||yy>=N) continue; v+=T[yy*N+x]*noy[k+rad]; }
+    S[y*N+x]=v;
+  }
+  return S;
+}
+
+/* Le champ des poses, séparé par issue. On divise chaque champ par son
+   nombre de batailles AVANT de les comparer : trente-quatre victoires
+   contre dix-huit défaites donneraient sinon un avantage mécanique aux
+   victoires partout, et toute la carte virerait au vert. */
+function dkChampPoses(ids, b){
+  const N=DK_FIN, lx=(b[2]-b[0])||1, lz=(b[3]-b[1])||1;
+  const G=new Float32Array(N*N), Pd=new Float32Array(N*N);
+  let W=0, L=0;
+  for(const id of ids){
+    const R=dkRep[id], res=dkRepRes[id];
+    if(!R || !R.vehicles || (res!==0 && res!==1)) continue;
+    if(res===1) W++; else L++;
+    const champ = res===1 ? G : Pd;
+    for(const v of R.vehicles){
+      if(v.team!==R.myTeam || !v.track || v.track.length<2) continue;
+      for(let i=1;i<v.track.length;i++){
+        const a=v.track[i-1], p=v.track[i];
+        const dt=(p[0]-a[0])||2;
+        const dx=p[1]-a[1], dz=p[2]-a[2];
+        const vit=Math.sqrt(dx*dx+dz*dz)/dt;
+        /* La rampe : immobile = 1, à la vitesse de transit = 0. */
+        const poids=1-vit/DK_V_POSE;
+        if(poids<=0) continue;
+        const ci=Math.floor(((p[1]-b[0])/lx)*N);
+        const cj=Math.floor(((b[3]-p[2])/lz)*N);
+        if(ci<0||cj<0||ci>=N||cj>=N) continue;
+        champ[cj*N+ci] += poids*dt;          // des secondes de pose
+      }
+    }
+  }
+  if(!W && !L) return null;
+  for(let k=0;k<N*N;k++){ if(W) G[k]/=W; if(L) Pd[k]/=L; }
+  const sig=2;                               // ≈ 20 m, l'emprise d'une pose
+  return {G:dkFlou(G,N,sig), P:dkFlou(Pd,N,sig), N:N, W:W, L:L};
+}
+
+/* ── Les cartes disponibles ─────────────────────────────────────────
+   Toutes celles où le clan a de quoi dire quelque chose. On les trie
+   par volume : c'est là que l'analyse aura le plus de chances d'aboutir,
+   et c'est aussi l'ordre dans lequel un joueur les cherche. */
+function dkCartesDispo(){
+  const clan={}, moi={}, vus={}, vusM={};
+  for(const x of RAW){
+    const c=x.mapName||""; if(!c || x.result==null || x.result===-1) continue;
+    const k=c+"|"+x.battleId;
+    if(!vus[k]){ vus[k]=1; clan[c]=(clan[c]||0)+1; }
+    if(Number(x.accId)===Number(SELP) && !vusM[k]){ vusM[k]=1; moi[c]=(moi[c]||0)+1; }
+  }
+  return Object.keys(clan).filter(function(c){ return clan[c]>=6; })
+    .map(function(c){ return {cle:c, nClan:clan[c], nMoi:moi[c]||0}; })
+    .sort(function(a,b){ return b.nClan-a.nClan; });
+}
+
+/* La carte regardée : le choix du lecteur s'il en a fait un, sinon
+   celle que dkCarteCible désigne. */
+let dkTrajChoix="";
+function dkTrajCarte(){
+  if(dkTrajChoix){
+    const d=dkCartesDispo().filter(function(x){ return x.cle===dkTrajChoix; })[0];
+    if(d) return {cle:d.cle, nClan:d.nClan, nMoi:d.nMoi, sansMoi:d.nMoi<2};
+  }
+  return dkCarteCible();
+}
+
+/* Changer de carte : on redessine tout de suite — le lecteur doit voir
+   que sa demande a été prise — puis on charge, et on redessine encore
+   à mesure que les replays arrivent. */
+function dkTrajVers(cle){
+  dkTrajChoix=cle||"";
+  const q=document.getElementById("pTrajectoire");
+  if(q) q.innerHTML=pTrajectoire();
+  dkCarteEnCours=false;                       // une demande explicite prime
+  dkChargeCarte(dkTrajCarte(), function(){
+    const e=document.getElementById("pTrajectoire");
+    if(e) e.innerHTML=pTrajectoire();
+  });
+}
+
 /* ── La trajectoire type d'une carte ─────────────────────────────────
    Grille de 14×14 sur les bornes du terrain — environ soixante-dix
    mètres par case sur une carte de mille. Plus fin, chaque case ne
@@ -4585,8 +4760,12 @@ function dkTrajectoire(vise){
     occ.forEach(function(k){ vues[k]++; if(res===1) gag[k]++; else per[k]++; });
     occMoi.forEach(function(k){ moi[k]++; });
   }
+  /* Sous trois victoires ou trois défaites on ne compare rien, mais on
+     décrit quand même : « voilà les emplacements qui servent ici » reste
+     vrai et utile sans le moindre test. */
   if(W<3 || L<3) return {carte:carte.cle, bounds:b, nBat:nBat, nMoi:nMoi, W:W, L:L,
-                         vues:vues, moi:moi, cases:null, testees:0, seuil:null};
+                         vues:vues, moi:moi, cases:null, testees:0, seuil:null,
+                         poses:dkChampPoses(carte.ids, b)};
 
   /* La différence de fréquence d'occupation entre victoires et défaites.
      L'écart type d'une différence de proportions vaut
@@ -4608,7 +4787,8 @@ function dkTrajectoire(vise){
   cases.forEach(function(c){ c.sur=Math.abs(c.z)>=zSeuil; });
   cases.sort(function(a,c){ return Math.abs(c.z)-Math.abs(a.z); });
   return {carte:carte.cle, bounds:b, nBat:nBat, nMoi:nMoi, W:W, L:L,
-          vues:vues, moi:moi, cases:cases, testees:testees, seuil:zSeuil};
+          vues:vues, moi:moi, cases:cases, testees:testees, seuil:zSeuil,
+          poses:dkChampPoses(carte.ids, b)};
 }
 
 /* Combien de batailles il en faudrait — calculé, pas supposé.
@@ -4676,38 +4856,41 @@ function dkZ(p){
    montrer n'est pas affirmer. */
 function dkPlanTraj(T){
   if(!T) return "";
-  /* Le dénominateur du tracé personnel, ce sont TES batailles sur la
-     carte — pas celles du clan. */
   const N=DK_GRILLE, tot=T.nMoi||1;
-  let maxV=1;
-  for(const v of T.vues) if(v>maxV) maxV=v;
-  const cells=[];
-  for(let k=0;k<N*N;k++){
-    const i=k%N, j=Math.floor(k/N);
-    const st="left:"+((i/N)*100).toFixed(3)+"%;top:"+((j/N)*100).toFixed(3)+
-             "%;width:"+(100/N).toFixed(3)+"%;height:"+(100/N).toFixed(3)+"%";
-    const pres=T.vues[k]/maxV;
-    if(pres<=0.02) continue;
-    let cls="tj-c", extra="";
-    const c=T.cases ? T.cases.find(function(x){ return x.k===k; }) : null;
-    /* Plafonds volontairement bas : le terrain doit rester lisible
-       SOUS l'analyse. « Le nord-ouest » ne veut rien dire pour qui ne
-       voit plus ni la colline ni la voie ferrée. */
-    if(c && Math.abs(c.diff)>=0.15){
-      cls+=c.diff>0?" tj-g":" tj-p";
-      extra=";--a:"+Math.min(0.34,0.10+Math.abs(c.diff)*0.42).toFixed(2);
-      if(c.sur) cls+=" tj-sur";
-    } else {
-      extra=";--a:"+(pres*0.26).toFixed(2);
-    }
-    cells.push('<i class="'+cls+'" style="'+st+extra+'"></i>');
-  }
-  /* Le passage du joueur. Au bout de dix batailles, tout le terrain
-     finit par être traversé une fois : une case vue UNE fois n'est pas
-     une habitude, c'est un aller-retour. On ne garde que celles vues
-     dans au moins un quart des batailles, et la taille du point dit la
-     fréquence — ce qui distingue un chemin d'un détour. */
-  const plancher=Math.max(2, Math.ceil(tot*0.25));   /* tot = TES batailles */
+  const cle=mapKey(T.carte);
+
+  /* 4. Les cernes : uniquement les cases qui survivent à la correction.
+     Un contour, pas un aplat — il désigne sans masquer le terrain, et
+     c'est le seul endroit de la figure où l'on affirme. */
+  /* Les cases retenues ne sont pas des constats indépendants : elles
+     forment des zones. On ne trace donc que les côtés qui bordent le
+     vide — le contour de la zone, pas le quadrillage de ses morceaux.
+     Même information, une seule ligne au lieu de cinquante boîtes. */
+  const dedans={};
+  (T.cases||[]).forEach(function(c){ if(c.sur) dedans[c.k]=c.diff; });
+  const cernes=Object.keys(dedans).map(function(ks){
+    const k=+ks, i=k%N, j=Math.floor(k/N);
+    /* Un voisin hors grille compte comme vide : le bord de la carte est
+       bien une frontière de la zone. */
+    const vide=function(di,dj){
+      const i2=i+di, j2=j+dj;
+      if(i2<0||j2<0||i2>=N||j2>=N) return true;
+      return dedans[j2*N+i2]===undefined;
+    };
+    const b=[vide(0,-1),vide(1,0),vide(0,1),vide(-1,0)];
+    if(!b[0] && !b[1] && !b[2] && !b[3]) return "";   // case intérieure : rien à tracer
+    const cotes=["border-top","border-right","border-bottom","border-left"]
+      .map(function(nom,x){ return b[x] ? nom+":1.5px solid var(--ink)" : ""; })
+      .filter(Boolean).join(";");
+    return '<i class="tj-sur '+(dedans[k]>0?"tj-sg":"tj-sp")+'" style="left:'+
+      ((i/N)*100).toFixed(3)+'%;top:'+((j/N)*100).toFixed(3)+'%;width:'+
+      (100/N).toFixed(3)+'%;height:'+(100/N).toFixed(3)+'%;'+cotes+'"></i>';
+  }).join("");
+
+  /* Le passage du joueur. Une case vue UNE fois n'est pas une habitude :
+     on ne garde que celles vues dans au moins un quart de SES batailles,
+     et la taille du point dit la fréquence. */
+  const plancher=Math.max(2, Math.ceil(tot*0.25));
   const pts=[];
   for(let k=0;k<N*N;k++){
     if(T.moi[k]<plancher) continue;
@@ -4716,24 +4899,55 @@ function dkPlanTraj(T){
       '%;top:'+(((j+0.5)/N)*100).toFixed(2)+'%;--a:'+(0.45+f*0.5).toFixed(2)+
       ';--d:'+(5+f*6).toFixed(1)+'px"></b>');
   }
+
+  /* 3. Le dégradé des poses. On met le champ de côté : le canevas
+     n'existe pas encore, il naîtra de cette chaîne. */
+  dkHeat=T.poses||null;
+  if(dkHeat) dkPeintPlusTard();
+
   return '<div class="dkf dkf-tj"><div class="tj-plan">'+
-    '<img src="maps/top/'+esc(mapKey(T.carte))+'.jpg" alt="'+esc(prettyMap(T.carte))+'" '+
+    '<img class="tj-sol" src="maps/top/'+esc(cle)+'.jpg" alt="'+esc(prettyMap(T.carte))+'" '+
       'loading="lazy" onerror="this.style.display=\'none\'">'+
-    cells.join("")+pts.join("")+
+    /* 2. Les courbes de niveau, tirées de l'altitude du jeu. « Une
+       pente » cesse d'être une intuition : elle est dessinée. */
+    '<img class="tj-relief" src="relief/'+esc(cle)+'.svg" alt="" aria-hidden="true" '+
+      'loading="lazy" onerror="this.remove()">'+
+    (dkHeat ? '<canvas id="tjHeat" class="tj-heat" aria-hidden="true"></canvas>' : '')+
+    cernes+pts.join("")+
   '</div></div>';
 }
 
 /* ── La section ─────────────────────────────────────────────────── */
 function pTrajectoire(){
-  const cible=dkCarteCible();
+  const cible=dkTrajCarte();
   const T=dkTrajectoire(cible&&cible.cle);
+  const dispo=dkCartesDispo();
+
+  /* Le sélecteur se dessine même quand la carte visée n'a rien à
+     montrer : c'est justement le moment où l'on veut en essayer une
+     autre. */
+  const sel = dispo.length>1
+    ? '<label class="tj-sel"><span>'+t("Carte")+'</span><select onchange="dkTrajVers(this.value)">'+
+      dispo.map(function(d){
+        const ici=(T&&T.carte===d.cle)||(!T&&cible&&cible.cle===d.cle);
+        return '<option value="'+esc(d.cle)+'"'+(ici?' selected':'')+'>'+
+          esc(prettyMap(d.cle))+' — '+t("{n} batailles").replace("{n}",d.nClan)+'</option>';
+      }).join("")+'</select></label>'
+    : "";
+
   if(!T){
     return '<section class="card"><h2>'+t("Comment se joue cette carte")+'</h2>'+
+      (sel?'<div class="tj-dit">'+sel+'</div>':'')+
       '<div class="empty">'+t("Il faut au moins six replays sur une même carte pour dégager une trajectoire. Reviens quand le clan aura rejoué les mêmes terrains.")+'</div></section>';
   }
+
+  /* Combien de batailles de CETTE carte sont déjà lues : pendant les
+     soixante requêtes, un compteur vaut mieux qu'une page figée. */
+  let lus=0;
+  for(const id of Object.keys(dkRep)) if(dkRepCarte[id]===T.carte && dkRep[id]) lus++;
+  const enCours = dkCarteEnCours && !dkCartesFaites[T.carte];
+
   const forte=(T.cases||[]).filter(function(c){ return c.sur; });
-  /* Le joueur ne joue pas des cases de grille, il joue un flanc : on
-     nomme le terrain plutôt que d'en compter les morceaux. */
   const zG=dkZone(forte.filter(function(c){ return c.diff>0; }));
   const zP=dkZone(forte.filter(function(c){ return c.diff<0; }));
   const dit = forte.length
@@ -4746,6 +4960,10 @@ function pTrajectoire(){
         ? t("Aucune zone ne sort du hasard sur {n} batailles. Les teintes ci-dessus sont des tendances, pas des preuves — il en faudrait environ {m} pour trancher.")
             .replace("{n}", T.nBat).replace("{m}", dkCombien(T.seuil))
         : t("Il faut au moins trois victoires et trois défaites sur la carte pour comparer quoi que ce soit."));
+
+  const metre=Math.round(((T.bounds[2]-T.bounds[0])/DK_GRILLE)/10)*10;
+  const fin=Math.round(((T.bounds[2]-T.bounds[0])/DK_FIN)/5)*5;
+
   return '<section class="card">'+
     '<h2>'+t("Comment se joue cette carte")+' <span class="hint">'+
       esc(prettyMap(T.carte))+' — '+t("{n} batailles du clan, {w} gagnées, {l} perdues")
@@ -4753,29 +4971,35 @@ function pTrajectoire(){
       (T.nMoi ? ' · '+t("dont {n} à toi").replace("{n}",T.nMoi)
               : ' · '+t("aucune à toi"))+'</span></h2>'+
     '<div class="tj-duo">'+dkPlanTraj(T)+'<div class="tj-dit">'+
+      sel+
+      (enCours ? '<p class="tj-load">'+t("Lecture des batailles du clan… {n} lues").replace("{n}",lus)+'</p>' : '')+
       '<div class="tj-chif">'+
         '<div class="tj-n"><b>'+T.nBat+'</b><span>'+t("batailles du clan")+'</span></div>'+
         '<div class="tj-n"><b class="up">'+T.W+'</b><span>'+t("gagnées")+'</span></div>'+
         '<div class="tj-n"><b class="dn">'+T.L+'</b><span>'+t("perdues")+'</span></div>'+
         '<div class="tj-n"><b>'+(T.nMoi||0)+'</b><span>'+t("à toi")+'</span></div>'+
       '</div>'+
+      /* La légende suit l'ordre des couches, du sol vers le jugement :
+         on lit d'abord où l'on se poste, ensuite si ça paie, et en
+         dernier ce qui est réellement établi. */
       '<div class="tj-leg">'+
-        '<span><i class="tj-c tj-neutre"></i>'+t("par où passe l'équipe")+'</span>'+
-        '<span><i class="tj-c tj-g"></i>'+t("plus présent dans les victoires")+'</span>'+
-        '<span><i class="tj-c tj-p"></i>'+t("plus présent dans les défaites")+'</span>'+
+        '<span><i class="tj-lg-pose"></i>'+t("emplacements tenus — plus c'est dense, plus on y reste")+'</span>'+
+        '<span><i class="tj-lg-g"></i>'+t("tenu plus souvent quand on gagne")+'</span>'+
+        '<span><i class="tj-lg-p"></i>'+t("tenu plus souvent quand on perd")+'</span>'+
+        '<span><i class="tj-lg-sur"></i>'+t("écart établi, à l'échelle de {n} m").replace("{n}",metre)+'</span>'+
         (T.nMoi ? '<span><b class="tj-moi"></b>'+t("ton passage")+'</span>' :
           '<span class="tj-abs">'+t("tu n'as pas joué cette carte — seul le tracé du clan est montré")+'</span>')+
       '</div>'+
       '<p class="ent-quoi">'+dit+'</p>'+
     '</div></div>'+
     '<footer class="hint">'+
-      t("Grille de {g}×{g}, soit environ {m} m par case.")
-        .replace(/{g}/g, DK_GRILLE)
-        .replace("{m}", Math.round(((T.bounds[2]-T.bounds[0])/DK_GRILLE)/10)*10)+' '+
+      t("Deux échelles, et elles ne disent pas la même chose. Le dégradé décrit à {f} m : où l'on se poste, pondéré par le temps passé à l'arrêt — c'est un constat, il ne démontre rien. Les cernes affirment à {g} m, seule échelle où le test corrigé a de quoi trancher.")
+        .replace("{f}", fin).replace("{g}", metre)+' '+
       t("Une case compte les BATAILLES où l'équipe y est passée, pas les relevés : quatorze chars et deux cents points partagent un seul résultat, et les compter séparément multiplierait l'effectif par trois cents.")+' '+
       (T.testees
         ? t("{n} cases testées, seuil corrigé en conséquence — sans cette correction, une dizaine s'allumerait par pur hasard.").replace("{n}", T.testees)
-        : "")+'</footer>'+
+        : "")+
+      ' '+t("Les courbes de niveau viennent des données d'altitude du jeu.")+'</footer>'+
   '</section>';
 }
 
@@ -5251,7 +5475,7 @@ let dkTrajArme=false, dkTrajLancee=false;
 function dkTrajLance(){
   if(!dkTrajArme || dkTrajLancee) return;
   dkTrajLancee=true;
-  dkChargeCarte(dkCarteCible(), function(){
+  dkChargeCarte(dkTrajCarte(), function(){
     const q=document.getElementById("pTrajectoire");
     if(q) q.innerHTML = pTrajectoire();
   });

@@ -3219,42 +3219,59 @@ i.pm-eq{width:8px;height:8px;background:var(--accent);opacity:.55;
 
 
 
+
 /* ══ La trajectoire type d'une carte ═══════════════════════════════
-   La grille se pose en absolu sur la vue du dessus : chaque case porte
-   son opacité dans --a, ce qui évite deux cents règles pour deux cents
-   nuances. Un liseré d'un pixel redécoupe les cases : sans lui elles
-   fusionnent en flaques, et on perd de vue que la résolution réelle de
-   l'affirmation est de soixante-dix mètres, pas du pixel. */
-/* Les deux colonnes sont plafonnées et le couple centré : sur cette
-   page pleine largeur, laisser la colonne de texte s'étirer à mille
-   pixels éloignerait les quatre chiffres les uns des autres au point
-   qu'on ne les lirait plus ensemble. */
-.tj-duo{display:grid;grid-template-columns:minmax(0,720px) minmax(260px,460px);
+   Quatre couches, et chacune répond à une question :
+     1. la vue du dessus      « où suis-je ? »
+     2. le dégradé des poses  « où se poste-t-on, et ça paie ? »
+     3. les courbes de niveau « où sont les pentes ? »
+     4. les cernes            « et qu'est-ce qui est prouvé ? »
+   L'ordre visuel n'est pas celui du balisage : le relief remonte
+   au-dessus du dégradé pour rester lisible là où l'on se poste le
+   plus. */
+.tj-duo{display:grid;grid-template-columns:minmax(0,720px) minmax(280px,460px);
   gap:clamp(18px,2.6vw,40px);align-items:start;justify-content:center}
 @media(max-width:900px){ .tj-duo{grid-template-columns:1fr} }
 .dkf-tj{margin:0}
 .tj-plan{position:relative;aspect-ratio:1/1;border-radius:12px;overflow:hidden;
-  border:1px solid var(--border);background:var(--surface-1)}
-/* Assez sombre pour que les teintes se voient, assez clair pour qu'on
-   reconnaisse le terrain : c'est tout l'équilibre de la figure. */
-.tj-plan>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
-  filter:grayscale(.35) brightness(.82) contrast(1.02)}
-.tj-c{position:absolute;display:block;background:var(--accent);
-  opacity:var(--a,.26);border-radius:3px;
-  box-shadow:inset 0 0 0 1px rgba(0,0,0,.28);pointer-events:none}
-.tj-g{background:var(--good)}
-.tj-p{background:var(--bad)}
-/* Le contour ne s'allume que pour une case qui survit à la correction :
-   c'est le seul endroit de la figure où l'on AFFIRME quelque chose. */
-.tj-sur{opacity:calc(var(--a,.26) + .16);
-  box-shadow:inset 0 0 0 1.5px var(--ink),inset 0 0 0 3px rgba(0,0,0,.45)}
-.tj-moi{position:absolute;width:var(--d,7px);height:var(--d,7px);border-radius:50%;
-  transform:translate(-50%,-50%);background:var(--ink);
-  box-shadow:0 0 0 1.5px rgba(0,0,0,.65);opacity:var(--a,.6);pointer-events:none}
-.tj-neutre{position:static;display:inline-block;opacity:.55}
+  border:1px solid var(--border);background:var(--surface-1);isolation:isolate}
+.tj-plan>*{position:absolute;inset:0}
+/* Plus clair qu'avant : le dégradé est translucide, c'est donc le sol
+   qui doit porter la lecture du terrain. */
+/* Assombri et désaturé : le mélange « screen » du dégradé se délavait
+   sur un fond clair, et la couleur n'arrivait plus à l'œil. Le terrain
+   reste parfaitement lisible — il porte, il ne parle pas. */
+.tj-sol{width:100%;height:100%;object-fit:cover;z-index:1;
+  filter:grayscale(.5) brightness(.66) contrast(1.1)}
+.tj-heat{width:100%;height:100%;z-index:2;pointer-events:none;
+  mix-blend-mode:screen}
+/* Les courbes sont en or dans le fichier : on les ramène au blanc pour
+   que le terrain ne se confonde pas avec l'analyse. */
+.tj-relief{width:100%;height:100%;object-fit:cover;z-index:3;pointer-events:none;
+  filter:grayscale(1) brightness(2.4);opacity:.28;mix-blend-mode:screen}
 
-/* Les chiffres avant les mots : on lit d'abord sur quoi repose la
-   figure, on lit la phrase ensuite. */
+/* Le cerne : un contour, jamais un aplat. Il désigne sans masquer, et
+   c'est le seul endroit de la figure où l'on affirme quelque chose. */
+/* Les bordures sont posées côté par côté dans le style en ligne : seuls
+   les côtés qui bordent le vide sont tracés. box-sizing est obligatoire,
+   sinon chaque bordure élargirait sa case et le contour se décalerait.
+   L'ombre portée creuse le trait sur un terrain clair. */
+.tj-sur{inset:auto;display:block;pointer-events:none;z-index:4;
+  box-sizing:border-box;filter:drop-shadow(0 0 1.5px rgba(0,0,0,.95))}
+.tj-moi{inset:auto;width:var(--d,7px);height:var(--d,7px);border-radius:50%;
+  transform:translate(-50%,-50%);background:var(--ink);z-index:5;
+  box-shadow:0 0 0 1.5px rgba(0,0,0,.7);opacity:var(--a,.6);pointer-events:none}
+
+/* ── La colonne de droite ───────────────────────────────────────── */
+.tj-sel{display:flex;align-items:center;gap:10px;margin:0 0 16px}
+.tj-sel span{font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--muted);flex:0 0 auto}
+.tj-sel select{flex:1 1 auto;min-width:0;font:inherit;font-size:13px;
+  padding:9px 11px;border-radius:9px;border:1px solid var(--border);
+  background:var(--surface-1);color:var(--ink);cursor:pointer}
+.tj-sel select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tj-load{margin:0 0 14px;font-size:12.5px;color:var(--accent-2)}
+
 .tj-chif{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
   gap:10px 16px;margin:0 0 18px}
 .tj-n{display:flex;flex-direction:column;gap:1px}
@@ -3263,14 +3280,24 @@ i.pm-eq{width:8px;height:8px;background:var(--accent);opacity:.55;
 .tj-n b.up{color:var(--good)} .tj-n b.dn{color:var(--bad)}
 .tj-n span{font-size:12px;color:var(--muted)}
 
-.tj-leg{display:flex;flex-direction:column;gap:8px;margin:0 0 14px;
+.tj-leg{display:flex;flex-direction:column;gap:9px;margin:0 0 14px;
   padding-top:14px;border-top:1px solid var(--border)}
-.tj-leg span{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--ink-2)}
-.tj-leg i{position:static;display:inline-block;width:14px;height:14px;border-radius:3px;
-  flex:0 0 auto;opacity:.75;box-shadow:none}
-.tj-leg b{position:static;display:inline-block;width:9px;height:9px;margin:0 2px;
-  flex:0 0 auto;opacity:1;transform:none;box-shadow:none}
-/* Quand le joueur n'a pas joué la carte, on le DIT plutôt que de
-   laisser une pastille de légende pointer un tracé absent. */
+.tj-leg span{display:flex;align-items:center;gap:9px;font-size:13px;
+  color:var(--ink-2);line-height:1.35}
+.tj-leg i{position:static;display:inline-block;width:16px;height:16px;
+  border-radius:3px;flex:0 0 auto}
+/* La pastille des poses est un dégradé, pas un aplat : c'est la densité
+   qui porte l'information, et la légende doit le montrer. */
+.tj-lg-pose{background:linear-gradient(90deg,
+  color-mix(in srgb,var(--accent) 12%,transparent),var(--accent))}
+.tj-lg-g{background:var(--good)}
+.tj-lg-p{background:var(--bad)}
+.tj-lg-sur{background:transparent;
+  box-shadow:inset 0 0 0 2px var(--ink),inset 0 0 0 3.5px rgba(0,0,0,.5)}
+.tj-leg b.tj-moi{position:static;display:inline-block;width:9px;height:9px;
+  margin:0 3px;flex:0 0 auto;opacity:1;transform:none;box-shadow:none}
 .tj-abs{font-style:italic;color:var(--muted)}
 .tj-dit .ent-quoi{margin:0}
+/* Le pied porte les deux mises en garde : centré et pleine largeur il
+   devenait un pavé. Aligné et borné, il se lit. */
+.dkf-tj ~ footer,.tj-duo ~ footer{text-align:left;max-width:104ch;margin-inline:0}
