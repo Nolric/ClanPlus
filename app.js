@@ -2715,6 +2715,10 @@ function prettyMap(s){ s=String(s||""); if(!s) return "?";
        const e=LU_MAPS.find(x=>x[0]===k); if(e && e[1]) return e[1]; }catch(_){}
   s=s.replace(/^\d+_/,"").replace(/_/g," ");
   return s.replace(/\b\w/g,c=>c.toUpperCase()); }
+/* La forme minuscule, insérée dans une phrase : elle doit être traduite
+   à part. Un toLowerCase() sur le libellé français aurait laissé
+   « your battles in lourd » — la phrase traduite, le mot non. */
+function clsMin(c){ return t(({heavyTank:"lourd",mediumTank:"moyen",lightTank:"léger","AT-SPG":"chasseur",SPG:"artillerie"})[c]||c||"—"); }
 function clsFR(c){ return ({heavyTank:"Lourd",mediumTank:"Moyen",lightTank:"Léger","AT-SPG":"Chasseur (TD)",SPG:"Artillerie"})[c]||c||"—"; }
 /* ⚠️ Le tier fait partie du filtre, au même titre que le mode : « Ma progression »
    ne montre que le rang couvert par le SR. Sans ça, les KPI, les records et les
@@ -3707,6 +3711,140 @@ function dkRefPond(rows, part){
    adversaires réellement affrontés. On vise le MEILLEUR des deux : tous
    deux sont atteints par de vrais joueurs, dans la même classe et les
    mêmes batailles — ce n'est donc pas un objectif théorique. */
+
+/* ── Ce qu'est le métier de chaque classe ────────────────────────────
+   Les poids : 2 cœur du métier, 1 secondaire, 0 hors rôle. Un poids 0
+   n'efface rien — la mesure reste affichée — il interdit seulement de
+   la PRESCRIRE. Les étages ont leur propre poids parce qu'un axe entier
+   est trop grossier : « permis » n'est pas le métier d'un lourd, mais
+   chenailler au corps-à-corps l'est parfaitement.
+
+   Les textes ne sont là que là où le conseil générique serait faux pour
+   la classe. Partout ailleurs, celui de DK_AXES suffit. */
+const DK_ROLES={
+  heavyTank:{
+    tenue:"Encaisser, tenir le point, échanger des points de vie.",
+    axes:{inflige:2, evite:2, permis:0},
+    etages:{radio:0, chenilles:1, stun:0},
+    hors:"Le repérage se mesure, mais éclairer n'est pas le métier d'un lourd : ce n'est pas là qu'on te demandera de progresser."
+  },
+  mediumTank:{
+    tenue:"Se déplacer, prendre les flancs, appuyer là où ça casse.",
+    axes:{inflige:2, evite:1, permis:1},
+    etages:{radio:1, chenilles:1, stun:0},
+    hors:""
+  },
+  lightTank:{
+    tenue:"Voir pour l'équipe, et rester en vie pour continuer à voir.",
+    axes:{inflige:1, evite:0, permis:2},
+    etages:{radio:2, chenilles:1, stun:0, feu:0, bloque:0},
+    /* Un léger qui bloque est un léger qui se fait tirer dessus : le
+       chiffre est réel, le conseil serait mortel. */
+    hors:"Le blindage se mesure, mais un léger qui encaisse est un léger mal placé : on ne te demandera pas d'en bloquer davantage.",
+    textes:{
+      obus:{agir:"Tirer sans te faire voir.",
+            quand:"Tu tires peu : soit tu meurs tôt, soit tu n'as pas de position sûre.",
+            quoi:"Tire depuis un buisson à distance, et repars avant que le camouflage ne tombe."}
+    }
+  },
+  "AT-SPG":{
+    tenue:"Frapper de loin, depuis une position que l'adversaire n'a pas repérée.",
+    axes:{inflige:2, evite:0, permis:1},
+    etages:{radio:0, chenilles:1, stun:0, feu:0, bloque:1},
+    hors:"Le blindage se mesure, mais un chasseur qui attire le feu a raté son placement : on ne te demandera pas d'en encaisser plus.",
+    textes:{
+      bloque:{agir:"Angler quand tu es pris.",
+              quand:"Quand on te trouve, tu encaisses de face au lieu de renvoyer.",
+              quoi:"Recule derrière ton couvert plutôt que d'échanger — et si tu dois tenir, présente le biais."}
+    }
+  },
+  SPG:{
+    tenue:"Étourdir, ouvrir les positions tenues, frapper ce que personne d'autre n'atteint.",
+    axes:{inflige:2, evite:0, permis:2},
+    etages:{radio:0, chenilles:0, stun:2, feu:0, bloque:0},
+    hors:"Le blindage se mesure, mais une artillerie touchée est une artillerie morte : ce n'est pas un axe de progrès."
+  }
+};
+
+/* Le poids d'un axe ou d'un étage pour le mélange de classes du joueur.
+   En « toutes classes », on fait la moyenne pondérée par ses batailles :
+   un joueur mi-lourd mi-léger obtient 1 sur « permis », donc éligible —
+   ce qui est juste, la moitié de son temps c'est son métier. Un lourd
+   pur obtient 0. La transition est continue, sans marche arbitraire. */
+function dkPoids(part, axe, etage){
+  let som=0, tot=0;
+  for(const [cls,p] of Object.entries(part||{})){
+    const R=DK_ROLES[cls]; if(!R) continue;
+    let w = (etage && R.etages && R.etages[etage]!==undefined)
+      ? R.etages[etage]
+      : (R.axes[axe]!==undefined ? R.axes[axe] : 1);
+    som += w*p; tot += p;
+  }
+  return tot ? som/tot : 1;      /* classe inconnue : on ne bride rien */
+}
+
+/* Le texte d'un étage, remplacé seulement là où le générique serait faux
+   pour la classe dominante. Ailleurs, DK_AXES fait autorité. */
+function dkTexteEtage(part, etage, base){
+  const dom=Object.keys(part||{}).sort(function(a,b){ return part[b]-part[a]; })[0];
+  const R=dom?DK_ROLES[dom]:null;
+  const t2=R&&R.textes&&R.textes[etage.cle];
+  return t2 ? Object.assign({}, etage, t2) : etage;
+}
+
+/* La classe dominante et sa tenue de poste, pour l'expliquer au lecteur. */
+function dkRoleDom(part){
+  const dom=Object.keys(part||{}).sort(function(a,b){ return part[b]-part[a]; })[0];
+  if(!dom || !DK_ROLES[dom]) return null;
+  /* La part compte : annoncer « ton métier en lourd » à un joueur qui
+     n'y passe que six batailles sur dix est un raccourci qu'il faut
+     dire, pas taire. */
+  return Object.assign({cls:dom, part:part[dom]||0}, DK_ROLES[dom]);
+}
+
+/* ── Le filtre de classe ────────────────────────────────────────────
+   Un lourd et un léger ne font pas le même métier : les mélanger dans
+   une seule analyse produit une moyenne qui ne décrit personne. On
+   choisit donc la classe qu'on veut regarder, et TOUT le fil s'y
+   restreint — contributions, entonnoir, contexte, boucle, positions.
+
+   Huit batailles minimum, le même seuil que l'analyse elle-même : en
+   dessous, on affiche la classe mais désactivée, plutôt que de la faire
+   disparaître sans explication. */
+let DK_CLASSE="";
+const DK_CLS_ORDRE=["heavyTank","mediumTank","lightTank","AT-SPG","SPG"];
+
+function dkClasseVers(c){
+  if(DK_CLASSE===c) return;
+  DK_CLASSE=c||"";
+  renderPlayerView();
+}
+
+function dkSelClasses(){
+  const f=pfilter();
+  const tous=(typeof RAW!=="undefined"?RAW:[]).filter(function(x){
+    return x.accId===SELP && f(x); });
+  const c={};
+  for(const x of tous) if(x.cls) c[x.cls]=(c[x.cls]||0)+1;
+  const dispo=DK_CLS_ORDRE.filter(function(k){ return c[k]; });
+  if(dispo.length<2) return "";     /* une seule classe : le choix n'existe pas */
+  const bt=function(cle,lib,n,actif,assez){
+    return '<button type="button" class="ts-b '+(actif?"on":"off")+'"'+
+      (assez?'':' disabled')+' data-cls="'+esc(cle)+'" title="'+
+      (assez?esc(t("{n} batailles").replace("{n}",n))
+            :esc(t("{n} bataille(s) seulement — il en faut huit pour analyser.").replace("{n}",n)))+
+      '">'+esc(lib)+(n?' <span class="cs-n">'+n+'</span>':'')+'</button>';
+  };
+  return '<span class="ts-lab">'+t("Classe")+'</span><span class="ts-seg">'+
+    bt("", t("Toutes"), tous.length, !DK_CLASSE, true)+
+    dispo.map(function(k){ return bt(k, t(clsFR(k)), c[k], DK_CLASSE===k, c[k]>=8); }).join("")+
+    '</span><span class="ts-note">'+
+    (DK_CLASSE
+      ? t("Tout ce qui suit ne porte que sur tes batailles en {s}, comparées à celles du clan dans la même classe.").replace("{s}", clsMin(DK_CLASSE))
+      : t("Toutes classes confondues. Un lourd et un léger n'ayant pas le même métier, choisis une classe pour un conseil qui te concerne vraiment."))+
+    '</span>';
+}
+
 function dkAnalyse(my, clanRows){
   if(!my.length) return null;
   const S=dkSommes(my);
@@ -3749,28 +3887,53 @@ function dkAnalyse(my, clanRows){
           ? (m? moi*(r2.ref/m-1) : 0)
           : (r2.ref-m);
       }
-      return {...e, axe:ax.cle, moi:m, clan:ec, adv:ea, ref:r2.ref, qui:r2.qui,
-              gain:Math.max(0,gain), vide:(!m && !r2.ref)};
+      const av2=dkTexteEtage(part, e, e);
+      return {...av2, axe:ax.cle, moi:m, clan:ec, adv:ea, ref:r2.ref, qui:r2.qui,
+              gain:Math.max(0,gain), poids:dkPoids(part, ax.cle, e.cle),
+              vide:(!m && !r2.ref)};
     }).filter(e=>!e.vide);   /* l'étourdissement n'existe pas hors artillerie */
-    return {...ax, moi, clan:c, adv:a, ref, qui, marge, etages};
+    /* Le gain absolu, en dégâts par bataille : c'est la seule grandeur
+       comparable entre les trois axes, tous exprimés dans cette unité.
+       Les dégâts bloqués comptent comme des dégâts — convention, mais
+       assumée et bien meilleure que le biais du classement relatif. */
+    const gainAxe=(ref!=null && moi!=null)?Math.max(0,ref-moi):null;
+    return {...ax, moi, clan:c, adv:a, ref, qui, marge, gainAxe,
+            poids:dkPoids(part, ax.cle, null), etages};
   });
 
-  /* L'axe désigné est celui qui a la plus grande marge — même quand elle
-     est négative. Ce n'est pas « où tu es mauvais » mais « où il te reste
-     le plus à prendre », et c'est vrai dans les deux cas. */
-  const avecMarge=axes.filter(a=>a.marge!=null);
-  const faible=avecMarge.length
-    ? avecMarge.slice().sort((x,y)=>y.marge-x.marge)[0] : null;
-  const tousBons = faible ? faible.marge<0.02 : false;
+  /* ── L'axe désigné ───────────────────────────────────────────────
+     Deux règles, dans cet ordre, et elles répondent à deux questions
+     différentes qu'il ne faut pas mélanger :
 
-  /* Dans l'axe désigné, l'étage qui fuit : celui dont le gain est le plus
-     gros. Sous cinquante dégâts, l'écart ne vaut pas qu'on dérange. */
+       · le RÔLE dit ce qui est ton métier — un axe hors rôle reste
+         mesuré et affiché, il n'est simplement jamais prescrit ;
+       · le GAIN dit, parmi ton métier, où il te reste le plus à prendre.
+
+     Le classement se faisait à la marge relative, ce qui élisait
+     mécaniquement le plus petit axe : rater 38 % de 714 l'emportait sur
+     rater 25 % de 1 888, soit 273 dégâts contre 477. */
+  const eligibles=axes.filter(a=>a.gainAxe!=null && a.poids>=1);
+  const faible=eligibles.length
+    ? eligibles.slice().sort((x,y)=>y.gainAxe-x.gainAxe)[0] : null;
+  /* « Tout est bon » se juge toujours en relatif : deux pour cent d'écart
+     n'a de sens que rapporté à la grandeur mesurée. */
+  const tousBons = faible ? (faible.marge!=null && faible.marge<0.02) : false;
+
+  /* Les axes écartés parce qu'ils ne sont pas le métier : on les garde
+     pour pouvoir le DIRE, plutôt que de laisser un lecteur se demander
+     pourquoi son plus gros écart n'est pas retenu. */
+  const horsRole=axes.filter(a=>a.poids<1 && a.gainAxe!=null && a.gainAxe>=50);
+
+  /* Dans l'axe désigné, l'étage qui fuit — parmi ceux qui relèvent du
+     métier. Sous cinquante dégâts, l'écart ne vaut pas qu'on dérange. */
   let fuite=null;
   if(faible && faible.etages.length){
-    const t=faible.etages.slice().sort((x,y)=>y.gain-x.gain)[0];
-    if(t && t.gain>=50) fuite=t;
+    const dedans=faible.etages.filter(e=>e.poids>=1);
+    const t=(dedans.length?dedans:faible.etages).slice().sort((x,y)=>y.gain-x.gain)[0];
+    if(t && t.gain>=50 && t.poids>=1) fuite=t;
   }
-  return {S, axes, faible, fuite, tousBons, mix:part};
+  return {S, axes, faible, fuite, tousBons, mix:part,
+          horsRole, role:dkRoleDom(part)};
 }
 
 /* ── La figure : des barres comparées à leur référence ───────────────
@@ -3814,26 +3977,48 @@ function pContributions(my, clanRows){
   if(!A) return '<section class="card"><div class="empty">'+
     t("Il faut au moins trente obus tirés et huit batailles pour comparer tes contributions.")+'</div></section>';
   const lignes=A.axes.map(a=>{
-    const vif=A.faible&&A.faible.cle===a.cle;
-    return '<tr'+(vif?' class="ent-fuit"':"")+'>'+
-      '<td><b>'+t(a.nom)+'</b><div class="hint">'+t(a.sous)+'</div></td>'+
+    /* On ne surligne que s'il y a réellement quelque chose à prendre :
+       marquer en rouge un axe où le joueur dépasse la référence de 15 %
+       lui ferait corriger ce qui va bien. */
+    const vif=A.faible&&A.faible.cle===a.cle&&A.faible.gainAxe>=1;
+    const hors=a.poids<1;
+    return '<tr'+(vif?' class="ent-fuit"':(hors?' class="cs-hors"':""))+'>'+
+      '<td><b>'+t(a.nom)+'</b><div class="hint">'+t(a.sous)+
+        (hors?' · <i>'+t("pas le métier de cette classe")+'</i>':'')+'</div></td>'+
       '<td class="num">'+fmt(Math.round(a.moi||0))+'</td>'+
       '<td class="num hint">'+(a.clan!=null?fmt(Math.round(a.clan)):"—")+'</td>'+
       '<td class="num hint">'+(a.adv!=null?fmt(Math.round(a.adv)):"—")+'</td>'+
       '<td class="num">'+(a.marge!=null
         ? '<b class="'+(a.marge>0?"tagneg":"tagpos")+'">'+(a.marge>0?"−":"+")+
           Math.round(Math.abs(a.marge)*100)+' %</b>' : '<span class="hint">—</span>')+'</td>'+
+      /* Le gain est ce qui DÉSIGNE : il doit être dans le tableau, sinon
+         le lecteur ne voit pas sur quoi la décision repose. */
+      '<td class="num">'+(a.gainAxe==null
+        ? '<span class="hint">—</span>'
+        : (a.gainAxe>=1
+            ? '<b>+'+fmt(Math.round(a.gainAxe))+'</b>'
+            : '<span class="hint" title="'+esc(t("Tu es déjà au niveau de la référence sur cet axe."))+'">0</span>'))+'</td>'+
     '</tr>';
   }).join("");
+  const R=A.role;
   return '<section class="card">'+
     '<h2>'+t("Tes trois contributions")+' <span class="hint">'+
       t("moyenne par bataille, comparée à ta classe de char")+'</span></h2>'+
+    (R ? '<p class="cs-role"><b>'+(R.part>=0.8
+            ? t("Ton métier en {s} :").replace("{s}", clsMin(R.cls))
+            : t("Ta classe la plus jouée est le {s} ({n} % de tes batailles). Son métier :")
+                .replace("{s}", clsMin(R.cls)).replace("{n}", Math.round(R.part*100)))+
+         '</b> '+t(R.tenue)+'</p>' : '')+
     '<div class="tw"><table class="mini"><thead><tr>'+
       '<th>'+t("Contribution")+'</th><th class="num">'+t("Toi")+'</th>'+
       '<th class="num">'+t("Clan")+'</th><th class="num">'+t("Adversaires")+'</th>'+
-      '<th class="num">'+t("Marge")+'</th>'+
+      '<th class="num">'+t("Marge")+'</th><th class="num">'+t("Gain possible")+'</th>'+
     '</tr></thead><tbody>'+lignes+'</tbody></table></div>'+
-    '<footer class="hint">'+t("La marge est l'écart au meilleur des deux références, en pourcentage. C'est elle qui désigne la contribution à travailler — pas la valeur brute, qui ne se compare pas d'un axe à l'autre.")+'</footer>'+
+    ((A.horsRole||[]).length && R && R.hors
+      ? '<p class="cs-note">'+t(R.hors)+'</p>' : '')+
+    '<footer class="hint">'+
+      t("C'est le GAIN qui désigne la contribution à travailler : les trois axes s'expriment tous en dégâts par bataille, ils se comparent donc directement. La marge, en pourcentage, favorisait mécaniquement le plus petit axe — rater 38 % de 714 l'emportait sur rater 25 % de 1 888, soit 273 dégâts contre 477.")+' '+
+      t("Les dégâts bloqués comptent comme des dégâts : c'est une convention, mais elle vaut mieux que de comparer des pourcentages entre eux.")+'</footer>'+
   '</section>';
 }
 
@@ -5891,7 +6076,10 @@ function pVerdict(my, clanRows){
 
 function renderPlayerView(){
   const f=pfilter();
-  const my=RAW.filter(r=>r.accId===SELP && f(r));
+  /* La classe choisie restreint le joueur, jamais le clan : la
+     référence a besoin de toutes les classes pour se construire par
+     classe, c'est le mélange du joueur qui décide de la recombinaison. */
+  const my=RAW.filter(r=>r.accId===SELP && f(r) && (!DK_CLASSE || r.cls===DK_CLASSE));
   const clanRows=RAW.filter(r=>r.isMember && f(r));
   const sel=document.getElementById("playerSel");
   const name=(my[0]&&my[0].name)||(sel.selectedOptions[0]?sel.selectedOptions[0].textContent:"—");
@@ -5905,6 +6093,22 @@ function renderPlayerView(){
     const tousRangs=RAW.filter(r=>r.accId===SELP);
     const hors=tousRangs.length-tousRangs.filter(estTierSR).length;
     const RANGS=[[10,"X"],[8,"VIII"],[6,"VI"]];
+    {
+      const cs=document.getElementById("pClsSel");
+      if(cs){
+        cs.innerHTML=dkSelClasses();
+        cs.style.display=cs.innerHTML?"":"none";
+        /* Une délégation posée une fois : réécrire innerHTML à chaque
+           rendu effacerait un gestionnaire attaché aux boutons. */
+        if(!cs.dataset.arme){
+          cs.dataset.arme="1";
+          cs.addEventListener("click", function(e){
+            const b=e.target.closest("button[data-cls]");
+            if(b && !b.disabled) dkClasseVers(b.dataset.cls);
+          });
+        }
+      }
+    }
     document.getElementById("pTierSel").innerHTML=
       `<span class="ts-lab">Rang</span>
        <span class="ts-seg">${RANGS.map(([n,rn])=>

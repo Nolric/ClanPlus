@@ -3301,3 +3301,25 @@ i.pm-eq{width:8px;height:8px;background:var(--accent);opacity:.55;
 /* Le pied porte les deux mises en garde : centré et pleine largeur il
    devenait un pavé. Aligné et borné, il se lit. */
 .dkf-tj ~ footer,.tj-duo ~ footer{text-align:left;max-width:104ch;margin-inline:0}
+
+
+/* ══ Le métier de chaque classe ════════════════════════════════════
+   Le sélecteur reprend l'habillage du filtre de rang : deux filtres
+   côte à côte qui se ressembleraient à moitié seraient pires que deux
+   filtres identiques. */
+.cs-n{opacity:.55;font-variant-numeric:tabular-nums;margin-left:2px}
+.cs-role{margin:0 0 14px;font-size:14px;color:var(--ink-2);line-height:1.5}
+.cs-role b{color:var(--ink)}
+/* Un axe hors métier reste lisible — on l'affiche, on ne le prescrit
+   pas — mais il recule d'un cran pour qu'on voie où porte le conseil. */
+.cs-hors td{opacity:.62}
+.cs-hors td .hint i{font-style:italic;color:var(--muted)}
+.cs-note{margin:12px 0 0;font-size:13px;color:var(--ink-2);
+  padding-left:11px;border-left:2px solid var(--border);line-height:1.5}
+
+/* Un bouton DÉSACTIVÉ et un bouton simplement NON CHOISI se ressemblaient
+   trait pour trait : on ne pouvait pas deviner ce qui était cliquable.
+   Le premier perd son cadre et son curseur, le second reste vivant. */
+#pClsSel .ts-b:disabled{opacity:.34;cursor:not-allowed;border-style:dashed}
+#pClsSel .ts-b:not(:disabled){cursor:pointer}
+#pClsSel .ts-b:not(:disabled):not(.on):hover{color:var(--ink);border-color:var(--accent)}
