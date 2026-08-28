@@ -1684,6 +1684,13 @@
 .dke-fuit .dke-f{color:var(--bad)}
 .ent-fuit{background:rgba(236,106,106,.07)}
 .ent-fuit td:first-child b{color:var(--bad)}
+/* Une ligne trop mince pour conclure : montree, mais visiblement mise de
+   cote. La cacher laisserait croire que le contexte n existe pas ; la
+   presenter comme les autres inviterait a en tirer une lecon. */
+.ctx-mince{opacity:.42}
+.ctx-mince b{font-weight:500}
+.ctx-t{margin:22px 0 8px;font-size:13px;font-weight:600;letter-spacing:.02em;color:var(--ink-2)}
+.ctx-t:first-of-type{margin-top:14px}
 .ent-quoi{margin:14px 0 0;font-size:14.5px;line-height:1.6;color:var(--ink-2)}
 .ent-quoi b{color:var(--ink)}
 

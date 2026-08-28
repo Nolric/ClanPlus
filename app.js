@@ -3566,18 +3566,23 @@ const DK_AXES=[
     etages:[
       { cle:"obus", nom:"Obus tirés", sous:"par bataille", unite:"n",
         val:S=>S.n?S.shots/S.n:null,
+        /* Combien de batailles pour que la moyenne veuille dire quelque chose. */
+        denom:S=>S.n, min:4, assiette:"batailles",
         quand:"Tu ne tires pas assez : exposition, placement, ou tu meurs trop tôt.",
         quoi:"Cherche des angles où tu peux tirer plus longtemps, et vérifie ta durée de vie." },
       { cle:"touche", nom:"Obus qui touchent", sous:"sur les obus tirés", unite:"%",
         val:S=>S.shots?S.hits/S.shots:null,
+        denom:S=>S.shots, min:20, assiette:"obus tirés", borne:1,
         quand:"Ta visée décroche : tu tires en roulant, ou de trop loin.",
         quoi:"Attends l'arrêt complet du réticule sur les tirs longs, et rapproche-toi." },
       { cle:"perce", nom:"Obus qui percent", sous:"sur les obus qui touchent", unite:"%",
         val:S=>S.hits?S.pierce/S.hits:null,
+        denom:S=>S.hits, min:20, assiette:"obus touchés", borne:1,
         quand:"Ce n'est pas ta visée, c'est ton choix de cible.",
         quoi:"Vise les flancs, les toits de tourelle et les points faibles plutôt que la masse." },
       { cle:"parObus", nom:"Dégâts par perforation", sous:"quand un obus passe", unite:"n",
         val:S=>S.pierce?S.dmg/S.pierce:null,
+        denom:S=>S.pierce, min:15, assiette:"obus perçants",
         quand:"Tes coups portent peu : canon, munition, ou tu tapes trop haut en tier.",
         quoi:"Regarde ta configuration, et choisis des cibles à ta portée." },
     ]},
@@ -3588,10 +3593,12 @@ const DK_AXES=[
     etages:[
       { cle:"feu", nom:"Feu encaissé", sous:"dégâts potentiels par bataille", unite:"n",
         val:S=>S.n?S.pot/S.n:null,
+        denom:S=>S.n, min:4, assiette:"batailles",
         quand:"Tu attires peu de feu : un blindage ne sert à personne s'il ne tient pas la ligne.",
         quoi:"Prends la première ligne quand ton blindage le permet — c'est du feu que tes alliés ne prennent pas." },
       { cle:"bloque", nom:"Part bloquée", sous:"sur le feu encaissé", unite:"%",
         val:S=>S.pot?S.block/S.pot:null,
+        denom:S=>S.pot, min:3000, assiette:"dégâts potentiels", borne:1,
         quand:"Ton blindage encaisse au lieu de renvoyer : c'est une question d'angle.",
         quoi:"Présente ton flanc en biais plutôt que de face, et cache tes points faibles." },
     ]},
@@ -3602,14 +3609,17 @@ const DK_AXES=[
     etages:[
       { cle:"radio", nom:"Repérage", sous:"dégâts sur les cibles que tu éclaires", unite:"n",
         val:S=>S.n?S.aradio/S.n:null,
+        denom:S=>S.n, min:4, assiette:"batailles",
         quand:"Tu éclaires peu : tes alliés tirent sur ce qu'ils voient eux-mêmes.",
         quoi:"Avance ta vue là où l'équipe regarde, et reste en vie pour la tenir." },
       { cle:"chenilles", nom:"Immobilisation", sous:"dégâts sur les cibles que tu chenilles", unite:"n",
         val:S=>S.n?S.atrack/S.n:null,
+        denom:S=>S.n, min:4, assiette:"batailles",
         quand:"Tu immobilises peu : une cible arrêtée est une cible que toute l'équipe touche.",
         quoi:"Vise les chenilles quand tu ne peux pas percer le blindage." },
       { cle:"stun", nom:"Étourdissement", sous:"dégâts sur les cibles que tu étourdis", unite:"n",
         val:S=>S.n?S.astun/S.n:null,
+        denom:S=>S.n, min:4, assiette:"batailles",
         quand:"Tes tirs d'artillerie étourdissent peu.",
         quoi:"Privilégie les obus explosifs à proximité des cibles plutôt que le coup direct." },
     ]},
@@ -3823,6 +3833,116 @@ function pEntonnoir(my, clanRows){
   '</section>';
 }
 
+
+/* ── Trancher un étage par contexte ──────────────────────────────────
+   Le même calcul que pour l'ensemble, appliqué à un sous-ensemble. On
+   n'affiche un contexte que s'il atteint le minimum de CET étage —
+   quatre batailles suffisent pour un taux de victoire, pas pour un taux
+   de pénétration. Et le nombre reste à côté du chiffre : un taux sans
+   son assiette n'est pas une information. */
+let dkEcartes=0;
+function dkParContexte(my, etage, clef){
+  if(!etage) return [];
+  let ecartes=0;
+  const par=new Map();
+  for(const r of my){
+    const k=clef(r);
+    if(!k) continue;
+    if(!par.has(k)) par.set(k,[]);
+    par.get(k).push(r);
+  }
+  const out=[];
+  for(const [k,l] of par){
+    const S=dkSommes(l);
+    const d=etage.denom?etage.denom(S):S.n;
+    const min=etage.min||4;
+    const v=etage.val(S);
+    if(v==null) continue;
+    /* Un taux borne qui depasse sa borne signale des lignes douteuses —
+       chez nous ou chez le mod. On l ecarte plutot que d afficher un
+       chiffre impossible, et on le compte pour le dire. */
+    if(etage.borne && v>etage.borne){ ecartes++; continue; }
+    /* Quatre batailles minimum, comme annonce dans l audit — meme quand
+       le denominateur suffirait. Trois batailles peuvent etre trois
+       batailles du meme soir contre le meme adversaire. */
+    const assez = d>=min && S.n>=4;
+    out.push({cle:k, n:S.n, denom:d, val:v, assez,
+      wr:S.n?l.filter(r=>r.result===1).length/S.n:null});
+  }
+  dkEcartes=ecartes;
+  /* du pire au meilleur : c'est le pire qui intéresse */
+  return out.sort((a,b)=>a.val-b.val);
+}
+
+/* ── Le contexte le plus parlant ─────────────────────────────────────
+   On préfère la CARTE : elle se prépare, un adversaire non. On ne bascule
+   sur le clan adverse que si aucune carte n'atteint son minimum.
+   Et on ne parle que si l'écart au niveau habituel du joueur dépasse un
+   dixième : en dessous, c'est du bruit de mesure présenté comme un lieu. */
+function dkContexte(my, A){
+  if(!A || !A.fuite) return null;
+  const e=A.fuite;
+  const global=e.val(dkSommes(my));
+  const juge=(liste,genre)=>{
+    const bons=liste.filter(x=>x.assez);
+    if(!bons.length) return null;
+    const pire=bons[0];
+    if(global==null || !global) return null;
+    const ecart=(pire.val-global)/global;
+    return ecart<=-0.10 ? {genre, pire, bons, global, ecart} : null;
+  };
+  return juge(dkParContexte(my, e, r=>r.mapName), "carte")
+      || juge(dkParContexte(my, e, r=>BATTLE_ENEMY[r.battleId]), "clan")
+      || null;
+}
+
+/* ── Le détail : les deux découpages, côte à côte ──────────────────── */
+function pContexte(my, clanRows){
+  const A=dkAnalyse(my, clanRows);
+  if(!A || !A.fuite) return '<section class="card"><div class="empty">'+
+    t("Rien ne fuit pour l'instant : il n'y a donc rien à situer.")+'</div></section>';
+  const e=A.fuite;
+  const global=e.val(dkSommes(my));
+  const val=v=>v==null?"—":(e.unite==="%"?pctf(v):fmt(Math.round(v)));
+
+  const table=(liste,titre,nomCol,rendu)=>{
+    if(!liste.length) return "";
+    const lignes=liste.slice(0,8).map(x=>{
+      const ec = (global && x.val!=null) ? (x.val-global)/global : null;
+      return '<tr'+(x.assez?"":' class="ctx-mince"')+'>'+
+        '<td><b>'+rendu(x.cle)+'</b></td>'+
+        '<td class="num">'+val(x.val)+'</td>'+
+        '<td class="num">'+(ec!=null
+          ? '<b class="'+(ec<0?"tagneg":"tagpos")+'">'+(ec<0?"−":"+")+Math.round(Math.abs(ec)*100)+' %</b>'
+          : "—")+'</td>'+
+        '<td class="num hint">'+x.n+'</td>'+
+        '<td class="num hint">'+fmt(Math.round(x.denom))+'</td>'+
+        '<td class="hint">'+(x.assez?"":t("trop peu"))+'</td>'+
+      '</tr>';
+    }).join("");
+    return '<h3 class="ctx-t">'+titre+'</h3>'+
+      '<div class="tw"><table class="mini"><thead><tr>'+
+        '<th>'+nomCol+'</th><th class="num">'+t(e.nom)+'</th>'+
+        '<th class="num">'+t("vs ta moyenne")+'</th>'+
+        '<th class="num">'+t("batailles")+'</th>'+
+        '<th class="num">'+t(e.assiette||"batailles")+'</th><th></th>'+
+      '</tr></thead><tbody>'+lignes+'</tbody></table></div>';
+  };
+
+  const cartes=dkParContexte(my, e, r=>r.mapName); const ec1=dkEcartes;
+  const clans =dkParContexte(my, e, r=>BATTLE_ENEMY[r.battleId]); const ecartes=ec1+dkEcartes;
+  return '<section class="card">'+
+    '<h2>'+t("Où ça décroche")+
+      ' <span class="hint">'+t(e.nom)+' — '+t("ta moyenne : {n}").replace("{n}", val(global))+'</span></h2>'+
+    table(cartes, t("Par carte"), t("Carte"), k=>esc(prettyMap(k)))+
+    table(clans, t("Par clan adverse"), t("Clan adverse"), k=>esc(k))+
+    '<footer class="hint">'+t("Les lignes grisées n'ont pas assez de matière pour conclure : il faut au moins {n} {s} et quatre batailles sur un même contexte. Elles sont montrées pour que tu saches qu'elles existent, pas pour en tirer une leçon.")
+      .replace("{n}", fmt(e.min||4)).replace("{s}", t(e.assiette||"batailles"))+
+      (ecartes? ' '+t("{n} contexte(s) écarté(s) : le taux y dépasse cent pour cent, ce qui est impossible — les lignes de ces batailles sont douteuses.").replace("{n}", ecartes) : "")+
+      '</footer>'+
+  '</section>';
+}
+
 /* ── Un panneau ─────────────────────────────────────────────────────
    Repère, titre, UNE ligne, deux chiffres, un bouton. Rien de plus :
    c'est la contrainte qui fait la lisibilité, pas le style. */
@@ -3983,27 +4103,44 @@ function dkDonnees(my, clanRows){
         ligne:t("Il faut trente obus tirés et huit batailles pour décomposer tes contributions."),
         fond:(F(2)||{}).k, stats:[] };
 
-  /* ── 04 ── la preuve */
-  let t4, l4;
-  if(tr && tr.delta>=15){ t4=t("Ça monte."); l4=t("Ta seconde moitié de saison dépasse la première."); }
-  else if(tr && tr.delta<=-15){ t4=t("Ça recule."); l4=t("Ta seconde moitié de saison est sous la première."); }
-  else if(tr){ t4=t("Ça tient."); l4=t("Ton niveau ne bouge pas franchement dans un sens ni dans l'autre."); }
-  else { t4=t("Trop tôt pour le dire."); l4=t("La progression se lit à partir d'une dizaine de batailles."); }
-  /* la courbe : moyenne glissante du SR, pour que le trait dise une
-     tendance et non le hasard d'une bataille */
+  /* ── 04 ── OÙ : l'étage qui fuit, tranché par contexte ────────────
+     L'étape 03 dit CE QUI fuit ; celle-ci dit OÙ. On préfère la carte au
+     clan adverse : une carte se prépare, un adversaire non. */
+  const CTX=dkContexte(my, AN);
+  /* La courbe du SR sert encore à l'étape 05 : on la calcule ici, une
+     fois, puisque la suite triée est déjà à portée. */
   const suite=my.slice().filter(r=>r.ts).sort((x,y)=>x.ts-y.ts);
-  const k=Math.max(4, Math.round(suite.length/6));
+  const kf=Math.max(4, Math.round(suite.length/6));
   const pts=[];
-  for(let i=k;i<=suite.length;i++){ const v=srAvg(suite.slice(i-k,i)); if(v!=null) pts.push(v); }
-  const h4={ n:4, etape:t("Est-ce que ça marche"), titre:t4, ligne:l4,
-    fond:(F(2)||{}).k, fig:dkCourbe(pts),
-    /* Le point de depart compte autant que l'arrivee : « 1 573 » seul ne
-       dit pas si l'on monte. Les trois ensemble racontent le trajet. */
-    stats: tr?[
-      {v:(tr.delta>=0?"+":"−")+Math.abs(tr.delta), l:t("de SR"), ton:tr.delta>=0?"up":"dn"},
-      {v:fmt(tr.older), l:t("au départ")},
-      {v:fmt(tr.recent), l:t("aujourd'hui")},
-    ]:[] };
+  for(let i=kf;i<=suite.length;i++){ const v=srAvg(suite.slice(i-kf,i)); if(v!=null) pts.push(v); }
+
+  const h4 = CTX
+    ? { n:4, etape:t("Où"),
+        titre: CTX.genre==="carte" ? esc(prettyMap(CTX.pire.cle)) : esc(CTX.pire.cle),
+        /* Tournure nominale : rien a accorder, dans aucune des deux
+           langues, quel que soit le libelle de l etage. */
+        ligne: t("{s} : {a} ici, contre {b} sur l'ensemble de tes batailles.")
+                 .replace("{s}", t(AN.fuite.nom))
+                 .replace("{a}", AN.fuite.unite==="%"?pctf(CTX.pire.val):fmt(Math.round(CTX.pire.val)))
+                 .replace("{b}", AN.fuite.unite==="%"?pctf(CTX.global):fmt(Math.round(CTX.global))),
+        fond: CTX.genre==="carte" ? mapKey(CTX.pire.cle) : (F(2)||{}).k,
+        fig: CTX.genre==="carte"
+              ? dkCarte(mapKey(CTX.pire.cle), prettyMap(CTX.pire.cle), t("là où ça décroche"))
+              : dkBarres(CTX.bons.slice(0,4).map(x=>({cle:x.cle, nom:x.cle, unite:AN.fuite.unite,
+                  moi:x.val, ref:CTX.global})), CTX.pire.cle, "fuite"),
+        stats:[
+          {v:(AN.fuite.unite==="%"?pctf(CTX.pire.val):fmt(Math.round(CTX.pire.val))),
+           l:CTX.genre==="carte"?t("sur cette carte"):t("contre ce clan"), ton:"dn"},
+          {v:Math.round(Math.abs(CTX.ecart)*100)+" %", l:t("sous ta moyenne"), ton:"dn"},
+          {v:CTX.pire.n, l:t("batailles")},
+        ]}
+    : AN && AN.fuite
+    ? { n:4, etape:t("Où"), titre:t("Ça ne tient pas à un endroit."),
+        ligne:t("Aucune carte ni aucun adversaire ne fait décrocher ce point plus qu'ailleurs — c'est donc une habitude, pas une situation."),
+        fond:(F(2)||{}).k, stats:[] }
+    : { n:4, etape:t("Où"), titre:t("Rien à situer."),
+        ligne:t("Il faut d'abord qu'un point décroche pour chercher où il décroche."),
+        fond:(F(2)||{}).k, stats:[] };
 
   /* ── 05 ── le bilan */
   const h5={ n:5, etape:t("Le bilan"), titre: sr!=null?fmt(sr):t("Pas encore de SR"),
@@ -4628,6 +4765,7 @@ function renderPlayerView(){
     const et=document.getElementById("pTerrain"); if(et) et.innerHTML = pTerrain(my, clanRows);
     const en=document.getElementById("pEntonnoir"); if(en) en.innerHTML = pEntonnoir(my, clanRows);
     const co=document.getElementById("pContrib"); if(co) co.innerHTML = pContributions(my, clanRows);
+    const cx=document.getElementById("pContexte"); if(cx) cx.innerHTML = pContexte(my, clanRows);
     dkRemplit(my, clanRows);
     const em=document.getElementById("pMissions"); if(em) em.innerHTML = pMissions(my, clanRows); }
   {
