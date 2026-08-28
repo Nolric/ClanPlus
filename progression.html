@@ -16,14 +16,14 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20240%20240%22%3E%3Crect%20width%3D%22240%22%20height%3D%22240%22%20rx%3D%2254%22%20fill%3D%22%23141310%22%2F%3E%3Cg%20transform%3D%22translate%2830%2030%29%20scale%280.75%29%22%20fill%3D%22%23d8b566%22%3E%3Ccircle%20cx%3D%22120%22%20cy%3D%22120%22%20r%3D%22100%22%20fill%3D%22none%22%20stroke%3D%22%23d8b566%22%20stroke-width%3D%227%22%2F%3E%3Crect%20x%3D%2281%22%20y%3D%228%22%20width%3D%2218%22%20height%3D%2218%22%2F%3E%3Crect%20x%3D%22111%22%20y%3D%224%22%20width%3D%2218%22%20height%3D%2218%22%2F%3E%3Crect%20x%3D%22141%22%20y%3D%228%22%20width%3D%2218%22%20height%3D%2218%22%2F%3E%3Cpath%20d%3D%22M161%2C155%20A54%2C54%200%201%201%20161%2C85%22%20fill%3D%22none%22%20stroke%3D%22%23d8b566%22%20stroke-width%3D%2220%22%20stroke-linecap%3D%22round%22%2F%3E%3Crect%20x%3D%22112%22%20y%3D%2294%22%20width%3D%2216%22%20height%3D%2252%22%20rx%3D%225%22%2F%3E%3Crect%20x%3D%2294%22%20y%3D%22112%22%20width%3D%2252%22%20height%3D%2216%22%20rx%3D%225%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<script src="i18n/index.fr.js"></script>
-<script src="i18n/progression.fr.js"></script>
-<script src="i18n/index.en.js"></script>
-<script src="i18n.js"></script>
+<script src="i18n/index.fr.js?v=4d034ab3"></script>
+<script src="i18n/progression.fr.js?v=02209f81"></script>
+<script src="i18n/index.en.js?v=00a9a8c2"></script>
+<script src="i18n.js?v=ed3f8a4f"></script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <!-- La MÊME charte et le MÊME code que l'application : il ne doit exister
      qu'une version des calculs et des composants. -->
-<link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="app.css?v=33ab1c85">
 <style>
 /* Le titre monte avec la largeur, mais reste borne par la HAUTEUR :
    calcule sur la seule largeur, il deborde d'un ecran large et bas. */
@@ -117,11 +117,11 @@
 @media(max-width:620px){ .pg-id{display:none} }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" defer></script>
-<script src="app.js" defer></script>
-<script src="app-fin.js" defer></script>
+<script src="app.js?v=7e8a9838" defer></script>
+<script src="app-fin.js?v=4e570ee3" defer></script>
 <!-- Chargé APRÈS app.js : les scripts différés s'exécutent dans l'ordre
      du document, c'est ce qui garantit que les fonctions existent. -->
-<script src="progression.js" defer></script>
+<script src="progression.js?v=25806fb6" defer></script>
 </head>
 <body>
 

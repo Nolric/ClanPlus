@@ -3833,18 +3833,23 @@ function dkSelClasses(){
     return x.accId===SELP && f(x); });
   const c={};
   for(const x of tous) if(x.cls) c[x.cls]=(c[x.cls]||0)+1;
-  const dispo=DK_CLS_ORDRE.filter(function(k){ return c[k]; });
-  if(dispo.length<2) return "";     /* une seule classe : le choix n'existe pas */
+  /* Les CINQ classes, toujours, jouées ou non. Masquer celles qu'on n'a
+     pas jouées donnait à chaque joueur une interface différente — et à
+     celui qui ne joue qu'une classe, l'impression d'une page amputée.
+     Une classe sans bataille est montrée, désactivée, avec son zéro :
+     c'est une information, pas un vide. */
+  const dispo=DK_CLS_ORDRE.slice();
   const bt=function(cle,lib,n,actif,assez){
     return '<button type="button" class="ts-b '+(actif?"on":"off")+'"'+
       (assez?'':' disabled')+' data-cls="'+esc(cle)+'" title="'+
       (assez?esc(t("{n} batailles").replace("{n}",n))
-            :esc(t("{n} bataille(s) seulement — il en faut huit pour analyser.").replace("{n}",n)))+
+            :(n?esc(t("{n} bataille(s) seulement — il en faut huit pour analyser.").replace("{n}",n))
+                :esc(t("Aucune bataille enregistrée dans cette classe."))))+
       '">'+esc(lib)+(n?' <span class="cs-n">'+n+'</span>':'')+'</button>';
   };
   return '<span class="ts-lab">'+t("Classe")+'</span><span class="ts-seg">'+
     bt("", t("Toutes"), tous.length, !DK_CLASSE, true)+
-    dispo.map(function(k){ return bt(k, t(clsFR(k)), c[k], DK_CLASSE===k, c[k]>=8); }).join("")+
+    dispo.map(function(k){ return bt(k, t(clsFR(k)), c[k]||0, DK_CLASSE===k, (c[k]||0)>=8); }).join("")+
     '</span><span class="ts-note">'+
     (DK_CLASSE
       ? t("Tout ce qui suit ne porte que sur tes batailles en {s}, comparées à celles du clan dans la même classe.").replace("{s}", clsMin(DK_CLASSE))
