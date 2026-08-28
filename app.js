@@ -4114,14 +4114,87 @@ function pBoucle(my, clanRows){
    Un replay pèse quelques dizaines de kilo-octets : on ne les demande
    ni tous ni tout de suite. Douze suffisent pour une moyenne stable, et
    le chargement ne bloque jamais l'affichage — la page vit sans. */
-const DK_REP_MAX=12;
+/* Trente et non douze : une moyenne de distance se contente de douze
+   batailles toutes cartes confondues, mais une trajectoire se lit par
+   carte — et douze batailles sur dix terrains ne font rien du tout. Le
+   chargement est séquentiel et en arrière-plan : la page reste
+   utilisable pendant. */
+const DK_REP_MAX=30;
 /* Vingt secondes par tranche : dix relevés par joueur et par tranche,
    puisque le mod échantillonne toutes les deux secondes. */
 const DK_TRANCHE=20, DK_TRANCHES=18;   // jusqu'à six minutes
 let dkRep={}, dkRepEnCours=false, dkRepFini=false;
 /* Le replay ne porte pas le nom de la carte : on le retient au moment du
    chargement, depuis la bataille correspondante. */
-let dkRepCarte={};
+let dkRepCarte={}, dkRepRes={};
+
+/* Combien de replays du clan on s'autorise sur la carte visée. Bien
+   plus que la passe personnelle : c'est là qu'est tout le gain, et le
+   seuil corrigé demande environ cinquante batailles pour trancher. */
+const DK_REP_CARTE=60;
+let dkCarteEnCours=false, dkCarteFaite="";
+
+/* ── La carte à creuser ─────────────────────────────────────────────
+   La statistique vient du clan, le tracé personnel vient du joueur : il
+   faut donc une carte où les deux existent. On prend la plus jouée par
+   le CLAN parmi celles où le joueur compte au moins deux batailles —
+   sinon on afficherait une magnifique carte d'équipe sur un terrain où
+   il n'a jamais mis les chenilles. */
+function dkCarteCible(){
+  const clan={}, moi={}, vusC={}, vusM={};
+  for(const x of RAW){
+    const c=x.mapName||""; if(!c || x.result==null || x.result===-1) continue;
+    const k=c+"|"+x.battleId;
+    if(!vusC[k]){ vusC[k]=1; clan[c]=(clan[c]||0)+1; }
+    if(Number(x.accId)===Number(SELP) && !vusM[k]){ vusM[k]=1; moi[c]=(moi[c]||0)+1; }
+  }
+  let cible=null, secours=null;
+  Object.keys(clan).forEach(function(c){
+    if(!secours || clan[c]>clan[secours]) secours=c;
+    if((moi[c]||0)>=2 && (!cible || clan[c]>clan[cible])) cible=c;
+  });
+  const cle=cible||secours;
+  if(!cle) return null;
+  return {cle:cle, nClan:clan[cle]||0, nMoi:moi[cle]||0, sansMoi:!cible};
+}
+
+/* ── La seconde passe : la carte visée, tous joueurs confondus ──────
+   On redessine tous les cinq replays plutôt qu'à la fin : soixante
+   requêtes séquentielles font une bonne dizaine de secondes, et une
+   carte qui se remplit sous les yeux vaut mieux qu'un vide patient. */
+function dkChargeCarte(cible, avance){
+  if(!cible || dkCarteEnCours || dkCarteFaite===cible.cle) return;
+  const vus={}, ids=[];
+  for(const x of RAW.slice().sort(function(a,b){ return (b.ts||0)-(a.ts||0); })){
+    if((x.mapName||"")!==cible.cle) continue;
+    if(vus[x.battleId]) continue;
+    vus[x.battleId]=1;
+    if(dkRep[x.battleId]===undefined){
+      ids.push(x.battleId);
+      dkRepCarte[x.battleId]=x.mapName||"";
+      dkRepRes[x.battleId]=x.result;
+    }
+    if(ids.length>=DK_REP_CARTE) break;
+  }
+  if(!ids.length){ dkCarteFaite=cible.cle; if(avance) avance(); return; }
+  dkCarteEnCours=true;
+  (function suite(i){
+    if(i>=ids.length){
+      dkCarteEnCours=false; dkCarteFaite=cible.cle;
+      if(avance) avance();
+      return;
+    }
+    fnCall("replay", {session:localStorage.getItem(LS_SESSION), battle_id:ids[i]})
+      .then(function(r){
+        dkRep[ids[i]] = (r && r.ok && r.j && r.j.replay) ? r.j.replay : false;
+      })
+      .catch(function(){ dkRep[ids[i]]=false; })
+      .then(function(){
+        if(avance && (i+1)%5===0) avance();
+        suite(i+1);
+      });
+  })(0);
+}
 
 function dkChargeReplays(my, apres){
   if(dkRepEnCours || dkRepFini) return;
@@ -4129,7 +4202,11 @@ function dkChargeReplays(my, apres){
   for(const r of my.slice().sort((a,b)=>(b.ts||0)-(a.ts||0))){
     if(vus.has(r.battleId)) continue;
     vus.add(r.battleId);
-    if(dkRep[r.battleId]===undefined){ ids.push(r.battleId); dkRepCarte[r.battleId]=r.mapName||""; }
+    if(dkRep[r.battleId]===undefined){
+      ids.push(r.battleId);
+      dkRepCarte[r.battleId]=r.mapName||"";
+      dkRepRes[r.battleId]=r.result;
+    }
     if(ids.length>=DK_REP_MAX) break;
   }
   if(!ids.length){ dkRepFini=true; return; }
@@ -4435,6 +4512,270 @@ function pMorts(my){
         (moyen>C.ref*1.3 ? t("Plus loin que ta moyenne déjà élevée : ce sont ces moments-là qui te coûtent la bataille.") : "")+'</p>'
       : "")+'</div></div>'+
     '<footer class="hint">'+t("Seule la carte où tu meurs le plus est montrée, et seulement à partir de trois morts : en dessous, c'est une coïncidence, pas une habitude.")+'</footer>'+
+  '</section>';
+}
+
+
+/* ── La trajectoire type d'une carte ─────────────────────────────────
+   Grille de 14×14 sur les bornes du terrain — environ soixante-dix
+   mètres par case sur une carte de mille. Plus fin, chaque case ne
+   verrait qu'une poignée de batailles ; plus grossier, on ne
+   distinguerait plus un flanc d'un autre. */
+const DK_GRILLE=14;
+
+function dkTrajectoire(vise){
+  const parCarte={};
+  Object.keys(dkRep).forEach(function(id){
+    const R=dkRep[id]; if(!R || !R.vehicles || !R.bounds) return;
+    const c=dkRepCarte[id]||""; if(!c) return;
+    if(!parCarte[c]) parCarte[c]={cle:c, ids:[], bounds:R.bounds};
+    parCarte[c].ids.push(id);
+  });
+  /* On suit la carte DÉSIGNÉE, pas la mieux fournie du moment : pendant
+     que la seconde passe se charge, la mieux fournie change à chaque
+     replay, et la figure se mettrait à sauter d'un terrain à l'autre
+     sous les yeux du lecteur. */
+  let carte = (vise && parCarte[vise]) ? parCarte[vise] : null;
+  if(!carte) Object.keys(parCarte).forEach(function(k){
+    if(!carte || parCarte[k].ids.length>carte.ids.length) carte=parCarte[k];
+  });
+  /* Sous six batailles sur une même carte, il n'y a ni trajectoire type
+     ni comparaison possible : on se tait. */
+  if(!carte || carte.ids.length<6) return null;
+
+  const b=carte.bounds, lx=(b[2]-b[0])||1, lz=(b[3]-b[1])||1;
+  const cel=function(x,z){
+    const i=Math.floor(((x-b[0])/lx)*DK_GRILLE);
+    const j=Math.floor(((b[3]-z)/lz)*DK_GRILLE);   /* l'axe Z monte, l'image descend */
+    if(i<0||j<0||i>=DK_GRILLE||j>=DK_GRILLE) return -1;
+    return j*DK_GRILLE+i;
+  };
+
+  const N=DK_GRILLE*DK_GRILLE;
+  const vues=new Array(N).fill(0), gag=new Array(N).fill(0), per=new Array(N).fill(0);
+  const moi=new Array(N).fill(0);
+  /* nMoi compte à part : « ton passage » se rapporte à TES batailles.
+     Le rapporter au total du clan ferait fondre le tracé à mesure que
+     les autres jouent, ce qui n'a aucun sens. */
+  let W=0, L=0, nBat=0, nMoi=0;
+
+  for(const id of carte.ids){
+    const R=dkRep[id];
+    const res=dkRepRes[id];
+    if(res!==0 && res!==1) continue;            /* une nulle n'informe pas */
+    nBat++;
+    if(res===1) W++; else L++;
+    /* Par BATAILLE : l'ensemble des cases occupées, pas le nombre de
+       passages. Une case traversée cent fois dans une bataille compte
+       pour une. */
+    const occ=new Set(), occMoi=new Set();
+    let jouee=false;
+    for(const v of R.vehicles){
+      if(v.team!==R.myTeam || !v.track) continue;
+      const aMoi=Number(v.acc)===Number(SELP);
+      if(aMoi) jouee=true;
+      for(const p of v.track){
+        const k=cel(p[1],p[2]);
+        if(k<0) continue;
+        occ.add(k);
+        if(aMoi) occMoi.add(k);
+      }
+    }
+    if(jouee) nMoi++;
+    occ.forEach(function(k){ vues[k]++; if(res===1) gag[k]++; else per[k]++; });
+    occMoi.forEach(function(k){ moi[k]++; });
+  }
+  if(W<3 || L<3) return {carte:carte.cle, bounds:b, nBat:nBat, nMoi:nMoi, W:W, L:L,
+                         vues:vues, moi:moi, cases:null, testees:0, seuil:null};
+
+  /* La différence de fréquence d'occupation entre victoires et défaites.
+     L'écart type d'une différence de proportions vaut
+     √(p(1−p)(1/W + 1/L)) — c'est lui qui dit ce qui sort du hasard. */
+  const cases=[];
+  let testees=0;
+  for(let k=0;k<N;k++){
+    if(vues[k]<3) continue;                     /* trop peu vue pour parler */
+    testees++;
+    const p1=gag[k]/W, p2=per[k]/L;
+    const p=(gag[k]+per[k])/(W+L);
+    const se=Math.sqrt(Math.max(p*(1-p),1e-6)*(1/W+1/L));
+    cases.push({k:k, p1:p1, p2:p2, diff:p1-p2, z:se?(p1-p2)/se:0, vues:vues[k]});
+  }
+  /* Bonferroni : 196 cases testées au seuil de 5 %, ce sont dix fausses
+     découvertes garanties. On divise le seuil par le nombre de tests. */
+  const alpha=0.05/Math.max(1,testees);
+  const zSeuil=dkZ(1-alpha/2);
+  cases.forEach(function(c){ c.sur=Math.abs(c.z)>=zSeuil; });
+  cases.sort(function(a,c){ return Math.abs(c.z)-Math.abs(a.z); });
+  return {carte:carte.cle, bounds:b, nBat:nBat, nMoi:nMoi, W:W, L:L,
+          vues:vues, moi:moi, cases:cases, testees:testees, seuil:zSeuil};
+}
+
+/* Combien de batailles il en faudrait — calculé, pas supposé.
+   Avec autant de victoires que de défaites, l'écart type d'une
+   différence de proportions vaut 1/√n : un écart FRANC (la zone tenue
+   dans trois victoires sur quatre et une défaite sur quatre, soit une
+   différence de 0,5) atteint donc z = 0,5·√n. Il passe le seuil corrigé
+   quand n dépasse (seuil/0,5)². On arrondit à la dizaine : annoncer
+   « 46 » donnerait à ce chiffre une précision qu'il n'a pas. */
+function dkCombien(seuil){
+  const n=Math.pow((seuil||3.4)/0.5,2);
+  return Math.max(20, Math.round(n/10)*10);
+}
+
+/* Le nom d'un endroit, en points cardinaux — le vocabulaire du vocal.
+   On prend le barycentre des cases concernées et on le range en neuf
+   secteurs. « Le sud-ouest » se retrouve sur une minimap ; « la case 87 »
+   non. */
+function dkZone(cases){
+  if(!cases || !cases.length) return "";
+  let si=0, sj=0;
+  for(const c of cases){ si+=c.k%DK_GRILLE; sj+=Math.floor(c.k/DK_GRILLE); }
+  const i=si/cases.length, j=sj/cases.length, T=DK_GRILLE/3;
+  /* j vient de maxZ − z : il descend quand Z monte, donc j petit = nord,
+     exactement comme sur la vue du dessus. */
+  const ns = j<T ? "nord" : (j>2*T ? "sud" : "");
+  const eo = i<T ? "ouest" : (i>2*T ? "est" : "");
+  /* On traduit la forme AVEC article, pas le mot nu : « le nord » et
+     « l'ouest » ne prennent pas le même, et une concaténation en
+     produirait un faux dans la moitié des cas. */
+  const brut = (ns && eo) ? ns+"-"+eo : (ns || eo || "centre");
+  return t({nord:"le nord", sud:"le sud", est:"l'est", ouest:"l'ouest",
+    centre:"le centre", "nord-ouest":"le nord-ouest", "nord-est":"le nord-est",
+    "sud-ouest":"le sud-ouest", "sud-est":"le sud-est"}[brut]);
+}
+
+/* Le quantile de la loi normale : approximation d'Acklam, largement
+   suffisante ici — on l'emploie pour un seuil, pas pour publier. */
+function dkZ(p){
+  if(p<=0) return -Infinity; if(p>=1) return Infinity;
+  const a=[-39.69683028665376,220.9460984245205,-275.9285104469687,
+           138.3577518672690,-30.66479806614716,2.506628277459239];
+  const b2=[-54.47609879822406,161.5858368580409,-155.6989798598866,
+            66.80131188771972,-13.28068155288572];
+  const c=[-0.007784894002430293,-0.3223964580411365,-2.400758277161838,
+           -2.549732539343734,4.374664141464968,2.938163982698783];
+  const d=[0.007784695709041462,0.3224671290700398,2.445134137142996,
+           3.754408661907416];
+  const pl=0.02425;
+  let q,x;
+  if(p<pl){ q=Math.sqrt(-2*Math.log(p));
+    x=(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5])/((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1); }
+  else if(p<=1-pl){ q=p-0.5; const r2=q*q;
+    x=(((((a[0]*r2+a[1])*r2+a[2])*r2+a[3])*r2+a[4])*r2+a[5])*q/
+      (((((b2[0]*r2+b2[1])*r2+b2[2])*r2+b2[3])*r2+b2[4])*r2+1); }
+  else { q=Math.sqrt(-2*Math.log(1-p));
+    x=-(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5])/((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1); }
+  return x;
+}
+
+/* ── La carte : présence, puis tendance ─────────────────────────────
+   Deux couches. La PRÉSENCE est un constat — par où l'équipe passe — et
+   s'affiche toujours. La TENDANCE gagné/perdu se colore par-dessus, mais
+   seules les cases qui survivent à la correction portent un contour :
+   montrer n'est pas affirmer. */
+function dkPlanTraj(T){
+  if(!T) return "";
+  /* Le dénominateur du tracé personnel, ce sont TES batailles sur la
+     carte — pas celles du clan. */
+  const N=DK_GRILLE, tot=T.nMoi||1;
+  let maxV=1;
+  for(const v of T.vues) if(v>maxV) maxV=v;
+  const cells=[];
+  for(let k=0;k<N*N;k++){
+    const i=k%N, j=Math.floor(k/N);
+    const st="left:"+((i/N)*100).toFixed(3)+"%;top:"+((j/N)*100).toFixed(3)+
+             "%;width:"+(100/N).toFixed(3)+"%;height:"+(100/N).toFixed(3)+"%";
+    const pres=T.vues[k]/maxV;
+    if(pres<=0.02) continue;
+    let cls="tj-c", extra="";
+    const c=T.cases ? T.cases.find(function(x){ return x.k===k; }) : null;
+    /* Plafonds volontairement bas : le terrain doit rester lisible
+       SOUS l'analyse. « Le nord-ouest » ne veut rien dire pour qui ne
+       voit plus ni la colline ni la voie ferrée. */
+    if(c && Math.abs(c.diff)>=0.15){
+      cls+=c.diff>0?" tj-g":" tj-p";
+      extra=";--a:"+Math.min(0.34,0.10+Math.abs(c.diff)*0.42).toFixed(2);
+      if(c.sur) cls+=" tj-sur";
+    } else {
+      extra=";--a:"+(pres*0.26).toFixed(2);
+    }
+    cells.push('<i class="'+cls+'" style="'+st+extra+'"></i>');
+  }
+  /* Le passage du joueur. Au bout de dix batailles, tout le terrain
+     finit par être traversé une fois : une case vue UNE fois n'est pas
+     une habitude, c'est un aller-retour. On ne garde que celles vues
+     dans au moins un quart des batailles, et la taille du point dit la
+     fréquence — ce qui distingue un chemin d'un détour. */
+  const plancher=Math.max(2, Math.ceil(tot*0.25));   /* tot = TES batailles */
+  const pts=[];
+  for(let k=0;k<N*N;k++){
+    if(T.moi[k]<plancher) continue;
+    const i=k%N, j=Math.floor(k/N), f=Math.min(1,T.moi[k]/tot);
+    pts.push('<b class="tj-moi" style="left:'+(((i+0.5)/N)*100).toFixed(2)+
+      '%;top:'+(((j+0.5)/N)*100).toFixed(2)+'%;--a:'+(0.45+f*0.5).toFixed(2)+
+      ';--d:'+(5+f*6).toFixed(1)+'px"></b>');
+  }
+  return '<div class="dkf dkf-tj"><div class="tj-plan">'+
+    '<img src="maps/top/'+esc(mapKey(T.carte))+'.jpg" alt="'+esc(prettyMap(T.carte))+'" '+
+      'loading="lazy" onerror="this.style.display=\'none\'">'+
+    cells.join("")+pts.join("")+
+  '</div></div>';
+}
+
+/* ── La section ─────────────────────────────────────────────────── */
+function pTrajectoire(){
+  const cible=dkCarteCible();
+  const T=dkTrajectoire(cible&&cible.cle);
+  if(!T){
+    return '<section class="card"><h2>'+t("Comment se joue cette carte")+'</h2>'+
+      '<div class="empty">'+t("Il faut au moins six replays sur une même carte pour dégager une trajectoire. Reviens quand le clan aura rejoué les mêmes terrains.")+'</div></section>';
+  }
+  const forte=(T.cases||[]).filter(function(c){ return c.sur; });
+  /* Le joueur ne joue pas des cases de grille, il joue un flanc : on
+     nomme le terrain plutôt que d'en compter les morceaux. */
+  const zG=dkZone(forte.filter(function(c){ return c.diff>0; }));
+  const zP=dkZone(forte.filter(function(c){ return c.diff<0; }));
+  const dit = forte.length
+    ? ((zG && zP && zG!==zP)
+        ? t("Les batailles gagnées passent par {a}, les perdues par {b}.").replace("{a}", zG).replace("{b}", zP)
+        : (zG ? t("Les batailles gagnées passent par {a} — c'est le seul écart qui sort du hasard ici.").replace("{a}", zG)
+              : t("Les batailles perdues passent par {b} — c'est le seul écart qui sort du hasard ici.").replace("{b}", zP)))
+      + " " + t("({n} cases sur {m} testées.)").replace("{n}", forte.length).replace("{m}", T.testees)
+    : (T.cases
+        ? t("Aucune zone ne sort du hasard sur {n} batailles. Les teintes ci-dessus sont des tendances, pas des preuves — il en faudrait environ {m} pour trancher.")
+            .replace("{n}", T.nBat).replace("{m}", dkCombien(T.seuil))
+        : t("Il faut au moins trois victoires et trois défaites sur la carte pour comparer quoi que ce soit."));
+  return '<section class="card">'+
+    '<h2>'+t("Comment se joue cette carte")+' <span class="hint">'+
+      esc(prettyMap(T.carte))+' — '+t("{n} batailles du clan, {w} gagnées, {l} perdues")
+        .replace("{n}",T.nBat).replace("{w}",T.W).replace("{l}",T.L)+
+      (T.nMoi ? ' · '+t("dont {n} à toi").replace("{n}",T.nMoi)
+              : ' · '+t("aucune à toi"))+'</span></h2>'+
+    '<div class="tj-duo">'+dkPlanTraj(T)+'<div class="tj-dit">'+
+      '<div class="tj-chif">'+
+        '<div class="tj-n"><b>'+T.nBat+'</b><span>'+t("batailles du clan")+'</span></div>'+
+        '<div class="tj-n"><b class="up">'+T.W+'</b><span>'+t("gagnées")+'</span></div>'+
+        '<div class="tj-n"><b class="dn">'+T.L+'</b><span>'+t("perdues")+'</span></div>'+
+        '<div class="tj-n"><b>'+(T.nMoi||0)+'</b><span>'+t("à toi")+'</span></div>'+
+      '</div>'+
+      '<div class="tj-leg">'+
+        '<span><i class="tj-c tj-neutre"></i>'+t("par où passe l'équipe")+'</span>'+
+        '<span><i class="tj-c tj-g"></i>'+t("plus présent dans les victoires")+'</span>'+
+        '<span><i class="tj-c tj-p"></i>'+t("plus présent dans les défaites")+'</span>'+
+        (T.nMoi ? '<span><b class="tj-moi"></b>'+t("ton passage")+'</span>' :
+          '<span class="tj-abs">'+t("tu n'as pas joué cette carte — seul le tracé du clan est montré")+'</span>')+
+      '</div>'+
+      '<p class="ent-quoi">'+dit+'</p>'+
+    '</div></div>'+
+    '<footer class="hint">'+
+      t("Grille de {g}×{g}, soit environ {m} m par case.")
+        .replace(/{g}/g, DK_GRILLE)
+        .replace("{m}", Math.round(((T.bounds[2]-T.bounds[0])/DK_GRILLE)/10)*10)+' '+
+      t("Une case compte les BATAILLES où l'équipe y est passée, pas les relevés : quatorze chars et deux cents points partagent un seul résultat, et les compter séparément multiplierait l'effectif par trois cents.")+' '+
+      (T.testees
+        ? t("{n} cases testées, seuil corrigé en conséquence — sans cette correction, une dizaine s'allumerait par pur hasard.").replace("{n}", T.testees)
+        : "")+'</footer>'+
   '</section>';
 }
 
@@ -4815,6 +5156,20 @@ function dkRemplit(my, clanRows){
     if(po) po.innerHTML = pPosition(my);
     const pm=document.getElementById("pMorts");
     if(pm) pm.innerHTML = pMorts(my);
+    const pt=document.getElementById("pTrajectoire");
+    if(pt) pt.innerHTML = pTrajectoire();
+    /* Puis la seconde passe : la carte visée, tous joueurs confondus.
+       Elle ne concerne QUE la trajectoire — l'isolement et les morts se
+       mesurent sur le joueur, et ne doivent pas être redessinés avec des
+       batailles auxquelles il n'a pas participé.
+
+       On l'ARME sans la lancer : soixante replays, c'est plusieurs méga-
+       octets et autant d'appels à la fonction serveur. Les dépenser pour
+       quelqu'un qui ne descendra jamais à l'étape 4 serait du gaspillage
+       pur. dkVa() la déclenche à l'arrivée sur l'étape, et dkTrajArme la
+       lance tout de suite si le lecteur y est déjà. */
+    dkTrajArme=true;
+    if(dkN>=4) dkTrajLance();
   });
 
   /* Si la video existe, on redessine une fois pour la poser. */
@@ -4891,8 +5246,22 @@ function dkAnime(vers){
   dkRaf=requestAnimationFrame(pas);
 }
 
+/* La seconde passe attend qu'on arrive à l'étape où elle sert. */
+let dkTrajArme=false, dkTrajLancee=false;
+function dkTrajLance(){
+  if(!dkTrajArme || dkTrajLancee) return;
+  dkTrajLancee=true;
+  dkChargeCarte(dkCarteCible(), function(){
+    const q=document.getElementById("pTrajectoire");
+    if(q) q.innerHTML = pTrajectoire();
+  });
+}
+
 function dkVa(n, sec){
   n=Math.max(1,Math.min(5,n));
+  /* L'étape 4 porte la trajectoire : c'est en y arrivant qu'on paie ses
+     soixante requêtes, pas au chargement de la page. */
+  if(n>=4) dkTrajLance();
   /* Le sens du geste : le contenu entrera par la ou l'on vient. */
   dkSens = n>dkN ? 1 : (n<dkN ? -1 : dkSens);
   const vers=(n-1)*dkL();
@@ -5409,6 +5778,7 @@ function renderPlayerView(){
        ultérieur (un redimensionnement, un changement de joueur) les
        effacerait sans jamais les redessiner. */
     const pm=document.getElementById("pMorts"); if(pm) pm.innerHTML = pMorts(my);
+    const pt=document.getElementById("pTrajectoire"); if(pt) pt.innerHTML = pTrajectoire();
     dkRemplit(my, clanRows);
     const em=document.getElementById("pMissions"); if(em) em.innerHTML = pMissions(my, clanRows); }
   {
@@ -6102,9 +6472,11 @@ async function loadLoadouts(){
     if(!r.ok){ list.innerHTML='<div class="card"><div class="empty">Erreur loadouts : '+esc((r.j&&r.j.error)||String(r.status))+' — la fonction « loadouts » est-elle déployée ?</div></div>'; return; }
     LOADOUTS=r.j.loadouts||[]; LO_CANEDIT=meIsManager();
     document.getElementById("loNewBtn").classList.toggle("hidden",!LO_CANEDIT);
+    /* textContent contourne le moteur : il écrit après le passage du
+       traducteur, et la phrase restait donc en français. */
     document.getElementById("loRole").textContent = LO_CANEDIT
-      ? "Tu peux créer et modifier les loadouts du clan."
-      : "Consultation seule — réservé aux officiers de combat et plus.";
+      ? t("Tu peux créer et modifier les loadouts du clan.")
+      : t("Consultation seule — réservé aux officiers de combat et plus.");
     renderLoadouts();
   }catch(e){
     list.innerHTML='<div class="card"><div class="empty">Impossible de joindre la fonction « loadouts » ('+esc(String(e))+'). Vérifie son déploiement.</div></div>';
