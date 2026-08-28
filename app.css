@@ -871,7 +871,12 @@
     font-size:12.5px;font-weight:800;letter-spacing:-.1px}
   .bl-team-card.ours>.hd{color:var(--accent)} .bl-team-card.foe>.hd{color:var(--bad)}
   .bl-team-card>.hd .sub{margin-left:auto;font-size:11px;font-weight:600;color:var(--muted)}
-  .bl-team-card .tw{overflow-x:auto}
+  /* La classe .tw signifie « tableau large » : elle doit defiler chez elle
+   plutot que pousser la page de cote. Elle n existait que dans le contexte
+   des cartes d equipe ; ailleurs elle ne faisait rien, et le tableau de
+   l entonnoir debordait de 69 px sur telephone. */
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.bl-team-card .tw{overflow-x:auto}
   .rp-launch{appearance:none;cursor:pointer;display:inline-flex;align-items:center;gap:8px;background:var(--surface-2);border:1px solid var(--border);border-radius:9px;padding:9px 15px;color:var(--ink);font-size:13px;font-weight:700}
   .rp-launch:hover{border-color:var(--accent);color:var(--accent)}
   .rp-launch .rp-tri{color:var(--accent);font-size:11px}
@@ -1654,6 +1659,30 @@
   border:1px solid rgba(236,106,106,.45)}
 
 /* 04 — la courbe du SR */
+/* 03 bis — l entonnoir : quatre etages, deux barres par etage.
+   Le repere de reference est un TRAIT, pas une seconde barre : deux
+   barres pleines superposees rendent le depassement illisible. */
+.dkf-e{width:100%;max-width:520px;display:grid;gap:clamp(12px,1.7vh,20px)}
+.dke-h{display:flex;align-items:baseline;justify-content:space-between;gap:14px;margin-bottom:7px}
+.dke-h span{font-size:12.5px;color:var(--ink-2)}
+.dke-h b{font-size:clamp(17px,1.9vw,23px);font-weight:800;letter-spacing:-.02em;
+  font-variant-numeric:tabular-nums;color:var(--ink)}
+.dke-b{position:relative;height:9px;border-radius:5px;background:var(--grid)}
+.dke-moi{position:absolute;left:0;top:0;bottom:0;border-radius:5px;display:block;
+  background:linear-gradient(90deg,rgba(216,181,102,.5),var(--accent))}
+.dke-ref{position:absolute;top:-5px;bottom:-5px;width:2px;border-radius:2px;display:block;
+  background:var(--ink);transform:translateX(-50%);box-shadow:0 0 0 2px var(--card)}
+.dke-f{margin-top:7px;font:500 10.5px/1 ui-monospace,Consolas,monospace;
+  letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+/* L etage qui fuit porte la seule couleur vive de la figure. */
+.dke-fuit .dke-h b{color:var(--bad)}
+.dke-fuit .dke-moi{background:linear-gradient(90deg,rgba(236,106,106,.45),var(--bad))}
+.dke-fuit .dke-f{color:var(--bad)}
+.ent-fuit{background:rgba(236,106,106,.07)}
+.ent-fuit td:first-child b{color:var(--bad)}
+.ent-quoi{margin:14px 0 0;font-size:14.5px;line-height:1.6;color:var(--ink-2)}
+.ent-quoi b{color:var(--ink)}
+
 .dkf-c{width:100%;max-width:440px;height:clamp(140px,19vh,210px)}
 .dkf-c svg{width:100%;height:100%;display:block}
 
