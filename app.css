@@ -1536,6 +1536,12 @@
    un calque décalé laisse voir le vide au bord. */
 .dk-bg{position:absolute;inset:0;z-index:0;overflow:hidden}
 .dk-map{position:absolute;inset:-14%;will-change:transform}
+/* La vidéo occupe la même place que le relief et le recouvre quand elle
+   existe. Le même traitement sombre : c'est le voile qui gère le
+   contraste avec le texte, pas la source. */
+.dk-vid{position:absolute;inset:-14%;will-change:transform}
+.dk-vid video{width:100%;height:100%;object-fit:cover;display:block;
+  filter:grayscale(.35) contrast(1.12) brightness(.46)}
 /* Le relief est du TRAIT, pas de la photo : l'assombrir le ferait
    disparaitre. On le laisse tel quel et c'est le voile qui gere le
    contraste avec le texte. */

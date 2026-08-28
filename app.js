@@ -3505,6 +3505,37 @@ function dkInstruments(){
     L.join("")+'</svg>';
 }
 
+/* ── La vidéo est-elle permise ? ────────────────────────────────────
+   Trois refus : le petit écran (données et batterie), le réglage système
+   « moins d'animations » (accessibilité, pas esthétique), et l'absence de
+   fichier — traitée par onerror plus haut. */
+/* null = pas encore demande · false = absent · true = present.
+   On ne redemande jamais : le fichier n apparait pas en cours de visite. */
+let dkVideoDispo=null, dkVideoDemande=false;
+function dkVideoOk(){
+  try{
+    if(matchMedia("(prefers-reduced-motion: reduce)").matches) return false;
+    if(innerWidth<760) return false;
+    return dkVideoDispo===true;
+  }catch(_){ return false; }
+}
+/* La question est posee une seule fois, et seulement si la video serait
+   permise. Poser la balise pour la retirer ensuite coutait cinq requetes
+   echouees par rendu. */
+function dkVideoCherche(apres){
+  if(dkVideoDemande) return;
+  try{
+    if(matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if(innerWidth<760) return;
+  }catch(_){ return; }
+  dkVideoDemande=true;
+  try{
+    fetch("heroes/01.mp4", {method:"HEAD"})
+      .then(function(r){ if(r && r.ok){ dkVideoDispo=true; if(apres) apres(); } })
+      .catch(function(){ /* absente : le relief tient le bandeau */ });
+  }catch(_){}
+}
+
 /* ── ③ L'emblème du clan ────────────────────────────────────────────
    Wargaming le fournit en plusieurs tailles. On prend la plus grande
    disponible : à 6 % d'opacité et 500 px de large, la différence entre
@@ -3900,8 +3931,12 @@ function dkContexte(my, A){
     const ecart=(pire.val-global)/global;
     return ecart<=-0.10 ? {genre, pire, bons, global, ecart} : null;
   };
+  /* Carte, puis clan adverse, puis char. La carte se prépare avant la
+     bataille, l'adversaire se revoit chaque semaine ; le char est déjà
+     choisi quand on entre — c'est le moins actionnable sur le moment. */
   return juge(dkParContexte(my, e, r=>r.mapName), "carte")
       || juge(dkParContexte(my, e, r=>BATTLE_ENEMY[r.battleId]), "clan")
+      || juge(dkParContexte(my, e, r=>r.tank), "char")
       || null;
 }
 
@@ -3939,12 +3974,16 @@ function pContexte(my, clanRows){
   };
 
   const cartes=dkParContexte(my, e, r=>r.mapName); const ec1=dkEcartes;
-  const clans =dkParContexte(my, e, r=>BATTLE_ENEMY[r.battleId]); const ecartes=ec1+dkEcartes;
+  const clans =dkParContexte(my, e, r=>BATTLE_ENEMY[r.battleId]); const ec2=dkEcartes;
+  const chars =dkParContexte(my, e, r=>r.tank); const ecartes=ec1+ec2+dkEcartes;
   return '<section class="card">'+
     '<h2>'+t("Où ça décroche")+
       ' <span class="hint">'+t(e.nom)+' — '+t("ta moyenne : {n}").replace("{n}", val(global))+'</span></h2>'+
     table(cartes, t("Par carte"), t("Carte"), k=>esc(prettyMap(k)))+
     table(clans, t("Par clan adverse"), t("Clan adverse"), k=>esc(k))+
+    /* Les chars restent affichés même sous le seuil : « tu n'as pas assez
+       joué ce char » est une information, pas un vide. */
+    table(chars, t("Par char"), t("Char"), k=>esc(k))+
     '<footer class="hint">'+t("Les lignes grisées n'ont pas assez de matière pour conclure : il faut au moins {n} {s} et quatre batailles sur un même contexte. Elles sont montrées pour que tu saches qu'elles existent, pas pour en tirer une leçon.")
       .replace("{n}", fmt(e.min||4)).replace("{s}", t(e.assiette||"batailles"))+
       (ecartes? ' '+t("{n} contexte(s) écarté(s) : le taux y dépasse cent pour cent, ce qui est impossible — les lignes de ces batailles sont douteuses.").replace("{n}", ecartes) : "")+
@@ -4089,6 +4128,19 @@ function dkPanneau(o){
          même qu'on cherchait à corriger. Sous 240 px de large, le calque
          se retire. Trois calques nets valent mieux que quatre dont un
          flou. */
+      /* La vidéo, quand elle est demandée ET permise. Elle se pose
+         au-dessus du relief : c'est elle qui porte l'image si elle
+         existe, et le relief reprend la main sinon. */
+      (o.video && dkVideoOk()
+        /* Une seule source, et pas d'affiche. Le mp4 est celui qu'on vient
+           de sonder : il existe. Un webm et une affiche auraient coûté
+           deux requêtes échouées à chaque visite si seul le mp4 est
+           fourni — et le relief est déjà derrière, il n'y a rien à
+           masquer pendant le chargement. */
+        ? '<div class="dk-vid"><video muted loop autoplay playsinline preload="auto" '+
+          'src="heroes/01.mp4" onerror="this.closest(\'.dk-vid\').remove()">'+
+          '</video></div>'
+        : "")+
       (o.char?'<div class="dk-char"><img src="'+esc(o.char)+'" alt="" loading="lazy" '+
         'onerror="this.closest(\'.dk-char\').remove()" '+
         'onload="if(this.naturalWidth<240)this.closest(\'.dk-char\').remove()"></div>':"")+
@@ -4246,6 +4298,8 @@ function dkDonnees(my, clanRows){
   const h4 = CTX
     ? { n:4, etape:t("Où"),
         titre: CTX.genre==="carte" ? esc(prettyMap(CTX.pire.cle)) : esc(CTX.pire.cle),
+        /* Le fond ne prend une carte que si c'en est une : montrer un
+           terrain quand on parle d'un char raconterait autre chose. */
         /* Tournure nominale : rien a accorder, dans aucune des deux
            langues, quel que soit le libelle de l etage. */
         ligne: t("{s} : {a} ici, contre {b} sur l'ensemble de tes batailles.")
@@ -4259,7 +4313,8 @@ function dkDonnees(my, clanRows){
                   moi:x.val, ref:CTX.global})), CTX.pire.cle, "fuite"),
         stats:[
           {v:(AN.fuite.unite==="%"?pctf(CTX.pire.val):fmt(Math.round(CTX.pire.val))),
-           l:CTX.genre==="carte"?t("sur cette carte"):t("contre ce clan"), ton:"dn"},
+           l:CTX.genre==="carte"?t("sur cette carte")
+             :(CTX.genre==="char"?t("sur ce char"):t("contre ce clan")), ton:"dn"},
           {v:Math.round(Math.abs(CTX.ecart)*100)+" %", l:t("sous ta moyenne"), ton:"dn"},
           {v:CTX.pire.n, l:t("batailles")},
         ]}
@@ -4333,6 +4388,9 @@ function dkDonnees(my, clanRows){
     /* L'emblème va sur les cinq. Le char seulement là où la figure lui
      laisse la place : sur l'étape 03 la carte occupe déjà la droite, et
      deux objets superposés ne font qu'une bouillie. */
+  /* Une seule vidéo, sur l'étape d'arrivée. Cinq boucles relancées à
+     chaque clic seraient pires que cinq images fixes. */
+  h1.video=true;
   [h1,h2,h3,h4,h5].forEach(h=>{ h.emb=emb; });
   [h1,h2,h4,h5].forEach(h=>{ h.char=chr; });
   return [h1,h2,h3,h4,h5];
@@ -4354,6 +4412,28 @@ function dkRemplit(my, clanRows){
     const el=document.getElementById("dkP"+o.n);
     if(el) el.innerHTML=dkPanneau(o);
   });
+  /* Quand aucune <source> n aboutit, la spécification dispatche « error »
+     sur la <source>, PAS sur la vidéo : l attribut onerror de l élément
+     ne se déclenche jamais, et le calque resterait en place, vide,
+     au-dessus du relief. On interroge donc networkState, qui vaut
+     NETWORK_NO_SOURCE une fois la sélection épuisée. On ne teste pas
+     readyState : sur une connexion lente, une vraie vidéo y serait
+     encore à zéro et on la supprimerait à tort. */
+  /* Filet de securite : le fichier existe mais s avere illisible. Quand
+     aucune <source> n aboutit, la specification dispatche « error » sur
+     la <source>, PAS sur la video — l attribut onerror ne se declenche
+     donc jamais. On interroge networkState, qui vaut NETWORK_NO_SOURCE
+     une fois la selection epuisee. On ne teste pas readyState : sur une
+     connexion lente une vraie video y serait encore a zero. */
+  setTimeout(function(){
+    document.querySelectorAll(".dk-vid video").forEach(function(v){
+      if(v.networkState===3){ const d=v.closest(".dk-vid"); if(d) d.remove(); }
+    });
+  }, 1200);
+
+  /* Si la video existe, on redessine une fois pour la poser. */
+  dkVideoCherche(function(){ dkRemplit(my, clanRows); });
+
   dkArme();
   /* On RESTAURE l'étape au lieu de revenir à la première.
      La vue joueur est re-rendue à chaque redimensionnement de fenêtre
@@ -4377,7 +4457,7 @@ function dkApplique(){
     const x=Math.max(-1.4,Math.min(1.4,(i*L-dkPos)/L));
     const c=p.querySelector(".dk-c");
     if(doux){
-      p.querySelectorAll(".dk-map,.dk-inst,.dk-em,.dk-char").forEach(e=>e.style.transform="");
+      p.querySelectorAll(".dk-map,.dk-vid,.dk-inst,.dk-em,.dk-char").forEach(e=>e.style.transform="");
       if(c){ c.style.transform=""; c.style.opacity=Math.abs(x)<.5?"1":"0"; }
     } else {
       /* Quatre vitesses, donc quatre profondeurs. L'ordre n'est pas
@@ -4387,6 +4467,7 @@ function dkApplique(){
         e.style.transform="translate3d("+(x*v).toFixed(1)+"px,0,0)"+(ech?" scale("+ech+")":""); };
       bouge(".dk-em", -60);          // l'emblème, au fond
       bouge(".dk-map", -170, 1.22);  // le relief
+      bouge(".dk-vid", -170, 1.14);  // la vidéo, au même plan que lui
       bouge(".dk-inst", 240);        // les instruments
       bouge(".dk-char", 130);        // le char, au premier plan
       if(c){
