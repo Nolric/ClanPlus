@@ -3568,21 +3568,25 @@ const DK_AXES=[
         val:S=>S.n?S.shots/S.n:null,
         /* Combien de batailles pour que la moyenne veuille dire quelque chose. */
         denom:S=>S.n, min:4, assiette:"batailles",
+        agir:"Tirer plus souvent.",
         quand:"Tu ne tires pas assez : exposition, placement, ou tu meurs trop tôt.",
         quoi:"Cherche des angles où tu peux tirer plus longtemps, et vérifie ta durée de vie." },
       { cle:"touche", nom:"Obus qui touchent", sous:"sur les obus tirés", unite:"%",
         val:S=>S.shots?S.hits/S.shots:null,
         denom:S=>S.shots, min:20, assiette:"obus tirés", borne:1,
+        agir:"Toucher plus souvent.",
         quand:"Ta visée décroche : tu tires en roulant, ou de trop loin.",
         quoi:"Attends l'arrêt complet du réticule sur les tirs longs, et rapproche-toi." },
       { cle:"perce", nom:"Obus qui percent", sous:"sur les obus qui touchent", unite:"%",
         val:S=>S.hits?S.pierce/S.hits:null,
         denom:S=>S.hits, min:20, assiette:"obus touchés", borne:1,
+        agir:"Percer plus souvent.",
         quand:"Ce n'est pas ta visée, c'est ton choix de cible.",
         quoi:"Vise les flancs, les toits de tourelle et les points faibles plutôt que la masse." },
       { cle:"parObus", nom:"Dégâts par perforation", sous:"quand un obus passe", unite:"n",
         val:S=>S.pierce?S.dmg/S.pierce:null,
         denom:S=>S.pierce, min:15, assiette:"obus perçants",
+        agir:"Frapper plus fort.",
         quand:"Tes coups portent peu : canon, munition, ou tu tapes trop haut en tier.",
         quoi:"Regarde ta configuration, et choisis des cibles à ta portée." },
     ]},
@@ -3594,11 +3598,13 @@ const DK_AXES=[
       { cle:"feu", nom:"Feu encaissé", sous:"dégâts potentiels par bataille", unite:"n",
         val:S=>S.n?S.pot/S.n:null,
         denom:S=>S.n, min:4, assiette:"batailles",
+        agir:"Tenir la ligne.",
         quand:"Tu attires peu de feu : un blindage ne sert à personne s'il ne tient pas la ligne.",
         quoi:"Prends la première ligne quand ton blindage le permet — c'est du feu que tes alliés ne prennent pas." },
       { cle:"bloque", nom:"Part bloquée", sous:"sur le feu encaissé", unite:"%",
         val:S=>S.pot?S.block/S.pot:null,
         denom:S=>S.pot, min:3000, assiette:"dégâts potentiels", borne:1,
+        agir:"Mieux angler.",
         quand:"Ton blindage encaisse au lieu de renvoyer : c'est une question d'angle.",
         quoi:"Présente ton flanc en biais plutôt que de face, et cache tes points faibles." },
     ]},
@@ -3610,16 +3616,19 @@ const DK_AXES=[
       { cle:"radio", nom:"Repérage", sous:"dégâts sur les cibles que tu éclaires", unite:"n",
         val:S=>S.n?S.aradio/S.n:null,
         denom:S=>S.n, min:4, assiette:"batailles",
+        agir:"Éclairer plus.",
         quand:"Tu éclaires peu : tes alliés tirent sur ce qu'ils voient eux-mêmes.",
         quoi:"Avance ta vue là où l'équipe regarde, et reste en vie pour la tenir." },
       { cle:"chenilles", nom:"Immobilisation", sous:"dégâts sur les cibles que tu chenilles", unite:"n",
         val:S=>S.n?S.atrack/S.n:null,
         denom:S=>S.n, min:4, assiette:"batailles",
+        agir:"Immobiliser plus.",
         quand:"Tu immobilises peu : une cible arrêtée est une cible que toute l'équipe touche.",
         quoi:"Vise les chenilles quand tu ne peux pas percer le blindage." },
       { cle:"stun", nom:"Étourdissement", sous:"dégâts sur les cibles que tu étourdis", unite:"n",
         val:S=>S.n?S.astun/S.n:null,
         denom:S=>S.n, min:4, assiette:"batailles",
+        agir:"Étourdir plus.",
         quand:"Tes tirs d'artillerie étourdissent peu.",
         quoi:"Privilégie les obus explosifs à proximité des cibles plutôt que le coup direct." },
     ]},
@@ -3943,6 +3952,124 @@ function pContexte(my, clanRows){
   '</section>';
 }
 
+
+/* ── La mémoire du cycle ─────────────────────────────────────────────
+   Par joueur : la page a un sélecteur, et le cycle de l'un n'est pas
+   celui de l'autre. localStorage peut refuser d'écrire — navigation
+   privée, quota — et la page doit vivre sans. */
+const DK_HORIZON=10;
+function dkCleCycle(){ return "cp_cycle_"+(CLANTAG||"x")+"_"+(SELP||"0"); }
+function dkLitCycle(){
+  try{ const b=localStorage.getItem(dkCleCycle()); return b?JSON.parse(b):null; }
+  catch(_){ return null; }
+}
+function dkEcritCycle(c){
+  try{ localStorage.setItem(dkCleCycle(), JSON.stringify(c)); }catch(_){}
+}
+function dkEffaceCycle(){ try{ localStorage.removeItem(dkCleCycle()); }catch(_){} }
+
+/* ── L'écart au-delà duquel on parle de progrès ──────────────────────
+   Sur une proportion, l'erreur type √(p(1−p)/n) : en dessous, l'écart
+   est du bruit. Ailleurs, un cinquième d'écart relatif — une convention,
+   pas une vérité, et elle est affichée comme telle. */
+function dkSeuilBouge(etage, p, n){
+  if(etage.borne && n>0) return Math.sqrt(Math.max(p*(1-p),0.01)/n);
+  return Math.abs(p)*0.2;
+}
+
+/* ── L'état de la boucle ─────────────────────────────────────────────
+   Trois cas : rien en cours, un cycle qui court, un cycle arrivé à
+   terme. Le quatrième — rien à corriger — est traité par l'appelant. */
+function dkBoucle(my, A){
+  const c=dkLitCycle();
+
+  /* Pas de cycle : on en ouvre un sur ce que l'analyse vient de
+     désigner. L'écriture est un effet de bord assumé — sans elle, la
+     page ne pourrait jamais rien mesurer. */
+  if(!c){
+    if(!A || !A.fuite) return {etat:"rien"};
+    const dernier=my.reduce((m,r)=>Math.max(m,r.ts||0),0);
+    const n={cle:A.fuite.cle, axe:A.faible.cle, depart:A.fuite.moi,
+             cible:A.fuite.ref, apres:dernier, ouvert:Math.floor(Date.now()/1000)};
+    dkEcritCycle(n);
+    return {etat:"neuf", c:n, etage:A.fuite};
+  }
+
+  /* On retrouve l'étage du cycle, même si le diagnostic a changé. */
+  let etage=null;
+  for(const ax of DK_AXES) for(const e of ax.etages) if(e.cle===c.cle) etage=e;
+  if(!etage){ dkEffaceCycle(); return {etat:"rien"}; }
+
+  const depuis=my.filter(r=>(r.ts||0)>c.apres);
+  const S=dkSommes(depuis);
+  const n=S.n;
+  /* Zéro bataille depuis l ouverture : c est encore l état neuf. Le rendu
+     de la vue passe deux fois — la référence des véhicules arrive après
+     et redessine — et sans ce cas, le message d ouverture n était jamais
+     vu : le second passage trouvait déjà le cycle écrit. */
+  if(n===0) return {etat:"neuf", c, etage};
+  if(n<DK_HORIZON){
+    return {etat:"court", c, etage, n, reste:DK_HORIZON-n,
+            valeur:etage.val(S)};
+  }
+
+  /* Terme atteint : on tranche, et on rouvre un cycle sur l'état du
+     moment — sinon le joueur resterait bloqué sur un verdict. */
+  const val=etage.val(S);
+  const d=etage.denom?etage.denom(S):n;
+  const seuil=dkSeuilBouge(etage, c.depart||0, d);
+  const ecart=(val!=null && c.depart!=null)?val-c.depart:null;
+  const verdict = ecart==null ? "inconnu"
+    : (ecart>=seuil ? "monte" : (ecart<=-seuil ? "baisse" : "stable"));
+  return {etat:"fini", c, etage, n, valeur:val, ecart, seuil, verdict, denom:d};
+}
+
+/* ── La figure : l'avancée vers l'horizon, ou l'avant/après ──────── */
+function dkJauge10(n, total){
+  const p=Math.max(0,Math.min(1,n/total));
+  return '<div class="dkf dkf-h">'+
+    '<div class="dkh-n"><b>'+n+'</b><span>/'+total+'</span></div>'+
+    '<div class="dkh-b"><i style="width:'+(p*100).toFixed(1)+'%"></i></div>'+
+    '<div class="dkh-l">'+t("batailles depuis le début du cycle")+'</div>'+
+  '</div>';
+}
+
+/* ── Le détail de la boucle ──────────────────────────────────────── */
+function pBoucle(my, clanRows){
+  const A=dkAnalyse(my, clanRows);
+  const B=dkBoucle(my, A);
+  const val=(e,v)=>v==null?"—":(e.unite==="%"?pctf(v):fmt(Math.round(v)));
+
+  if(B.etat==="rien"){
+    return '<section class="card"><h2>'+t("Ton cycle en cours")+'</h2>'+
+      '<div class="empty">'+t("Aucun point ne décroche assez pour ouvrir un cycle. Reviens quand les étapes précédentes en auront désigné un.")+'</div></section>';
+  }
+  const e=B.etage;
+  const lignes=[
+    ['<b>'+t("Au départ")+'</b>', val(e,B.c.depart), t("mesuré sur tes batailles d'avant")],
+    ['<b>'+t("Depuis")+'</b>', B.valeur!=null?val(e,B.valeur):"—",
+      B.etat==="court"
+        ? t("{n} bataille(s) — il en faut {m}").replace("{n}",B.n).replace("{m}",DK_HORIZON)
+        : t("mesuré sur les {n} batailles du cycle").replace("{n}",B.n)],
+    ['<b>'+t("Visé")+'</b>', val(e,B.c.cible), t("le meilleur du clan ou des adversaires")],
+  ].map(l=>'<tr><td>'+l[0]+'</td><td class="num">'+l[1]+'</td><td class="hint">'+l[2]+'</td></tr>').join("");
+
+  const explique = B.etat==="fini"
+    ? (e.borne
+        ? t("Sur un taux, un écart plus petit que l'erreur type — ici {n} — n'est pas un progrès mais du hasard. Le verdict en tient compte.")
+            .replace("{n}", pctf(B.seuil))
+        : t("Hors des taux, on retient un cinquième d'écart relatif comme seuil. C'est une convention, pas une vérité statistique."))
+    : t("Le verdict tombera à {n} batailles. En dessous, l'écart mesuré serait dominé par le hasard.").replace("{n}",DK_HORIZON);
+
+  return '<section class="card">'+
+    '<h2>'+t("Ton cycle en cours")+' <span class="hint">'+t(e.nom)+'</span></h2>'+
+    '<p class="ent-quoi"><b>'+t(e.quand)+'</b> '+t(e.quoi)+'</p>'+
+    '<div class="tw"><table class="mini"><tbody>'+lignes+'</tbody></table></div>'+
+    '<footer class="hint">'+explique+' '+
+      t("Le cycle reste accroché au point sur lequel il a démarré, même si le diagnostic change entre deux visites — sinon aucun verdict ne tomberait jamais.")+'</footer>'+
+  '</section>';
+}
+
 /* ── Un panneau ─────────────────────────────────────────────────────
    Repère, titre, UNE ligne, deux chiffres, un bouton. Rien de plus :
    c'est la contrainte qui fait la lisibilité, pas le style. */
@@ -4035,8 +4162,10 @@ function dkDonnees(my, clanRows){
     fond:(F(0)||{}).k, fig:dkBandes(my),
     /* Le rang situe mieux que le taux : « 52 % » ne se compare à rien,
        « 12ᵉ sur 47 » se comprend d'un coup. */
+    /* Le SR remonte ici : c'est LE résultat, et cette étape s'appelle
+       « où tu en es ». Il répondait mal à « que faire ». */
     stats:[
-      {v:Math.round(bw.wr*100)+" %", l:t("de victoires"), ton:bw.wr>=0.5?"up":"dn"},
+      sr!=null?{v:fmt(sr), l:t("de SR")}:{v:Math.round(bw.wr*100)+" %", l:t("de victoires"), ton:bw.wr>=0.5?"up":"dn"},
       rang?{v:rang.rang+"<i>/"+rang.total+"</i>", l:t("dans le clan"),
             ton:rang.rang<=Math.ceil(rang.total/3)?"up":""}:null,
       dpts!=null?{v:(dpts>=0?"+":"−")+Math.abs(dpts)+" %", l:t("dégâts sur 30 j"), ton:dpts>=0?"up":"dn"}:null,
@@ -4142,27 +4271,66 @@ function dkDonnees(my, clanRows){
         ligne:t("Il faut d'abord qu'un point décroche pour chercher où il décroche."),
         fond:(F(2)||{}).k, stats:[] };
 
-  /* ── 05 ── le bilan */
-  const h5={ n:5, etape:t("Le bilan"), titre: sr!=null?fmt(sr):t("Pas encore de SR"),
-    ligne: sr!=null
-      ? (()=>{ const p=dkProchain(sr);
-          return p ? esc(tier.l)+" — "+t("encore {n} pour « {s} ».")
-                       .replace("{n}", fmt(p.reste)).replace("{s}", esc(p.nom))
-                   : esc(tier.l); })()
-      : t("Le SR se calcule à partir d'une dizaine de batailles."),
-    fond:(F(3)||{}).k, fig:dkJauge(sr),
-    /* Un classement se contemple, un objectif se vise : le rang pour
-       situer, la marche suivante pour agir. */
-    stats: sr!=null?[
-      rang?{v:rang.rang+"<i>/"+rang.total+"</i>", l:t("dans le clan"),
-            ton:rang.rang<=Math.ceil(rang.total/3)?"up":""}:null,
-      (()=>{ const p=dkProchain(sr);
-        return p?{v:"+"+fmt(p.reste), l:t("pour le palier suivant")}:null; })(),
-      st?{v:st.n, l:st.res===1?t("victoires d'affilée"):t("défaites d'affilée"),
-          ton:st.res===1?"up":"dn"}:null,
-    ]:[] };
+  /* ── 05 ── LA BOUCLE : une action, un chiffre, un horizon ─────────
+     Les quatre étapes précédentes font un diagnostic. Celle-ci en fait
+     une habitude : la page retient ce qu'elle a conseillé, et au passage
+     suivant elle mesure CE chiffre-là. Sans cette étape, la page se lit
+     une fois. */
+  const BO=dkBoucle(my, AN);
+  const vB=(e,v)=>v==null?"—":(e.unite==="%"?pctf(v):fmt(Math.round(v)));
+  let h5;
+  if(BO.etat==="rien"){
+    h5={ n:5, etape:t("Quoi faire"), titre:t("Rien à corriger pour l'instant."),
+      ligne:t("Aucun point ne décroche assez pour qu'un changement vaille la peine. Reviens quand les étapes précédentes en auront désigné un."),
+      fond:(F(3)||{}).k, stats:[] };
+  } else if(BO.etat==="neuf"){
+    /* Un titre n est pas une phrase : l imperatif court en titre, le
+       conseil sur la ligne. La phrase entiere en corps 84 debordait. */
+    h5={ n:5, etape:t("Quoi faire"), titre:t(BO.etage.agir||BO.etage.quoi),
+      ligne:t(BO.etage.quoi)+" "+t("On mesure {s} sur tes {n} prochaines batailles. Aujourd'hui : {a}.")
+              .replace("{s}", t(BO.etage.nom).toLowerCase())
+              .replace("{n}", DK_HORIZON).replace("{a}", vB(BO.etage, BO.c.depart)),
+      fond:(F(3)||{}).k, fig:dkJauge10(0, DK_HORIZON),
+      stats:[
+        {v:vB(BO.etage,BO.c.depart), l:t("aujourd'hui")},
+        {v:vB(BO.etage,BO.c.cible), l:t("visé"), ton:"up"},
+        {v:"0/"+DK_HORIZON, l:t("batailles")},
+      ]};
+  } else if(BO.etat==="court"){
+    h5={ n:5, etape:t("Quoi faire"), titre:t("Encore {n} batailles.").replace("{n}", BO.reste),
+      ligne:t(BO.etage.quoi),
+      fond:(F(3)||{}).k, fig:dkJauge10(BO.n, DK_HORIZON),
+      stats:[
+        {v:vB(BO.etage,BO.c.depart), l:t("au départ")},
+        BO.valeur!=null?{v:vB(BO.etage,BO.valeur), l:t("depuis")}:null,
+        {v:BO.n+"/"+DK_HORIZON, l:t("batailles")},
+      ]};
+  } else {
+    /* Le verdict distingue trois cas, dont « trop juste pour trancher » —
+       celui que la plupart des pages oublient, et qui est le plus
+       fréquent. */
+    const titres={monte:"Ça a bougé.", baisse:"Ça a reculé.",
+                  stable:"Trop juste pour trancher.", inconnu:"Trop juste pour trancher."};
+    h5={ n:5, etape:t("Quoi faire"), titre:t(titres[BO.verdict]),
+      ligne: BO.verdict==="stable"||BO.verdict==="inconnu"
+        ? t("L'écart mesuré est plus petit que le hasard de la mesure : on ne peut pas encore conclure. Garde le même point.")
+        : t("{s} : {a} au départ, {b} sur les {n} batailles du cycle.")
+            .replace("{s}", t(BO.etage.nom)).replace("{a}", vB(BO.etage,BO.c.depart))
+            .replace("{b}", vB(BO.etage,BO.valeur)).replace("{n}", BO.n),
+      fond:(F(3)||{}).k,
+      fig:dkBarres([
+        {cle:"av", nom:"Au départ", unite:BO.etage.unite, moi:BO.c.depart, ref:BO.c.cible},
+        {cle:"ap", nom:"Depuis", unite:BO.etage.unite, moi:BO.valeur, ref:BO.c.cible},
+      ], "ap", BO.verdict==="monte"?"vise":"fuite"),
+      stats:[
+        {v:vB(BO.etage,BO.c.depart), l:t("au départ")},
+        {v:vB(BO.etage,BO.valeur), l:t("depuis"), ton:BO.verdict==="monte"?"up":(BO.verdict==="baisse"?"dn":"")},
+        BO.ecart!=null?{v:(BO.ecart>=0?"+":"−")+vB(BO.etage,Math.abs(BO.ecart)),
+          l:t("d'écart"), ton:BO.verdict==="monte"?"up":(BO.verdict==="baisse"?"dn":"")}:null,
+      ]};
+  }
 
-  /* L'emblème va sur les cinq. Le char seulement là où la figure lui
+    /* L'emblème va sur les cinq. Le char seulement là où la figure lui
      laisse la place : sur l'étape 03 la carte occupe déjà la droite, et
      deux objets superposés ne font qu'une bouillie. */
   [h1,h2,h3,h4,h5].forEach(h=>{ h.emb=emb; });
@@ -4766,6 +4934,7 @@ function renderPlayerView(){
     const en=document.getElementById("pEntonnoir"); if(en) en.innerHTML = pEntonnoir(my, clanRows);
     const co=document.getElementById("pContrib"); if(co) co.innerHTML = pContributions(my, clanRows);
     const cx=document.getElementById("pContexte"); if(cx) cx.innerHTML = pContexte(my, clanRows);
+    const bo=document.getElementById("pBoucle"); if(bo) bo.innerHTML = pBoucle(my, clanRows);
     dkRemplit(my, clanRows);
     const em=document.getElementById("pMissions"); if(em) em.innerHTML = pMissions(my, clanRows); }
   {
