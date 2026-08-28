@@ -1540,8 +1540,13 @@
    existe. Le même traitement sombre : c'est le voile qui gère le
    contraste avec le texte, pas la source. */
 .dk-vid{position:absolute;inset:-14%;will-change:transform}
+/* Le voile (.dk-veil) est déjà directionnel : quasi opaque à gauche où
+   vit le texte, transparent à droite où vit l'image. Assombrir la vidéo
+   par-dessus faisait donc le même travail une seconde fois — et sur un
+   plan déjà nocturne, le résultat était un rectangle noir. On n'ajuste
+   plus ici que la teinte, la lisibilité restant l'affaire du voile. */
 .dk-vid video{width:100%;height:100%;object-fit:cover;display:block;
-  filter:grayscale(.35) contrast(1.12) brightness(.46)}
+  filter:grayscale(.18) contrast(1.05) brightness(.92)}
 /* Le relief est du TRAIT, pas de la photo : l'assombrir le ferait
    disparaitre. On le laisse tel quel et c'est le voile qui gere le
    contraste avec le texte. */
