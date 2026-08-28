@@ -5275,6 +5275,15 @@ function dkPanneau(o){
          même qu'on cherchait à corriger. Sous 240 px de large, le calque
          se retire. Trois calques nets valent mieux que quatre dont un
          flou. */
+      /* La photo de l'étape. Elle se pose au-dessus du relief et sous
+         la vidéo — mais on ne l'émet pas du tout quand la vidéo va la
+         recouvrir : une requête pour un calque invisible est une requête
+         de trop. Elle disparaît proprement si le fichier manque, et le
+         relief reprend la main. */
+      (o.photo && !(o.video && dkVideoOk())
+        ? '<div class="dk-photo"><img src="'+esc(o.photo)+'" alt="" loading="lazy" '+
+          'onerror="this.closest(\'.dk-photo\').remove()"></div>'
+        : "")+
       /* La vidéo, quand elle est demandée ET permise. Elle se pose
          au-dessus du relief : c'est elle qui porte l'image si elle
          existe, et le relief reprend la main sinon. */
@@ -5538,6 +5547,11 @@ function dkDonnees(my, clanRows){
   /* Une seule vidéo, sur l'étape d'arrivée. Cinq boucles relancées à
      chaque clic seraient pires que cinq images fixes. */
   h1.video=true;
+  /* Une image par étape, choisie pour ce qu'elle DIT : l'impact pour
+     « ce qui te freine », le départ du coup pour « pourquoi », les
+     sillages vus d'en haut pour « où », la ligne qui avance pour
+     « quoi faire ». */
+  [h1,h2,h3,h4,h5].forEach((h,i)=>{ h.photo="heroes/0"+(i+1)+".jpg"; });
   [h1,h2,h3,h4,h5].forEach(h=>{ h.emb=emb; });
   [h1,h2,h4,h5].forEach(h=>{ h.char=chr; });
   return [h1,h2,h3,h4,h5];
@@ -5629,7 +5643,7 @@ function dkApplique(){
     const x=Math.max(-1.4,Math.min(1.4,(i*L-dkPos)/L));
     const c=p.querySelector(".dk-c");
     if(doux){
-      p.querySelectorAll(".dk-map,.dk-vid,.dk-inst,.dk-em,.dk-char").forEach(e=>e.style.transform="");
+      p.querySelectorAll(".dk-map,.dk-vid,.dk-photo,.dk-inst,.dk-em,.dk-char").forEach(e=>e.style.transform="");
       if(c){ c.style.transform=""; c.style.opacity=Math.abs(x)<.5?"1":"0"; }
     } else {
       /* Quatre vitesses, donc quatre profondeurs. L'ordre n'est pas
@@ -5640,6 +5654,7 @@ function dkApplique(){
       bouge(".dk-em", -60);          // l'emblème, au fond
       bouge(".dk-map", -170, 1.22);  // le relief
       bouge(".dk-vid", -170, 1.14);  // la vidéo, au même plan que lui
+      bouge(".dk-photo", -170, 1.14); // la photo tient exactement son rôle
       bouge(".dk-inst", 240);        // les instruments
       bouge(".dk-char", 130);        // le char, au premier plan
       if(c){
