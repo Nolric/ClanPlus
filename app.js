@@ -4109,6 +4109,381 @@ function pBoucle(my, clanRows){
   '</section>';
 }
 
+
+/* ── Les replays, chargés en arrière-plan ───────────────────────────
+   Un replay pèse quelques dizaines de kilo-octets : on ne les demande
+   ni tous ni tout de suite. Douze suffisent pour une moyenne stable, et
+   le chargement ne bloque jamais l'affichage — la page vit sans. */
+const DK_REP_MAX=12;
+/* Vingt secondes par tranche : dix relevés par joueur et par tranche,
+   puisque le mod échantillonne toutes les deux secondes. */
+const DK_TRANCHE=20, DK_TRANCHES=18;   // jusqu'à six minutes
+let dkRep={}, dkRepEnCours=false, dkRepFini=false;
+/* Le replay ne porte pas le nom de la carte : on le retient au moment du
+   chargement, depuis la bataille correspondante. */
+let dkRepCarte={};
+
+function dkChargeReplays(my, apres){
+  if(dkRepEnCours || dkRepFini) return;
+  const vus=new Set(), ids=[];
+  for(const r of my.slice().sort((a,b)=>(b.ts||0)-(a.ts||0))){
+    if(vus.has(r.battleId)) continue;
+    vus.add(r.battleId);
+    if(dkRep[r.battleId]===undefined){ ids.push(r.battleId); dkRepCarte[r.battleId]=r.mapName||""; }
+    if(ids.length>=DK_REP_MAX) break;
+  }
+  if(!ids.length){ dkRepFini=true; return; }
+  dkRepEnCours=true;
+  (function suite(i){
+    if(i>=ids.length){
+      dkRepEnCours=false; dkRepFini=true;
+      if(apres) apres();
+      return;
+    }
+    /* Un par un, pas en rafale : douze requêtes simultanées sur une
+       fonction serveur qui lit un gros blob, c'est une façon de se
+       faire limiter. */
+    fnCall("replay", {session:localStorage.getItem(LS_SESSION), battle_id:ids[i]})
+      .then(function(r){
+        dkRep[ids[i]] = (r && r.ok && r.j && r.j.replay) ? r.j.replay : false;
+      })
+      .catch(function(){ dkRep[ids[i]]=false; })
+      .then(function(){ suite(i+1); });
+  })(0);
+}
+
+/* ── L'écart à l'équipe, pour un replay ─────────────────────────────
+   Renvoie une carte accId → distance moyenne, plus les morts de la
+   bataille. */
+/* L'axe d'attaque : de sa base vers celle de l'adversaire, normalisé.
+   Sans les deux bases — certains modes n'en ont pas — on renonce à
+   parler d'avance plutôt que d'inventer une direction. */
+function dkAxe(R){
+  const bs=R.bases||[];
+  let moi=null, eux=null;
+  for(const b of bs){
+    if(b[0]===R.myTeam) moi=b;
+    else if(b[0] && b[0]!==R.myTeam) eux=b;
+  }
+  if(!moi || !eux) return null;
+  const dx=eux[1]-moi[1], dz=eux[2]-moi[2];
+  const n=Math.sqrt(dx*dx+dz*dz);
+  return n ? {x:dx/n, z:dz/n} : null;
+}
+
+function dkEcartReplay(R){
+  if(!R || !R.vehicles) return null;
+  const mien=R.myTeam;
+  const axe=dkAxe(R);
+  const amis=R.vehicles.filter(v=>v.team===mien && v.track && v.track.length);
+  /* Sous trois chars, un barycentre ne veut rien dire. */
+  if(amis.length<3) return null;
+
+  /* On regroupe par instant : le mod échantillonne tout le monde sur la
+     même horloge, les temps se recoupent donc exactement. */
+  const parT=new Map();
+  for(const v of amis) for(const p of v.track){
+    if(!parT.has(p[0])) parT.set(p[0],[]);
+    parT.get(p[0]).push({acc:v.acc, x:p[1], z:p[2]});
+  }
+  const acc=new Map();
+  /* Par tranche de vingt secondes : une moyenne dit COMBIEN, la courbe
+     dit QUAND. Le second se corrige, le premier non. */
+  const tranches=new Map();
+  parT.forEach(function(pts, t){
+    if(pts.length<3) return;      // trop peu de vivants pour un barycentre
+    let sx=0, sz=0;
+    for(const p of pts){ sx+=p.x; sz+=p.z; }
+    const tr=Math.floor(t/DK_TRANCHE);
+    for(const p of pts){
+      /* Barycentre SANS soi — voir la note en tête de fichier. */
+      const cx=(sx-p.x)/(pts.length-1), cz=(sz-p.z)/(pts.length-1);
+      const d=Math.sqrt((p.x-cx)*(p.x-cx)+(p.z-cz)*(p.z-cz));
+      if(!acc.has(p.acc)) acc.set(p.acc,{s:0,n:0,a:0,na:0});
+      const o=acc.get(p.acc); o.s+=d; o.n++;
+      /* L'avance : la projection sur l'axe d'attaque, moins celle du
+         barycentre. Positive = plus près de l'ennemi que son équipe. */
+      if(axe){
+        o.a += (p.x-cx)*axe.x + (p.z-cz)*axe.z;
+        o.na++;
+      }
+      const k=p.acc+"|"+tr;
+      if(!tranches.has(k)) tranches.set(k,{acc:p.acc, tr:tr, s:0, n:0});
+      const u=tranches.get(k); u.s+=d; u.n++;
+    }
+  });
+  const out=new Map(), avances=new Map();
+  acc.forEach(function(o,k){
+    if(o.n) out.set(Number(k), o.s/o.n);
+    if(o.na) avances.set(Number(k), o.a/o.na);
+  });
+
+  /* Les morts : la dernière position connue d'un char qui meurt. */
+  const morts=[];
+  for(const v of amis){
+    if(v.death==null || !v.track.length) continue;
+    const p=v.track[v.track.length-1];
+    /* Où était l'équipe au même instant : c'est ce qui explique la mort
+       autant que l'endroit lui-même. */
+    const pts=parT.get(p[0])||[];
+    let cx=null, cz=null;
+    const dehors=pts.filter(function(q){ return q.acc!==v.acc; });
+    if(dehors.length){
+      cx=dehors.reduce(function(a,q){return a+q.x;},0)/dehors.length;
+      cz=dehors.reduce(function(a,q){return a+q.z;},0)/dehors.length;
+    }
+    morts.push({acc:Number(v.acc), x:p[1], z:p[2], t:v.death, cx:cx, cz:cz});
+  }
+  return {ecarts:out, avances:avances, tranches:tranches, morts:morts,
+          bounds:R.bounds, duree:R.duration};
+}
+
+/* ── L'écart à l'équipe, sur l'ensemble des replays chargés ──────── */
+function dkIsolement(my){
+  const mien=new Map(), autres=new Map();
+  const mesMorts=[]; let bounds=null, nBat=0;
+  const avMoi=[], avRef=[];
+  /* Les morts par carte : une carte de chaleur n'a de sens que sur UNE
+     carte, pas sur la moyenne de dix terrains différents. */
+  const mortsCarte={};
+  /* Deux courbes : la mienne et celle des coéquipiers de même classe,
+     tranche par tranche. */
+  const cbMoi=[], cbRef=[];
+  for(let i=0;i<DK_TRANCHES;i++){ cbMoi.push({s:0,n:0}); cbRef.push({s:0,n:0}); }
+  const maClasse=(function(){
+    const c={}; for(const r of my) c[r.cls]=(c[r.cls]||0)+1;
+    return Object.keys(c).sort(function(a,b){ return c[b]-c[a]; })[0]||"";
+  })();
+  /* Quelle classe joue chacun : on la lit dans le replay lui-même. */
+  for(const id of Object.keys(dkRep)){
+    const R=dkRep[id];
+    if(!R) continue;
+    const E=dkEcartReplay(R);
+    if(!E) continue;
+    nBat++;
+    if(!bounds) bounds=E.bounds;
+    const cls={};
+    for(const v of R.vehicles) cls[Number(v.acc)]=v.cls||"";
+    E.ecarts.forEach(function(d,k){
+      const cible = (k===Number(SELP)) ? mien : ((cls[k]===maClasse) ? autres : null);
+      if(!cible) return;
+      if(!cible.has(k)) cible.set(k,{s:0,n:0});
+      const o=cible.get(k); o.s+=d; o.n++;
+    });
+    E.tranches.forEach(function(u){
+      if(u.tr>=DK_TRANCHES || !u.n) return;
+      const cible = (u.acc===Number(SELP)) ? cbMoi : ((cls[u.acc]===maClasse) ? cbRef : null);
+      if(!cible) return;
+      cible[u.tr].s += u.s/u.n; cible[u.tr].n++;
+    });
+    E.avances.forEach(function(a,k){
+      if(k===Number(SELP)) avMoi.push(a);
+      else if(cls[k]===maClasse) avRef.push(a);
+    });
+    const carte=(dkRepCarte[id]||"");
+    for(const m of E.morts) if(m.acc===Number(SELP)){
+      mesMorts.push(m);
+      if(carte){
+        if(!mortsCarte[carte]) mortsCarte[carte]={cle:carte, bounds:E.bounds, pts:[]};
+        mortsCarte[carte].pts.push(m);
+      }
+    }
+  }
+  if(nBat<3) return null;
+  const moyenne=function(m){
+    const v=[]; m.forEach(function(o){ if(o.n) v.push(o.s/o.n); });
+    return v.length ? v.reduce(function(a,b){return a+b;},0)/v.length : null;
+  };
+  const moi=moyenne(mien), ref=moyenne(autres);
+  if(moi==null || ref==null) return null;
+  /* Une tranche vue moins de trois fois ne dit rien : on la laisse vide
+     plutôt que de tracer un point sur une seule bataille. */
+  const cb=function(l){ return l.map(function(o){ return o.n>=3 ? o.s/o.n : null; }); };
+  const courbe={moi:cb(cbMoi), ref:cb(cbRef)};
+  /* Le moment où l'on décroche : la première tranche où l'écart dépasse
+     un quart, et ne revient plus en dessous. */
+  let bascule=null;
+  for(let i=0;i<DK_TRANCHES;i++){
+    const a=courbe.moi[i], b=courbe.ref[i];
+    if(a==null||b==null||!b) continue;
+    if((a-b)/b>0.25){
+      let tient=true;
+      for(let j=i+1;j<DK_TRANCHES;j++){
+        const x=courbe.moi[j], y=courbe.ref[j];
+        if(x==null||y==null||!y) continue;
+        if((x-y)/y<=0.15){ tient=false; break; }
+      }
+      if(tient){ bascule=i*DK_TRANCHE; break; }
+    }
+  }
+  const moy=function(l){ return l.length ? l.reduce(function(a,b){return a+b;},0)/l.length : null; };
+  /* La carte où l'on meurt le plus : au moins trois morts, sinon ce
+     n'est pas une habitude mais une coïncidence. */
+  let pire=null;
+  Object.keys(mortsCarte).forEach(function(k){
+    const c=mortsCarte[k];
+    if(c.pts.length>=3 && (!pire || c.pts.length>pire.pts.length)) pire=c;
+  });
+  return {nBat:nBat, moi:moi, ref:ref, nRef:autres.size,
+          ecart:(moi-ref)/ref, morts:mesMorts, bounds:bounds, classe:maClasse,
+          courbe:courbe, bascule:bascule,
+          avance:moy(avMoi), avanceRef:moy(avRef), carteMorts:pire};
+}
+
+
+/* ── La courbe de l'écart à l'équipe ────────────────────────────────
+   Deux traits sur la même échelle : le sien et celui des coéquipiers de
+   même classe. L'aire entre les deux EST le problème — c'est elle qu'on
+   remplit, pas les traits qu'on épaissit. */
+function dkCourbeEcart(C){
+  if(!C || !C.courbe) return "";
+  const W=680, H=190, m=C.courbe.moi, r=C.courbe.ref;
+  let mx=0;
+  for(let i=0;i<m.length;i++){ if(m[i]!=null&&m[i]>mx) mx=m[i]; if(r[i]!=null&&r[i]>mx) mx=r[i]; }
+  if(!mx) return "";
+  mx*=1.15;
+  const X=function(i){ return (i/(DK_TRANCHES-1))*W; };
+  const Y=function(v){ return H-8-(v/mx)*(H-24); };
+  const trace=function(l){
+    let d="", ouvert=false;
+    for(let i=0;i<l.length;i++){
+      if(l[i]==null){ ouvert=false; continue; }
+      d+=(ouvert?"L":"M")+X(i).toFixed(1)+" "+Y(l[i]).toFixed(1);
+      ouvert=true;
+    }
+    return d;
+  };
+  /* l'aire entre les deux : seulement là où les deux existent */
+  let aire="", debut=true;
+  const haut=[], bas=[];
+  for(let i=0;i<m.length;i++){
+    if(m[i]==null||r[i]==null) continue;
+    haut.push([X(i),Y(Math.max(m[i],r[i]))]);
+    bas.unshift([X(i),Y(Math.min(m[i],r[i]))]);
+  }
+  if(haut.length>1){
+    aire="M"+haut.map(function(p){return p[0].toFixed(1)+" "+p[1].toFixed(1);}).join("L")+
+         "L"+bas.map(function(p){return p[0].toFixed(1)+" "+p[1].toFixed(1);}).join("L")+"Z";
+  }
+  void debut;
+  return '<div class="dkf dkf-ec">'+
+    '<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" aria-hidden="true">'+
+      (aire?'<path d="'+aire+'" fill="rgba(236,106,106,.16)"/>':"")+
+      '<path d="'+trace(r)+'" fill="none" stroke="var(--muted)" stroke-width="2" '+
+        'stroke-dasharray="5 5" vector-effect="non-scaling-stroke"/>'+
+      '<path d="'+trace(m)+'" fill="none" stroke="var(--bad)" stroke-width="2.5" '+
+        'stroke-linejoin="round" vector-effect="non-scaling-stroke"/>'+
+    '</svg>'+
+    '<div class="dkec-l"><span><i class="moi"></i>'+t("toi")+'</span>'+
+      '<span><i class="ref"></i>'+t("ton clan, même classe")+'</span>'+
+      '<span class="dkec-t">'+t("minutes de bataille")+'</span></div>'+
+  '</div>';
+}
+
+
+/* ── Où l'on meurt, sur la carte ─────────────────────────────────────
+   Les bornes du replay couvrent exactement la vue du dessus : la
+   projection est directe. Seule subtilité, l'axe Z du jeu monte vers le
+   nord quand celui d'une image descend — on l'inverse, sinon tout
+   apparaît en miroir et personne ne reconnaît son terrain. */
+function dkPlanMorts(C){
+  const c=C&&C.carteMorts;
+  if(!c || !c.bounds || c.bounds.length<4) return "";
+  const minX=c.bounds[0], minZ=c.bounds[1], maxX=c.bounds[2], maxZ=c.bounds[3];
+  const lx=(maxX-minX)||1, lz=(maxZ-minZ)||1;
+  const u=function(x){ return Math.max(0,Math.min(100,((x-minX)/lx)*100)); };
+  const v=function(z){ return Math.max(0,Math.min(100,((maxZ-z)/lz)*100)); };
+  const pts=c.pts.map(function(m,i){
+    const eq = (m.cx!=null)
+      ? '<i class="pm-eq" style="left:'+u(m.cx).toFixed(1)+'%;top:'+v(m.cz).toFixed(1)+'%"></i>'
+      : "";
+    return eq+'<i class="pm-mort" style="left:'+u(m.x).toFixed(1)+'%;top:'+v(m.z).toFixed(1)+
+      '%;--i:'+i+'"></i>';
+  }).join("");
+  return '<div class="dkf dkf-pm">'+
+    '<div class="pm-plan">'+
+      '<img src="maps/top/'+esc(mapKey(c.cle))+'.jpg" alt="'+esc(prettyMap(c.cle))+'" '+
+        'loading="lazy" onerror="this.style.display=\'none\'">'+
+      pts+
+    '</div>'+
+    '<div class="pm-l"><span class="pm-n">'+esc(prettyMap(c.cle))+'</span>'+
+      '<span><i class="pm-mort"></i>'+t("tes morts")+'</span>'+
+      '<span><i class="pm-eq"></i>'+t("ton équipe au même instant")+'</span></div>'+
+  '</div>';
+}
+
+/* ── La carte « Où tu meurs » ───────────────────────────────────── */
+function pMorts(my){
+  const C=dkIsolement(my);
+  if(!C || !C.carteMorts) return "";
+  const c=C.carteMorts;
+  /* La distance à l'équipe AU MOMENT de la mort : c'est elle qui relie
+     l'endroit au reste du constat. */
+  let d=null, n=0;
+  for(const m of c.pts){
+    if(m.cx==null) continue;
+    d=(d||0)+Math.sqrt((m.x-m.cx)*(m.x-m.cx)+(m.z-m.cz)*(m.z-m.cz)); n++;
+  }
+  const moyen = n ? d/n : null;
+  return '<section class="card">'+
+    '<h2>'+t("Où tu meurs")+' <span class="hint">'+
+      t("{n} morts sur {s}").replace("{n}", c.pts.length).replace("{s}", esc(prettyMap(c.cle)))+'</span></h2>'+
+    '<div class="pm-duo">'+dkPlanMorts(C)+'<div class="pm-dit">'+
+    (moyen!=null
+      ? '<p class="ent-quoi"><b>'+t("À l'instant où tu tombes, ton équipe est en moyenne à {n} m.")
+          .replace("{n}", fmt(Math.round(moyen)))+'</b> '+
+        (moyen>C.ref*1.3 ? t("Plus loin que ta moyenne déjà élevée : ce sont ces moments-là qui te coûtent la bataille.") : "")+'</p>'
+      : "")+'</div></div>'+
+    '<footer class="hint">'+t("Seule la carte où tu meurs le plus est montrée, et seulement à partir de trois morts : en dessous, c'est une coïncidence, pas une habitude.")+'</footer>'+
+  '</section>';
+}
+
+/* ── La carte du constat positionnel ────────────────────────────────
+   Elle n'apparaît que si les replays sont là. Le reste de la page ne
+   l'attend pas : c'est un supplément, pas une dépendance. */
+function pPosition(my){
+  const C=dkIsolement(my);
+  if(!C){
+    return '<section class="card"><h2>'+t("Où tu te places")+'</h2>'+
+      '<div class="empty">'+t("Les positions arrivent avec les replays enregistrés par le mod. Il en faut au moins trois exploitables — reviens quand le clan aura joué davantage.")+'</div></section>';
+  }
+  const gros=Math.abs(C.ecart)>=0.15;
+  /* L'écart dit COMBIEN on est seul, l'avance de quel CÔTÉ. Seul devant
+     et seul derrière sont deux joueurs opposés : le même écart appelle
+     alors deux conseils inverses. On fait la synthèse pour le lecteur
+     plutôt que de lui livrer deux nombres à rapprocher. */
+  const dAv = (C.avance!=null && C.avanceRef!=null) ? C.avance-C.avanceRef : null;
+  const devant = dAv!=null && dAv>=25, derriere = dAv!=null && dAv<=-25;
+  const phrase = C.ecart>0.15
+    ? (devant
+        ? t("Tu pars devant, et seul. C'est la position que l'adversaire concentre en premier.")
+        : (derriere
+            ? t("Tu restes en arrière, et seul. Ni protégé par l'équipe, ni utile à elle.")
+            : (C.bascule!=null
+                ? t("Tu t'écartes après {n} minute(s), et tu ne reviens pas.").replace("{n}", Math.max(1,Math.round(C.bascule/60)))
+                : t("Tu joues plus loin de ton équipe qu'eux, du début à la fin."))))
+    : (C.ecart<-0.15
+        ? t("Tu restes plus près de ton équipe que les autres — cette part-là est acquise.")
+        : t("Tu tiens la même distance que tes coéquipiers de même classe."));
+  return '<section class="card">'+
+    '<h2>'+t("Où tu te places")+' <span class="hint">'+
+      t("distance moyenne au reste de ton équipe, sur {n} batailles").replace("{n}", C.nBat)+'</span></h2>'+
+    '<div class="pos-h">'+
+      '<div class="pos-n"><b class="'+(C.ecart>0.15?"dn":"")+'">'+fmt(Math.round(C.moi))+' m</b><span>'+t("toi")+'</span></div>'+
+      '<div class="pos-n"><b>'+fmt(Math.round(C.ref))+' m</b><span>'+t("ton clan, même classe")+'</span></div>'+
+      '<div class="pos-n"><b class="'+(C.ecart>0?"dn":"up")+'">'+(C.ecart>0?"+":"−")+Math.round(Math.abs(C.ecart)*100)+' %</b><span>'+t("d'écart")+'</span></div>'+
+      (dAv!=null
+        ? '<div class="pos-n"><b class="'+(Math.abs(dAv)>=25?"dn":"")+'">'+(dAv>=0?"+":"−")+fmt(Math.round(Math.abs(dAv)))+' m</b><span>'+
+          (dAv>=0?t("devant ton équipe"):t("derrière ton équipe"))+'</span></div>'
+        : "")+
+    '</div>'+
+    dkCourbeEcart(C)+
+    '<p class="ent-quoi"><b>'+phrase+'</b> '+
+      (gros&&C.ecart>0 ? t("Un char isolé est un char que l'adversaire concentre : c'est la première cause de mort précoce.") : "")+'</p>'+
+    '<footer class="hint">'+t("Mesuré à partir des positions enregistrées par le mod, toutes les deux secondes. La distance est celle au barycentre des coéquipiers ENCORE EN VIE, soi-même exclu — s'inclure tirerait le barycentre vers soi et un joueur parti seul paraîtrait bien accompagné.")+'</footer>'+
+  '</section>';
+}
+
 /* ── Un panneau ─────────────────────────────────────────────────────
    Repère, titre, UNE ligne, deux chiffres, un bouton. Rien de plus :
    c'est la contrainte qui fait la lisibilité, pas le style. */
@@ -4430,6 +4805,17 @@ function dkRemplit(my, clanRows){
       if(v.networkState===3){ const d=v.closest(".dk-vid"); if(d) d.remove(); }
     });
   }, 1200);
+
+  /* Les replays arrivent en arrière-plan : quelques centaines de kilo-
+     octets qui ne doivent bloquer personne. Quand ils sont là, on ne
+     redessine QUE la carte positionnelle — refaire toute la vue ferait
+     rejouer les animations d entrée pour rien. */
+  dkChargeReplays(my, function(){
+    const po=document.getElementById("pPosition");
+    if(po) po.innerHTML = pPosition(my);
+    const pm=document.getElementById("pMorts");
+    if(pm) pm.innerHTML = pMorts(my);
+  });
 
   /* Si la video existe, on redessine une fois pour la poser. */
   dkVideoCherche(function(){ dkRemplit(my, clanRows); });
@@ -5016,6 +5402,13 @@ function renderPlayerView(){
     const co=document.getElementById("pContrib"); if(co) co.innerHTML = pContributions(my, clanRows);
     const cx=document.getElementById("pContexte"); if(cx) cx.innerHTML = pContexte(my, clanRows);
     const bo=document.getElementById("pBoucle"); if(bo) bo.innerHTML = pBoucle(my, clanRows);
+    const po=document.getElementById("pPosition"); if(po) po.innerHTML = pPosition(my);
+    /* Au premier rendu les replays ne sont pas encore là et ces deux
+       cartes se dessinent vides ou absentes. Elles sont refaites dès leur
+       arrivée — mais il faut aussi les poser ici, sinon un re-rendu
+       ultérieur (un redimensionnement, un changement de joueur) les
+       effacerait sans jamais les redessiner. */
+    const pm=document.getElementById("pMorts"); if(pm) pm.innerHTML = pMorts(my);
     dkRemplit(my, clanRows);
     const em=document.getElementById("pMissions"); if(em) em.innerHTML = pMissions(my, clanRows); }
   {
