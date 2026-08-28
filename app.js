@@ -4661,7 +4661,9 @@ function dkCartesDispo(){
     if(!vus[k]){ vus[k]=1; clan[c]=(clan[c]||0)+1; }
     if(Number(x.accId)===Number(SELP) && !vusM[k]){ vusM[k]=1; moi[c]=(moi[c]||0)+1; }
   }
-  return Object.keys(clan).filter(function(c){ return clan[c]>=6; })
+  /* Aucun filtre : une liste sert à donner accès, pas à juger. Le
+     seuil vit dans la figure, qui refusera de conclure et le dira. */
+  return Object.keys(clan)
     .map(function(c){ return {cle:c, nClan:clan[c], nMoi:moi[c]||0}; })
     .sort(function(a,b){ return b.nClan-a.nClan; });
 }
@@ -4926,7 +4928,9 @@ function pTrajectoire(){
   /* Le sélecteur se dessine même quand la carte visée n'a rien à
      montrer : c'est justement le moment où l'on veut en essayer une
      autre. */
-  const sel = dispo.length>1
+  /* Dès UNE carte : masquer la commande quand il n'y en a qu'une
+     laissait croire qu'on ne peut pas choisir du tout. */
+  const sel = dispo.length
     ? '<label class="tj-sel"><span>'+t("Carte")+'</span><select onchange="dkTrajVers(this.value)">'+
       dispo.map(function(d){
         const ici=(T&&T.carte===d.cle)||(!T&&cible&&cible.cle===d.cle);
@@ -4936,9 +4940,27 @@ function pTrajectoire(){
     : "";
 
   if(!T){
-    return '<section class="card"><h2>'+t("Comment se joue cette carte")+'</h2>'+
+    /* On ne dit plus « reviens plus tard » : on dit ce qui manque, avec
+       les chiffres de la carte demandée. Un refus sans chiffres est
+       indiscernable d'une panne. */
+    const cle=cible&&cible.cle;
+    let lus=0, ratés=0;
+    for(const id of Object.keys(dkRep)){
+      if(dkRepCarte[id]!==cle) continue;
+      if(dkRep[id]) lus++; else if(dkRep[id]===false) ratés++;
+    }
+    const nBat=cible?cible.nClan:0;
+    const attend = dkCarteEnCours && cle && !dkCartesFaites[cle];
+    const dit = attend
+      ? t("Lecture des batailles du clan… {n} lues").replace("{n}", lus)
+      : (nBat && !lus && !ratés
+          ? t("Le clan a {m} bataille(s) sur cette carte, mais aucune n'a de replay enregistré. Il faut que les joueurs présents aient le mod installé.").replace("{m}", nBat)
+          : t("{n} replay(s) lu(s) sur {m} bataille(s) du clan ici. Il en faut six pour dessiner une trajectoire — choisis une autre carte, ou reviens quand le clan aura rejoué celle-ci.")
+              .replace("{n}", lus).replace("{m}", nBat));
+    return '<section class="card"><h2>'+t("Comment se joue cette carte")+
+      (cle?' <span class="hint">'+esc(prettyMap(cle))+'</span>':'')+'</h2>'+
       (sel?'<div class="tj-dit">'+sel+'</div>':'')+
-      '<div class="empty">'+t("Il faut au moins six replays sur une même carte pour dégager une trajectoire. Reviens quand le clan aura rejoué les mêmes terrains.")+'</div></section>';
+      '<div class="empty">'+dit+'</div></section>';
   }
 
   /* Combien de batailles de CETTE carte sont déjà lues : pendant les
@@ -5494,6 +5516,15 @@ function dkVa(n, sec){
   dkActive(n);
 }
 
+/* Ce dont le glisser doit s'écarter : tout ce qui est interactif. Le
+   rail traverse les panneaux, et les panneaux contiennent maintenant des
+   commandes — une liste de cartes, demain autre chose. */
+const DK_CTRL="button,select,input,textarea,a[href],label,[contenteditable]";
+/* Ce dont le CLAVIER doit s'écarter : seulement ce qui consomme les
+   flèches. Un bouton n'en fait rien et ne doit donc pas bloquer la
+   navigation entre étapes — d'où deux listes et non une. */
+const DK_CTRL_TOUCHES="select,input,textarea,[contenteditable]";
+
 function dkArme(){
   const vp=document.getElementById("dkVp");
   if(!vp || dkPret) { dkApplique(); return; }
@@ -5515,6 +5546,9 @@ function dkArme(){
 
   /* Le clavier. Sans lui, un carrousel n'existe qu'à la souris. */
   vp.addEventListener("keydown", e=>{
+    /* Une liste déroulante se pilote aux flèches : les lui voler rendait
+       le changement de carte impossible même au clavier. */
+    if(e.target && e.target.closest && e.target.closest(DK_CTRL_TOUCHES)) return;
     if(e.key==="ArrowRight"||e.key==="PageDown"){ e.preventDefault(); dkVa(dkN+1); }
     if(e.key==="ArrowLeft"||e.key==="PageUp"){ e.preventDefault(); dkVa(dkN-1); }
     if(e.key==="Home"){ e.preventDefault(); dkVa(1); }
@@ -5530,7 +5564,9 @@ function dkArme(){
      n'y a rien de plus » mieux qu'un blocage net. */
   let ax=0, ay=0, base=0, presse=false, tire=false, juge=false, tms=0, tpos=0, vit=0;
   vp.addEventListener("pointerdown", e=>{
-    if(e.target.closest("button")) return;
+    /* « button » ne suffisait plus : sur un <select>, le glisser s'armait,
+       puis capturait le pointeur avant que la liste ait pu s'ouvrir. */
+    if(e.target.closest(DK_CTRL)) return;
     presse=true; tire=false; juge=false;
     ax=e.clientX; ay=e.clientY; base=dkPos;
     tms=performance.now(); tpos=dkPos; vit=0;
