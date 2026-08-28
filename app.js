@@ -4429,6 +4429,67 @@ function dkChargeReplays(my, apres){
   })(0);
 }
 
+
+/* ── La place attendue de chaque classe ──────────────────────────────
+   avance : −1 en retrait · 0 avec l'équipe · +1 devant
+   ecart  : −1 serré · 0 indifférent · +1 éloigné attendu
+   Les quatre lectures disent la même mesure dans la langue du métier.
+   Rien ici ne modifie un chiffre : seul le verdict change. */
+const DK_PLACES={
+  /* Chaque lecture porte SON verdict. Le déduire d'un chiffre unique
+     faisait diverger le texte et l'étiquette : « c'est tenable en
+     moyen » se retrouvait marqué comme une faute, et « un chasseur au
+     contact perd son seul avantage » comme conforme. Écrire les deux
+     ensemble rend la contradiction impossible. */
+  heavyTank:{
+    devant:  {f:1, t:"Tu ouvres la voie seul. Un lourd mène la poussée, il ne la précède pas de cent mètres."},
+    derriere:{f:1, t:"Tu restes en retrait. Ton blindage ne sert à l'équipe que sur la ligne."},
+    loin:    {f:1, t:"Tu joues plus loin des tiens qu'eux. Un lourd isolé est le premier char que l'adversaire concentre."},
+    pres:    {f:0, t:"Tu tiens la ligne avec les tiens — c'est la place d'un lourd."},
+    ecart:-1
+  },
+  mediumTank:{
+    devant:  {f:0, t:"Tu joues devant. C'est tenable en moyen, tant que tu gardes une sortie."},
+    derriere:{f:1, t:"Tu restes derrière. Un moyen qui suit la ligne n'apporte ni flanc ni pression."},
+    loin:    {f:0, t:"Tu t'écartes pour prendre les flancs : ce n'est pas une faute en soi, tant que tu reviens à temps."},
+    pres:    {f:0, t:"Tu restes avec l'équipe. Un moyen gagne à ouvrir un second angle."},
+    ecart:0
+  },
+  lightTank:{
+    devant:  {f:0, t:"Tu prends de l'avance sur ton équipe — c'est exactement le métier d'un léger."},
+    derriere:{f:1, t:"Tu restes derrière l'équipe. Un léger qui n'avance pas ne voit rien, et personne ne tire sur ce qu'on ne voit pas."},
+    loin:    {f:0, t:"Tu joues loin des tiens : c'est la condition pour voir, pas un défaut."},
+    pres:    {f:1, t:"Tu colles à l'équipe. Un léger dans le paquet ne repère rien de plus que les autres."},
+    ecart:1
+  },
+  "AT-SPG":{
+    devant:  {f:1, t:"Tu avances trop. Un chasseur frappe de loin, depuis une position que l'adversaire n'a pas repérée."},
+    derriere:{f:0, t:"Tu tiens l'arrière — c'est la place d'un chasseur."},
+    loin:    {f:0, t:"Tu tiens un angle à l'écart : pour un chasseur, l'éloignement n'est pas une faute."},
+    pres:    {f:1, t:"Tu joues près du paquet. Un chasseur au contact perd son seul avantage, la distance."},
+    ecart:0
+  },
+  SPG:{
+    devant:  {f:1, t:"Tu avances beaucoup trop. Une artillerie prise au contact est une artillerie morte."},
+    derriere:{f:0, t:"Tu restes en retrait — c'est la place d'une artillerie."},
+    loin:    {f:0, t:"Tu joues à l'écart : c'est ce qu'on attend d'une artillerie."},
+    pres:    {f:1, t:"Tu es trop près de la mêlée pour une artillerie."},
+    ecart:0
+  }
+};
+
+/* La lecture d'une position au regard du métier. Le verdict vient de la
+   table, jamais d'un calcul : c'est ce qui garantit qu'il ne peut pas
+   contredire la phrase qu'il accompagne. L'avance prime sur la distance
+   — de quel CÔTÉ on est seul importe plus que combien. */
+function dkLecturePlace(classe, cote, eloigne){
+  const p=DK_PLACES[classe];
+  if(!p) return null;
+  const c = cote!==0 ? (cote>0?p.devant:p.derriere)
+          : (eloigne!==0 ? (eloigne>0?p.loin:p.pres) : null);
+  return c ? {phrase:c.t, conflit:!!c.f} : {phrase:"", conflit:false};
+}
+
 /* ── L'écart à l'équipe, pour un replay ─────────────────────────────
    Renvoie une carte accId → distance moyenne, plus les morts de la
    bataille. */
@@ -4709,7 +4770,14 @@ function pMorts(my){
     (moyen!=null
       ? '<p class="ent-quoi"><b>'+t("À l'instant où tu tombes, ton équipe est en moyenne à {n} m.")
           .replace("{n}", fmt(Math.round(moyen)))+'</b> '+
-        (moyen>C.ref*1.3 ? t("Plus loin que ta moyenne déjà élevée : ce sont ces moments-là qui te coûtent la bataille.") : "")+'</p>'
+        /* Mourir loin des siens n'est une faute que pour qui doit rester
+         groupé. Un léger meurt loin par construction ; le lui reprocher
+         serait lui reprocher son métier. */
+      (moyen>C.ref*1.3 && (DK_PLACES[C.classe]||{}).ecart!==1
+        ? t("Plus loin que ta moyenne déjà élevée : ce sont ces moments-là qui te coûtent la bataille.")
+        : ((DK_PLACES[C.classe]||{}).ecart===1
+            ? t("Tu meurs loin des tiens, ce qui est normal dans cette classe : ce qui compte ici, c'est le MOMENT — regarde si tu tombes avant d'avoir rapporté ta vision.")
+            : ""))+'</p>'
       : "")+'</div></div>'+
     '<footer class="hint">'+t("Seule la carte où tu meurs le plus est montrée, et seulement à partir de trois morts : en dessous, c'est une coïncidence, pas une habitude.")+'</footer>'+
   '</section>';
@@ -5232,38 +5300,44 @@ function pPosition(my){
       '<div class="empty">'+t("Les positions arrivent avec les replays enregistrés par le mod. Il en faut au moins trois exploitables — reviens quand le clan aura joué davantage.")+'</div></section>';
   }
   const gros=Math.abs(C.ecart)>=0.15;
-  /* L'écart dit COMBIEN on est seul, l'avance de quel CÔTÉ. Seul devant
-     et seul derrière sont deux joueurs opposés : le même écart appelle
-     alors deux conseils inverses. On fait la synthèse pour le lecteur
-     plutôt que de lui livrer deux nombres à rapprocher. */
+  /* L'écart dit COMBIEN on est seul, l'avance de quel CÔTÉ. Mais ni l'un
+     ni l'autre ne se lit sans la classe : « cent mètres devant » est une
+     faute pour un lourd et le métier même d'un léger. On mesure d'abord,
+     on lit ensuite — à travers DK_PLACES. */
   const dAv = (C.avance!=null && C.avanceRef!=null) ? C.avance-C.avanceRef : null;
-  const devant = dAv!=null && dAv>=25, derriere = dAv!=null && dAv<=-25;
-  const phrase = C.ecart>0.15
-    ? (devant
-        ? t("Tu pars devant, et seul. C'est la position que l'adversaire concentre en premier.")
-        : (derriere
-            ? t("Tu restes en arrière, et seul. Ni protégé par l'équipe, ni utile à elle.")
-            : (C.bascule!=null
-                ? t("Tu t'écartes après {n} minute(s), et tu ne reviens pas.").replace("{n}", Math.max(1,Math.round(C.bascule/60)))
-                : t("Tu joues plus loin de ton équipe qu'eux, du début à la fin."))))
-    : (C.ecart<-0.15
-        ? t("Tu restes plus près de ton équipe que les autres — cette part-là est acquise.")
-        : t("Tu tiens la même distance que tes coéquipiers de même classe."));
+  const cote = dAv==null ? 0 : (dAv>=25 ? 1 : (dAv<=-25 ? -1 : 0));
+  const eloigne = C.ecart>0.15 ? 1 : (C.ecart<-0.15 ? -1 : 0);
+  const L = dkLecturePlace(C.classe, cote, eloigne);
+  /* Sans classe connue, on retombe sur la formulation neutre plutôt que
+     d'inventer un métier. */
+  const phrase = (L && L.phrase)
+    ? t(L.phrase)
+    : (eloigne>0
+        ? (C.bascule!=null
+            ? t("Tu t'écartes après {n} minute(s), et tu ne reviens pas.").replace("{n}", Math.max(1,Math.round(C.bascule/60)))
+            : t("Tu joues plus loin de ton équipe qu'eux, du début à la fin."))
+        : (eloigne<0
+            ? t("Tu restes plus près de ton équipe que les autres — cette part-là est acquise.")
+            : t("Tu tiens la même distance que tes coéquipiers de même classe.")));
+  /* Le conflit avec le métier décide de la couleur. Colorer en rouge un
+     léger qui prend de l'avance serait un mensonge aussi net qu'une
+     phrase fausse. */
+  const conflit = L ? L.conflit : (eloigne>0);
   return '<section class="card">'+
     '<h2>'+t("Où tu te places")+' <span class="hint">'+
       t("distance moyenne au reste de ton équipe, sur {n} batailles").replace("{n}", C.nBat)+'</span></h2>'+
     '<div class="pos-h">'+
-      '<div class="pos-n"><b class="'+(C.ecart>0.15?"dn":"")+'">'+fmt(Math.round(C.moi))+' m</b><span>'+t("toi")+'</span></div>'+
+      '<div class="pos-n"><b class="'+(conflit&&eloigne>0?"dn":"")+'">'+fmt(Math.round(C.moi))+' m</b><span>'+t("toi")+'</span></div>'+
       '<div class="pos-n"><b>'+fmt(Math.round(C.ref))+' m</b><span>'+t("ton clan, même classe")+'</span></div>'+
-      '<div class="pos-n"><b class="'+(C.ecart>0?"dn":"up")+'">'+(C.ecart>0?"+":"−")+Math.round(Math.abs(C.ecart)*100)+' %</b><span>'+t("d'écart")+'</span></div>'+
+      '<div class="pos-n"><b class="'+(eloigne===0?"":(conflit?"dn":"up"))+'">'+(C.ecart>0?"+":"−")+Math.round(Math.abs(C.ecart)*100)+' %</b><span>'+t("d'écart")+'</span></div>'+
       (dAv!=null
-        ? '<div class="pos-n"><b class="'+(Math.abs(dAv)>=25?"dn":"")+'">'+(dAv>=0?"+":"−")+fmt(Math.round(Math.abs(dAv)))+' m</b><span>'+
+        ? '<div class="pos-n"><b class="'+(cote!==0&&conflit?"dn":(cote!==0?"up":""))+'">'+(dAv>=0?"+":"−")+fmt(Math.round(Math.abs(dAv)))+' m</b><span>'+
           (dAv>=0?t("devant ton équipe"):t("derrière ton équipe"))+'</span></div>'
         : "")+
     '</div>'+
     dkCourbeEcart(C)+
     '<p class="ent-quoi"><b>'+phrase+'</b> '+
-      (gros&&C.ecart>0 ? t("Un char isolé est un char que l'adversaire concentre : c'est la première cause de mort précoce.") : "")+'</p>'+
+      (gros&&eloigne>0&&conflit ? t("Un char isolé est un char que l'adversaire concentre : c'est la première cause de mort précoce.") : "")+'</p>'+
     '<footer class="hint">'+t("Mesuré à partir des positions enregistrées par le mod, toutes les deux secondes. La distance est celle au barycentre des coéquipiers ENCORE EN VIE, soi-même exclu — s'inclure tirerait le barycentre vers soi et un joueur parti seul paraîtrait bien accompagné.")+'</footer>'+
   '</section>';
 }
