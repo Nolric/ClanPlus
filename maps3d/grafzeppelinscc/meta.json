@@ -1,1 +1,1 @@
-{"n":512,"world":1600,"hmin":0,"hmax":65535,"src":2048}
+{"n":1025,"world":1600,"zmin":-25,"zmax":210,"pas":1.5625,"src":"terrain2","chunks":"16x16","couture":{"ouvertes":2,"sur":480,"pire":0.006},"jeu":{"x":[-500,600],"z":[-500,700]},"origine":[-800,-800]}

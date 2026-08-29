@@ -99,6 +99,7 @@
     <button class="btn on" id="texBtn">Texture</button>
     <button class="btn" id="wireBtn">Grid</button>
     <button class="btn" id="bldBtn" style="display:none" title="Building preview (positions extracted from the game)">Buildings</button>
+    <button class="btn on" id="limBtn" style="display:none" title="The battle boundary, from the game's arena definition">Boundary</button>
     <button class="btn" id="resetBtn">Recentre</button>
   </div>
   <div id="hint"><b>Drag</b> to rotate · <b>Scroll</b> to zoom · <b>Right-click</b> to pan</div>
@@ -118,13 +119,37 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
 
   // ---- shaders ----
   const vsrc=`attribute vec3 aPos;attribute vec3 aNrm;attribute vec2 aUv;uniform mat4 uMVP;
-    varying vec3 vN;varying vec2 vUv;varying float vH;
-    void main(){vN=aNrm;vUv=aUv;vH=aPos.y;gl_Position=uMVP*vec4(aPos,1.0);}`;
-  const fsrc=`precision highp float;varying vec3 vN;varying vec2 vUv;varying float vH;
-    uniform sampler2D uTex;uniform float uUseTex;uniform float uMaxH;
+    varying vec3 vN;varying vec2 vUv;varying float vH;varying vec3 vP;
+    void main(){vN=aNrm;vUv=aUv;vH=aPos.y;vP=aPos;gl_Position=uMVP*vec4(aPos,1.0);}`;
+  const fsrc=`precision highp float;varying vec3 vN;varying vec2 vUv;varying float vH;varying vec3 vP;
+    uniform sampler2D uTex;uniform float uUseTex;uniform float uMaxH;uniform float uWorld;
     void main(){ vec3 L=normalize(vec3(0.55,0.78,0.32));
-      float d=max(dot(normalize(vN),L),0.0); float amb=0.42;
+      vec3 N=normalize(vN);
+      float d=max(dot(N,L),0.0); float amb=0.42;
       vec3 base=uUseTex>0.5?texture2D(uTex,vUv).rgb:vec3(0.42,0.40,0.36);
+      /* La texture est une vue de DESSUS : sur une paroi verticale, deux
+         pixels voisins tombent sur le même texel et l image se delave en
+         longues trainees sombres — ce qu on prend pour un trou dans le
+         terrain. Les falaises du chateau et les bords de carte en etaient
+         couverts.
+         On projette donc aussi la texture de COTE, et on melange selon la
+         normale. C est du placage triplanaire : rien n est invente, c est
+         la meme image lue sous un autre angle, mais elle cesse de s etirer. */
+      vec3 an=abs(N); vec3 bl=an/max(an.x+an.y+an.z,0.001);
+      float plat=smoothstep(0.14,0.62,bl.y);
+      if(uUseTex>0.5){
+        vec2 uvX=vec2(vP.z/uWorld+0.5, clamp(vP.y/uWorld+0.5,0.0,1.0));
+        vec2 uvZ=vec2(vP.x/uWorld+0.5, clamp(vP.y/uWorld+0.5,0.0,1.0));
+        vec3 cote=(texture2D(uTex,uvX).rgb*bl.x+texture2D(uTex,uvZ).rgb*bl.z)
+                  /max(bl.x+bl.z,0.001);
+        /* Une paroi porte une roche neutre ; la lecture de cote ne sert
+           qu a lui donner du grain. Prise seule elle sortait presque
+           noire, la ou la texture vue de dessus est sombre. */
+        vec3 roche=mix(vec3(0.54,0.51,0.46), cote, 0.34);
+        base=mix(roche, base, plat);
+      } else {
+        base=mix(vec3(0.44,0.42,0.39), base, plat);
+      }
       float t=clamp(vH/max(uMaxH,1.0),0.0,1.0);
       vec3 tint=mix(vec3(0.83,0.87,0.96),vec3(1.07,1.0,0.85),t);
       gl_FragColor=vec4(base*tint*(amb+d*0.95),1.0); }`;
@@ -134,26 +159,96 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
   gl.attachShader(prog,sh(gl.VERTEX_SHADER,vsrc));gl.attachShader(prog,sh(gl.FRAGMENT_SHADER,fsrc));
   gl.linkProgram(prog);gl.useProgram(prog);
   const aPos=gl.getAttribLocation(prog,"aPos"),aNrm=gl.getAttribLocation(prog,"aNrm"),aUv=gl.getAttribLocation(prog,"aUv");
-  const uMVP=gl.getUniformLocation(prog,"uMVP"),uUseTex=gl.getUniformLocation(prog,"uUseTex"),uMaxH=gl.getUniformLocation(prog,"uMaxH"),uTexLoc=gl.getUniformLocation(prog,"uTex");
+  const uMVP=gl.getUniformLocation(prog,"uMVP"),uUseTex=gl.getUniformLocation(prog,"uUseTex"),uMaxH=gl.getUniformLocation(prog,"uMaxH"),uTexLoc=gl.getUniformLocation(prog,"uTex"),uWorldLoc=gl.getUniformLocation(prog,"uWorld");
 
   // ---- programme des blocs (bâtiments) ----
   // bâtiments : base suit le relief exagéré, HAUTEUR réelle non exagérée ; normales par dérivées d'écran
-  const bvs=`attribute vec3 aPos;attribute float aBase;uniform mat4 uPV;uniform float uHS;uniform float uExag;
-    varying vec3 vW;varying float vH;
-    void main(){ float y=aBase*uHS*uExag+aPos.y; vec3 w=vec3(aPos.x,y,aPos.z); vW=w; vH=aPos.y; gl_Position=uPV*vec4(w,1.0); }`;
+  /* Chaque modèle n'existe qu'UNE FOIS dans le fichier ; ses centaines
+     d'exemplaires sont des matrices. aPos est un entier court dans le
+     repère du modèle — la mise à l'échelle et le recentrage sont déjà
+     absorbés dans la matrice, il n'y a donc rien à corriger ici.
+     iBase est l'altitude du terrain sous l'exemplaire : elle suit
+     l'exagération du relief, la hauteur propre de l'objet non. */
+  const bvs=`attribute vec3 aPos;
+    attribute vec4 iA;attribute vec4 iB;attribute vec4 iC;attribute float iBase;attribute float iGenre;
+    uniform mat4 uPV;uniform float uHS;uniform float uExag;
+    varying vec3 vW;varying float vH;varying float vGenre;
+    void main(){
+      vec3 w=vec3(dot(iA.xyz,aPos)+iA.w, dot(iB.xyz,aPos)+iB.w, dot(iC.xyz,aPos)+iC.w);
+      float y=iBase*uHS*uExag+w.y;
+      vec3 p=vec3(w.x,y,w.z); vW=p; vH=w.y; vGenre=iGenre;
+      gl_Position=uPV*vec4(p,1.0); }`;
   const bfs=`#extension GL_OES_standard_derivatives : enable
-    precision highp float;varying vec3 vW;varying float vH;
-    void main(){ vec3 N=normalize(cross(dFdx(vW),dFdy(vW))); vec3 L=normalize(vec3(0.5,0.8,0.35));
-      float d=abs(dot(N,L));
-      float t=clamp(vH/26.0,0.0,1.0); vec3 base=mix(vec3(0.60,0.58,0.54),vec3(0.82,0.78,0.70),t);
-      gl_FragColor=vec4(base*(0.40+d*0.80),1.0); }`;
+    precision highp float;varying vec3 vW;varying float vH;varying float vGenre;uniform vec3 uEye;uniform float uFlore;
+    void main(){
+      vec3 N=normalize(cross(dFdx(vW),dFdy(vW)));
+      /* La normale vient des derivees d ecran : son SIGNE depend du sens
+         de parcours du triangle, pas de la geometrie. On l oriente vers
+         la camera, sinon une face sur deux serait eclairee a l envers. */
+      /* Vers la camera, pas selon l enroulement : gl_FrontFacing depend
+         de l ordre des sommets, qui n a aucune raison d etre coherent sur
+         une geometrie extraite. Une face sur deux tombait au noir. */
+      if(dot(N, uEye-vW) < 0.0) N=-N;
+      vec3 L=normalize(vec3(0.5,0.8,0.35));
+      /* max, PAS abs : avec la valeur absolue, une facade a l ombre etait
+         aussi lumineuse qu une facade au soleil, et le volume disparaissait.
+         C etait le defaut principal du rendu. */
+      float d=max(dot(N,L),0.0);
+      /* Eclairage d hemisphere : le ciel par le haut, le sol par le bas.
+         Creuse les volumes sans noircir ce qui est a l ombre. */
+      float ciel=0.5+0.5*N.y;
+      /* Plus haute qu avant : une facade a l ombre doit rester lisible.
+         Le contraste vient de la direction retrouvee, pas de l obscurite. */
+      vec3 amb=mix(vec3(0.42,0.41,0.39), vec3(0.60,0.63,0.70), ciel);
+      /* Toit ou facade : la normale verticale les separe. Sans cette
+         distinction, une ville n est qu un tas de polygones. */
+      float toit=smoothstep(0.55,0.85,abs(N.y));
+      vec3 mur=mix(vec3(0.56,0.54,0.51), vec3(0.47,0.36,0.31), toit);
+      /* La ROCHE n a pas de toit. Sans cette distinction, les 139 rochers
+         de la falaise du chateau prenaient la teinte de tuile brune des
+         toits d Himmelsdorf et formaient une longue tache — que j ai
+         d abord cherchee dans le terrain, ou elle n etait pas. */
+      vec3 pierre=mix(vec3(0.50,0.48,0.45), vec3(0.45,0.43,0.39), toit);
+      vec3 bati=mix(mur, pierre, clamp(vGenre,0.0,1.0));
+      /* La vegetation a sa propre couleur : sur une carte tactique, un
+         buisson et un mur ne se valent pas — l un cache, l autre arrete.
+         Les confondre en gris serait la faute la plus couteuse. */
+      vec3 vert=mix(vec3(0.22,0.29,0.17), vec3(0.40,0.49,0.26), ciel);
+      vec3 base=mix(bati, vert, uFlore);
+      /* Les premiers metres s assombrissent : un contact au sol, meme
+         approche, pose l objet au lieu de le laisser flotter. La hauteur
+         de ce degrade suit l objet — quatre metres pour un batiment, un
+         seul pour une haie, sinon la haie est noire de bout en bout. */
+      base*=mix(0.62,1.0,smoothstep(0.0,mix(4.0,1.0,uFlore),vH));
+      gl_FragColor=vec4(base*(amb+vec3(d)*0.62),1.0); }`;
   const bprog=gl.createProgram();
   gl.attachShader(bprog,sh(gl.VERTEX_SHADER,bvs));gl.attachShader(bprog,sh(gl.FRAGMENT_SHADER,bfs));gl.linkProgram(bprog);
-  const bPos=gl.getAttribLocation(bprog,"aPos"),bBase=gl.getAttribLocation(bprog,"aBase");
+  const bPos=gl.getAttribLocation(bprog,"aPos");
+  const bIA=gl.getAttribLocation(bprog,"iA"),bIB=gl.getAttribLocation(bprog,"iB"),
+        bIC=gl.getAttribLocation(bprog,"iC"),bIBase=gl.getAttribLocation(bprog,"iBase"),
+        bIGenre=gl.getAttribLocation(bprog,"iGenre");
   const buPV=gl.getUniformLocation(bprog,"uPV"),buHS=gl.getUniformLocation(bprog,"uHS"),buExag=gl.getUniformLocation(bprog,"uExag");
-  let blkPB=gl.createBuffer(),blkIB=gl.createBuffer(),blkLen=0,showBld=0,shpN=0;
-  let curHeights=null,curHN=0,curHmin=0,curHmax=1,mSpanM=50;
-  const VSCALE=0.07;   // échelle verticale du relief (fraction de la largeur de carte) — réaliste
+  const buEye=gl.getUniformLocation(bprog,"uEye"),buFlore=gl.getUniformLocation(bprog,"uFlore");
+  /* L'instanciation : sans elle il faudrait écrire la géométrie de
+     chacun des 18 374 objets, soit cinquante mégaoctets au lieu de
+     treize — et pour une qualité moindre. */
+  const instExt=gl.getExtension("ANGLE_instanced_arrays");
+  let showBld=0;
+  /* Deux jeux : le bâti et la flore, colorés séparément. */
+  const JEUX=[{nom:"formes",flore:0,vb:null,ib:null,xb:null,modeles:[]},
+              {nom:"flore", flore:1,vb:null,ib:null,xb:null,modeles:[]}];
+  let curHeights=null,curHN=0,curHZ=0,curHmin=0,curHmax=1,WORLDZ=1100;
+  /* L ORIGINE du monde. Je supposais la carte centrée sur zéro ; elle ne
+     l est que si le nombre de chunks est PAIR. Himmelsdorf en a onze et
+     va de −500 à +600 : un demi-chunk de décalage, qui enterrait les
+     remparts du château sous le relief. Les contrôles internes au relief
+     — bornes par chunk, coutures — ne pouvaient pas le voir ; ce sont les
+     objets du jeu qui l ont montré. */
+  let ORIG=[-550,-550];
+  /* Il y avait ici VSCALE = 0,07 : le relief valait sept pour cent de la
+     largeur de la carte, un chiffre choisi à l'œil faute d'échelle dans la
+     donnée. Le relief est désormais en mètres et se met à l'échelle tout
+     seul ; le curseur « Terrain » reste, mais il exagère à partir du vrai. */
 
   // ---- texture ----
   const tex=gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D,tex);
@@ -171,7 +266,10 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
 
   // ---- buffers (recréés à chaque carte) ----
   let pB=gl.createBuffer(),nB=gl.createBuffer(),uB=gl.createBuffer(),iB=gl.createBuffer(),idxLen=0,curMaxH=1;
-  const MESH=512;
+  /* La carte de hauteur fait 709×709 : échantillonner en 512 revenait à
+     jeter un tiers de la donnée et à arrondir chaque rebord. On suit la
+     source. La valeur est relevée au chargement de chaque carte. */
+  let MESH=512;
   // filtre MÉDIAN : enlève les petits carrés/pics parasites tout en gardant les arêtes nettes (falaises)
   function medianHeights(src,N,passes){ let a=Float32Array.from(src); const w=new Float32Array(9);
     for(let p=0;p<passes;p++){ const b=new Float32Array(N*N);
@@ -181,72 +279,185 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
         for(let i=0;i<9;i++)for(let j=i+1;j<9;j++){ if(w[j]<w[i]){const t=w[i];w[i]=w[j];w[j]=t;} }
         b[y*N+x]=w[4]; } a=b; }
     return a; }
-  function buildMesh(heights,HN0,world,hmin,hmax){
-    const HN=HN0; const H=medianHeights(heights,HN0,1); curHeights=H; curHN=HN;   // pleine résolution, arêtes préservées (données déjà propres)
-    // normalisation robuste p1..p97
-    const srt=Float32Array.from(H).sort(); const lo=srt[(srt.length*0.01)|0], hi=srt[(srt.length*0.97)|0];
-    curHmin=lo; curHmax=hi; const span=Math.max(1,hi-lo); const HS=world*VSCALE; curMaxH=HS;
-    const sampleH=(u,v)=>{ const x=Math.min(HN-1,Math.max(0,u*(HN-1))),y=Math.min(HN-1,Math.max(0,v*(HN-1)));
-      const x0=x|0,y0=y|0,x1=Math.min(HN-1,x0+1),y1=Math.min(HN-1,y0+1),fx=x-x0,fy=y-y0;
+  function buildMesh(heights,HN0,world,zmin,zmax,HZ0,worldZ,orig){
+    /* Presque toutes les cartes sont carrées, mais pas toutes : la Tour
+       Eiffel fait 10 chunks sur 12. Le maillage traitait la grille comme
+       carrée et en aurait tranché le dernier tiers sans rien dire. */
+    const HN=HN0, HZ=HZ0||HN0, wZ=worldZ||world;
+    ORIG=orig||[-world/2,-wZ/2];
+    /* On suit la résolution de la source, plafonnée : au-delà d'un
+       millier de mailles le gain visuel ne compense plus le coût. */
+    MESH=Math.min(1024, Math.max(256, Math.max(HN,HZ)-1));
+    /* Le filtre médian 3×3 arrondissait murets et rebords — exactement ce
+       qui décide d'un angle de tir. Le commentaire d'origine disait déjà
+       que la donnée est propre : on la prend telle quelle. */
+    const H=Float32Array.from(heights); curHeights=H; curHN=HN; curHZ=HZ; WORLDZ=wZ;
+    /* L'ancienne normalisation prenait les centiles 1 et 97 et BORNAIT à
+       1 : le sommet de la colline, au-delà du 97e centile, était rasé —
+       la mesa n'était pas seulement dans la donnée, elle était aussi
+       fabriquée ici. Le fichier encode désormais linéairement zmin→zmax
+       en mètres : la valeur brute divisée par 65535 EST la position dans
+       cette plage, sans percentile ni bornage.
+       L'échelle verticale n'est plus une fraction arbitraire de la
+       largeur : c'est l'étendue réelle du relief, en mètres. Une unité du
+       monde vaut donc un mètre, comme pour X et Z. */
+    curHmin=0; curHmax=65535; const span=65535;
+    const HS=Math.max(1,zmax-zmin); curMaxH=HS;
+    const sampleH=(u,v)=>{ const x=Math.min(HN-1,Math.max(0,u*(HN-1))),y=Math.min(HZ-1,Math.max(0,v*(HZ-1)));
+      const x0=x|0,y0=y|0,x1=Math.min(HN-1,x0+1),y1=Math.min(HZ-1,y0+1),fx=x-x0,fy=y-y0;
       const a=H[y0*HN+x0],b=H[y0*HN+x1],c=H[y1*HN+x0],d=H[y1*HN+x1];
-      return Math.max(0,Math.min(1,((a*(1-fx)+b*fx)*(1-fy)+(c*(1-fx)+d*fx)*fy - lo)/span)); };
+      /* La valeur brute VA de 0 à 65535 sur toute la plage zmin→zmax :
+         la diviser suffit, il n'y a plus ni décalage ni bornage. */
+      return ((a*(1-fx)+b*fx)*(1-fy)+(c*(1-fx)+d*fx)*fy)/span; };
     const V=(MESH+1)*(MESH+1);
     const pos=new Float32Array(V*3),nrm=new Float32Array(V*3),uv=new Float32Array(V*2);
     let k=0,ku=0;
     for(let gy=0;gy<=MESH;gy++)for(let gx=0;gx<=MESH;gx++){ const u=gx/MESH,v=gy/MESH;
-      pos[k]=(u-0.5)*world; pos[k+1]=sampleH(u,v)*HS; pos[k+2]=(v-0.5)*world; uv[ku]=u; uv[ku+1]=v; k+=3; ku+=2; }
-    const cell=world/MESH;
+      pos[k]=ORIG[0]+u*world; pos[k+1]=sampleH(u,v)*HS; pos[k+2]=ORIG[1]+v*wZ; uv[ku]=u; uv[ku+1]=v; k+=3; ku+=2; }
+    /* Les normales sur DEUX mailles, pas une. Sur un à-pic — la falaise
+       du château fait quarante mètres pour un mètre et demi — une
+       différence centrée sur une seule maille donne des normales qui
+       basculent d'un sommet à l'autre : la paroi sort cannelée, striée,
+       et se lit comme une déchirure. Un appui plus large la lisse sans
+       rien inventer : la géométrie ne change pas, seul son éclairage. */
+    const R=2, cell=Math.max(world,wZ)/MESH*R;
     for(let gy=0;gy<=MESH;gy++)for(let gx=0;gx<=MESH;gx++){
-      const hl=sampleH(Math.max(0,gx-1)/MESH,gy/MESH)*HS, hr=sampleH(Math.min(MESH,gx+1)/MESH,gy/MESH)*HS;
-      const hd=sampleH(gx/MESH,Math.max(0,gy-1)/MESH)*HS, hu=sampleH(gx/MESH,Math.min(MESH,gy+1)/MESH)*HS;
+      const hl=sampleH(Math.max(0,gx-R)/MESH,gy/MESH)*HS, hr=sampleH(Math.min(MESH,gx+R)/MESH,gy/MESH)*HS;
+      const hd=sampleH(gx/MESH,Math.max(0,gy-R)/MESH)*HS, hu=sampleH(gx/MESH,Math.min(MESH,gy+R)/MESH)*HS;
       let nx=hl-hr,ny=2*cell,nz=hd-hu; const L=Math.hypot(nx,ny,nz)||1; const i=(gy*(MESH+1)+gx)*3;
       nrm[i]=nx/L;nrm[i+1]=ny/L;nrm[i+2]=nz/L; }
+    /* Les TROUS du jeu — mesurés deux fois, ÉCARTÉS deux fois.
+       Le jeu déclare, cellule par cellule, où il ne dessine pas de
+       terrain : 101 471 cellules sur 495 616. Les appliquer toutes ouvre
+       de grands vides noirs, car il les remplit d'une géométrie qu'on n'a
+       pas. Les restreindre à celles qu'un objet recouvre réduit les vides
+       sans les supprimer — l'empreinte d'un objet est sa boîte, plus
+       large que sa géométrie, et les rues se percent au bord.
+       Surtout, le gain est nul : sur les 433 pièces du château, 322
+       émergent déjà du terrain et 105 sont des fondations que le JEU
+       n'exhume pas davantage. Six pièces gagnées contre des trous dans
+       les rues : le compte ne tient pas.
+       L'extraction reste dans outils/terrain/trous-bin.js. */
     const idx=new Uint32Array(MESH*MESH*6); let p=0;
-    for(let gy=0;gy<MESH;gy++)for(let gx=0;gx<MESH;gx++){ const a=gy*(MESH+1)+gx,b=a+1,c=a+(MESH+1),d=c+1;
+    for(let gy=0;gy<MESH;gy++)for(let gx=0;gx<MESH;gx++){
+      const a=gy*(MESH+1)+gx,b=a+1,c=a+(MESH+1),d=c+1;
       idx[p++]=a;idx[p++]=c;idx[p++]=b;idx[p++]=b;idx[p++]=c;idx[p++]=d; }
     gl.bindBuffer(gl.ARRAY_BUFFER,pB);gl.bufferData(gl.ARRAY_BUFFER,pos,gl.STATIC_DRAW);
     gl.bindBuffer(gl.ARRAY_BUFFER,nB);gl.bufferData(gl.ARRAY_BUFFER,nrm,gl.STATIC_DRAW);
     gl.bindBuffer(gl.ARRAY_BUFFER,uB);gl.bufferData(gl.ARRAY_BUFFER,uv,gl.STATIC_DRAW);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,iB);gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,idx,gl.STATIC_DRAW);
-    idxLen=idx.length;
+    idxLen=p;
   }
-  // hauteur normalisée du terrain aux coords monde (x,z)
-  function terrainNorm(x,z){ if(!curHeights) return 0; const HN=curHN, u=(x+WORLD/2)/WORLD, v=(z+WORLD/2)/WORLD;
-    const px=Math.min(HN-1,Math.max(0,u*(HN-1))),py=Math.min(HN-1,Math.max(0,v*(HN-1)));
-    const x0=px|0,y0=py|0,x1=Math.min(HN-1,x0+1),y1=Math.min(HN-1,y0+1),fx=px-x0,fy=py-y0;
+  /* La hauteur du terrain, normalisée, aux coordonnées monde (x,z).
+     Elle sert à poser la limite de zone jouable sur le relief. */
+  function terrainNorm(x,z){ if(!curHeights) return 0; const HN=curHN, HZ=curHZ||curHN;
+    const u=(x-ORIG[0])/WORLD, v=(z-ORIG[1])/WORLDZ;
+    const px=Math.min(HN-1,Math.max(0,u*(HN-1))),py=Math.min(HZ-1,Math.max(0,v*(HZ-1)));
+    const x0=px|0,y0=py|0,x1=Math.min(HN-1,x0+1),y1=Math.min(HZ-1,y0+1),fx=px-x0,fy=py-y0;
     const a=curHeights[y0*HN+x0],b2=curHeights[y0*HN+x1],c=curHeights[y1*HN+x0],d=curHeights[y1*HN+x1];
-    return (((a*(1-fx)+b2*fx)*(1-fy)+(c*(1-fx)+d*fx)*fy)-curHmin)/Math.max(1,curHmax-curHmin); }
-  // construit tous les blocs (bâtiments) en un seul maillage
-  // bâtiments à la VRAIE taille : 8 floats/instance = x,z,rotY, cx,cz (centre bbox local), sizeX,sizeZ, hauteur(m)
-  // repli boîtes : format interleave 4 floats/sommet (X, hauteurLocale, Z, baseNorm) comme les vraies formes
-  function buildBlocks(f32){
-    const n=f32.length/8, HS=WORLD*VSCALE, mPerU=HS/Math.max(12,mSpanM); const P=[],I=[]; let vi=0;
-    const push=(x,y,z,bn)=>{ P.push(x,y,z,bn); return vi++; };
-    const quad=(a,b,c,d,bn)=>{ const A=push(a[0],a[1],a[2],bn),B=push(b[0],b[1],b[2],bn),C=push(c[0],c[1],c[2],bn),D=push(d[0],d[1],d[2],bn); I.push(A,B,C,A,C,D); };
-    for(let k=0;k<n;k++){
-      const x=f32[k*8],z=f32[k*8+1],rotY=f32[k*8+2],cxl=f32[k*8+3],czl=f32[k*8+4],sx=f32[k*8+5],sz=f32[k*8+6],hgt=f32[k*8+7];
-      const c=Math.cos(rotY),s=Math.sin(rotY);
-      const wcx=x+cxl*c-czl*s, wcz=z+cxl*s+czl*c;               // centre empreinte en monde
-      const bn=terrainNorm(wcx,wcz), y0=0, y1=Math.max(2,hgt*mPerU);   // hauteur locale (base = 0)
-      const hx=sx/2, hz=sz/2; const R=(lx,lz)=>[wcx+lx*c-lz*s, wcz+lx*s+lz*c];
-      const p00=R(-hx,-hz),p01=R(-hx,hz),p11=R(hx,hz),p10=R(hx,-hz);
-      const wall=(a,b)=>quad([a[0],y0,a[1]],[b[0],y0,b[1]],[b[0],y1,b[1]],[a[0],y1,a[1]],bn);
-      wall(p00,p01); wall(p01,p11); wall(p11,p10); wall(p10,p00);
-      quad([p00[0],y1,p00[1]],[p01[0],y1,p01[1]],[p11[0],y1,p11[1]],[p10[0],y1,p10[1]],bn);
+    return (((a*(1-fx)+b2*fx)*(1-fy)+(c*(1-fx)+d*fx)*fy))/65535; }
+
+  /* ── la limite de la zone jouable ────────────────────────────────
+     Elle vient de la définition d'arène du jeu, pas d'une estimation :
+     sur Himmelsdorf, un carré de 700 m allant de (−300,−300) à
+     (400,400) — qui n'est PAS centré sur l'origine. On la dessine comme
+     le jeu la montre : un voile rouge dressé sur le relief, opaque au
+     sol et s'effaçant vers le haut. */
+  const lvs=`attribute vec3 aPos;attribute float aBase;
+    uniform mat4 uPV;uniform float uHS;uniform float uExag;uniform float uHaut;
+    varying float vT;
+    void main(){ vT=aPos.y/uHaut;
+      gl_Position=uPV*vec4(aPos.x, aBase*uHS*uExag+aPos.y, aPos.z, 1.0); }`;
+  const lfs=`precision mediump float;varying float vT;uniform vec4 uCoul;uniform float uVoile;
+    void main(){ float a=uCoul.a*mix(1.0,0.0,vT*vT*uVoile);
+      gl_FragColor=vec4(uCoul.rgb,a); }`;
+  const lprog=gl.createProgram();
+  gl.attachShader(lprog,sh(gl.VERTEX_SHADER,lvs));gl.attachShader(lprog,sh(gl.FRAGMENT_SHADER,lfs));
+  gl.linkProgram(lprog);
+  const lPos=gl.getAttribLocation(lprog,"aPos"),lBase=gl.getAttribLocation(lprog,"aBase");
+  const luPV=gl.getUniformLocation(lprog,"uPV"),luHS=gl.getUniformLocation(lprog,"uHS"),
+        luExag=gl.getUniformLocation(lprog,"uExag"),luHaut=gl.getUniformLocation(lprog,"uHaut");
+  const luCoul=gl.getUniformLocation(lprog,"uCoul"),luVoile=gl.getUniformLocation(lprog,"uVoile");
+  const limB=gl.createBuffer(); let limN=0, showLim=1;
+  const LIM_HAUT=18;                       // hauteur du voile, en mètres
+
+  /* L EAU — mesurée, essayée, ÉCARTÉE.
+     La section BWWa de space.bin donne, pour chaque nappe, une boîte
+     englobante et ses textures. Himmelsdorf en a deux, à −7,3 m.
+     Mais une boîte n est pas une forme : dessinée telle quelle, la
+     nappe recouvrait des îlots entiers d immeubles. La découper au
+     niveau d eau ne la sauve pas — l emprise ainsi obtenue tombe encore
+     sur des cours et des toits. La vraie surface est un maillage à part,
+     désigné par un identifiant sous spaces/<carte>/water/. Tant qu il
+     n est pas lu, mieux vaut pas d eau qu une fausse. */
+  function buildLimite(jeu){
+    limN=0; const btn=document.getElementById("limBtn");
+    if(!jeu||!curHeights){ btn.style.display="none"; return; }
+    btn.style.display="";
+    /* On échantillonne le pourtour tous les deux mètres pour que le
+       voile épouse le relief au lieu de le traverser. */
+    const P=[], pas=2;
+    const coins=[[jeu.x[0],jeu.z[0]],[jeu.x[1],jeu.z[0]],[jeu.x[1],jeu.z[1]],[jeu.x[0],jeu.z[1]],[jeu.x[0],jeu.z[0]]];
+    for(let k=0;k<4;k++){
+      const [x1,z1]=coins[k], [x2,z2]=coins[k+1];
+      const L=Math.hypot(x2-x1,z2-z1), n=Math.max(2,Math.ceil(L/pas));
+      for(let i=0;i<=n;i++){
+        const t=i/n, x=x1+(x2-x1)*t, z=z1+(z2-z1)*t, b=terrainNorm(x,z);
+        P.push(x,0,z,b, x,LIM_HAUT,z,b);
+      }
     }
-    gl.bindBuffer(gl.ARRAY_BUFFER,blkPB);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(P),gl.STATIC_DRAW);
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,blkIB);gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint32Array(I),gl.STATIC_DRAW);
-    blkLen=I.length;
+    gl.bindBuffer(gl.ARRAY_BUFFER,limB);
+    gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(P),gl.STATIC_DRAW);
+    limN=P.length/4;
   }
-  async function loadObjects(key){ blkLen=0; shpN=0; const btn=document.getElementById("bldBtn");
-    // 1) vraies formes 3D des bâtiments (géométrie extraite du jeu)
-    try{ const rp=await fetch("maps3d/"+key+"/shapes.pos");
-      if(rp.ok){ const P=new Float32Array(await rp.arrayBuffer());
-        gl.bindBuffer(gl.ARRAY_BUFFER,blkPB);gl.bufferData(gl.ARRAY_BUFFER,P,gl.STATIC_DRAW);
-        shpN=P.length/4; btn.style.display=""; showBld=1; btn.classList.add("on"); return; } }catch(e){}
-    // 2) repli : boîtes à la bonne taille
-    try{ const r=await fetch("maps3d/"+key+"/buildings.f32"); if(!r.ok) throw 0; const ab=await r.arrayBuffer(); buildBlocks(new Float32Array(ab)); btn.style.display=""; }
-    catch(e){ btn.style.display="none"; showBld=0; btn.classList.remove("on"); } }
+
+  /* Il y avait ici buildBlocks(), qui posait des
+     boîtes sur le relief quand la vraie géométrie manquait. Elle ne
+     manque plus : les 18 374 objets de la carte ont leur maillage.
+     Un repli qu on ne peut plus atteindre est du code mort qui ment
+     sur ce que la page sait faire. */
+  /* Un fichier « CPF5 » : en-tête, table des modèles, les sommets (une
+     seule fois par modèle), les indices, puis une matrice par
+     exemplaire. Voir outils/terrain/LISEZ-MOI.md. */
+  function lisCPF4(ab, jeu){
+    const v=new DataView(ab);
+    if(String.fromCharCode(v.getUint8(0),v.getUint8(1),v.getUint8(2),v.getUint8(3))!=="CPF5")
+      throw new Error("format inattendu");
+    const nM=v.getUint32(4,true), nS=v.getUint32(8,true),
+          nI=v.getUint32(12,true), nX=v.getUint32(16,true);
+    jeu.modeles=[];
+    for(let i=0;i<nM;i++){ const o=24+i*24;
+      jeu.modeles.push({s0:v.getUint32(o,true), ns:v.getUint32(o+4,true),
+        i0:v.getUint32(o+8,true), ni:v.getUint32(o+12,true),
+        x0:v.getUint32(o+16,true), nx:v.getUint32(o+20,true)}); }
+    const oS=24+nM*24, oI=oS+nS*8, oX=oI+nI*2;
+    jeu.vb=jeu.vb||gl.createBuffer(); jeu.ib=jeu.ib||gl.createBuffer(); jeu.xb=jeu.xb||gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER,jeu.vb);
+    gl.bufferData(gl.ARRAY_BUFFER,new Uint8Array(ab,oS,nS*8),gl.STATIC_DRAW);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,jeu.ib);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint8Array(ab,oI,nI*2),gl.STATIC_DRAW);
+    gl.bindBuffer(gl.ARRAY_BUFFER,jeu.xb);
+    gl.bufferData(gl.ARRAY_BUFFER,new Uint8Array(ab,oX,nX*56),gl.STATIC_DRAW);
+    return {nM,nS,nI,nX};
+  }
+  async function loadObjects(key){
+    for(const j of JEUX) j.modeles=[];
+    const btn=document.getElementById("bldBtn");
+    /* Une seule carte sur cinquante-deux a sa géométrie : demander les
+       fichiers à toutes coûtait un 404 par carte, et un journal bruyant
+       masque les vraies erreurs le jour où il y en a. */
+    const quoi=(MAPS3D[key]||{}).geo;
+    if(!quoi||!instExt){ btn.style.display="none"; showBld=0; btn.classList.remove("on"); return; }
+    let charge=0;
+    for(const j of JEUX){
+      try{ const r=await fetch("maps3d/"+key+"/"+j.nom+".bin");
+        if(!r.ok) continue;
+        lisCPF4(await r.arrayBuffer(), j); charge++;
+      }catch(e){ console.error("carte3d : "+j.nom+".bin illisible —", e); }
+    }
+    if(charge){ btn.style.display=""; showBld=1; btn.classList.add("on"); }
+    else { btn.style.display="none"; showBld=0; btn.classList.remove("on"); }
+  }
 
   // ---- maths ----
   function persp(f,a,n,fa){const t=1/Math.tan(f/2);return[t/a,0,0,0,0,t,0,0,0,0,(fa+n)/(n-fa),-1,0,0,2*fa*n/(n-fa),0];}
@@ -259,7 +470,13 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
   // ---- caméra ----
   let WORLD=1100, az=-0.9, pol=0.72, rad=1250, tgt=[0,60,0], exag=1, useTex=1, wire=0, pan={x:0,z:0};
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-  function frameCam(){ rad=WORLD*1.15; tgt=[0,WORLD*0.05,0]; az=-0.9; pol=0.72; pan.x=0; pan.z=0; }
+  /* Le cadrage suit la plus grande dimension : sur une carte non carrée,
+     se caler sur la largeur seule couperait la longueur. */
+  function frameCam(){ const D=Math.max(WORLD,WORLDZ);
+    /* le centre de la carte, pas l origine du monde : sur une carte à
+       nombre impair de chunks, les deux diffèrent d un demi-chunk. */
+    rad=D*1.15; tgt=[ORIG[0]+WORLD/2, D*0.05, ORIG[1]+WORLDZ/2];
+    az=-0.9; pol=0.72; pan.x=0; pan.z=0; }
   function eye(){ const ce=Math.cos(pol)*rad; return [tgt[0]+pan.x+Math.cos(az)*ce, tgt[1]+Math.sin(pol)*rad, tgt[2]+pan.z+Math.sin(az)*ce]; }
 
   // ---- interactions ----
@@ -275,6 +492,7 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
   document.getElementById("exag").addEventListener("input",e=>exag=parseFloat(e.target.value));
   document.getElementById("texBtn").addEventListener("click",e=>{useTex^=1;e.currentTarget.classList.toggle("on",useTex);});
   document.getElementById("wireBtn").addEventListener("click",e=>{wire^=1;e.currentTarget.classList.toggle("on",wire);});
+  document.getElementById("limBtn").addEventListener("click",e=>{showLim^=1;e.currentTarget.classList.toggle("on",showLim);});
   document.getElementById("bldBtn").addEventListener("click",e=>{showBld^=1;e.currentTarget.classList.toggle("on",showBld);});
   document.getElementById("resetBtn").addEventListener("click",()=>{frameCam();document.getElementById("exag").value=1;exag=1;});
 
@@ -287,14 +505,28 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
       const meta=await fetch("maps3d/"+key+"/meta.json").then(r=>r.json());
       const ab=await fetch("maps3d/"+key+"/height.u16").then(r=>r.arrayBuffer());
       const heights=new Uint16Array(ab); const HN=meta.n;
-      WORLD=meta.world||1100; mSpanM=meta.spanM||50;
-      buildMesh(heights,HN,WORLD,meta.hmin,meta.hmax);
+      WORLD=meta.world||1100;
+      /* zmin/zmax sont les altitudes RÉELLES du relief, en mètres. Les
+         cartes pas encore réextraites n'ont que l'ancien couple hmin/hmax
+         sans unité : on leur laisse leur échelle d'avant, faute de mieux. */
+      const zmin = meta.zmin!==undefined ? meta.zmin : 0;
+      const zmax = meta.zmax!==undefined ? meta.zmax : (meta.spanM||50);
+      /* nz et worldz ne figurent que sur les cartes non carrées ; ailleurs
+         la grille et le monde sont les mêmes dans les deux sens. */
+      buildMesh(heights,HN,WORLD,zmin,zmax,meta.nz||HN,meta.worldz||WORLD,meta.origine);
+      buildLimite(meta.jeu);
       loadTex("maps3d/"+key+"/tex.jpg","maps/top/"+key+".jpg");
       loadObjects(key);
       frameCam();
       document.getElementById("mapSub").textContent=t("Real elevation")+" · "+WORLD+" m";
       try{ localStorage.setItem("cp_map3d",key); }catch(_){}
-    }catch(e){ document.getElementById("mapName").textContent=t("Loading error"); }
+    }catch(e){
+      /* « Erreur de chargement » sans la cause ne dit rien à personne — ni
+         à celui qui déboguera, ni à moi. On garde le message court à
+         l'écran et on écrit la cause dans la console. */
+      document.getElementById("mapName").textContent=t("Loading error");
+      console.error("carte3d : chargement de « "+key+" » échoué —", e);
+    }
     loadEl.classList.remove("on");
   }
 
@@ -312,22 +544,66 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
       const MVP=new Float32Array(mul(mul(P,V),M));
       gl.useProgram(prog);
       gl.uniformMatrix4fv(uMVP,false,MVP);
-      gl.uniform1f(uUseTex,useTex?1:0); gl.uniform1f(uMaxH,curMaxH);
+      gl.uniform1f(uUseTex,useTex?1:0); gl.uniform1f(uMaxH,curMaxH); gl.uniform1f(uWorldLoc,WORLD);
       gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D,tex); gl.uniform1i(uTexLoc,0);
       bind(aPos,pB,3);bind(aNrm,nB,3);bind(aUv,uB,2);
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,iB);
       gl.drawElements(wire?gl.LINES:gl.TRIANGLES,idxLen,gl.UNSIGNED_INT,0);
-      if(showBld&&(shpN||blkLen)){
+      if(showBld&&instExt&&JEUX.some(j=>j.modeles.length)){
         gl.useProgram(bprog);
         const PV=new Float32Array(mul(P,V));   // PAS d'exag sur les bâtiments (calculé dans le shader)
         gl.uniformMatrix4fv(buPV,false,PV); gl.uniform1f(buHS,curMaxH); gl.uniform1f(buExag,exag);
+        { const E=eye(); gl.uniform3f(buEye,E[0],E[1],E[2]); }
         gl.disableVertexAttribArray(aUv);
-        gl.bindBuffer(gl.ARRAY_BUFFER,blkPB);
-        gl.enableVertexAttribArray(bPos); gl.vertexAttribPointer(bPos,3,gl.FLOAT,false,16,0);
-        gl.enableVertexAttribArray(bBase); gl.vertexAttribPointer(bBase,1,gl.FLOAT,false,16,12);
-        if(shpN){ gl.drawArrays(gl.TRIANGLES,0,shpN); }
-        else { gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,blkIB); gl.drawElements(gl.TRIANGLES,blkLen,gl.UNSIGNED_INT,0); }
-        gl.disableVertexAttribArray(bBase);
+        for(const a of [bPos,bIA,bIB,bIC,bIBase,bIGenre]) gl.enableVertexAttribArray(a);
+        for(const a of [bIA,bIB,bIC,bIBase,bIGenre]) instExt.vertexAttribDivisorANGLE(a,1);
+        for(const j of JEUX){
+          if(!j.modeles.length) continue;
+          gl.uniform1f(buFlore,j.flore);
+          gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,j.ib);
+          /* Un appel par modèle : ses sommets une fois, ses exemplaires
+             en série. Les indices repartant de zéro pour chaque modèle,
+             c'est le pointeur de sommets qu'on décale. */
+          for(const M2 of j.modeles){
+            gl.bindBuffer(gl.ARRAY_BUFFER,j.vb);
+            gl.vertexAttribPointer(bPos,3,gl.SHORT,false,8,M2.s0*8);
+            gl.bindBuffer(gl.ARRAY_BUFFER,j.xb);
+            const b0=M2.x0*56;
+            gl.vertexAttribPointer(bIA,4,gl.FLOAT,false,56,b0);
+            gl.vertexAttribPointer(bIB,4,gl.FLOAT,false,56,b0+16);
+            gl.vertexAttribPointer(bIC,4,gl.FLOAT,false,56,b0+32);
+            gl.vertexAttribPointer(bIBase,1,gl.FLOAT,false,56,b0+48);
+            gl.vertexAttribPointer(bIGenre,1,gl.FLOAT,false,56,b0+52);
+            instExt.drawElementsInstancedANGLE(gl.TRIANGLES,M2.ni,gl.UNSIGNED_SHORT,M2.i0*2,M2.nx);
+          }
+        }
+        /* Le diviseur est un état du contexte : le laisser à 1 ferait
+           lire un seul sommet au maillage du terrain à l'image suivante. */
+        for(const a of [bIA,bIB,bIC,bIBase,bIGenre]){ instExt.vertexAttribDivisorANGLE(a,0);
+          gl.disableVertexAttribArray(a); }
+      }
+      if(showLim&&limN){
+        gl.useProgram(lprog);
+        gl.uniformMatrix4fv(luPV,false,new Float32Array(mul(P,V)));
+        gl.uniform1f(luHS,curMaxH); gl.uniform1f(luExag,exag); gl.uniform1f(luHaut,LIM_HAUT);
+        gl.enableVertexAttribArray(lPos); gl.enableVertexAttribArray(lBase);
+        gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
+        gl.disable(gl.CULL_FACE);
+        /* L'eau écrit dans le tampon de profondeur : c'est une surface,
+           elle doit masquer ce qui passe dessous. */
+        /* Le voile de limite, lui, n'écrit PAS la profondeur : sinon il
+           masquerait la ville qu'il borde, au lieu de la ceinturer. */
+        {
+          gl.uniform4f(luCoul,0.90,0.16,0.16,0.42); gl.uniform1f(luVoile,1.0);
+          gl.depthMask(false);
+          gl.bindBuffer(gl.ARRAY_BUFFER,limB);
+          gl.vertexAttribPointer(lPos,3,gl.FLOAT,false,16,0);
+          gl.vertexAttribPointer(lBase,1,gl.FLOAT,false,16,12);
+          gl.drawArrays(gl.TRIANGLE_STRIP,0,limN);
+          gl.depthMask(true);
+        }
+        gl.disable(gl.BLEND);
+        gl.disableVertexAttribArray(lPos); gl.disableVertexAttribArray(lBase);
       }
     }
     requestAnimationFrame(frame);
@@ -335,7 +611,11 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
 
   // ---- init : liste des cartes ----
   if(!uintExt){ document.getElementById("err").style.display="flex"; document.getElementById("err").textContent=t("This browser doesn't support the 32-bit mesh required."); loadEl.classList.remove("on"); return; }
+  /* On garde l'index sous la main : c'est lui qui dit quelles cartes
+     possèdent une géométrie, et donc ce qu'il est inutile de demander. */
+  let MAPS3D={};
   fetch("maps3d/index.json").then(r=>r.json()).then(list=>{
+    list.forEach(function(m){ MAPS3D[m.key]=m; });
     const sel=document.getElementById("mapSel");
     list.map(m=>m.key).sort((a,b)=>pretty(a).localeCompare(pretty(b), window.CP_LANG==="fr"?'fr':'en')).forEach(k=>{
       const o=document.createElement("option"); o.value=k; o.textContent=pretty(k); sel.appendChild(o);
@@ -353,13 +633,27 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
 /* Page en chantier : ouverte a tous, contenu reserve au mode test (?dev).
    On recouvre la page plutot que de rediriger, pour garder le lien partageable. */
 (function(){
-  if(/[?&]dev/.test(location.search)) return;
+  /* Deux sources, comme partout ailleurs : le paramètre d'URL ET le mode
+     test mémorisé. Un testeur qui l'a activé sur une autre page était
+     bloqué ici.
+     ⚠ Ce motif contenait un VRAI caractère backspace (0x08) à la place
+     de la séquence \\b : il ne correspondait à rien, et la page restait
+     fermée à tout le monde. */
+  var urlDev = /[?&]dev(=|&|$)/.test(location.search);
+  var memDev = false;
+  try{ memDev = localStorage.getItem("cp_dev") === "1"; }catch(e){}
+  if(/[?&]dev=0(&|$)/.test(location.search)){
+    try{ localStorage.removeItem("cp_dev"); }catch(e){}
+  } else if(urlDev){
+    try{ localStorage.setItem("cp_dev","1"); }catch(e){}
+    return;
+  } else if(memDev) return;
   var d=document.createElement("div");
   d.setAttribute("style","position:fixed;inset:0;z-index:99999;background:#0a0a09;color:#f7f6f2;"+
     "display:flex;align-items:center;justify-content:center;padding:24px;"+
     "font-family:var(--d-sans)");
   d.innerHTML="<div style='max-width:520px;text-align:center'>"+
-    "<div style='font-size:38px;margin-bottom:14px'>D83dDea7</div>"+
+    "<div style='font-size:38px;margin-bottom:14px'>🚧</div>"+
     "<h1 style='font-size:22px;margin:0 0 10px;font-weight:800'>3D maps — under construction</h1>"+
     "<p style='margin:0 0 18px;color:#c2beb4;line-height:1.6'>The real map elevation is still being built. "+
     "It will open to the whole clan as soon as it is ready.</p>"+

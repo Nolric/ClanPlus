@@ -23,6 +23,32 @@
     if (dv != null) { if (dv === "0") localStorage.removeItem("cp_dev"); else localStorage.setItem("cp_dev", "1"); }
     if (typeof DEV !== "undefined") DEV = localStorage.getItem("cp_dev") === "1";
 
+    /* ── En construction, sauf en mode test ────────────────────────
+       On barre AVANT d'appeler clan-data : charger les données d'un clan
+       pour les jeter ensuite coûterait une requête à chaque visite d'un
+       membre qui ne verra rien. Le bandeau est celui de l'application
+       (.wip-msg), pas un second dessin. */
+    if (!(typeof DEV !== "undefined" && DEV)) {
+      cache("pgCharge");
+      const p = document.getElementById("pgPorte");
+      if (p) {
+        p.innerHTML =
+          '<div class="wip-msg">' +
+            '<div class="wip-ic">🚧</div>' +
+            /* Le bandeau passe par t() comme le reste : il est injecté par
+               script, donc APRÈS le passage du traducteur sur le document,
+               et resterait sinon en français pour un lecteur anglais. */
+            '<h3>' + t("Ma progression — en construction") + '</h3>' +
+            '<p>' + t("Cette page est en cours de refonte : les données et le plan de progression sont en train d'être repensés.") +
+              '<br>' + t("Elle sera ouverte à tout le clan dès qu'elle sera prête.") + '</p>' +
+            '<p style="margin-top:16px"><a href="index.html" class="btn">' +
+              t("Retour à Clan Plus") + '</a></p>' +
+          '</div>';
+        p.classList.remove("hidden");
+      }
+      return;
+    }
+
     const jeton = localStorage.getItem(LS_SESSION);
     if (!jeton) { cache("pgCharge"); montre("pgPorte"); return; }
 
@@ -67,8 +93,14 @@
     };
 addEventListener("resize", mesureBarre, { passive: true });;
 
-    const t = document.getElementById("pgClan");
-    if (t) t.textContent = clan.tag ? ("[" + clan.tag + "] " + (clan.name || "")) : "Ton clan";
+    /* Surtout pas « t » : c'est le nom de la fonction de traduction. Une
+       variable locale ainsi nommée la rend inaccessible dans TOUTE la
+       portée, y compris en amont de sa déclaration — le bandeau « en
+       construction » plus haut levait « Cannot access 't' before
+       initialization » à cause de cette seule ligne. */
+    const titreClan = document.getElementById("pgClan");
+    if (titreClan) titreClan.textContent =
+      clan.tag ? ("[" + clan.tag + "] " + (clan.name || "")) : "Ton clan";
 
     montre("pgApp");
     /* APRÈS l'affichage : un élément caché mesure zéro, et le bandeau

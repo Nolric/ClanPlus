@@ -15,6 +15,8 @@ window.CP_FR = Object.assign(window.CP_FR || {}, {
   "Airfield": "Aérodrome",
   "Berlin (winter)": "Berlin (hiver)",
   "Building preview (positions extracted from the game)": "Aperçu des bâtiments (positions extraites du jeu)",
+  "The battle boundary, from the game's arena definition": "La limite de combat, tirée de la définition d'arène du jeu",
+  "Boundary": "Limites",
   "Buildings": "Bâtiments",
   "Campania": "Campanie",
   "City": "Ville",
