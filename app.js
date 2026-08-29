@@ -79,6 +79,12 @@ async function boot(){
   const dv=new URLSearchParams(location.search).get("dev");
   if(dv!=null){ if(dv==="0") localStorage.removeItem("cp_dev"); else localStorage.setItem("cp_dev","1"); }
   DEV=localStorage.getItem("cp_dev")==="1";
+  /* « Ma progression » est en chantier : hors mode test, on retire son
+     entrée de la barre plutôt que d'inviter le clan à cliquer sur une
+     porte fermée. La page se défend d'elle-même de toute façon — ceci
+     n'est que la politesse. */
+  if(!DEV) document.querySelectorAll('#sidebar a[href="progression.html"]')
+    .forEach(function(a){ a.style.display="none"; });
   if(DEV){ const b=document.createElement("div"); b.textContent="MODE TEST"; b.title="Interface officier débloquée (clic pour quitter)";
     b.style.cssText="position:fixed;bottom:12px;right:12px;z-index:200;background:#e5b95c;color:#141310;font:700 11px system-ui;letter-spacing:.5px;padding:5px 11px;border-radius:20px;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.4)";
     b.onclick=()=>{ localStorage.removeItem("cp_dev"); location.href=location.pathname; }; document.body.appendChild(b); }
@@ -919,8 +925,10 @@ function placeSubbar(v){
 /* Sections encore en chantier : tout le monde voit le message, seul le mode test
    (?dev) accède au contenu réel. On MASQUE le contenu au lieu de le supprimer,
    pour que le basculement en dev le rétablisse sans recharger la page. */
-const WIP_VIEWS={ player:["Ma progression","Le nouveau SR et sa décomposition arrivent bientôt."],
-                  ranking:["Classements","Le classement des clans est en cours de refonte."] };
+/* « Ma progression » a quitté index.html pour progression.html : son
+   entrée ici ne visait plus aucun élément. Le portillon de cette page
+   est désormais dans progression.js. */
+const WIP_VIEWS={ ranking:["Classements","Le classement des clans est en cours de refonte."] };
 function wipGate(v){
   for(const id in WIP_VIEWS){
     const el=document.getElementById("view"+id.charAt(0).toUpperCase()+id.slice(1));
