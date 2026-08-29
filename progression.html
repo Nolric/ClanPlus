@@ -18,12 +18,12 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <script src="i18n/index.fr.js?v=4d034ab3"></script>
 <script src="i18n/progression.fr.js?v=02209f81"></script>
-<script src="i18n/index.en.js?v=f97e4bac"></script>
+<script src="i18n/index.en.js?v=57bc30c3"></script>
 <script src="i18n.js?v=ed3f8a4f"></script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <!-- La MÊME charte et le MÊME code que l'application : il ne doit exister
      qu'une version des calculs et des composants. -->
-<link rel="stylesheet" href="app.css?v=33ab1c85">
+<link rel="stylesheet" href="app.css?v=15b7b6bb">
 <style>
 /* Le titre monte avec la largeur, mais reste borne par la HAUTEUR :
    calcule sur la seule largeur, il deborde d'un ecran large et bas. */
@@ -117,7 +117,7 @@
 @media(max-width:620px){ .pg-id{display:none} }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" defer></script>
-<script src="app.js?v=45d87731" defer></script>
+<script src="app.js?v=d0639e09" defer></script>
 <script src="app-fin.js?v=4e570ee3" defer></script>
 <!-- Chargé APRÈS app.js : les scripts différés s'exécutent dans l'ordre
      du document, c'est ce qui garantit que les fonctions existent. -->
@@ -269,6 +269,10 @@
           </section>
           <section class="dk-d" data-n="5" hidden>
               <p class="et-lead">Une seule action, un seul chiffre à surveiller, et un horizon de dix batailles. Au prochain passage, la page mesure ce chiffre-là et te dit s'il a bougé — ou si l'écart est encore trop petit pour qu'on puisse trancher.</p>
+            <!-- La réponse d'abord : ce qui sépare RÉELLEMENT ses victoires
+                 de ses défaites. Tout ce qui suit devient la preuve de
+                 cette réponse au lieu d'être une liste. -->
+            <div id="pSepare"></div>
             <div id="pBoucle"></div>
               <p class="pz-note"><b>Deux lectures différentes :</b> le geste travaillé à l'étape 02
                 te compare <b>au clan</b>, le radar ci-dessous te compare <b>à ta classe de char</b>.

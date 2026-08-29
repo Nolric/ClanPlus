@@ -4286,7 +4286,10 @@ function pBoucle(my, clanRows){
     ['<b>'+t("Depuis")+'</b>', B.valeur!=null?val(e,B.valeur):"—",
       B.etat==="court"
         ? t("{n} bataille(s) — il en faut {m}").replace("{n}",B.n).replace("{m}",DK_HORIZON)
-        : t("mesuré sur les {n} batailles du cycle").replace("{n}",B.n)],
+        /* B.n n'existe pas tant qu'aucun cycle n'a commencé : la page
+           affichait « mesuré sur les undefined batailles du cycle ». */
+        : (B.n>0 ? t("mesuré sur les {n} batailles du cycle").replace("{n}",B.n)
+                 : t("le cycle n'a pas encore commencé"))],
     ['<b>'+t("Visé")+'</b>', val(e,B.c.cible), t("le meilleur du clan ou des adversaires")],
   ].map(l=>'<tr><td>'+l[0]+'</td><td class="num">'+l[1]+'</td><td class="hint">'+l[2]+'</td></tr>').join("");
 
@@ -4429,6 +4432,217 @@ function dkChargeReplays(my, apres){
   })(0);
 }
 
+
+
+/* ── Ce qu'on met dans la balance ────────────────────────────────────
+   fam:"choix"  — un geste, une distance, une discipline. Le plan se
+                  construit sur celles-là, et sur elles seules.
+   fam:"suite"  — conséquence autant que cause. On l'affiche parce que
+                  c'est vrai, on ne le prescrit jamais.
+   La frontière n'est pas cosmétique : c'est elle qui empêche la page de
+   conseiller « fais plus de dégâts pour gagner ». */
+const DK_SEPARE=[
+  { cle:"precision", fam:"choix", nom:"Précision", u:"%", mieux:1,
+    val:r=> r.shots>=2 ? r.hits/r.shots : null,
+    quoi:"La part de tes obus qui touchent." },
+  { cle:"perfo", fam:"choix", nom:"Perforation", u:"%", mieux:1,
+    val:r=> r.hits>=2 ? r.pierce/r.hits : null,
+    quoi:"Sur tes obus qui touchent, la part qui traverse le blindage." },
+  { cle:"portee", fam:"choix", nom:"Distance de tir", u:"m", mieux:0,
+    val:r=> r.dist>0 ? r.dist : null,
+    quoi:"La distance moyenne à laquelle tu engages." },
+  { cle:"invisible", fam:"choix", nom:"Dégâts sans être repéré", u:"%", mieux:1,
+    val:r=> r.dmg>0 ? Math.min(1,(r.dmginvis||0)/r.dmg) : null,
+    quoi:"La part de tes dégâts infligés alors que l'adversaire ne te voyait pas." },
+  { cle:"echange", fam:"choix", nom:"Échange", u:"x", mieux:1,
+    val:function(r){ const pv=Math.max(0,(r.maxhp||0)-(r.hpleft||0));
+      return pv>=200 ? r.dmg/pv : null; },
+    quoi:"Les dégâts que tu rends pour chaque point de vie que tu perds." },
+  { cle:"bloque", fam:"choix", nom:"Part bloquée", u:"%", mieux:1,
+    val:r=> r.pot>=500 ? r.block/r.pot : null,
+    quoi:"Sur ce que l'adversaire t'envoie, la part que ton blindage renvoie." },
+  { cle:"exposition", fam:"choix", nom:"Dégâts subis par minute", u:"n", mieux:-1,
+    val:function(r){ const m=(r.life||0)/60; return m>=0.5 ? (r.dmgr||0)/m : null; },
+    quoi:"Ce que tu encaisses rapporté au temps que tu passes en vie. Moins, c'est mieux." },
+
+  { cle:"degats", fam:"suite", nom:"Dégâts infligés", u:"n", mieux:1,
+    val:r=> r.dmg, quoi:"Conséquence autant que cause : on inflige plus quand l'équipe l'emporte." },
+  { cle:"assist", fam:"suite", nom:"Assistance", u:"n", mieux:1,
+    val:r=> r.assist, quoi:"Ne mesure que ce qui est CRÉDITÉ. Éclairer l'axe adverse sans qu'un allié tire dessus ne compte pas ici, et vaut pourtant une bataille." },
+  { cle:"survie", fam:"suite", nom:"Temps de vie", u:"s", mieux:1,
+    val:r=> r.life>0 ? r.life : null, quoi:"On survit aussi PARCE QU'ON gagne : le conseil « survis plus » reviendrait à dire « gagne plus »." },
+  { cle:"frags", fam:"suite", nom:"Frags", u:"n", mieux:1,
+    val:r=> r.kills, quoi:"Il reste plus de cibles à achever quand la bataille tourne bien." },
+];
+
+/* Un générateur ensemencé : le test doit rendre le même verdict à chaque
+   affichage. Une valeur p qui bouge d'un rendu à l'autre inquiéterait à
+   juste titre. */
+function dkAlea(graine){
+  let x=graine>>>0 || 1;
+  return function(){ x^=x<<13; x>>>=0; x^=x>>17; x^=x<<5; x>>>=0; return x/4294967296; };
+}
+function dkMoy(t){ let s=0; for(const v of t) s+=v; return t.length? s/t.length : null; }
+
+/* Le test de permutation. On rebat les étiquettes victoire/défaite mille
+   fois : si l'écart observé se reproduit souvent par pur hasard, il n'y
+   a rien à dire. C'est le seul test qu'on puisse expliquer en une phrase
+   au lecteur — et cette page n'affirme rien qu'elle ne sache expliquer. */
+const DK_PERM=1000;
+function dkPermute(a, b, graine){
+  const obs=Math.abs(dkMoy(a)-dkMoy(b));
+  const tout=a.concat(b), na=a.length, N=tout.length;
+  const rnd=dkAlea(graine);
+  let pire=0;
+  for(let k=0;k<DK_PERM;k++){
+    /* Fisher-Yates sur une copie : mélanger le tableau d'origine
+       fausserait les tirages suivants. */
+    const c=tout.slice();
+    for(let i=N-1;i>0;i--){ const j=Math.floor(rnd()*(i+1)); const t=c[i]; c[i]=c[j]; c[j]=t; }
+    const m1=dkMoy(c.slice(0,na)), m2=dkMoy(c.slice(na));
+    if(Math.abs(m1-m2)>=obs-1e-12) pire++;
+  }
+  /* +1 au numérateur et au dénominateur : une valeur p de zéro n'existe
+     pas, on ne peut qu'affirmer « moins de 1 sur 1001 ». */
+  return (pire+1)/(DK_PERM+1);
+}
+
+/* ── Ce qui sépare tes victoires de tes défaites ─────────────────────
+   Correction de Holm sur les seules mesures de la famille « choix » :
+   tester moins de choses donne plus de puissance, et ce sont les seules
+   qui puissent devenir un plan. */
+function dkSeparation(my){
+  const V=my.filter(function(r){ return r.result===1; });
+  const D=my.filter(function(r){ return r.result===0; });
+  /* Huit de chaque : en dessous, une seule bataille déplace une moyenne
+     et le test n'a plus aucune chance de trancher. */
+  if(V.length<8 || D.length<8) return {assez:false, nV:V.length, nD:D.length};
+
+  const lignes=[];
+  for(const m of DK_SEPARE){
+    const a=V.map(m.val).filter(function(x){ return x!=null && isFinite(x); });
+    const b=D.map(m.val).filter(function(x){ return x!=null && isFinite(x); });
+    if(a.length<6 || b.length<6) continue;
+    const mv=dkMoy(a), md=dkMoy(b);
+    /* La graine dépend de la mesure et des effectifs : stable d'un rendu
+       à l'autre, mais pas identique d'une mesure à l'autre. */
+    const p=dkPermute(a, b, (m.cle.length*7919 + a.length*131 + b.length));
+    /* L'écart réduit : les mesures n'ont pas les mêmes unités, seul un
+       écart rapporté à la dispersion se compare d'une ligne à l'autre. */
+    const ec=function(t,mo){ let s=0; for(const v of t) s+=(v-mo)*(v-mo);
+      return t.length>1 ? Math.sqrt(s/(t.length-1)) : 0; };
+    const sd=Math.sqrt((ec(a,mv)*ec(a,mv)+ec(b,md)*ec(b,md))/2);
+    lignes.push({...m, victoire:mv, defaite:md, nV:a.length, nD:b.length, p:p,
+                 ampleur: sd? (mv-md)/sd : 0});
+  }
+
+  /* Holm : on trie les valeurs p, et la k-ième est comparée à α/(K−k+1).
+     Moins brutal que Bonferroni, tout aussi honnête, et il s'arrête au
+     premier échec — ce qui évite de déclarer significatif un test moins
+     fort qu'un autre déjà rejeté. */
+  const choix=lignes.filter(function(l){ return l.fam==="choix"; })
+                    .sort(function(a,b){ return a.p-b.p; });
+  const K=choix.length;
+  let encore=true;
+  choix.forEach(function(l,i){
+    const seuil=0.05/(K-i);
+    l.sur = encore && l.p<=seuil;
+    if(!l.sur) encore=false;
+    l.seuil=seuil;
+  });
+  const suites=lignes.filter(function(l){ return l.fam==="suite"; })
+                     .sort(function(a,b){ return Math.abs(b.ampleur)-Math.abs(a.ampleur); });
+  /* Le levier : la plus grande ampleur parmi ce qui survit. À défaut, la
+     plus grande ampleur tout court — mais on dira alors qu'elle n'est
+     pas établie. */
+  const surs=choix.filter(function(l){ return l.sur; });
+  const levier = surs.length
+    ? surs.slice().sort(function(a,b){ return Math.abs(b.ampleur)-Math.abs(a.ampleur); })[0]
+    : (choix.length ? choix.slice().sort(function(a,b){ return Math.abs(b.ampleur)-Math.abs(a.ampleur); })[0] : null);
+  return {assez:true, nV:V.length, nD:D.length, choix:choix, suites:suites,
+          levier:levier, etabli:surs.length>0, K:K};
+}
+
+
+/* Mettre en forme une valeur dans son unité. Sans ça, « 0.7234 » et
+   « 260.4 » se retrouvent côte à côte et plus personne ne lit. */
+function dkValSep(m, v){
+  if(v==null) return "—";
+  if(m.u==="%") return Math.round(v*100)+" %";
+  if(m.u==="m") return Math.round(v)+" m";
+  if(m.u==="s") return Math.round(v)+" s";
+  if(m.u==="x") return v.toFixed(2).replace(".",",")+"×";
+  return fmt(Math.round(v));
+}
+
+/* Une ligne du schéma : deux points, un trait, deux étiquettes.
+   L'écart est plafonné à deux écarts-types — au-delà, la ligne sortirait
+   du cadre sans rien apprendre de plus. */
+function dkHaltere(l){
+  const A=Math.max(-2, Math.min(2, l.ampleur||0));
+  const demi=Math.abs(A)/2/2*100*0.86;      /* 2 σ occupent 86 % de la largeur */
+  const cD=50-(A>=0?demi:-demi), cV=50+(A>=0?demi:-demi);
+  const g=Math.min(cD,cV), d=Math.max(cD,cV);
+  return '<div class="sp-l'+(l.sur?" sp-sur":"")+'">'+
+    '<div class="sp-n">'+esc(t(l.nom))+
+      (l.sur?'<i class="sp-b" title="'+esc(t("Cet écart résiste au test : il ne s'explique pas par le hasard."))+'">'+t("établi")+'</i>':'')+
+    '</div>'+
+    '<div class="sp-p">'+
+      '<span class="sp-axe"></span>'+
+      '<span class="sp-t" style="left:'+g.toFixed(2)+'%;width:'+(d-g).toFixed(2)+'%"></span>'+
+      '<b class="sp-d" style="left:'+cD.toFixed(2)+'%" title="'+esc(t("En défaite"))+' : '+esc(dkValSep(l,l.defaite))+'"></b>'+
+      '<b class="sp-v" style="left:'+cV.toFixed(2)+'%" title="'+esc(t("En victoire"))+' : '+esc(dkValSep(l,l.victoire))+'"></b>'+
+    '</div>'+
+    '<div class="sp-c"><span class="sp-cd">'+esc(dkValSep(l,l.defaite))+'</span>'+
+      '<span class="sp-cv">'+esc(dkValSep(l,l.victoire))+'</span></div>'+
+  '</div>';
+}
+
+/* ── La carte ────────────────────────────────────────────────────────
+   Une réponse en haut, le schéma dessous, la méthode en dernier. Le
+   lecteur qui s'arrête à la première ligne a déjà eu l'essentiel. */
+function pSepare(my){
+  const S=dkSeparation(my||[]);
+  if(!S.assez){
+    return '<section class="card"><h2>'+t("Ce qui sépare tes victoires de tes défaites")+'</h2>'+
+      '<div class="empty">'+t("Il faut au moins huit victoires et huit défaites pour comparer. Tu en as {v} et {d}.")
+        .replace("{v}",S.nV).replace("{d}",S.nD)+'</div></section>';
+  }
+  const L=S.levier;
+  const titre = S.etabli && L
+    ? t("Ce qui change vraiment entre tes victoires et tes défaites : {s}.").replace("{s}", t(L.nom).toLowerCase())
+    : t("Rien ne sépare nettement tes victoires de tes défaites, pour l'instant.");
+  const sous = S.etabli && L
+    ? t("En victoire : {v}. En défaite : {d}. C'est le seul écart de la liste qui résiste au test.")
+        .replace("{v}", dkValSep(L,L.victoire)).replace("{d}", dkValSep(L,L.defaite))
+    : t("Aucun de tes gestes ne se comporte différemment selon l'issue, au-delà de ce que le hasard produirait. Joue davantage : l'écart le plus net aujourd'hui est {s}, mais il n'est pas établi.")
+        .replace("{s}", L?t(L.nom).toLowerCase():"—");
+
+  return '<section class="card">'+
+    '<h2>'+t("Ce qui sépare tes victoires de tes défaites")+' <span class="hint">'+
+      t("{v} victoires, {d} défaites").replace("{v}",S.nV).replace("{d}",S.nD)+'</span></h2>'+
+    '<p class="sp-rep"><b>'+titre+'</b> '+sous+'</p>'+
+    '<div class="sp-leg">'+
+      '<span><i class="sp-pd"></i>'+t("En défaite")+'</span>'+
+      '<span><i class="sp-pv"></i>'+t("En victoire")+'</span>'+
+      '<span class="sp-lg-x">'+t("la longueur du trait dit combien la mesure sépare — pas sa valeur")+'</span>'+
+    '</div>'+
+    '<div class="sp-g">'+S.choix.map(dkHaltere).join("")+'</div>'+
+    /* La seconde famille reste visible : la cacher donnerait l'impression
+       qu'on escamote des chiffres. Elle est simplement mise à part, avec
+       la raison écrite. */
+    '<details class="sp-suite"><summary>'+
+      t("Aussi mesuré, mais jamais transformé en conseil ({n} mesures)").replace("{n}", S.suites.length)+
+      '</summary>'+
+      '<p class="sp-pq">'+t("Ces mesures suivent la victoire autant qu'elles la causent : on inflige plus de dégâts quand l'équipe l'emporte, et on survit parce qu'on a gagné. En faire un plan reviendrait à conseiller « gagne pour gagner ».")+'</p>'+
+      '<div class="sp-g">'+S.suites.map(dkHaltere).join("")+'</div>'+
+    '</details>'+
+    '<footer class="hint">'+
+      t("Méthode : on rebat mille fois au hasard les étiquettes victoire et défaite de tes propres batailles, et on regarde si l'écart observé se reproduit. S'il se reproduit souvent, c'est du hasard.")+' '+
+      t("{n} mesures testées, seuil corrigé en conséquence — sans cette correction, une mesure sur vingt paraîtrait décisive par pur hasard.").replace("{n}", S.K)+
+    '</footer>'+
+  '</section>';
+}
 
 /* ── La place attendue de chaque classe ──────────────────────────────
    avance : −1 en retrait · 0 avec l'équipe · +1 devant
@@ -6298,10 +6512,10 @@ function renderPlayerView(){
     if(!h){ h=document.createElement("div"); h.id="pVideHost";
       const a=document.getElementById("pVerdictHost"); a.parentNode.insertBefore(h, a.nextSibling); }
     h.innerHTML = assez ? "" : (nBat===0
-      ? cpVide("🎯","Ton bilan personnel arrive",
+      ? cpVide("","Ton bilan personnel arrive",
           "Il se calcule sur tes batailles Bastion enregistrées par le mod. Joue-en quelques-unes et cette page se remplit toute seule.",
           [{fait:0,total:5,quoi:"batailles enregistrées"}])
-      : cpVide("🎯","Encore quelques batailles",
+      : cpVide("","Encore quelques batailles",
           "Sous cinq batailles, une moyenne ne veut rien dire : un seul mauvais tour la fait basculer. "+
           "On préfère se taire plutôt que t'induire en erreur.",
           [{fait:nBat,total:5,quoi:"batailles enregistrées"}]));
@@ -6384,6 +6598,7 @@ function renderPlayerView(){
        ultérieur (un redimensionnement, un changement de joueur) les
        effacerait sans jamais les redessiner. */
     const pm=document.getElementById("pMorts"); if(pm) pm.innerHTML = pMorts(my);
+    const ps=document.getElementById("pSepare"); if(ps) ps.innerHTML = pSepare(my);
     const pt=document.getElementById("pTrajectoire"); if(pt) pt.innerHTML = pTrajectoire();
     dkRemplit(my, clanRows);
     const em=document.getElementById("pMissions"); if(em) em.innerHTML = pMissions(my, clanRows); }

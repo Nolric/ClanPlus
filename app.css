@@ -3340,3 +3340,171 @@ i.pm-eq{width:8px;height:8px;background:var(--accent);opacity:.55;
    expliqué — un chiffre en retard sans conseil passerait pour un oubli. */
 .tv-hors{margin:14px 0 0;font-size:12.5px;color:var(--muted);line-height:1.5;
   padding-left:11px;border-left:2px solid var(--border)}
+
+
+/* ══ Défaite ← → Victoire ══════════════════════════════════════════
+   Deux points, un trait. La seule grandeur portée par l'espace est
+   l'écart en écarts-types : sept mesures et quatre unités n'ont aucune
+   position absolue comparable, et prétendre le contraire serait un
+   mensonge graphique. Les valeurs réelles sont écrites à côté.
+
+   Bleu et or, et non vert et rouge : le couple du site donne ΔE 2,7 en
+   deutéranopie — indistinguable. Celui-ci donne 22, et chaque point
+   porte en plus son étiquette. */
+:root{ --cp-vic:#63a4dd; --cp-def:#c8933c; }
+.sp-rep{margin:0 0 18px;font-size:15px;line-height:1.55;color:var(--ink-2)}
+.sp-rep b{color:var(--ink)}
+.sp-leg{display:flex;flex-wrap:wrap;align-items:center;gap:8px 20px;margin:0 0 16px;
+  font-size:12.5px;color:var(--muted)}
+.sp-leg span{display:flex;align-items:center;gap:7px}
+.sp-leg i{width:11px;height:11px;border-radius:50%;flex:0 0 auto}
+.sp-pd{background:var(--cp-def)} .sp-pv{background:var(--cp-vic)}
+.sp-lg-x{font-style:italic}
+
+.sp-g{display:flex;flex-direction:column;gap:2px}
+.sp-l{display:grid;grid-template-columns:minmax(130px,1.1fr) minmax(0,2.4fr) minmax(112px,auto);
+  align-items:center;gap:14px;padding:9px 0;border-bottom:1px solid var(--border)}
+.sp-l:last-child{border-bottom:0}
+@media(max-width:720px){
+  .sp-l{grid-template-columns:1fr auto;gap:4px 10px}
+  .sp-p{grid-column:1/-1;order:3}
+}
+.sp-n{font-size:13.5px;color:var(--ink-2);display:flex;align-items:center;gap:8px;
+  flex-wrap:wrap;line-height:1.3}
+.sp-sur .sp-n{color:var(--ink);font-weight:600}
+.sp-b{font-style:normal;font-size:10px;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--plane);background:var(--accent);padding:2px 6px;border-radius:4px;cursor:help}
+
+/* La piste. L'axe est un simple repère : il ne porte aucune graduation,
+   parce qu'aucune graduation ne serait vraie pour sept unités. */
+.sp-p{position:relative;height:20px}
+.sp-axe{position:absolute;left:0;right:0;top:50%;height:1px;
+  background:var(--grid);transform:translateY(-50%)}
+.sp-t{position:absolute;top:50%;height:3px;border-radius:2px;transform:translateY(-50%);
+  background:linear-gradient(90deg,var(--cp-def),var(--cp-vic))}
+.sp-d,.sp-v{position:absolute;top:50%;width:11px;height:11px;border-radius:50%;
+  transform:translate(-50%,-50%);
+  /* l'anneau de surface évite que deux points qui se touchent fusionnent */
+  box-shadow:0 0 0 2px var(--card)}
+.sp-d{background:var(--cp-def)} .sp-v{background:var(--cp-vic)}
+
+.sp-c{display:flex;gap:12px;justify-content:flex-end;font-size:13px;
+  font-variant-numeric:tabular-nums;white-space:nowrap}
+.sp-cd{color:var(--cp-def)} .sp-cv{color:var(--cp-vic);font-weight:600}
+
+.sp-suite{margin:18px 0 0;border-top:1px solid var(--border);padding-top:14px}
+.sp-suite summary{cursor:pointer;font-size:13px;color:var(--ink-2)}
+.sp-suite summary:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.sp-pq{margin:12px 0 14px;font-size:13px;color:var(--muted);line-height:1.55;
+  padding-left:11px;border-left:2px solid var(--border)}
+
+
+/* ══════════════════════════════════════════════════════════════════
+   LE SYSTÈME DE CARTE DE LA PAGE PROGRESSION
+
+   Une anatomie : un titre qui est une question, une réponse en une
+   phrase, une figure, la méthode en pied. Trois rangs pour que douze
+   cartes ne crient pas ensemble. Tout est confiné sous .pg-main :
+   les huit vues de l'application partagent le même .card et ne
+   doivent pas bouger tant qu'elles n'ont pas été reprises.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── L'anatomie ─────────────────────────────────────────────────── */
+.pg-main .dk-d .card{
+  padding:clamp(18px,2vw,26px) clamp(18px,2.2vw,30px);
+  border-radius:14px;
+  margin:0 0 clamp(14px,1.6vw,22px);
+}
+/* Le titre est une question : il se lit d'un bloc, et son contexte
+   (« 25 batailles », « comparé au clan ») recule d'un cran au lieu de
+   se battre avec lui. */
+.pg-main .dk-d .card > h2{
+  display:flex;align-items:baseline;flex-wrap:wrap;gap:6px 12px;
+  margin:0 0 14px;font-size:15.5px;font-weight:600;letter-spacing:0;
+  color:var(--ink);line-height:1.35;
+}
+.pg-main .dk-d .card > h2 .hint{font-size:12.5px;font-weight:400;color:var(--muted)}
+
+/* La réponse : la seule phrase qu'on est sûr de lire. Elle vient AVANT
+   la figure, jamais après — une figure qu'on lit sans savoir ce qu'on
+   y cherche ne se lit pas. */
+.pg-main .dk-d .card > .ent-quoi,
+.pg-main .dk-d .card > .sp-rep,
+.pg-main .dk-d .card > .cs-role{
+  margin:0 0 18px;font-size:15px;line-height:1.55;color:var(--ink-2);
+  max-width:88ch;
+}
+.pg-main .dk-d .card > .ent-quoi b,
+.pg-main .dk-d .card > .sp-rep b{color:var(--ink);font-weight:600}
+
+/* La méthode : présente, jamais au centre, jamais en pleine largeur.
+   Un pavé centré de six lignes est un pavé qu'on saute. */
+.pg-main .dk-d .card > footer,
+.pg-main .dk-d .card > .hint:last-child{
+  margin:18px 0 0;padding-top:14px;border-top:1px solid var(--border);
+  text-align:left;max-width:104ch;font-size:12px;line-height:1.55;
+  color:var(--muted);
+}
+
+/* ── Les trois rangs ────────────────────────────────────────────────
+   La première carte d'une étape porte la réponse de l'étape. Le rang se
+   lit sur la position et non sur une classe : une carte ajoutée demain
+   se rangera toute seule. */
+.pg-main .dk-d > div:first-of-type .card{
+  border-color:rgba(255,255,255,.14);
+  box-shadow:0 1px 0 var(--accent) inset;
+}
+.pg-main .dk-d > div:first-of-type .card > h2{font-size:18px}
+.pg-main .dk-d > div:first-of-type .card > .ent-quoi,
+.pg-main .dk-d > div:first-of-type .card > .sp-rep{font-size:16.5px}
+/* Les suivantes reculent : même soin, moins de voix. */
+.pg-main .dk-d > div:not(:first-of-type) .card{background:var(--surface-1)}
+
+/* ── UNE tuile, partout ─────────────────────────────────────────────
+   Quatre dessins différents coexistaient pour la même chose : un nombre
+   et son libellé. Les trente derniers jours, les records, la position,
+   la trajectoire. Un lecteur qui doit réapprendre la même tuile quatre
+   fois ne lit aucune des quatre. */
+.pg-main .pos-n,.pg-main .tj-n,.pg-main .pd-grid > *,.pg-main .pr-t{
+  display:flex;flex-direction:column;gap:2px;min-width:0;
+}
+.pg-main .pos-n b,.pg-main .tj-n b,.pg-main .pd-grid b,.pg-main .pr-v{
+  font:600 26px/1.05 "IBM Plex Sans Condensed","IBM Plex Sans",sans-serif;
+  color:var(--ink);font-variant-numeric:tabular-nums;letter-spacing:-.01em;
+}
+.pg-main .pos-n span,.pg-main .tj-n span,.pg-main .pd-grid span,
+.pg-main .pr-l,.pg-main .pr-ctx{
+  font-size:11.5px;color:var(--muted);letter-spacing:.02em;line-height:1.35;
+}
+/* Les grilles de tuiles respirent de la même façon. */
+.pg-main .pd-grid,.pg-main .pr-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+  gap:clamp(14px,1.8vw,26px);
+}
+.pg-main .pr-t{padding:14px 16px;border:1px solid var(--border);
+  border-radius:11px;background:var(--card)}
+
+/* ── Les figures ────────────────────────────────────────────────────
+   Une figure a de l'air autour d'elle, sinon elle se lit comme un bloc
+   de texte de plus. */
+.pg-main .dk-d .dkf,.pg-main .dk-d .sp-g{margin:2px 0 4px}
+
+/* ── Le repli ───────────────────────────────────────────────────────
+   Rien n'est supprimé : ce qui est secondaire se replie, et son résumé
+   reste une question à laquelle on peut décider de répondre. */
+.pg-main .dk-d details > summary{
+  cursor:pointer;font-size:13.5px;color:var(--ink-2);padding:4px 0;
+  list-style:none;display:flex;align-items:center;gap:9px;
+}
+.pg-main .dk-d details > summary::-webkit-details-marker{display:none}
+.pg-main .dk-d details > summary::before{
+  content:"";width:7px;height:7px;flex:0 0 auto;
+  border-right:1.5px solid var(--muted);border-bottom:1.5px solid var(--muted);
+  transform:rotate(-45deg);transition:transform .18s ease;
+}
+.pg-main .dk-d details[open] > summary::before{transform:rotate(45deg)}
+.pg-main .dk-d details > summary:hover{color:var(--ink)}
+.pg-main .dk-d details > summary:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+@media (prefers-reduced-motion:reduce){
+  .pg-main .dk-d details > summary::before{transition:none}
+}
