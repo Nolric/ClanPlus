@@ -76,6 +76,12 @@
   .spin{display:inline-block;width:14px;height:14px;border:2px solid var(--line);border-top-color:var(--gold);
     border-radius:50%;animation:sp .8s linear infinite;vertical-align:-2px;margin-right:8px}
   @keyframes sp{to{transform:rotate(360deg)}}
+  #mini{position:absolute;left:16px;bottom:18px;padding:7px;display:none}
+  #mini img{display:block;width:190px;height:190px;image-rendering:auto;border-radius:2px}
+  #mini .lg{font-size:10px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;
+    color:var(--muted);margin:0 0 5px 1px}
+  #mini .n{position:absolute;top:24px;right:12px;font-size:10px;font-weight:800;color:var(--gold)}
+  @media(max-width:900px){ #mini{display:none!important} }
   #err{position:absolute;inset:0;display:none;align-items:center;justify-content:center;text-align:center;padding:30px;color:var(--muted);font-size:14px}
   @media(max-width:640px){ #title h1{font-size:17px} #hint{display:none} #hud input[type=range]{width:84px} }
 </style>
@@ -99,9 +105,11 @@
     <button class="btn on" id="texBtn">Texture</button>
     <button class="btn" id="wireBtn">Grid</button>
     <button class="btn" id="bldBtn" style="display:none" title="Building preview (positions extracted from the game)">Buildings</button>
-    <button class="btn on" id="limBtn" style="display:none" title="The battle boundary, from the game's arena definition">Boundary</button>
+    <button class="btn on" id="limBtn" style="display:none" title="The battle boundary and the two team bases, from the game's arena definition">Boundary</button>
+    <button class="btn on" id="miniBtn">Minimap</button>
     <button class="btn" id="resetBtn">Recentre</button>
   </div>
+  <div id="mini" class="glass"><div class="lg">Minimap</div><img id="miniImg" alt=""><div class="n">N ↑</div></div>
   <div id="hint"><b>Drag</b> to rotate · <b>Scroll</b> to zoom · <b>Right-click</b> to pan</div>
   <div id="load" class="on"><div class="box glass"><span class="spin"></span>Loading the terrain…</div></div>
   <div id="err" class="glass">Your browser couldn't start 3D (WebGL required).</div>
@@ -174,7 +182,7 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
     uniform mat4 uPV;uniform float uHS;uniform float uExag;
     varying vec3 vW;varying float vH;varying float vGenre;
     void main(){
-      vec3 w=vec3(dot(iA.xyz,aPos)+iA.w, dot(iB.xyz,aPos)+iB.w, dot(iC.xyz,aPos)+iC.w);
+      vec3 w=vec3(dot(iA.xyz,aPos)+iA.w, dot(iB.xyz,aPos)+iB.w, -(dot(iC.xyz,aPos)+iC.w));
       float y=iBase*uHS*uExag+w.y;
       vec3 p=vec3(w.x,y,w.z); vW=p; vH=w.y; vGenre=iGenre;
       gl_Position=uPV*vec4(p,1.0); }`;
@@ -266,9 +274,8 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
 
   // ---- buffers (recréés à chaque carte) ----
   let pB=gl.createBuffer(),nB=gl.createBuffer(),uB=gl.createBuffer(),iB=gl.createBuffer(),idxLen=0,curMaxH=1;
-  /* La carte de hauteur fait 709×709 : échantillonner en 512 revenait à
-     jeter un tiers de la donnée et à arrondir chaque rebord. On suit la
-     source. La valeur est relevée au chargement de chaque carte. */
+  /* Le maillage suit la résolution de la carte de hauteurs, relevée au
+     chargement : 704 mailles pour les 705 points d Himmelsdorf. */
   let MESH=512;
   // filtre MÉDIAN : enlève les petits carrés/pics parasites tout en gardant les arêtes nettes (falaises)
   function medianHeights(src,N,passes){ let a=Float32Array.from(src); const w=new Float32Array(9);
@@ -313,7 +320,22 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
     const pos=new Float32Array(V*3),nrm=new Float32Array(V*3),uv=new Float32Array(V*2);
     let k=0,ku=0;
     for(let gy=0;gy<=MESH;gy++)for(let gx=0;gx<=MESH;gx++){ const u=gx/MESH,v=gy/MESH;
-      pos[k]=ORIG[0]+u*world; pos[k+1]=sampleH(u,v)*HS; pos[k+2]=ORIG[1]+v*wZ; uv[ku]=u; uv[ku+1]=v; k+=3; ku+=2; }
+      /* Z INVERSÉ. Le jeu range son monde dans un repère GAUCHER (X à
+         l est, Z au nord, vu de dessus est à droite et nord en haut) ;
+         un rendu 3D est droitier. Affichée telle quelle, la carte sort
+         en miroir de la minimap — mesuré : aucun azimut ne donne à la
+         fois l est à droite et le nord en haut. Inverser Z rétablit le
+         sens, et les modèles avec, puisqu ils sont eux aussi authorés
+         dans ce repère. */
+      pos[k]=ORIG[0]+u*world; pos[k+1]=sampleH(u,v)*HS; pos[k+2]=-(ORIG[1]+v*wZ);
+      /* La texture est POSÉE À L'ENVERS sur l'axe nord-sud : sa première
+         ligne correspond au Z maximal, pas au minimal. La géométrie, elle,
+         est juste — c'est l'image qu'il faut retourner, pas le monde, sinon
+         la limite de zone et les bases d'équipe, qui viennent en
+         coordonnées du jeu, partiraient au mauvais endroit.
+         Mesuré sur les empreintes des 1 492 bâtiments : la corrélation à
+         la texture passe de −0,001 à −0,091 une fois retournée. */
+      uv[ku]=u; uv[ku+1]=1.0-v; k+=3; ku+=2; }
     /* Les normales sur DEUX mailles, pas une. Sur un à-pic — la falaise
        du château fait quarante mètres pour un mètre et demi — une
        différence centrée sur une seule maille donne des normales qui
@@ -325,7 +347,7 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
       const hl=sampleH(Math.max(0,gx-R)/MESH,gy/MESH)*HS, hr=sampleH(Math.min(MESH,gx+R)/MESH,gy/MESH)*HS;
       const hd=sampleH(gx/MESH,Math.max(0,gy-R)/MESH)*HS, hu=sampleH(gx/MESH,Math.min(MESH,gy+R)/MESH)*HS;
       let nx=hl-hr,ny=2*cell,nz=hd-hu; const L=Math.hypot(nx,ny,nz)||1; const i=(gy*(MESH+1)+gx)*3;
-      nrm[i]=nx/L;nrm[i+1]=ny/L;nrm[i+2]=nz/L; }
+      nrm[i]=nx/L;nrm[i+1]=ny/L;nrm[i+2]=-nz/L; }
     /* Les TROUS du jeu — mesurés deux fois, ÉCARTÉS deux fois.
        Le jeu déclare, cellule par cellule, où il ne dessine pas de
        terrain : 101 471 cellules sur 495 616. Les appliquer toutes ouvre
@@ -390,6 +412,33 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
      sur des cours et des toits. La vraie surface est un maillage à part,
      désigné par un identifiant sous spaces/<carte>/water/. Tant qu il
      n est pas lu, mieux vaut pas d eau qu une fausse. */
+  /* Les BASES d'équipe, lues dans la définition d'arène. Deux repères que
+     le jeu donne lui-même, et que le joueur reconnaît : ils disent d'un
+     coup d'œil si la carte est dans le bon sens. */
+  const basB=gl.createBuffer(); let basLots=[];
+  const BASE_R=28, BASE_H=26;
+  /* Une couleur par base : c'est ce qui permet de les distinguer d'un
+     coup d'œil — et de vérifier l'orientation de la carte, puisque le
+     jeu donne leurs coordonnées. Ni l'une ni l'autre n'existe dans le
+     terrain, donc aucune confusion possible avec la végétation. */
+  const BASE_COUL=[[0.28,0.55,1.00],[0.98,0.72,0.22]];
+  function buildBases(bases){
+    basLots=[]; if(!bases||!bases.length||!curHeights) return;
+    const P=[], C=24;
+    for(let k=0;k<bases.length;k++){
+      const [x,z]=bases[k], d0=P.length/4;
+      /* un fût de lumière ouvert, posé sur le relief */
+      for(let a=0;a<=C;a++){
+        const t=a/C*Math.PI*2, px=x+Math.cos(t)*BASE_R, pz=z+Math.sin(t)*BASE_R;
+        const b=terrainNorm(px,pz);
+        P.push(px,0,-pz,b, px,BASE_H,-pz,b);
+      }
+      basLots.push({d:d0, n:P.length/4-d0, c:BASE_COUL[k%BASE_COUL.length]});
+    }
+    gl.bindBuffer(gl.ARRAY_BUFFER,basB);
+    gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(P),gl.STATIC_DRAW);
+  }
+
   function buildLimite(jeu){
     limN=0; const btn=document.getElementById("limBtn");
     if(!jeu||!curHeights){ btn.style.display="none"; return; }
@@ -403,7 +452,7 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
       const L=Math.hypot(x2-x1,z2-z1), n=Math.max(2,Math.ceil(L/pas));
       for(let i=0;i<=n;i++){
         const t=i/n, x=x1+(x2-x1)*t, z=z1+(z2-z1)*t, b=terrainNorm(x,z);
-        P.push(x,0,z,b, x,LIM_HAUT,z,b);
+        P.push(x,0,-z,b, x,LIM_HAUT,-z,b);
       }
     }
     gl.bindBuffer(gl.ARRAY_BUFFER,limB);
@@ -468,15 +517,17 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
   function mul(a,b){const o=new Array(16);for(let i=0;i<4;i++)for(let j=0;j<4;j++){let s=0;for(let k=0;k<4;k++)s+=a[k*4+j]*b[i*4+k];o[i*4+j]=s;}return o;}
 
   // ---- caméra ----
-  let WORLD=1100, az=-0.9, pol=0.72, rad=1250, tgt=[0,60,0], exag=1, useTex=1, wire=0, pan={x:0,z:0};
+  let WORLD=1100, az=Math.PI/2, pol=0.72, rad=1250, tgt=[0,60,0], exag=1, useTex=1, wire=0, pan={x:0,z:0};
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   /* Le cadrage suit la plus grande dimension : sur une carte non carrée,
      se caler sur la largeur seule couperait la longueur. */
   function frameCam(){ const D=Math.max(WORLD,WORLDZ);
     /* le centre de la carte, pas l origine du monde : sur une carte à
        nombre impair de chunks, les deux diffèrent d un demi-chunk. */
-    rad=D*1.15; tgt=[ORIG[0]+WORLD/2, D*0.05, ORIG[1]+WORLDZ/2];
-    az=-0.9; pol=0.72; pan.x=0; pan.z=0; }
+    rad=D*1.15; tgt=[ORIG[0]+WORLD/2, D*0.05, -(ORIG[1]+WORLDZ/2)];
+    /* Cet azimut-là, et pas un autre : c est le seul qui place l est à
+       droite et le nord en haut, comme la minimap du jeu. */
+    az=Math.PI/2; pol=0.72; pan.x=0; pan.z=0; }
   function eye(){ const ce=Math.cos(pol)*rad; return [tgt[0]+pan.x+Math.cos(az)*ce, tgt[1]+Math.sin(pol)*rad, tgt[2]+pan.z+Math.sin(az)*ce]; }
 
   // ---- interactions ----
@@ -493,6 +544,11 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
   document.getElementById("texBtn").addEventListener("click",e=>{useTex^=1;e.currentTarget.classList.toggle("on",useTex);});
   document.getElementById("wireBtn").addEventListener("click",e=>{wire^=1;e.currentTarget.classList.toggle("on",wire);});
   document.getElementById("limBtn").addEventListener("click",e=>{showLim^=1;e.currentTarget.classList.toggle("on",showLim);});
+  let showMini=1;
+  document.getElementById("miniBtn").addEventListener("click",e=>{ showMini^=1;
+    e.currentTarget.classList.toggle("on",showMini);
+    const mi=document.getElementById("mini");
+    mi.style.display = showMini && document.getElementById("miniImg").naturalWidth ? "block" : "none"; });
   document.getElementById("bldBtn").addEventListener("click",e=>{showBld^=1;e.currentTarget.classList.toggle("on",showBld);});
   document.getElementById("resetBtn").addEventListener("click",()=>{frameCam();document.getElementById("exag").value=1;exag=1;});
 
@@ -514,7 +570,13 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
       /* nz et worldz ne figurent que sur les cartes non carrées ; ailleurs
          la grille et le monde sont les mêmes dans les deux sens. */
       buildMesh(heights,HN,WORLD,zmin,zmax,meta.nz||HN,meta.worldz||WORLD,meta.origine);
-      buildLimite(meta.jeu);
+      buildLimite(meta.jeu); buildBases(meta.bases);
+      /* La minimap du jeu, en vis-à-vis : c est elle qui dit si la carte
+         3D est dans le bon sens, et le joueur la reconnaît. */
+      { const mi=document.getElementById("mini"), im=document.getElementById("miniImg");
+        im.onload=()=>{ mi.style.display=showMini?"block":"none"; };
+        im.onerror=()=>{ mi.style.display="none"; };
+        im.src="maps/top/"+key+".jpg"; }
       loadTex("maps3d/"+key+"/tex.jpg","maps/top/"+key+".jpg");
       loadObjects(key);
       frameCam();
@@ -582,7 +644,7 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
         for(const a of [bIA,bIB,bIC,bIBase,bIGenre]){ instExt.vertexAttribDivisorANGLE(a,0);
           gl.disableVertexAttribArray(a); }
       }
-      if(showLim&&limN){
+      if(showLim&&(limN||basLots.length)){
         gl.useProgram(lprog);
         gl.uniformMatrix4fv(luPV,false,new Float32Array(mul(P,V)));
         gl.uniform1f(luHS,curMaxH); gl.uniform1f(luExag,exag); gl.uniform1f(luHaut,LIM_HAUT);
@@ -593,15 +655,26 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
            elle doit masquer ce qui passe dessous. */
         /* Le voile de limite, lui, n'écrit PAS la profondeur : sinon il
            masquerait la ville qu'il borde, au lieu de la ceinturer. */
-        {
+        gl.depthMask(false);
+        if(limN){
           gl.uniform4f(luCoul,0.90,0.16,0.16,0.42); gl.uniform1f(luVoile,1.0);
-          gl.depthMask(false);
           gl.bindBuffer(gl.ARRAY_BUFFER,limB);
           gl.vertexAttribPointer(lPos,3,gl.FLOAT,false,16,0);
           gl.vertexAttribPointer(lBase,1,gl.FLOAT,false,16,12);
           gl.drawArrays(gl.TRIANGLE_STRIP,0,limN);
-          gl.depthMask(true);
         }
+        if(basLots.length){
+          gl.uniform1f(luVoile,1.0); gl.uniform1f(luHaut,BASE_H);
+          gl.bindBuffer(gl.ARRAY_BUFFER,basB);
+          gl.vertexAttribPointer(lPos,3,gl.FLOAT,false,16,0);
+          gl.vertexAttribPointer(lBase,1,gl.FLOAT,false,16,12);
+          for(const L of basLots){
+            gl.uniform4f(luCoul,L.c[0],L.c[1],L.c[2],0.55);
+            gl.drawArrays(gl.TRIANGLE_STRIP,L.d,L.n);
+          }
+          gl.uniform1f(luHaut,LIM_HAUT);
+        }
+        gl.depthMask(true);
         gl.disable(gl.BLEND);
         gl.disableVertexAttribArray(lPos); gl.disableVertexAttribArray(lBase);
       }
