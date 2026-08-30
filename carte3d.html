@@ -117,6 +117,7 @@
     <button class="btn" id="wireBtn">Grid</button>
     <button class="btn" id="bldBtn" style="display:none" title="Building preview (positions extracted from the game)">Buildings</button>
     <button class="btn on" id="limBtn" style="display:none" title="The battle boundary, from the game's arena definition">Boundary</button>
+    <button class="btn on" id="eauBtn" style="display:none" title="Water, cut where the ground rises above its level">Water</button>
     <button class="btn on" id="miniBtn">Minimap</button>
     <button class="btn" id="resetBtn">Recentre</button>
   </div>
@@ -321,7 +322,7 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
     img.onerror=()=>{ if(fallback) loadTex(fallback); }; img.src=url; }
 
   // ---- buffers (recréés à chaque carte) ----
-  let pB=gl.createBuffer(),nB=gl.createBuffer(),uB=gl.createBuffer(),iB=gl.createBuffer(),idxLen=0,curMaxH=1;
+  let pB=gl.createBuffer(),nB=gl.createBuffer(),uB=gl.createBuffer(),iB=gl.createBuffer(),idxLen=0,curMaxH=1,curZmin=0;
   /* Le maillage suit la résolution de la carte de hauteurs, relevée au
      chargement : 704 mailles pour les 705 points d Himmelsdorf. */
   let MESH=512;
@@ -357,7 +358,7 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
        largeur : c'est l'étendue réelle du relief, en mètres. Une unité du
        monde vaut donc un mètre, comme pour X et Z. */
     curHmin=0; curHmax=65535; const span=65535;
-    const HS=Math.max(1,zmax-zmin); curMaxH=HS;
+    const HS=Math.max(1,zmax-zmin); curMaxH=HS; curZmin=zmin;
     const sampleH=(u,v)=>{ const x=Math.min(HN-1,Math.max(0,u*(HN-1))),y=Math.min(HZ-1,Math.max(0,v*(HZ-1)));
       const x0=x|0,y0=y|0,x1=Math.min(HN-1,x0+1),y1=Math.min(HZ-1,y0+1),fx=x-x0,fy=y-y0;
       const a=H[y0*HN+x0],b=H[y0*HN+x1],c=H[y1*HN+x0],d=H[y1*HN+x1];
@@ -451,15 +452,49 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
   const limB=gl.createBuffer(); let limN=0, showLim=1;
   const LIM_HAUT=18;                       // hauteur du voile, en mètres
 
-  /* L EAU — mesurée, essayée, ÉCARTÉE.
-     La section BWWa de space.bin donne, pour chaque nappe, une boîte
-     englobante et ses textures. Himmelsdorf en a deux, à −7,3 m.
-     Mais une boîte n est pas une forme : dessinée telle quelle, la
-     nappe recouvrait des îlots entiers d immeubles. La découper au
-     niveau d eau ne la sauve pas — l emprise ainsi obtenue tombe encore
-     sur des cours et des toits. La vraie surface est un maillage à part,
-     désigné par un identifiant sous spaces/<carte>/water/. Tant qu il
-     n est pas lu, mieux vaut pas d eau qu une fausse. */
+  const eauB=gl.createBuffer(); let eauN=0, showEau=1;
+  /* L EAU.
+     Le jeu ne donne, par nappe, qu une BOÎTE et un NIVEAU (section BWWa
+     de space.bin, reportés dans meta.eau). Une boîte n est pas une
+     forme : dessinée telle quelle, la nappe recouvrait des îlots
+     entiers d immeubles — c est ce qui m avait fait écarter la piste.
+     Mais le découpage n a pas besoin d être lu. Une nappe est PLANE :
+     elle se voit exactement là où le sol passe sous son niveau, et
+     depuis que le relief est à l échelle métrique, cette comparaison
+     est exacte. On maille donc la boîte et on ne garde que les
+     cellules mouillées. */
+  function buildEau(nappes){
+    eauN=0; const btn=document.getElementById("eauBtn");
+    if(!nappes||!nappes.length||!curHeights){ btn.style.display="none"; return; }
+    const P=[], WZm=WORLDZ||WORLD;
+    for(const n of nappes){
+      const lx=n.x[1]-n.x[0], lz=n.z[1]-n.z[0];
+      if(!(lx>0&&lz>0)) continue;
+      /* Le NIVEAU, ramené à l échelle du relief : le nuanceur multiplie
+         ensuite par uHS, comme pour le terrain. */
+      const b=(n.y-curZmin)/curMaxH;
+      /* Un pas de trois mètres suffit pour un rivage vu de haut, et on
+         plafonne à 300 cellules par côté : au-delà, le trait ne gagne
+         rien et la carte rame. */
+      const nx=Math.min(300,Math.max(2,Math.ceil(lx/3))), nz=Math.min(300,Math.max(2,Math.ceil(lz/3)));
+      for(let i=0;i<nx;i++) for(let j=0;j<nz;j++){
+        const x1=n.x[0]+lx*i/nx, x2=n.x[0]+lx*(i+1)/nx;
+        const z1=n.z[0]+lz*j/nz, z2=n.z[0]+lz*(j+1)/nz;
+        const cx=(x1+x2)/2, cz=(z1+z2)/2;
+        /* Hors du terrain, il n y a pas de sol : terrainNorm y renvoie
+           la valeur du bord, ce qui ferait déborder la nappe. */
+        if(cx<ORIG[0]||cx>ORIG[0]+WORLD||cz<ORIG[1]||cz>ORIG[1]+WZm) continue;
+        if(terrainNorm(cx,cz)>=b) continue;      // le sol émerge : pas d eau
+        P.push(x1,0,-z1,b, x2,0,-z1,b, x2,0,-z2,b,
+               x1,0,-z1,b, x2,0,-z2,b, x1,0,-z2,b);
+      }
+    }
+    if(!P.length){ btn.style.display="none"; return; }
+    btn.style.display="";
+    gl.bindBuffer(gl.ARRAY_BUFFER,eauB);
+    gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(P),gl.STATIC_DRAW);
+    eauN=P.length/4;
+  }
   function buildLimite(jeu){
     limN=0; const btn=document.getElementById("limBtn");
     if(!jeu||!curHeights){ btn.style.display="none"; return; }
@@ -679,6 +714,7 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
   document.getElementById("texBtn").addEventListener("click",e=>{useTex^=1;e.currentTarget.classList.toggle("on",useTex);});
   document.getElementById("wireBtn").addEventListener("click",e=>{wire^=1;e.currentTarget.classList.toggle("on",wire);});
   document.getElementById("limBtn").addEventListener("click",e=>{showLim^=1;e.currentTarget.classList.toggle("on",showLim);});
+  document.getElementById("eauBtn").addEventListener("click",e=>{showEau^=1;e.currentTarget.classList.toggle("on",showEau);});
   let showMini=1;
   document.getElementById("miniBtn").addEventListener("click",e=>{ showMini^=1;
     e.currentTarget.classList.toggle("on",showMini);
@@ -741,6 +777,7 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
          la grille et le monde sont les mêmes dans les deux sens. */
       buildMesh(heights,HN,WORLD,zmin,zmax,meta.nz||HN,meta.worldz||WORLD,meta.origine);
       buildLimite(meta.jeu);
+      buildEau(meta.eau);
       /* La minimap du jeu, en vis-à-vis : c est elle qui dit si la carte
          3D est dans le bon sens, et le joueur la reconnaît. */
       { const mi=document.getElementById("mini"), im=document.getElementById("miniImg");
@@ -816,19 +853,27 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
         for(const a of [bIA,bIB,bIC,bIBase,bIGenre]){ instExt.vertexAttribDivisorANGLE(a,0);
           gl.disableVertexAttribArray(a); }
       }
-      if(showLim&&limN){
+      if((showLim&&limN)||(showEau&&eauN)){
         gl.useProgram(lprog);
         gl.uniformMatrix4fv(luPV,false,new Float32Array(mul(P,V)));
         gl.uniform1f(luHS,curMaxH); gl.uniform1f(luExag,exag); gl.uniform1f(luHaut,LIM_HAUT);
         gl.enableVertexAttribArray(lPos); gl.enableVertexAttribArray(lBase);
         gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
         gl.disable(gl.CULL_FACE);
-        /* L'eau écrit dans le tampon de profondeur : c'est une surface,
-           elle doit masquer ce qui passe dessous. */
-        /* Le voile de limite, lui, n'écrit PAS la profondeur : sinon il
+        /* L'eau d'abord, et elle ÉCRIT la profondeur : c'est une
+           surface opaque au regard, elle doit masquer ce qui passe
+           dessous. Le voile de limite, lui, vient après sans l'écrire. */
+        if(showEau&&eauN){
+          gl.uniform4f(luCoul,0.16,0.34,0.52,0.72); gl.uniform1f(luVoile,0.0);
+          gl.bindBuffer(gl.ARRAY_BUFFER,eauB);
+          gl.vertexAttribPointer(lPos,3,gl.FLOAT,false,16,0);
+          gl.vertexAttribPointer(lBase,1,gl.FLOAT,false,16,12);
+          gl.drawArrays(gl.TRIANGLES,0,eauN);
+        }
+        /* Le voile de limite n'écrit PAS la profondeur : sinon il
            masquerait la ville qu'il borde, au lieu de la ceinturer. */
         gl.depthMask(false);
-        if(limN){
+        if(showLim&&limN){
           gl.uniform4f(luCoul,0.90,0.16,0.16,0.42); gl.uniform1f(luVoile,1.0);
           gl.bindBuffer(gl.ARRAY_BUFFER,limB);
           gl.vertexAttribPointer(lPos,3,gl.FLOAT,false,16,0);
