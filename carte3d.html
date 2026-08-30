@@ -82,6 +82,17 @@
     color:var(--muted);margin:0 0 5px 1px}
   #mini .n{position:absolute;top:24px;right:12px;font-size:10px;font-weight:800;color:var(--gold)}
   @media(max-width:900px){ #mini{display:none!important} }
+  /* La légende ne s'affiche qu'avec un calque : sans calque elle
+     n'expliquerait rien, et elle mangerait le coin de l'écran. */
+  /* Au-dessus de l'aide, qui occupe déjà le coin : superposées, ni
+     l'une ni l'autre ne se lisait. */
+  #leg{position:absolute;right:16px;bottom:64px;padding:9px 11px;display:none;max-width:230px}
+  #leg .lg{font-size:10px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;
+    color:var(--muted);margin:0 0 6px 1px}
+  #leg .li{display:flex;align-items:center;gap:8px;font-size:12px;line-height:1.35;margin:4px 0}
+  #leg .pu{width:13px;height:13px;border-radius:3px;flex:0 0 13px;box-shadow:0 0 0 1px rgba(0,0,0,.35) inset}
+  #leg .no{font-size:11px;color:var(--muted);margin:7px 0 0;line-height:1.35}
+  @media(max-width:900px){ #leg{display:none!important} }
   #err{position:absolute;inset:0;display:none;align-items:center;justify-content:center;text-align:center;padding:30px;color:var(--muted);font-size:14px}
   @media(max-width:640px){ #title h1{font-size:17px} #hint{display:none} #hud input[type=range]{width:84px} }
 </style>
@@ -100,6 +111,8 @@
     <div class="sep"></div>
     <div class="grp" id="cpLang"></div>
     <div class="sep"></div>
+    <div class="grp" id="calGrp" style="display:none"><select id="calSel"></select></div>
+    <div class="sep" id="calSep" style="display:none"></div>
     <button class="btn on" id="texBtn">Texture</button>
     <button class="btn" id="wireBtn">Grid</button>
     <button class="btn" id="bldBtn" style="display:none" title="Building preview (positions extracted from the game)">Buildings</button>
@@ -108,6 +121,7 @@
     <button class="btn" id="resetBtn">Recentre</button>
   </div>
   <div id="mini" class="glass"><div class="lg">Minimap</div><img id="miniImg" alt=""><div class="n">N ↑</div></div>
+  <div id="leg" class="glass"><div class="lg" id="legT">Legend</div><div id="legL"></div><p class="no" id="legN"></p></div>
   <div id="hint"><b>Drag</b> to rotate · <b>Scroll</b> zooms where you point<br><b>Right-click</b> or <b>Shift</b> to pan · <b>WASD</b> to move · <b>Shift</b> to go faster</div>
   <div id="load" class="on"><div class="box glass"><span class="spin"></span>Loading the terrain…</div></div>
   <div id="err" class="glass">Your browser couldn't start 3D (WebGL required).</div>
@@ -178,14 +192,19 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
   const bvs=`attribute vec3 aPos;
     attribute vec4 iA;attribute vec4 iB;attribute vec4 iC;attribute float iBase;attribute float iGenre;
     uniform mat4 uPV;uniform float uHS;uniform float uExag;
-    varying vec3 vW;varying float vH;varying float vGenre;
+    varying vec3 vW;varying float vH;varying vec4 vCal;
     void main(){
       vec3 w=vec3(dot(iA.xyz,aPos)+iA.w, dot(iB.xyz,aPos)+iB.w, -(dot(iC.xyz,aPos)+iC.w));
       float y=iBase*uHS*uExag+w.y;
-      vec3 p=vec3(w.x,y,w.z); vW=p; vH=w.y; vGenre=iGenre;
+      vec3 p=vec3(w.x,y,w.z); vW=p; vH=w.y;
+      /* Le genre est un entier de bits, decode ici une fois par sommet :
+         x roche · y destructibilite 0..3 · z couvert dur · w buisson.
+         GLSL ES 1.0 n a pas d operateurs binaires, d ou floor et mod. */
+      float g=iGenre;
+      vCal=vec4(mod(g,2.0), mod(floor(g/2.0),4.0), mod(floor(g/8.0),2.0), mod(floor(g/16.0),2.0));
       gl_Position=uPV*vec4(p,1.0); }`;
   const bfs=`#extension GL_OES_standard_derivatives : enable
-    precision highp float;varying vec3 vW;varying float vH;varying float vGenre;uniform vec3 uEye;uniform float uFlore;
+    precision highp float;varying vec3 vW;varying float vH;varying vec4 vCal;uniform vec3 uEye;uniform float uFlore;uniform float uCalque;
     void main(){
       vec3 N=normalize(cross(dFdx(vW),dFdy(vW)));
       /* La normale vient des derivees d ecran : son SIGNE depend du sens
@@ -215,12 +234,40 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
          toits d Himmelsdorf et formaient une longue tache — que j ai
          d abord cherchee dans le terrain, ou elle n etait pas. */
       vec3 pierre=mix(vec3(0.50,0.48,0.45), vec3(0.45,0.43,0.39), toit);
-      vec3 bati=mix(mur, pierre, clamp(vGenre,0.0,1.0));
+      vec3 bati=mix(mur, pierre, clamp(vCal.x,0.0,1.0));
       /* La vegetation a sa propre couleur : sur une carte tactique, un
          buisson et un mur ne se valent pas — l un cache, l autre arrete.
          Les confondre en gris serait la faute la plus couteuse. */
       vec3 vert=mix(vec3(0.22,0.29,0.17), vec3(0.40,0.49,0.26), ciel);
       vec3 base=mix(bati, vert, uFlore);
+      /* ── LES CALQUES ────────────────────────────────────────────────
+         Chacun repeint l objet ; l eclairage, lui, ne change pas, sinon
+         le relief des facades disparaitrait avec la couleur.
+         Le gris neutre est TOUJOURS la couleur de « ce dont on ne parle
+         pas » : sur un calque, ce qui n est pas mis en avant doit
+         s effacer sans disparaitre. */
+      vec3 neutre=vec3(0.50,0.49,0.47);
+      if(uCalque>0.5&&uCalque<1.5){
+        /* DESTRUCTIBLE — une seule teinte, du clair au sombre selon la
+           resistance : c est une grandeur ordonnee, pas des categories.
+           Le plus clair tombe au premier contact. */
+        vec3 c=neutre;
+        if(vCal.y>0.5&&vCal.y<1.5) c=vec3(0.98,0.85,0.44);
+        else if(vCal.y>1.5&&vCal.y<2.5) c=vec3(0.90,0.56,0.20);
+        else if(vCal.y>2.5) c=vec3(0.66,0.28,0.13);
+        base=c;
+      } else if(uCalque>1.5&&uCalque<2.5){
+        /* VEGETATION — la haie et le buisson d abord : ce sont eux qui
+           cachent un char. L arbre compte moins, le reste s efface. */
+        base=neutre*0.9;
+        if(uFlore>0.5) base=vCal.w>0.5 ? vec3(0.36,0.72,0.30) : vec3(0.20,0.42,0.24);
+      } else if(uCalque>2.5){
+        /* COUVERT — deux teintes opposees et un gris : ce qui arrete un
+           obus, ce qui ne l arrete pas, et ce qui n est pas un couvert. */
+        if(vCal.z>0.5) base=vec3(0.24,0.45,0.58);
+        else if(vCal.y>0.5||uFlore>0.5) base=vec3(0.91,0.68,0.35);
+        else base=neutre*0.92;
+      }
       /* Les premiers metres s assombrissent : un contact au sol, meme
          approche, pose l objet au lieu de le laisser flotter. La hauteur
          de ce degrade suit l objet — quatre metres pour un batiment, un
@@ -235,11 +282,14 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
         bIGenre=gl.getAttribLocation(bprog,"iGenre");
   const buPV=gl.getUniformLocation(bprog,"uPV"),buHS=gl.getUniformLocation(bprog,"uHS"),buExag=gl.getUniformLocation(bprog,"uExag");
   const buEye=gl.getUniformLocation(bprog,"uEye"),buFlore=gl.getUniformLocation(bprog,"uFlore");
+  const buCalque=gl.getUniformLocation(bprog,"uCalque");
   /* L'instanciation : sans elle il faudrait écrire la géométrie de
      chacun des 18 374 objets, soit cinquante mégaoctets au lieu de
      treize — et pour une qualité moindre. */
   const instExt=gl.getExtension("ANGLE_instanced_arrays");
   let showBld=0;
+  /* 0 = aucun calque ; voir CALQUES plus bas. */
+  let calque=0;
   /* Deux jeux : le bâti et la flore, colorés séparément. */
   const JEUX=[{nom:"formes",flore:0,vb:null,ib:null,xb:null,modeles:[]},
               {nom:"flore", flore:1,vb:null,ib:null,xb:null,modeles:[]}];
@@ -476,8 +526,15 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
         lisCPF4(await r.arrayBuffer(), j); charge++;
       }catch(e){ console.error("carte3d : "+j.nom+".bin illisible —", e); }
     }
-    if(charge){ btn.style.display=""; showBld=1; btn.classList.add("on"); }
-    else { btn.style.display="none"; showBld=0; btn.classList.remove("on"); }
+    const cal=document.getElementById("calGrp"), sep=document.getElementById("calSep");
+    if(charge){ btn.style.display=""; showBld=1; btn.classList.add("on");
+      cal.style.display=""; sep.style.display=""; }
+    else { btn.style.display="none"; showBld=0; btn.classList.remove("on");
+      /* Sans objets, un calque ne colorerait rien : on le remet à zéro
+         plutôt que de laisser un sélecteur qui ment. */
+      cal.style.display="none"; sep.style.display="none";
+      calque=0; document.getElementById("calSel").value=0;
+      document.getElementById("leg").style.display="none"; }
   }
 
   // ---- maths ----
@@ -630,6 +687,41 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
   document.getElementById("bldBtn").addEventListener("click",e=>{showBld^=1;e.currentTarget.classList.toggle("on",showBld);});
   document.getElementById("resetBtn").addEventListener("click",frameCam);
 
+  /* ── LES CALQUES ─────────────────────────────────────────────────
+     Quatre lectures d'une même scène. Les pastilles de la légende
+     reprennent EXACTEMENT les teintes du nuanceur : une légende qui ne
+     correspond pas à l'image est pire que pas de légende. */
+  const CALQUES=[
+    {nom:"No layer", note:"", cles:[]},
+    {nom:"Destructible", note:"Hit points come from the game's own list of destructibles.", cles:[
+      ["#fad970","Goes down at a touch"],["#e68f33","Takes a nudge"],
+      ["#a84721","Holds up"],["#807d78","Indestructible"]]},
+    {nom:"Cover from view", note:"Hedges and bushes are what hide a tank — they are shown ahead of trees.", cles:[
+      ["#5cb84d","Bush or hedge"],["#336b3d","Tree"],["#807d78","Everything else"]]},
+    {nom:"Hard or soft cover", note:"Hard cover is measured here, not declared by the game: indestructible, and at least a metre tall and a metre across.", cles:[
+      ["#3d7394","Stops a shell"],["#e8ad59","Doesn't stop one"],["#807d78","Not cover at all"]]},
+  ];
+  {
+    const s=document.getElementById("calSel");
+    CALQUES.forEach((c,i)=>{ const o=document.createElement("option"); o.value=i; o.textContent=t(c.nom); s.appendChild(o); });
+    const leg=document.getElementById("leg"), lst=document.getElementById("legL"), note=document.getElementById("legN");
+    document.getElementById("legT").textContent=t("Legend");
+    s.addEventListener("change",()=>{
+      calque=+s.value;
+      const c=CALQUES[calque];
+      lst.innerHTML="";
+      for(const [coul,txt] of c.cles){
+        const d=document.createElement("div"); d.className="li";
+        const p=document.createElement("span"); p.className="pu"; p.style.background=coul;
+        d.appendChild(p); d.appendChild(document.createTextNode(t(txt))); lst.appendChild(d);
+      }
+      note.textContent=t(c.note); note.style.display=c.note?"":"none";
+      leg.style.display=calque?"block":"none";
+      /* Choisir un calque sans voir les objets ne montrerait rien. */
+      if(calque&&!showBld){ showBld=1; document.getElementById("bldBtn").classList.add("on"); }
+    });
+  }
+
   // ---- chargement d'une carte ----
   const loadEl=document.getElementById("load");
   async function loadMap(key){
@@ -695,6 +787,7 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
         const PV=new Float32Array(mul(P,V));   // PAS d'exag sur les bâtiments (calculé dans le shader)
         gl.uniformMatrix4fv(buPV,false,PV); gl.uniform1f(buHS,curMaxH); gl.uniform1f(buExag,exag);
         { const E=eye(); gl.uniform3f(buEye,E[0],E[1],E[2]); }
+        gl.uniform1f(buCalque,calque);
         gl.disableVertexAttribArray(aUv);
         for(const a of [bPos,bIA,bIB,bIC,bIBase,bIGenre]) gl.enableVertexAttribArray(a);
         for(const a of [bIA,bIB,bIC,bIBase,bIGenre]) instExt.vertexAttribDivisorANGLE(a,1);
