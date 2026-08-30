@@ -813,6 +813,11 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
        découpe au sol, elle ne peut pas rester celle d'avant. */
     buildLimite((m&&m.jeu)||meta.jeu);
     buildEau(meta.eau);
+    /* La TEXTURE aussi : sans elle, le relief du mode est bien là mais
+       repeint avec l'ancienne herbe, et la différence disparaît dès
+       qu'on rallume la texture. C'est ce qui faisait croire à deux
+       cartes identiques. */
+    loadTex("maps3d/"+curKey+"/"+((m&&m.tex)||"tex.jpg"),"maps/top/"+curKey+".jpg");
     curMode=mode;
   }
   document.getElementById("modeSel").addEventListener("change",async e=>{
@@ -839,7 +844,7 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
         im.onload=()=>{ mi.style.display=showMini?"block":"none"; };
         im.onerror=()=>{ mi.style.display="none"; };
         im.src="maps/top/"+key+".jpg"; }
-      loadTex("maps3d/"+key+"/tex.jpg","maps/top/"+key+".jpg");
+      /* poseRelief a déjà chargé la texture du mode retenu. */
       loadObjects(key);
       frameCam();
       document.getElementById("mapSub").textContent=t("Real elevation")+" · "+WORLD+" m";
