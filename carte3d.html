@@ -500,6 +500,36 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
     gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(P),gl.STATIC_DRAW);
     eauN=P.length/4;
   }
+  /* Les zones que le mode Fer de lance modifie, dessinées comme le
+     voile de limite mais en bleu : le terrain y change, parfois de
+     vingt-cinq mètres, et sans repère on cherche la différence au lieu
+     de la voir. Les boîtes viennent des prefabs Onslaught du jeu. */
+  const zonB=gl.createBuffer(); let zonN=0;
+  function buildZones(zones){
+    zonN=0;
+    if(!zones||!zones.length||!curHeights) return;
+    const P=[], pas=4, HAUT=6;
+    for(const zo of zones){
+      const coins=[[zo.x[0],zo.z[0]],[zo.x[1],zo.z[0]],[zo.x[1],zo.z[1]],[zo.x[0],zo.z[1]],[zo.x[0],zo.z[0]]];
+      for(let k=0;k<4;k++){
+        const [x1,z1]=coins[k], [x2,z2]=coins[k+1];
+        const L=Math.hypot(x2-x1,z2-z1), n=Math.max(2,Math.ceil(L/pas));
+        /* Chaque côté est un ruban à part : sans la répétition du
+           premier point, le dernier segment d'une zone rejoindrait la
+           suivante en travers de la carte. */
+        for(let i=0;i<=n;i++){
+          const t=i/n, x=x1+(x2-x1)*t, z=z1+(z2-z1)*t, b=terrainNorm(x,z);
+          if(i===0&&P.length) P.push(x,0,-z,b, x,0,-z,b);
+          P.push(x,0,-z,b, x,HAUT,-z,b);
+          if(i===n) P.push(x,HAUT,-z,b, x,HAUT,-z,b);
+        }
+      }
+    }
+    if(!P.length) return;
+    gl.bindBuffer(gl.ARRAY_BUFFER,zonB);
+    gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(P),gl.STATIC_DRAW);
+    zonN=P.length/4;
+  }
   function buildLimite(jeu){
     limN=0; const btn=document.getElementById("limBtn");
     if(!jeu||!curHeights){ btn.style.display="none"; return; }
@@ -812,6 +842,7 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
     /* La limite et l'eau se redressent sur le nouveau relief : l'eau se
        découpe au sol, elle ne peut pas rester celle d'avant. */
     buildLimite((m&&m.jeu)||meta.jeu);
+    buildZones(m&&m.zones);
     buildEau(meta.eau);
     /* La TEXTURE aussi : sans elle, le relief du mode est bien là mais
        repeint avec l'ancienne herbe, et la différence disparaît dès
@@ -913,7 +944,7 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
         for(const a of [bIA,bIB,bIC,bIBase,bIGenre]){ instExt.vertexAttribDivisorANGLE(a,0);
           gl.disableVertexAttribArray(a); }
       }
-      if((showLim&&limN)||(showEau&&eauN)){
+      if((showLim&&limN)||(showEau&&eauN)||zonN){
         gl.useProgram(lprog);
         gl.uniformMatrix4fv(luPV,false,new Float32Array(mul(P,V)));
         gl.uniform1f(luHS,curMaxH); gl.uniform1f(luExag,exag); gl.uniform1f(luHaut,LIM_HAUT);
@@ -933,6 +964,17 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
         /* Le voile de limite n'écrit PAS la profondeur : sinon il
            masquerait la ville qu'il borde, au lieu de la ceinturer. */
         gl.depthMask(false);
+        /* Les zones du mode, en bleu, sous le voile rouge des limites :
+           elles se lisent d'un coup d'œil sans masquer le terrain. */
+        if(zonN){
+          gl.uniform4f(luCoul,0.32,0.62,0.92,0.50); gl.uniform1f(luVoile,1.0);
+          gl.uniform1f(luHaut,6.0);
+          gl.bindBuffer(gl.ARRAY_BUFFER,zonB);
+          gl.vertexAttribPointer(lPos,3,gl.FLOAT,false,16,0);
+          gl.vertexAttribPointer(lBase,1,gl.FLOAT,false,16,12);
+          gl.drawArrays(gl.TRIANGLE_STRIP,0,zonN);
+          gl.uniform1f(luHaut,LIM_HAUT);
+        }
         if(showLim&&limN){
           gl.uniform4f(luCoul,0.90,0.16,0.16,0.42); gl.uniform1f(luVoile,1.0);
           gl.bindBuffer(gl.ARRAY_BUFFER,limB);
