@@ -293,7 +293,11 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
   /* 0 = aucun calque ; voir CALQUES plus bas. */
   let calque=0;
   /* Deux jeux : le bâti et la flore, colorés séparément. */
+  /* Le troisième jeu ne se charge que dans un mode qui en déclare un :
+     le Fer de lance ajoute des objets à Himmelsdorf (le zeppelin
+     écrasé), sans rien retirer. Il se dessine comme le bâti. */
   const JEUX=[{nom:"formes",flore:0,vb:null,ib:null,xb:null,modeles:[]},
+    {nom:"formes-comp7",flore:0,mode:"comp7",vb:null,ib:null,xb:null,modeles:[]},
               {nom:"flore", flore:1,vb:null,ib:null,xb:null,modeles:[]}];
   let curHeights=null,curHN=0,curHZ=0,curHmin=0,curHmax=1,WORLDZ=1100;
   /* L ORIGINE du monde. Je supposais la carte centrée sur zéro ; elle ne
@@ -557,6 +561,13 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
     if(!quoi||!instExt){ btn.style.display="none"; showBld=0; btn.classList.remove("on"); return; }
     let charge=0;
     for(const j of JEUX){
+      /* Un jeu lié à un mode ne se demande que dans ce mode, et
+         seulement si la carte le déclare : sinon c'est un 404 par
+         carte, et un journal bruyant masque les vraies erreurs. */
+      if(j.mode){
+        const m=curMeta&&curMeta.modes&&curMeta.modes[j.mode];
+        if(j.mode!==curMode||!m||!m.formes) continue;
+      }
       try{ const r=await fetch("maps3d/"+key+"/"+j.nom+".bin");
         if(!r.ok) continue;
         lisCPF4(await r.arrayBuffer(), j); charge++;
@@ -785,7 +796,10 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
   async function poseRelief(mode){
     const meta=curMeta; if(!meta) return;
     const m=(mode&&meta.modes&&meta.modes[mode])||null;
-    const ab=await fetch("maps3d/"+curKey+"/"+(m?m.relief:"height.u16")).then(r=>r.arrayBuffer());
+    /* Un mode peut n'avoir PAS de relief propre : Himmelsdorf ne change
+       que ses objets. On retombe alors sur le relief de base — écrire
+       « m ? m.relief : … » demandait un fichier nommé undefined. */
+    const ab=await fetch("maps3d/"+curKey+"/"+((m&&m.relief)||"height.u16")).then(r=>r.arrayBuffer());
     const heights=new Uint16Array(ab);
     /* zmin/zmax sont les altitudes RÉELLES du relief, en mètres. Les
        cartes pas encore réextraites n'ont que l'ancien couple hmin/hmax
@@ -803,7 +817,7 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
   }
   document.getElementById("modeSel").addEventListener("change",async e=>{
     const l=document.getElementById("load"); l.classList.add("on");
-    try{ await poseRelief(e.target.value); }
+    try{ await poseRelief(e.target.value); await loadObjects(curKey); }
     catch(err){ console.error("carte3d : mode « "+e.target.value+" » —",err); }
     l.classList.remove("on");
   });
