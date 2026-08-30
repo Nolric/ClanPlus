@@ -297,7 +297,8 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
      le Fer de lance ajoute des objets à Himmelsdorf (le zeppelin
      écrasé), sans rien retirer. Il se dessine comme le bâti. */
   const JEUX=[{nom:"formes",flore:0,vb:null,ib:null,xb:null,modeles:[]},
-    {nom:"formes-comp7",flore:0,mode:"comp7",vb:null,ib:null,xb:null,modeles:[]},
+    {nom:"formes-comp7",flore:0,mode:"comp7",cle:"formes",vb:null,ib:null,xb:null,modeles:[]},
+    {nom:"flore-comp7",flore:1,mode:"comp7",cle:"flore",vb:null,ib:null,xb:null,modeles:[]},
               {nom:"flore", flore:1,vb:null,ib:null,xb:null,modeles:[]}];
   let curHeights=null,curHN=0,curHZ=0,curHmin=0,curHmax=1,WORLDZ=1100;
   /* L ORIGINE du monde. Je supposais la carte centrée sur zéro ; elle ne
@@ -596,7 +597,7 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
          carte, et un journal bruyant masque les vraies erreurs. */
       if(j.mode){
         const m=curMeta&&curMeta.modes&&curMeta.modes[j.mode];
-        if(j.mode!==curMode||!m||!m.formes) continue;
+        if(j.mode!==curMode||!m||!m[j.cle]) continue;
       }
       try{ const r=await fetch("maps3d/"+key+"/"+j.nom+".bin");
         if(!r.ok) continue;
