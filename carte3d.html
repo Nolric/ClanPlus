@@ -554,7 +554,11 @@ function pretty(k){ const L=LABELS[k];
      Le rayon de capture d'une base est de 50 m dans le jeu ; les points
      d'apparition sont marqués plus petits, ce ne sont pas des zones. */
   const objB=gl.createBuffer(); let objLots=[];
-  const COUL_EQ={1:[0.36,0.74,0.42], 2:[0.92,0.42,0.34], 0:[0.96,0.80,0.30]};
+  /* Les couleurs du JEU : vert pour l'équipe 1, rouge pour l'équipe 2, et
+     BLANC pour une base neutre — celle du mode Rencontre, que les deux
+     camps se disputent. Elle était jaune ici, ce qui la faisait passer
+     pour un objectif d'un troisième genre. */
+  const COUL_EQ={1:[0.36,0.74,0.42], 2:[0.92,0.42,0.34], 0:[0.95,0.96,0.98]};
   function buildObjectifs(m){
     objLots=[];
     if(!m||!curHeights) return;
@@ -564,20 +568,44 @@ function pretty(k){ const L=LABELS[k];
        On pose donc un DISQUE au sol, qui se lit à la verticale, ceinturé
        d'un muret, qui se lit de profil. Le disque flotte à 1,2 m pour ne
        pas se battre avec le relief. */
+    /* Trois pièces, chacune pour un angle de vue :
+         le DISQUE, discret, qui dit où est la zone vue de haut ;
+         l'ANNEAU de bord, net et franc, qui en donne le contour exact —
+           c'est lui qui fait la différence entre une tache et un repère ;
+         le MURET, qui la rend lisible de profil et s'efface vers le haut.
+       La finesse suit le rayon : un cercle de 50 m dessiné avec vingt-huit
+       segments se voyait polygonal dès qu'on s'approchait. */
     const marque=(x,z,r,mur,coul)=>{
-      const n=Math.max(28,Math.round(r*1.2));
-      const bord=[];
-      for(let i=0;i<=n;i++){
-        const a=i/n*Math.PI*2, px=x+Math.cos(a)*r, pz=z+Math.sin(a)*r;
-        bord.push([px,pz,terrainNorm(px,pz)]);
-      }
+      const n=Math.max(64,Math.min(192,Math.round(r*3)));
+      const RI=r*0.955;                     // rayon intérieur de l'anneau
+      const H=1.0;                          // le disque flotte, pour ne pas se battre avec le sol
+      const cercle=(rayon)=>{ const l=[];
+        for(let i=0;i<=n;i++){ const a=i/n*Math.PI*2, px=x+Math.cos(a)*rayon, pz=z+Math.sin(a)*rayon;
+          l.push([px,pz,terrainNorm(px,pz)]); }
+        return l; };
+      const dedans=cercle(RI), dehors=cercle(r);
+      /* le disque */
       const d0=P.length/4;
-      P.push(x,1.2,-z,terrainNorm(x,z));
-      for(const [px,pz,b] of bord) P.push(px,1.2,-pz,b);
-      objLots.push({d:d0,n:P.length/4-d0,coul,mode:gl.TRIANGLE_FAN,voile:0,haut:mur,alpha:0.28});
+      P.push(x,H,-z,terrainNorm(x,z));
+      for(const [px,pz,b] of dedans) P.push(px,H,-pz,b);
+      objLots.push({d:d0,n:P.length/4-d0,coul,mode:gl.TRIANGLE_FAN,voile:0,haut:mur,alpha:0.20});
+      /* l'anneau de bord */
       const d1=P.length/4;
-      for(const [px,pz,b] of bord) P.push(px,0,-pz,b, px,mur,-pz,b);
-      objLots.push({d:d1,n:P.length/4-d1,coul,mode:gl.TRIANGLE_STRIP,voile:1,haut:mur,alpha:0.60});
+      for(let i=0;i<=n;i++){ const a=dedans[i], c=dehors[i];
+        P.push(a[0],H,-a[1],a[2], c[0],H,-c[1],c[2]); }
+      objLots.push({d:d1,n:P.length/4-d1,coul,mode:gl.TRIANGLE_STRIP,voile:0,haut:mur,alpha:0.85});
+      /* Un CONTOUR sombre juste à l'extérieur. Sans lui, la base neutre
+         du mode Rencontre — blanche, comme dans le jeu — se perd sur un
+         sol clair : Steppes est sablonneuse. Le contour tient sur les
+         deux fonds, et détache aussi le vert et le rouge. */
+      const ext=cercle(r*1.035), d15=P.length/4;
+      for(let i=0;i<=n;i++){ const a=dehors[i], c=ext[i];
+        P.push(a[0],H,-a[1],a[2], c[0],H,-c[1],c[2]); }
+      objLots.push({d:d15,n:P.length/4-d15,coul:[0.06,0.07,0.09],mode:gl.TRIANGLE_STRIP,voile:0,haut:mur,alpha:0.55});
+      /* le muret */
+      const d2=P.length/4;
+      for(const [px,pz,b] of dehors) P.push(px,0,-pz,b, px,mur,-pz,b);
+      objLots.push({d:d2,n:P.length/4-d2,coul,mode:gl.TRIANGLE_STRIP,voile:1,haut:mur,alpha:0.55});
     };
     for(const b of (m.bases||[])) marque(b.x,b.z,50,16,COUL_EQ[b.e]||COUL_EQ[0]);
     if(m.point) marque(m.point[0],m.point[1],50,16,COUL_EQ[0]);
