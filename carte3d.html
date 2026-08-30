@@ -292,6 +292,8 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
   let showBld=0;
   /* 0 = aucun calque ; voir CALQUES plus bas. */
   let calque=0;
+  /* le joueur a-t-il touché au bouton des objets ? */
+  let bldTouche=0;
   /* Deux jeux : le bâti et la flore, colorés séparément. */
   /* Le troisième jeu ne se charge que dans un mode qui en déclare un :
      le Fer de lance ajoute des objets à Himmelsdorf (le zeppelin
@@ -605,7 +607,12 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
       }catch(e){ console.error("carte3d : "+j.nom+".bin illisible —", e); }
     }
     const cal=document.getElementById("calGrp"), sep=document.getElementById("calSep");
-    if(charge){ btn.style.display=""; showBld=1; btn.classList.add("on");
+    /* On n'allume les objets qu'à la PREMIÈRE carte : changer de mode
+       rallumait ce que l'on venait d'éteindre, et toute comparaison
+       terrain nu contre terrain nu devenait impossible. */
+    if(charge){ btn.style.display="";
+      if(!bldTouche){ showBld=1; }
+      btn.classList.toggle("on",!!showBld);
       cal.style.display=""; sep.style.display=""; }
     else { btn.style.display="none"; showBld=0; btn.classList.remove("on");
       /* Sans objets, un calque ne colorerait rien : on le remet à zéro
@@ -763,7 +770,7 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
     e.currentTarget.classList.toggle("on",showMini);
     const mi=document.getElementById("mini");
     mi.style.display = showMini && document.getElementById("miniImg").naturalWidth ? "block" : "none"; });
-  document.getElementById("bldBtn").addEventListener("click",e=>{showBld^=1;e.currentTarget.classList.toggle("on",showBld);});
+  document.getElementById("bldBtn").addEventListener("click",e=>{showBld^=1;bldTouche=1;e.currentTarget.classList.toggle("on",showBld);});
   document.getElementById("resetBtn").addEventListener("click",frameCam);
 
   /* ── LES CALQUES ─────────────────────────────────────────────────
