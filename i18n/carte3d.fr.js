@@ -8,6 +8,7 @@ window.t = window.t || function (s) { return s; };
    Généré : la clé est la phrase anglaise telle qu'elle est écrite dans
    le HTML. Une phrase absente d'ici reste affichée en anglais. */
 window.CP_FR = Object.assign(window.CP_FR || {}, {
+  "<b>Drag</b> to rotate · <b>Scroll</b> zooms where you point · <b>Double-click</b> to go there<br><b>Right-click</b> or <b>Shift</b> to pan · <b>WASD</b> to move · <b>Shift</b> to go faster": "<b>Glisser</b> pour tourner · la <b>molette</b> zoome où l’on pointe · <b>double-clic</b> pour s’y rendre<br><b>Clic droit</b> ou <b>Maj</b> pour déplacer · <b>ZQSD</b> pour avancer · <b>Maj</b> pour accélérer",
   "Assault 2": "Assaut 2",
   "Serene Coast": "Côte sereine",
   "El Halluf": "El Halluf",

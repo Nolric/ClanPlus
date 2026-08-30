@@ -124,7 +124,7 @@
   </div>
   <div id="mini" class="glass"><div class="lg">Minimap</div><img id="miniImg" alt=""><div class="n">N ↑</div></div>
   <div id="leg" class="glass"><div class="lg" id="legT">Legend</div><div id="legL"></div><p class="no" id="legN"></p></div>
-  <div id="hint"><b>Drag</b> to rotate · <b>Scroll</b> zooms where you point<br><b>Right-click</b> or <b>Shift</b> to pan · <b>WASD</b> to move · <b>Shift</b> to go faster</div>
+  <div id="hint"><b>Drag</b> to rotate · <b>Scroll</b> zooms where you point · <b>Double-click</b> to go there<br><b>Right-click</b> or <b>Shift</b> to pan · <b>WASD</b> to move · <b>Shift</b> to go faster</div>
   <div id="load" class="on"><div class="box glass"><span class="spin"></span>Loading the terrain…</div></div>
   <div id="err" class="glass">Your browser couldn't start 3D (WebGL required).</div>
 </div>
@@ -518,36 +518,11 @@ function pretty(k){ const L=LABELS[k];
     gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(P),gl.STATIC_DRAW);
     eauN=P.length/4;
   }
-  /* Les zones que le mode Fer de lance modifie, dessinées comme le
-     voile de limite mais en bleu : le terrain y change, parfois de
-     vingt-cinq mètres, et sans repère on cherche la différence au lieu
-     de la voir. Les boîtes viennent des prefabs Onslaught du jeu. */
-  const zonB=gl.createBuffer(); let zonN=0;
-  function buildZones(zones){
-    zonN=0;
-    if(!zones||!zones.length||!curHeights) return;
-    const P=[], pas=4, HAUT=6;
-    for(const zo of zones){
-      const coins=[[zo.x[0],zo.z[0]],[zo.x[1],zo.z[0]],[zo.x[1],zo.z[1]],[zo.x[0],zo.z[1]],[zo.x[0],zo.z[0]]];
-      for(let k=0;k<4;k++){
-        const [x1,z1]=coins[k], [x2,z2]=coins[k+1];
-        const L=Math.hypot(x2-x1,z2-z1), n=Math.max(2,Math.ceil(L/pas));
-        /* Chaque côté est un ruban à part : sans la répétition du
-           premier point, le dernier segment d'une zone rejoindrait la
-           suivante en travers de la carte. */
-        for(let i=0;i<=n;i++){
-          const t=i/n, x=x1+(x2-x1)*t, z=z1+(z2-z1)*t, b=terrainNorm(x,z);
-          if(i===0&&P.length) P.push(x,0,-z,b, x,0,-z,b);
-          P.push(x,0,-z,b, x,HAUT,-z,b);
-          if(i===n) P.push(x,HAUT,-z,b, x,HAUT,-z,b);
-        }
-      }
-    }
-    if(!P.length) return;
-    gl.bindBuffer(gl.ARRAY_BUFFER,zonB);
-    gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(P),gl.STATIC_DRAW);
-    zonN=P.length/4;
-  }
+  /* Il y avait ici buildZones(), qui peignait en bleu les boîtes que le
+     Fer de lance modifie. C'était un outil d'enquête, utile pour montrer
+     OÙ le terrain change pendant qu'on cherchait le mécanisme ; sur une
+     carte livrée, ce sont des rectangles bleus posés sur la ville, et ça
+     n'a pas sa place. Les boîtes restent dans meta.json pour les outils. */
   /* LES OBJECTIFS DU MODE : bases à prendre, points d'apparition,
      point de contrôle. C'est tout ce qui distingue Standard, Assaut et
      Rencontre — leur terrain est le même au bit près.
@@ -735,6 +710,11 @@ function pretty(k){ const L=LABELS[k];
   const exag=1;
   let WORLD=1100, az=Math.PI/2, pol=0.72, rad=1250, tgt=[0,60,0], useTex=1, wire=0, pan={x:0,z:0};
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+  /* La distance minimale valait 6 % de la carte, soit 66 m sur
+     Himmelsdorf : on ne pouvait pas descendre dans une rue. Le pivot
+     suivant désormais le sol, on peut s'approcher sans passer sous le
+     relief. */
+  const RMIN=()=>Math.max(12,WORLD*0.018);
   /* Le cadrage suit la plus grande dimension : sur une carte non carrée,
      se caler sur la largeur seule couperait la longueur. */
   function frameCam(){ const D=Math.max(WORLD,WORLDZ);
@@ -762,15 +742,31 @@ function pretty(k){ const L=LABELS[k];
      images au lieu d'y sauter, ce qui rend la lecture du relief plus
      facile à suivre. */
   let cible={az, pol, rad, px:0, pz:0};       // où la caméra va
+  /* L'amortissement était appliqué PAR IMAGE : sur un écran à 144 Hz la
+     caméra allait deux fois et demie plus vite qu'à 60, et le clavier
+     avec. On raisonne donc en SECONDES — même ressenti qu'avant à 60
+     images, identique partout ailleurs. */
   const AMORTI=0.22;
-  function suivre(){
+  let tPrec=0;
+  function suivre(dt){
+    const k=Math.min(1,1-Math.pow(1-AMORTI,dt*60));
     /* l'azimut se rejoint par le plus court chemin */
     let d=cible.az-az; while(d>Math.PI) d-=2*Math.PI; while(d<-Math.PI) d+=2*Math.PI;
-    az+=d*AMORTI;
-    pol+=(cible.pol-pol)*AMORTI;
-    rad+=(cible.rad-rad)*AMORTI;
-    pan.x+=(cible.px-pan.x)*AMORTI;
-    pan.z+=(cible.pz-pan.z)*AMORTI;
+    az+=d*k;
+    pol+=(cible.pol-pol)*k;
+    rad+=(cible.rad-rad)*k;
+    pan.x+=(cible.px-pan.x)*k;
+    pan.z+=(cible.pz-pan.z)*k;
+    /* LE PIVOT SUIT LE SOL. Il restait à une altitude fixe, celle du
+       cadrage initial : en se déplaçant vers la colline du château on
+       finissait par tourner autour d'un point enfoui, et la vue partait
+       de travers. Le pivot se cale maintenant sur le relief sous lui,
+       plus une fraction de la distance pour rester au-dessus des toits. */
+    if(curHeights){
+      const gx=tgt[0]+pan.x, gz=-(tgt[2]+pan.z);
+      const sol=curZmin+terrainNorm(gx,gz)*curMaxH;
+      tgt[1]+=((sol+rad*0.05)-tgt[1])*k*0.7;
+    }
   }
   /* Le point du sol visé par un pixel de l'écran, à altitude constante :
      c'est ce qui permet de zoomer vers le curseur. */
@@ -805,11 +801,19 @@ function pretty(k){ const L=LABELS[k];
       cible.px=drag.px+(-dx*rx+dy*fx)*s; cible.pz=drag.pz+(-dx*rz+dy*fz)*s;}
     else{cible.az=drag.az-dx*0.008;cible.pol=clamp(drag.pol-dy*0.008,0.12,1.45);}});
   cv.addEventListener("pointerup",()=>drag=null); cv.addEventListener("pointercancel",()=>drag=null);
+  /* DOUBLE-CLIC : on va voir là. C'est le geste le plus simple pour se
+     rendre quelque part — on désigne, la caméra s'y rend en glissant,
+     au lieu de tourner puis déplacer puis zoomer. */
+  cv.addEventListener("dblclick",e=>{
+    const p=solSousCurseur(e.clientX,e.clientY); if(!p) return;
+    cible.px=p[0]-tgt[0]; cible.pz=p[1]-tgt[2];
+    cible.rad=clamp(cible.rad*0.55,RMIN(),WORLD*2.4);
+  });
   cv.addEventListener("contextmenu",e=>e.preventDefault());
   cv.addEventListener("wheel",e=>{e.preventDefault();
     const avant=solSousCurseur(e.clientX,e.clientY);
     const k=e.deltaY>0?1.12:1/1.12;
-    cible.rad=clamp(cible.rad*k,WORLD*0.06,WORLD*2.4);
+    cible.rad=clamp(cible.rad*k,RMIN(),WORLD*2.4);
     /* on ramène sous le curseur le point qui s'y trouvait : le zoom suit
        la souris au lieu de fuir vers le centre. */
     if(avant){ cible.px+= (avant[0]-(tgt[0]+cible.px))*(1-k)*0.9;
@@ -824,8 +828,8 @@ function pretty(k){ const L=LABELS[k];
     touches[e.key.toLowerCase()]=1;
     if(" wasdzqe".includes(e.key.toLowerCase())||e.key.startsWith("Arrow")) e.preventDefault(); });
   addEventListener("keyup",e=>{ touches[e.key.toLowerCase()]=0; });
-  function clavier(){
-    const k=touches, vite=(k.shift?3:1);
+  function clavier(dt){
+    const k=touches, vite=(k.shift?3:1)*dt*60;
     const av=(k.z||k.w||k.arrowup?1:0)-(k.s||k.arrowdown?1:0);
     const la=(k.d||k.arrowright?1:0)-(k.q||k.a||k.arrowleft?1:0);
     if(av||la){
@@ -834,10 +838,11 @@ function pretty(k){ const L=LABELS[k];
       const fx=-Math.cos(az),fz=-Math.sin(az),rx=-Math.sin(az),rz=Math.cos(az);
       cible.px+=(av*fx+la*rx)*s; cible.pz+=(av*fz+la*rz)*s;
     }
-    if(k["+"]||k["="]) cible.rad=clamp(cible.rad*0.97,WORLD*0.06,WORLD*2.4);
-    if(k["-"]) cible.rad=clamp(cible.rad*1.03,WORLD*0.06,WORLD*2.4);
-    if(k.pageup) cible.pol=clamp(cible.pol+0.02,0.12,1.45);
-    if(k.pagedown) cible.pol=clamp(cible.pol-0.02,0.12,1.45);
+    const p=dt*60;
+    if(k["+"]||k["="]) cible.rad=clamp(cible.rad*Math.pow(0.97,p),RMIN(),WORLD*2.4);
+    if(k["-"]) cible.rad=clamp(cible.rad*Math.pow(1.03,p),RMIN(),WORLD*2.4);
+    if(k.pageup) cible.pol=clamp(cible.pol+0.02*p,0.12,1.45);
+    if(k.pagedown) cible.pol=clamp(cible.pol-0.02*p,0.12,1.45);
   }
 
   /* Le doigt : deux doigts pour zoomer et déplacer, comme partout. */
@@ -852,7 +857,7 @@ function pretty(k){ const L=LABELS[k];
     e.preventDefault();
     const [a,b]=e.touches;
     const d=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);
-    cible.rad=clamp(pince.rad*pince.d/Math.max(1,d),WORLD*0.06,WORLD*2.4);
+    cible.rad=clamp(pince.rad*pince.d/Math.max(1,d),RMIN(),WORLD*2.4);
     const cx=(a.clientX+b.clientX)/2, cy=(a.clientY+b.clientY)/2;
     const s=cible.rad/900,rx=-Math.sin(az),rz=Math.cos(az),fx=-Math.cos(az),fz=-Math.sin(az);
     const dx=cx-pince.x, dy=cy-pince.y;
@@ -969,7 +974,6 @@ function pretty(k){ const L=LABELS[k];
     /* La limite et l'eau se redressent sur le nouveau relief : l'eau se
        découpe au sol, elle ne peut pas rester celle d'avant. */
     buildLimite((m&&m.jeu)||meta.jeu);
-    buildZones(m&&m.zones);
     buildObjectifs(m);
     buildEau(meta.eau);
     /* La TEXTURE aussi : sans elle, le relief du mode est bien là mais
@@ -1027,8 +1031,9 @@ function pretty(k){ const L=LABELS[k];
   window.addEventListener("resize",resize); resize();
   gl.enable(gl.DEPTH_TEST); gl.clearColor(0.047,0.051,0.059,1);
   function bind(loc,b,sz){gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.enableVertexAttribArray(loc);gl.vertexAttribPointer(loc,sz,gl.FLOAT,false,0,0);}
-  function frame(){
-    clavier(); suivre();
+  function frame(t){
+    const dt=Math.min(0.1,(t-tPrec)/1000)||0.016; tPrec=t;
+    clavier(dt); suivre(dt);
     gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
     if(idxLen){
       const P=persp(0.86,cv.width/cv.height,WORLD*0.02,WORLD*7);
@@ -1076,7 +1081,7 @@ function pretty(k){ const L=LABELS[k];
         for(const a of [bIA,bIB,bIC,bIBase,bIGenre]){ instExt.vertexAttribDivisorANGLE(a,0);
           gl.disableVertexAttribArray(a); }
       }
-      if((showLim&&limN)||(showEau&&eauN)||zonN||objLots.length){
+      if((showLim&&limN)||(showEau&&eauN)||objLots.length){
         gl.useProgram(lprog);
         gl.uniformMatrix4fv(luPV,false,new Float32Array(mul(P,V)));
         gl.uniform1f(luHS,curMaxH); gl.uniform1f(luExag,exag); gl.uniform1f(luHaut,LIM_HAUT);
@@ -1096,17 +1101,6 @@ function pretty(k){ const L=LABELS[k];
         /* Le voile de limite n'écrit PAS la profondeur : sinon il
            masquerait la ville qu'il borde, au lieu de la ceinturer. */
         gl.depthMask(false);
-        /* Les zones du mode, en bleu, sous le voile rouge des limites :
-           elles se lisent d'un coup d'œil sans masquer le terrain. */
-        if(zonN){
-          gl.uniform4f(luCoul,0.32,0.62,0.92,0.50); gl.uniform1f(luVoile,1.0);
-          gl.uniform1f(luHaut,6.0);
-          gl.bindBuffer(gl.ARRAY_BUFFER,zonB);
-          gl.vertexAttribPointer(lPos,3,gl.FLOAT,false,16,0);
-          gl.vertexAttribPointer(lBase,1,gl.FLOAT,false,16,12);
-          gl.drawArrays(gl.TRIANGLE_STRIP,0,zonN);
-          gl.uniform1f(luHaut,LIM_HAUT);
-        }
         /* Les objectifs du mode : un anneau par base, par point
            d apparition et par point de controle, aux couleurs des
            equipes. Ils ne masquent pas le terrain — ils le ceinturent. */
