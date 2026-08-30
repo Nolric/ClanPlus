@@ -130,7 +130,12 @@
 </div>
 <script>
 const NAMES={himmelsdorf:"Himmelsdorf",karelia:"Karelia",malinovka:"Malinovka",campaniabig:"Campania",prohorovka:"Prokhorovka",ensk:"Ensk",enskbig:"Ensk (large)",lakeville:"Lakeville",ruinberg:"Ruinberg",ruinbergsm:"Ruinberg (winter)",hills:"Mines",murovanka:"Murovanka",erlenberg:"Erlenberg",siegfriedline:"Siegfried Line",munchen:"Munich",cliff:"Cliff",monastery:"Abbey",westfeld:"Westfield",desert:"Sand River",elhallouf:"El Halluf",airfield:"Airfield",fjord:"Fjords",redshire:"Redshire",steppes:"Steppes",fishingbay:"Fisherman's Bay",caucasus:"Serene Coast",mannerheimline:"Mannerheim Line",tundra:"Tundra",canadaa:"Highway",asiagreatwall:"Great Wall",asiamiao:"Pearl River",northamerica:"Live Oaks",czech:"Pilsen",sweden:"Rocky coast",poland:"Icy pass",grafzeppelin:"Graf Zeppelin",japort:"Pacific port",lostcityctf:"Lost city",lostparadisev:"Lost paradise",lastfrontierv:"Last frontier",eiffeltowerctf:"Paris",dday:"D-Day",ddaysm:"D-Day (winter)",germany:"Berlin",germanysm:"Berlin (winter)",grafzeppelinscc:"Graf Zeppelin (SCC)",brbattlecity:"City",eralaska:"Alaska"};
-function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
+/* Le nom d une variante de mode vient de l index, pas du dictionnaire :
+   il se compose du nom de la carte et du nom du mode, tous deux traduits. */
+const LABELS={};
+function pretty(k){ const L=LABELS[k];
+  if(L) return t(NAMES[L.carte]||L.carte)+" · "+t(L.mode);
+  return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
 
 (function(){
   const cv=document.getElementById("c");
@@ -298,9 +303,19 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
   /* Le troisième jeu ne se charge que dans un mode qui en déclare un :
      le Fer de lance ajoute des objets à Himmelsdorf (le zeppelin
      écrasé), sans rien retirer. Il se dessine comme le bâti. */
+  /* TROIS jeux d'objets, pas deux. Le commun, celui que le mode AJOUTE,
+     et celui que le mode RETIRE — ce dernier manquait, et c'est pourquoi
+     un bâtiment supprimé par le Fer de lance restait à l'écran : il était
+     dans le fichier commun, chargé dans les deux modes.
+     « formes-prefab » vient des préfabs Onslaught (l'épave du dirigeable
+     d'Himmelsdorf) ; « formes-comp7 » vient de la carte elle-même, dans
+     les zones que le mode remplit. Les deux coexistent. */
   const JEUX=[{nom:"formes",flore:0,vb:null,ib:null,xb:null,modeles:[]},
-    {nom:"formes-comp7",flore:0,mode:"comp7",cle:"formes",vb:null,ib:null,xb:null,modeles:[]},
-    {nom:"flore-comp7",flore:1,mode:"comp7",cle:"flore",vb:null,ib:null,xb:null,modeles:[]},
+    {nom:"formes-comp7", flore:0,mode:"comp7",cle:"formes",vb:null,ib:null,xb:null,modeles:[]},
+    {nom:"formes-prefab",flore:0,mode:"comp7",cle:"prefab",vb:null,ib:null,xb:null,modeles:[]},
+    {nom:"flore-comp7",  flore:1,mode:"comp7",cle:"flore", vb:null,ib:null,xb:null,modeles:[]},
+    {nom:"formes-base",flore:0,sauf:"comp7",cle:"formes",vb:null,ib:null,xb:null,modeles:[]},
+    {nom:"flore-base", flore:1,sauf:"comp7",cle:"flore", vb:null,ib:null,xb:null,modeles:[]},
               {nom:"flore", flore:1,vb:null,ib:null,xb:null,modeles:[]}];
   let curHeights=null,curHN=0,curHZ=0,curHmin=0,curHmax=1,WORLDZ=1100;
   /* L ORIGINE du monde. Je supposais la carte centrée sur zéro ; elle ne
@@ -641,7 +656,12 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
         const m=curMeta&&curMeta.modes&&curMeta.modes[j.mode];
         if(j.mode!==curMode||!m||!m[j.cle]) continue;
       }
-      try{ const r=await fetch("maps3d/"+key+"/"+j.nom+".bin");
+      /* le jeu propre à la bataille aléatoire : partout SAUF dans le mode */
+      if(j.sauf){
+        const m=curMeta&&curMeta.base;
+        if(j.sauf===curMode||!m||!m[j.cle]) continue;
+      }
+      try{ const r=await fetch("maps3d/"+((curMeta&&curMeta.dossier)||key)+"/"+j.nom+".bin");
         if(!r.ok) continue;
         lisCPF4(await r.arrayBuffer(), j); charge++;
       }catch(e){ console.error("carte3d : "+j.nom+".bin illisible —", e); }
@@ -864,7 +884,11 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
   /* Un mode que le jeu ajouterait demain n'est pas dans ORDRE : indexOf
      rend −1, et il passerait DEVANT Standard. On le range à la fin. */
   const rang=k=>{ const i=ORDRE.indexOf(k); return i<0?99:i; };
-  let curMeta=null, curKey=null, curMode="";
+  /* Une carte de mode est une ENTRÉE À PART dans la liste, comme Robert
+     l a demandé — mais elle ne duplique pas ses trois cents mégaoctets :
+     son meta.json porte « dossier », où vivent les fichiers. */
+  let curMeta=null, curKey=null, curMode="", curSrc=null;
+  const dossier=()=>(curMeta&&curMeta.dossier)||curKey;
   function majModes(meta){
     const g=document.getElementById("modeGrp"), s=document.getElementById("modeSel");
     const M=(meta&&meta.modes)||{};
@@ -894,7 +918,7 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
     /* Un mode peut n'avoir PAS de relief propre : Himmelsdorf ne change
        que ses objets. On retombe alors sur le relief de base — écrire
        « m ? m.relief : … » demandait un fichier nommé undefined. */
-    const ab=await fetch("maps3d/"+curKey+"/"+((m&&m.relief)||"height.u16")).then(r=>r.arrayBuffer());
+    const ab=await fetch("maps3d/"+dossier()+"/"+((m&&m.relief)||"height.u16")).then(r=>r.arrayBuffer());
     const heights=new Uint16Array(ab);
     /* zmin/zmax sont les altitudes RÉELLES du relief, en mètres. Les
        cartes pas encore réextraites n'ont que l'ancien couple hmin/hmax
@@ -914,7 +938,7 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
        repeint avec l'ancienne herbe, et la différence disparaît dès
        qu'on rallume la texture. C'est ce qui faisait croire à deux
        cartes identiques. */
-    loadTex("maps3d/"+curKey+"/"+((m&&m.tex)||"tex.jpg"),"maps/top/"+curKey+".jpg");
+    loadTex("maps3d/"+dossier()+"/"+((m&&m.tex)||"tex.jpg"),"maps/top/"+((curMeta&&curMeta.mini)||curKey)+".jpg");
     curMode=mode;
   }
   document.getElementById("modeSel").addEventListener("change",async e=>{
@@ -940,7 +964,7 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
       { const mi=document.getElementById("mini"), im=document.getElementById("miniImg");
         im.onload=()=>{ mi.style.display=showMini?"block":"none"; };
         im.onerror=()=>{ mi.style.display="none"; };
-        im.src="maps/top/"+key+".jpg"; }
+        im.src="maps/top/"+((curMeta&&curMeta.mini)||key)+".jpg"; }
       /* poseRelief a déjà chargé la texture du mode retenu. */
       loadObjects(key);
       frameCam();
@@ -1076,7 +1100,7 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
      possèdent une géométrie, et donc ce qu'il est inutile de demander. */
   let MAPS3D={};
   fetch("maps3d/index.json").then(r=>r.json()).then(list=>{
-    list.forEach(function(m){ MAPS3D[m.key]=m; });
+    list.forEach(function(m){ MAPS3D[m.key]=m; if(m.carte&&m.mode) LABELS[m.key]={carte:m.carte,mode:m.mode}; });
     const sel=document.getElementById("mapSel");
     list.map(m=>m.key).sort((a,b)=>pretty(a).localeCompare(pretty(b), window.CP_LANG==="fr"?'fr':'en')).forEach(k=>{
       const o=document.createElement("option"); o.value=k; o.textContent=pretty(k); sel.appendChild(o);
