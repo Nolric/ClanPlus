@@ -129,7 +129,7 @@
   <div id="err" class="glass">Your browser couldn't start 3D (WebGL required).</div>
 </div>
 <script>
-const NAMES={himmelsdorf:"Himmelsdorf",karelia:"Karelia",malinovka:"Malinovka",prohorovka:"Prokhorovka",ensk:"Ensk",lakeville:"Lakeville",ruinberg:"Ruinberg",hills:"Mines",murovanka:"Murovanka",siegfriedline:"Siegfried Line",cliff:"Cliff",monastery:"Abbey",westfeld:"Westfield",desert:"Sand River",elhallouf:"El Halluf",airfield:"Airfield",redshire:"Redshire",steppes:"Steppes",fishingbay:"Fisherman's Bay",caucasus:"Serene Coast",tundra:"Tundra",northamerica:"Live Oaks"};
+const NAMES={himmelsdorf:"Himmelsdorf",karelia:"Karelia",malinovka:"Malinovka",campaniabig:"Campania",prohorovka:"Prokhorovka",ensk:"Ensk",enskbig:"Ensk (large)",lakeville:"Lakeville",ruinberg:"Ruinberg",ruinbergsm:"Ruinberg (winter)",hills:"Mines",murovanka:"Murovanka",erlenberg:"Erlenberg",siegfriedline:"Siegfried Line",munchen:"Munich",cliff:"Cliff",monastery:"Abbey",westfeld:"Westfield",desert:"Sand River",elhallouf:"El Halluf",airfield:"Airfield",fjord:"Fjords",redshire:"Redshire",steppes:"Steppes",fishingbay:"Fisherman's Bay",caucasus:"Serene Coast",mannerheimline:"Mannerheim Line",tundra:"Tundra",canadaa:"Highway",asiagreatwall:"Great Wall",asiamiao:"Pearl River",northamerica:"Live Oaks",czech:"Pilsen",sweden:"Rocky coast",poland:"Icy pass",grafzeppelin:"Graf Zeppelin",japort:"Pacific port",lostcityctf:"Lost city",lostparadisev:"Lost paradise",lastfrontierv:"Last frontier",eiffeltowerctf:"Paris",dday:"D-Day",ddaysm:"D-Day (winter)",germany:"Berlin",germanysm:"Berlin (winter)",grafzeppelinscc:"Graf Zeppelin (SCC)",brbattlecity:"City",eralaska:"Alaska"};
 function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
 
 (function(){
@@ -533,6 +533,46 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
     gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(P),gl.STATIC_DRAW);
     zonN=P.length/4;
   }
+  /* LES OBJECTIFS DU MODE : bases à prendre, points d'apparition,
+     point de contrôle. C'est tout ce qui distingue Standard, Assaut et
+     Rencontre — leur terrain est le même au bit près.
+     Le rayon de capture d'une base est de 50 m dans le jeu ; les points
+     d'apparition sont marqués plus petits, ce ne sont pas des zones. */
+  const objB=gl.createBuffer(); let objLots=[];
+  const COUL_EQ={1:[0.36,0.74,0.42], 2:[0.92,0.42,0.34], 0:[0.96,0.80,0.30]};
+  function buildObjectifs(m){
+    objLots=[];
+    if(!m||!curHeights) return;
+    const P=[];
+    /* Une base fait 50 m de rayon ; vue d'en haut sur une carte de 1500 m,
+       un simple anneau de 5 m de haut mesure deux pixels et ne se voit pas.
+       On pose donc un DISQUE au sol, qui se lit à la verticale, ceinturé
+       d'un muret, qui se lit de profil. Le disque flotte à 1,2 m pour ne
+       pas se battre avec le relief. */
+    const marque=(x,z,r,mur,coul)=>{
+      const n=Math.max(28,Math.round(r*1.2));
+      const bord=[];
+      for(let i=0;i<=n;i++){
+        const a=i/n*Math.PI*2, px=x+Math.cos(a)*r, pz=z+Math.sin(a)*r;
+        bord.push([px,pz,terrainNorm(px,pz)]);
+      }
+      const d0=P.length/4;
+      P.push(x,1.2,-z,terrainNorm(x,z));
+      for(const [px,pz,b] of bord) P.push(px,1.2,-pz,b);
+      objLots.push({d:d0,n:P.length/4-d0,coul,mode:gl.TRIANGLE_FAN,voile:0,haut:mur,alpha:0.28});
+      const d1=P.length/4;
+      for(const [px,pz,b] of bord) P.push(px,0,-pz,b, px,mur,-pz,b);
+      objLots.push({d:d1,n:P.length/4-d1,coul,mode:gl.TRIANGLE_STRIP,voile:1,haut:mur,alpha:0.60});
+    };
+    for(const b of (m.bases||[])) marque(b.x,b.z,50,16,COUL_EQ[b.e]||COUL_EQ[0]);
+    if(m.point) marque(m.point[0],m.point[1],50,16,COUL_EQ[0]);
+    /* Un point d'apparition n'est pas une zone à prendre : plus petit,
+       mais plus haut, pour rester repérable malgré son rayon. */
+    for(const s of (m.spawns||[])) marque(s.x,s.z,15,34,COUL_EQ[s.e]||COUL_EQ[0]);
+    if(!P.length){ objLots=[]; return; }
+    gl.bindBuffer(gl.ARRAY_BUFFER,objB);
+    gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(P),gl.STATIC_DRAW);
+  }
   function buildLimite(jeu){
     limN=0; const btn=document.getElementById("limBtn");
     if(!jeu||!curHeights){ btn.style.display="none"; return; }
@@ -816,21 +856,38 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
      L'échelle verticale est la même pour les deux — les objets sont
      posés à une altitude absolue et ne bougent donc pas avec le
      relief, exactement comme en jeu. */
-  const MODES={ "":"Random battles", comp7:"Onslaught" };
+  /* Les modes viennent du JEU : meta.modes porte ceux que la définition
+     d'arène déclare, avec le nom que le jeu leur donne. Un seul change
+     le terrain — le Fer de lance ; les autres partagent la carte et ne
+     diffèrent que par leurs OBJECTIFS, qu'on dessine. */
+  const ORDRE=["ctf","domination","assault","assault2","comp7","maps_training"];
+  /* Un mode que le jeu ajouterait demain n'est pas dans ORDRE : indexOf
+     rend −1, et il passerait DEVANT Standard. On le range à la fin. */
+  const rang=k=>{ const i=ORDRE.indexOf(k); return i<0?99:i; };
   let curMeta=null, curKey=null, curMode="";
   function majModes(meta){
     const g=document.getElementById("modeGrp"), s=document.getElementById("modeSel");
-    const dispo=meta&&meta.modes?Object.keys(meta.modes).filter(k=>MODES[k]):[];
-    if(!dispo.length){ g.style.display="none"; return; }
+    const M=(meta&&meta.modes)||{};
+    const dispo=Object.keys(M).filter(k=>M[k]&&M[k].nom)
+      .sort((a,b)=>rang(a)-rang(b));
+    if(dispo.length<2){ g.style.display="none"; buildObjectifs(null); return; }
     g.style.display="";
     s.innerHTML="";
-    for(const k of ["",...dispo]){ const o=document.createElement("option");
-      o.value=k; o.textContent=t(MODES[k]); s.appendChild(o); }
-    s.value=dispo.includes(curMode)?curMode:"";
+    for(const k of dispo){ const o=document.createElement("option");
+      o.value=k; o.textContent=t(M[k].nom); s.appendChild(o); }
+    /* on garde le mode d'une carte à l'autre quand elle le propose */
+    s.value=dispo.includes(curMode)?curMode:dispo[0];
   }
   /* On garde le mode d'une carte à l'autre quand elle le propose : on
-     compare deux cartes dans le même mode, pas une carte dans deux. */
-  const modeVoulu=meta=>(meta&&meta.modes&&meta.modes[curMode])?curMode:"";
+     compare deux cartes dans le même mode, pas une carte dans deux.
+     Sinon on prend le premier de la liste — Standard, le plus souvent. */
+  function modeVoulu(meta){
+    const M=(meta&&meta.modes)||{};
+    if(M[curMode]&&M[curMode].nom) return curMode;
+    const l=Object.keys(M).filter(k=>M[k]&&M[k].nom)
+      .sort((a,b)=>rang(a)-rang(b));
+    return l[0]||"";
+  }
   async function poseRelief(mode){
     const meta=curMeta; if(!meta) return;
     const m=(mode&&meta.modes&&meta.modes[mode])||null;
@@ -851,6 +908,7 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
        découpe au sol, elle ne peut pas rester celle d'avant. */
     buildLimite((m&&m.jeu)||meta.jeu);
     buildZones(m&&m.zones);
+    buildObjectifs(m);
     buildEau(meta.eau);
     /* La TEXTURE aussi : sans elle, le relief du mode est bien là mais
        repeint avec l'ancienne herbe, et la différence disparaît dès
@@ -952,7 +1010,7 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
         for(const a of [bIA,bIB,bIC,bIBase,bIGenre]){ instExt.vertexAttribDivisorANGLE(a,0);
           gl.disableVertexAttribArray(a); }
       }
-      if((showLim&&limN)||(showEau&&eauN)||zonN){
+      if((showLim&&limN)||(showEau&&eauN)||zonN||objLots.length){
         gl.useProgram(lprog);
         gl.uniformMatrix4fv(luPV,false,new Float32Array(mul(P,V)));
         gl.uniform1f(luHS,curMaxH); gl.uniform1f(luExag,exag); gl.uniform1f(luHaut,LIM_HAUT);
@@ -981,6 +1039,20 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
           gl.vertexAttribPointer(lPos,3,gl.FLOAT,false,16,0);
           gl.vertexAttribPointer(lBase,1,gl.FLOAT,false,16,12);
           gl.drawArrays(gl.TRIANGLE_STRIP,0,zonN);
+          gl.uniform1f(luHaut,LIM_HAUT);
+        }
+        /* Les objectifs du mode : un anneau par base, par point
+           d apparition et par point de controle, aux couleurs des
+           equipes. Ils ne masquent pas le terrain — ils le ceinturent. */
+        if(objLots.length){
+          gl.bindBuffer(gl.ARRAY_BUFFER,objB);
+          gl.vertexAttribPointer(lPos,3,gl.FLOAT,false,16,0);
+          gl.vertexAttribPointer(lBase,1,gl.FLOAT,false,16,12);
+          for(const L of objLots){
+            gl.uniform1f(luVoile,L.voile); gl.uniform1f(luHaut,L.haut);
+            gl.uniform4f(luCoul,L.coul[0],L.coul[1],L.coul[2],L.alpha);
+            gl.drawArrays(L.mode,L.d,L.n);
+          }
           gl.uniform1f(luHaut,LIM_HAUT);
         }
         if(showLim&&limN){
