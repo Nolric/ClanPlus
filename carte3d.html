@@ -676,6 +676,10 @@ function pretty(k){ const L=LABELS[k];
     const quoi=(MAPS3D[key]||{}).geo;
     if(!quoi||!instExt){ btn.style.display="none"; showBld=0; btn.classList.remove("on"); return; }
     let charge=0;
+    /* Ces fichiers étaient demandés L UN APRÈS L AUTRE : quatre allers-
+       retours en file, alors qu ils ne dépendent pas les uns des autres.
+       On les lance ensemble et on n attend qu une fois. */
+    const aLire=[];
     for(const j of JEUX){
       /* Un jeu lié à un mode ne se demande que dans ce mode, et
          seulement si la carte le déclare : sinon c'est un 404 par
@@ -689,10 +693,16 @@ function pretty(k){ const L=LABELS[k];
         const m=curMeta&&curMeta.base;
         if(j.sauf===curMode||!m||!m[j.cle]) continue;
       }
-      try{ const r=await fetch("maps3d/"+((curMeta&&curMeta.dossier)||key)+"/"+j.nom+".bin");
-        if(!r.ok) continue;
-        lisCPF4(await r.arrayBuffer(), j); charge++;
-      }catch(e){ console.error("carte3d : "+j.nom+".bin illisible —", e); }
+      aLire.push(j);
+    }
+    const brut=await Promise.all(aLire.map(j=>
+      fetch("maps3d/"+((curMeta&&curMeta.dossier)||key)+"/"+j.nom+".bin")
+        .then(r=>r.ok?r.arrayBuffer():null)
+        .catch(e=>{ console.error("carte3d : "+j.nom+".bin illisible —", e); return null; })));
+    for(let k=0;k<aLire.length;k++){
+      if(!brut[k]) continue;
+      try{ lisCPF4(brut[k], aLire[k]); charge++; }
+      catch(e){ console.error("carte3d : "+aLire[k].nom+".bin illisible —", e); }
     }
     const cal=document.getElementById("calGrp"), sep=document.getElementById("calSep");
     /* On n'allume les objets qu'à la PREMIÈRE carte : changer de mode
@@ -966,8 +976,8 @@ function pretty(k){ const L=LABELS[k];
        repeint avec l'ancienne herbe, et la différence disparaît dès
        qu'on rallume la texture. C'est ce qui faisait croire à deux
        cartes identiques. */
-    loadTex("maps3d/"+dossier()+"/"+((m&&m.tex)||"tex.jpg"),"maps/top/"+((curMeta&&curMeta.mini)||curKey)+".jpg");
     curMode=mode;
+    loadTex("maps3d/"+dossier()+"/"+((m&&m.tex)||"tex.jpg"),"maps/top/"+((curMeta&&curMeta.mini)||curKey)+".jpg");
   }
   document.getElementById("modeSel").addEventListener("change",async e=>{
     const l=document.getElementById("load"); l.classList.add("on");
@@ -986,7 +996,11 @@ function pretty(k){ const L=LABELS[k];
       curMeta=meta; curKey=key;
       WORLD=meta.world||1100;
       majModes(meta);
-      await poseRelief(modeVoulu(meta));
+      /* Le relief et la géométrie ne dépendent pas l un de l autre :
+         les enchaîner doublait l attente pour rien. */
+      const p=poseRelief(modeVoulu(meta));
+      const g=loadObjects(key);
+      await p;
       /* La minimap du jeu, en vis-à-vis : c est elle qui dit si la carte
          3D est dans le bon sens, et le joueur la reconnaît. */
       { const mi=document.getElementById("mini"), im=document.getElementById("miniImg");
@@ -994,7 +1008,7 @@ function pretty(k){ const L=LABELS[k];
         im.onerror=()=>{ mi.style.display="none"; };
         im.src="maps/top/"+((curMeta&&curMeta.mini)||key)+".jpg"; }
       /* poseRelief a déjà chargé la texture du mode retenu. */
-      loadObjects(key);
+      await g;
       frameCam();
       document.getElementById("mapSub").textContent=t("Real elevation")+" · "+WORLD+" m";
       try{ localStorage.setItem("cp_map3d",key); }catch(_){}
