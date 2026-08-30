@@ -9,7 +9,7 @@ window.t = window.t || function (s) { return s; };
    le HTML. Une phrase absente d'ici reste affichée en anglais. */
 window.CP_FR = Object.assign(window.CP_FR || {}, {
   "3D maps — under construction": "Cartes 3D — en construction",
-  "<b>Drag</b> to rotate · <b>Scroll</b> to zoom · <b>Right-click</b> to pan": "<b>Glisser</b> pour tourner · <b>Molette</b> pour zoomer · <b>Clic droit</b> déplacer",
+  "<b>Drag</b> to rotate · <b>Scroll</b> zooms where you point<br><b>Right-click</b> or <b>Shift</b> to pan · <b>WASD</b> to move · <b>Shift</b> to go faster": "<b>Glisser</b> pour tourner · la <b>molette</b> zoome où l on pointe<br><b>Clic droit</b> ou <b>Maj</b> pour déplacer · <b>ZQSD</b> pour avancer · <b>Maj</b> pour accélérer",
   "<span class=\"spin\"></span>Loading the terrain…": "<span class=\"spin\"></span>Chargement du relief…",
   "Abbey": "Monastère",
   "Airfield": "Aérodrome",

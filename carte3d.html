@@ -100,22 +100,20 @@
     <div class="sep"></div>
     <div class="grp" id="cpLang"></div>
     <div class="sep"></div>
-    <div class="grp"><label>Terrain</label><input id="exag" type="range" min="0.35" max="2.6" step="0.05" value="1"></div>
-    <div class="sep"></div>
     <button class="btn on" id="texBtn">Texture</button>
     <button class="btn" id="wireBtn">Grid</button>
     <button class="btn" id="bldBtn" style="display:none" title="Building preview (positions extracted from the game)">Buildings</button>
-    <button class="btn on" id="limBtn" style="display:none" title="The battle boundary and the two team bases, from the game's arena definition">Boundary</button>
+    <button class="btn on" id="limBtn" style="display:none" title="The battle boundary, from the game's arena definition">Boundary</button>
     <button class="btn on" id="miniBtn">Minimap</button>
     <button class="btn" id="resetBtn">Recentre</button>
   </div>
   <div id="mini" class="glass"><div class="lg">Minimap</div><img id="miniImg" alt=""><div class="n">N ↑</div></div>
-  <div id="hint"><b>Drag</b> to rotate · <b>Scroll</b> to zoom · <b>Right-click</b> to pan</div>
+  <div id="hint"><b>Drag</b> to rotate · <b>Scroll</b> zooms where you point<br><b>Right-click</b> or <b>Shift</b> to pan · <b>WASD</b> to move · <b>Shift</b> to go faster</div>
   <div id="load" class="on"><div class="box glass"><span class="spin"></span>Loading the terrain…</div></div>
   <div id="err" class="glass">Your browser couldn't start 3D (WebGL required).</div>
 </div>
 <script>
-const NAMES={himmelsdorf:"Himmelsdorf",karelia:"Karelia",malinovka:"Malinovka",campaniabig:"Campania",prohorovka:"Prokhorovka",ensk:"Ensk",enskbig:"Ensk (large)",lakeville:"Lakeville",ruinberg:"Ruinberg",ruinbergsm:"Ruinberg (winter)",hills:"Mines",murovanka:"Murovanka",erlenberg:"Erlenberg",siegfriedline:"Siegfried Line",munchen:"Munich",cliff:"Cliff",monastery:"Abbey",westfeld:"Westfield",desert:"Sand River",elhallouf:"El Halluf",airfield:"Airfield",fjord:"Fjords",redshire:"Redshire",steppes:"Steppes",fishingbay:"Fisherman's Bay",caucasus:"Serene Coast",mannerheimline:"Mannerheim Line",tundra:"Tundra",canadaa:"Highway",asiagreatwall:"Great Wall",asiamiao:"Pearl River",northamerica:"Live Oaks",czech:"Pilsen",sweden:"Rocky coast",poland:"Icy pass",grafzeppelin:"Graf Zeppelin",japort:"Pacific port",lostcityctf:"Lost city",lostparadisev:"Lost paradise",lastfrontierv:"Last frontier",eiffeltowerctf:"Paris",dday:"D-Day",ddaysm:"D-Day (winter)",germany:"Berlin",germanysm:"Berlin (winter)",grafzeppelinscc:"Graf Zeppelin",brbattlecity:"City",eralaska:"Alaska",bfepicdesert:"Desert (Epic)",bfepicnormandy:"Normandy (Epic)",wgepicsuburbia:"Suburbia (Epic)",epicrandomvalleysm:"Valley (Epic)",normandynom:"Normandy"};
+const NAMES={himmelsdorf:"Himmelsdorf",karelia:"Karelia",malinovka:"Malinovka",prohorovka:"Prokhorovka",ensk:"Ensk",lakeville:"Lakeville",ruinberg:"Ruinberg",hills:"Mines",murovanka:"Murovanka",siegfriedline:"Siegfried Line",cliff:"Cliff",monastery:"Abbey",westfeld:"Westfield",desert:"Sand River",elhallouf:"El Halluf",airfield:"Airfield",redshire:"Redshire",steppes:"Steppes",fishingbay:"Fisherman's Bay",caucasus:"Serene Coast",tundra:"Tundra",northamerica:"Live Oaks"};
 function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
 
 (function(){
@@ -412,33 +410,6 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
      sur des cours et des toits. La vraie surface est un maillage à part,
      désigné par un identifiant sous spaces/<carte>/water/. Tant qu il
      n est pas lu, mieux vaut pas d eau qu une fausse. */
-  /* Les BASES d'équipe, lues dans la définition d'arène. Deux repères que
-     le jeu donne lui-même, et que le joueur reconnaît : ils disent d'un
-     coup d'œil si la carte est dans le bon sens. */
-  const basB=gl.createBuffer(); let basLots=[];
-  const BASE_R=28, BASE_H=26;
-  /* Une couleur par base : c'est ce qui permet de les distinguer d'un
-     coup d'œil — et de vérifier l'orientation de la carte, puisque le
-     jeu donne leurs coordonnées. Ni l'une ni l'autre n'existe dans le
-     terrain, donc aucune confusion possible avec la végétation. */
-  const BASE_COUL=[[0.28,0.55,1.00],[0.98,0.72,0.22]];
-  function buildBases(bases){
-    basLots=[]; if(!bases||!bases.length||!curHeights) return;
-    const P=[], C=24;
-    for(let k=0;k<bases.length;k++){
-      const [x,z]=bases[k], d0=P.length/4;
-      /* un fût de lumière ouvert, posé sur le relief */
-      for(let a=0;a<=C;a++){
-        const t=a/C*Math.PI*2, px=x+Math.cos(t)*BASE_R, pz=z+Math.sin(t)*BASE_R;
-        const b=terrainNorm(px,pz);
-        P.push(px,0,-pz,b, px,BASE_H,-pz,b);
-      }
-      basLots.push({d:d0, n:P.length/4-d0, c:BASE_COUL[k%BASE_COUL.length]});
-    }
-    gl.bindBuffer(gl.ARRAY_BUFFER,basB);
-    gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(P),gl.STATIC_DRAW);
-  }
-
   function buildLimite(jeu){
     limN=0; const btn=document.getElementById("limBtn");
     if(!jeu||!curHeights){ btn.style.display="none"; return; }
@@ -492,9 +463,10 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
   async function loadObjects(key){
     for(const j of JEUX) j.modeles=[];
     const btn=document.getElementById("bldBtn");
-    /* Une seule carte sur cinquante-deux a sa géométrie : demander les
-       fichiers à toutes coûtait un 404 par carte, et un journal bruyant
-       masque les vraies erreurs le jour où il y en a. */
+    /* Toutes les cartes n ont pas forcément leur géométrie : l index dit
+       lesquelles l ont. Demander les fichiers à l aveugle coûtait un 404
+       par carte, et un journal bruyant masque les vraies erreurs le jour
+       où il y en a. */
     const quoi=(MAPS3D[key]||{}).geo;
     if(!quoi||!instExt){ btn.style.display="none"; showBld=0; btn.classList.remove("on"); return; }
     let charge=0;
@@ -517,7 +489,11 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
   function mul(a,b){const o=new Array(16);for(let i=0;i<4;i++)for(let j=0;j<4;j++){let s=0;for(let k=0;k<4;k++)s+=a[k*4+j]*b[i*4+k];o[i*4+j]=s;}return o;}
 
   // ---- caméra ----
-  let WORLD=1100, az=Math.PI/2, pol=0.72, rad=1250, tgt=[0,60,0], exag=1, useTex=1, wire=0, pan={x:0,z:0};
+  /* Le relief est à sa VRAIE échelle : une unité du monde vaut un mètre.
+     Le curseur qui l exagérait n avait plus lieu d être — il ne servait
+     qu à rattraper une échelle inventée. */
+  const exag=1;
+  let WORLD=1100, az=Math.PI/2, pol=0.72, rad=1250, tgt=[0,60,0], useTex=1, wire=0, pan={x:0,z:0};
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   /* Le cadrage suit la plus grande dimension : sur une carte non carrée,
      se caler sur la largeur seule couperait la longueur. */
@@ -527,20 +503,122 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
     rad=D*1.15; tgt=[ORIG[0]+WORLD/2, D*0.05, -(ORIG[1]+WORLDZ/2)];
     /* Cet azimut-là, et pas un autre : c est le seul qui place l est à
        droite et le nord en haut, comme la minimap du jeu. */
-    az=Math.PI/2; pol=0.72; pan.x=0; pan.z=0; }
+    az=Math.PI/2; pol=0.72; pan.x=0; pan.z=0;
+    cible={az, pol, rad, px:0, pz:0}; }
   function eye(){ const ce=Math.cos(pol)*rad; return [tgt[0]+pan.x+Math.cos(az)*ce, tgt[1]+Math.sin(pol)*rad, tgt[2]+pan.z+Math.sin(az)*ce]; }
 
-  // ---- interactions ----
+  /* ── déplacement dans la scène ────────────────────────────────────
+     Trois façons de faire, qui se valent selon la main : la souris, le
+     clavier, et le doigt. Toutes visent la même chose — pouvoir aller
+     regarder un angle de tir sans se battre avec la caméra.
+
+     Deux choix qui changent tout à l'usage :
+     • la molette zoome VERS LE CURSEUR, pas vers le centre. On désigne
+       l'endroit qu'on veut voir au lieu de zoomer puis recadrer.
+     • la vitesse de déplacement suit la distance : de près on avance au
+       mètre, de loin on traverse la carte. Un pas fixe est soit
+       inutilisable de près, soit interminable de loin.
+     Le mouvement est amorti : la caméra rejoint sa cible en quelques
+     images au lieu d'y sauter, ce qui rend la lecture du relief plus
+     facile à suivre. */
+  let cible={az, pol, rad, px:0, pz:0};       // où la caméra va
+  const AMORTI=0.22;
+  function suivre(){
+    /* l'azimut se rejoint par le plus court chemin */
+    let d=cible.az-az; while(d>Math.PI) d-=2*Math.PI; while(d<-Math.PI) d+=2*Math.PI;
+    az+=d*AMORTI;
+    pol+=(cible.pol-pol)*AMORTI;
+    rad+=(cible.rad-rad)*AMORTI;
+    pan.x+=(cible.px-pan.x)*AMORTI;
+    pan.z+=(cible.pz-pan.z)*AMORTI;
+  }
+  /* Le point du sol visé par un pixel de l'écran, à altitude constante :
+     c'est ce qui permet de zoomer vers le curseur. */
+  function solSousCurseur(ex,ey){
+    const r=cv.getBoundingClientRect();
+    const nx=((ex-r.left)/r.width)*2-1, ny=1-((ey-r.top)/r.height)*2;
+    const e=eye(), c=[tgt[0]+pan.x,tgt[1],tgt[2]+pan.z];
+    /* on reconstruit le rayon dans le repère de la caméra */
+    const f=[c[0]-e[0],c[1]-e[1],c[2]-e[2]];
+    const fl=Math.hypot(f[0],f[1],f[2]); for(let k=0;k<3;k++) f[k]/=fl;
+    const up=[0,1,0];
+    const s=[f[1]*up[2]-f[2]*up[1], f[2]*up[0]-f[0]*up[2], f[0]*up[1]-f[1]*up[0]];
+    const sl=Math.hypot(s[0],s[1],s[2]); for(let k=0;k<3;k++) s[k]/=sl;
+    const u=[s[1]*f[2]-s[2]*f[1], s[2]*f[0]-s[0]*f[2], s[0]*f[1]-s[1]*f[0]];
+    const th=Math.tan(0.86/2), asp=cv.width/cv.height;
+    const d=[f[0]+s[0]*nx*th*asp+u[0]*ny*th,
+             f[1]+s[1]*nx*th*asp+u[1]*ny*th,
+             f[2]+s[2]*nx*th*asp+u[2]*ny*th];
+    if(Math.abs(d[1])<1e-6) return null;
+    const t=(tgt[1]-e[1])/d[1];
+    if(t<0) return null;
+    return [e[0]+d[0]*t, e[2]+d[2]*t];
+  }
   let drag=null;
-  cv.addEventListener("pointerdown",e=>{cv.setPointerCapture(e.pointerId);drag={x:e.clientX,y:e.clientY,az,pol,px:pan.x,pz:pan.z,btn:e.button};});
+  cv.addEventListener("pointerdown",e=>{cv.setPointerCapture(e.pointerId);
+    drag={x:e.clientX,y:e.clientY,az:cible.az,pol:cible.pol,px:cible.px,pz:cible.pz,
+          btn:e.button,shift:e.shiftKey};});
   cv.addEventListener("pointermove",e=>{if(!drag)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;
-    if(drag.btn===2){const s=rad/900,rx=-Math.sin(az),rz=Math.cos(az),fx=-Math.cos(az),fz=-Math.sin(az);
-      pan.x=drag.px+(-dx*rx+dy*fx)*s;pan.z=drag.pz+(-dx*rz+dy*fz)*s;}
-    else{az=drag.az-dx*0.008;pol=clamp(drag.pol-dy*0.008,0.12,1.45);}});
+    /* clic droit, molette enfoncée ou Maj : on déplace. Sinon on tourne. */
+    if(drag.btn===2||drag.btn===1||drag.shift){
+      const s=cible.rad/900,rx=-Math.sin(az),rz=Math.cos(az),fx=-Math.cos(az),fz=-Math.sin(az);
+      cible.px=drag.px+(-dx*rx+dy*fx)*s; cible.pz=drag.pz+(-dx*rz+dy*fz)*s;}
+    else{cible.az=drag.az-dx*0.008;cible.pol=clamp(drag.pol-dy*0.008,0.12,1.45);}});
   cv.addEventListener("pointerup",()=>drag=null); cv.addEventListener("pointercancel",()=>drag=null);
   cv.addEventListener("contextmenu",e=>e.preventDefault());
-  cv.addEventListener("wheel",e=>{e.preventDefault();rad=clamp(rad*(e.deltaY>0?1.1:0.9),WORLD*0.28,WORLD*2.4);},{passive:false});
-  document.getElementById("exag").addEventListener("input",e=>exag=parseFloat(e.target.value));
+  cv.addEventListener("wheel",e=>{e.preventDefault();
+    const avant=solSousCurseur(e.clientX,e.clientY);
+    const k=e.deltaY>0?1.12:1/1.12;
+    cible.rad=clamp(cible.rad*k,WORLD*0.06,WORLD*2.4);
+    /* on ramène sous le curseur le point qui s'y trouvait : le zoom suit
+       la souris au lieu de fuir vers le centre. */
+    if(avant){ cible.px+= (avant[0]-(tgt[0]+cible.px))*(1-k)*0.9;
+               cible.pz+= (avant[1]-(tgt[2]+cible.pz))*(1-k)*0.9; }
+  },{passive:false});
+
+  /* Le clavier : ZQSD ou les flèches pour se déplacer, A/E pour tourner,
+     Maj pour accélérer. Sur une carte de 1100 m, c'est souvent plus
+     précis que la souris. */
+  const touches={};
+  addEventListener("keydown",e=>{ if(e.target.tagName==="SELECT") return;
+    touches[e.key.toLowerCase()]=1;
+    if(" wasdzqe".includes(e.key.toLowerCase())||e.key.startsWith("Arrow")) e.preventDefault(); });
+  addEventListener("keyup",e=>{ touches[e.key.toLowerCase()]=0; });
+  function clavier(){
+    const k=touches, vite=(k.shift?3:1);
+    const av=(k.z||k.w||k.arrowup?1:0)-(k.s||k.arrowdown?1:0);
+    const la=(k.d||k.arrowright?1:0)-(k.q||k.a||k.arrowleft?1:0);
+    if(av||la){
+      /* la vitesse suit la distance : au mètre de près, à la carte de loin */
+      const s=cible.rad*0.012*vite;
+      const fx=-Math.cos(az),fz=-Math.sin(az),rx=-Math.sin(az),rz=Math.cos(az);
+      cible.px+=(av*fx+la*rx)*s; cible.pz+=(av*fz+la*rz)*s;
+    }
+    if(k["+"]||k["="]) cible.rad=clamp(cible.rad*0.97,WORLD*0.06,WORLD*2.4);
+    if(k["-"]) cible.rad=clamp(cible.rad*1.03,WORLD*0.06,WORLD*2.4);
+    if(k.pageup) cible.pol=clamp(cible.pol+0.02,0.12,1.45);
+    if(k.pagedown) cible.pol=clamp(cible.pol-0.02,0.12,1.45);
+  }
+
+  /* Le doigt : deux doigts pour zoomer et déplacer, comme partout. */
+  let pince=null;
+  cv.addEventListener("touchstart",e=>{ if(e.touches.length!==2) return;
+    e.preventDefault(); drag=null;
+    const [a,b]=e.touches;
+    pince={d:Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY), rad:cible.rad,
+           x:(a.clientX+b.clientX)/2, y:(a.clientY+b.clientY)/2, px:cible.px, pz:cible.pz};
+  },{passive:false});
+  cv.addEventListener("touchmove",e=>{ if(!pince||e.touches.length!==2) return;
+    e.preventDefault();
+    const [a,b]=e.touches;
+    const d=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);
+    cible.rad=clamp(pince.rad*pince.d/Math.max(1,d),WORLD*0.06,WORLD*2.4);
+    const cx=(a.clientX+b.clientX)/2, cy=(a.clientY+b.clientY)/2;
+    const s=cible.rad/900,rx=-Math.sin(az),rz=Math.cos(az),fx=-Math.cos(az),fz=-Math.sin(az);
+    const dx=cx-pince.x, dy=cy-pince.y;
+    cible.px=pince.px+(-dx*rx+dy*fx)*s; cible.pz=pince.pz+(-dx*rz+dy*fz)*s;
+  },{passive:false});
+  cv.addEventListener("touchend",()=>{ if(!pince) return; pince=null; });
   document.getElementById("texBtn").addEventListener("click",e=>{useTex^=1;e.currentTarget.classList.toggle("on",useTex);});
   document.getElementById("wireBtn").addEventListener("click",e=>{wire^=1;e.currentTarget.classList.toggle("on",wire);});
   document.getElementById("limBtn").addEventListener("click",e=>{showLim^=1;e.currentTarget.classList.toggle("on",showLim);});
@@ -550,7 +628,7 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
     const mi=document.getElementById("mini");
     mi.style.display = showMini && document.getElementById("miniImg").naturalWidth ? "block" : "none"; });
   document.getElementById("bldBtn").addEventListener("click",e=>{showBld^=1;e.currentTarget.classList.toggle("on",showBld);});
-  document.getElementById("resetBtn").addEventListener("click",()=>{frameCam();document.getElementById("exag").value=1;exag=1;});
+  document.getElementById("resetBtn").addEventListener("click",frameCam);
 
   // ---- chargement d'une carte ----
   const loadEl=document.getElementById("load");
@@ -570,7 +648,7 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
       /* nz et worldz ne figurent que sur les cartes non carrées ; ailleurs
          la grille et le monde sont les mêmes dans les deux sens. */
       buildMesh(heights,HN,WORLD,zmin,zmax,meta.nz||HN,meta.worldz||WORLD,meta.origine);
-      buildLimite(meta.jeu); buildBases(meta.bases);
+      buildLimite(meta.jeu);
       /* La minimap du jeu, en vis-à-vis : c est elle qui dit si la carte
          3D est dans le bon sens, et le joueur la reconnaît. */
       { const mi=document.getElementById("mini"), im=document.getElementById("miniImg");
@@ -598,6 +676,7 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
   gl.enable(gl.DEPTH_TEST); gl.clearColor(0.047,0.051,0.059,1);
   function bind(loc,b,sz){gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.enableVertexAttribArray(loc);gl.vertexAttribPointer(loc,sz,gl.FLOAT,false,0,0);}
   function frame(){
+    clavier(); suivre();
     gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
     if(idxLen){
       const P=persp(0.86,cv.width/cv.height,WORLD*0.02,WORLD*7);
@@ -644,7 +723,7 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
         for(const a of [bIA,bIB,bIC,bIBase,bIGenre]){ instExt.vertexAttribDivisorANGLE(a,0);
           gl.disableVertexAttribArray(a); }
       }
-      if(showLim&&(limN||basLots.length)){
+      if(showLim&&limN){
         gl.useProgram(lprog);
         gl.uniformMatrix4fv(luPV,false,new Float32Array(mul(P,V)));
         gl.uniform1f(luHS,curMaxH); gl.uniform1f(luExag,exag); gl.uniform1f(luHaut,LIM_HAUT);
@@ -662,17 +741,6 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
           gl.vertexAttribPointer(lPos,3,gl.FLOAT,false,16,0);
           gl.vertexAttribPointer(lBase,1,gl.FLOAT,false,16,12);
           gl.drawArrays(gl.TRIANGLE_STRIP,0,limN);
-        }
-        if(basLots.length){
-          gl.uniform1f(luVoile,1.0); gl.uniform1f(luHaut,BASE_H);
-          gl.bindBuffer(gl.ARRAY_BUFFER,basB);
-          gl.vertexAttribPointer(lPos,3,gl.FLOAT,false,16,0);
-          gl.vertexAttribPointer(lBase,1,gl.FLOAT,false,16,12);
-          for(const L of basLots){
-            gl.uniform4f(luCoul,L.c[0],L.c[1],L.c[2],0.55);
-            gl.drawArrays(gl.TRIANGLE_STRIP,L.d,L.n);
-          }
-          gl.uniform1f(luHaut,LIM_HAUT);
         }
         gl.depthMask(true);
         gl.disable(gl.BLEND);
