@@ -8,6 +8,8 @@ window.t = window.t || function (s) { return s; };
    Généré : la clé est la phrase anglaise telle qu'elle est écrite dans
    le HTML. Une phrase absente d'ici reste affichée en anglais. */
 window.CP_FR = Object.assign(window.CP_FR || {}, {
+  "Random battles": "Batailles aléatoires",
+  "Onslaught": "Fer de lance",
   "Water": "Eau",
   "Water, cut where the ground rises above its level": "L'eau, découpée là où le sol remonte au-dessus de son niveau",
   "Legend": "Légende",

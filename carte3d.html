@@ -111,6 +111,7 @@
     <div class="sep"></div>
     <div class="grp" id="cpLang"></div>
     <div class="sep"></div>
+    <div class="grp" id="modeGrp" style="display:none"><select id="modeSel"></select></div>
     <div class="grp" id="calGrp" style="display:none"><select id="calSel"></select></div>
     <div class="sep" id="calSep" style="display:none"></div>
     <button class="btn on" id="texBtn">Texture</button>
@@ -758,6 +759,55 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
     });
   }
 
+  /* ── LES MODES DE JEU ────────────────────────────────────────────
+     Le jeu ne livre pas deux cartes : il livre la carte de base, plus
+     des correctifs de relief par zone pour le mode Fer de lance
+     (« Onslaught », comp7). L'extraction les a déjà appliqués et écrits
+     dans height-comp7.u16 ; ici on ne fait que choisir le fichier.
+     L'échelle verticale est la même pour les deux — les objets sont
+     posés à une altitude absolue et ne bougent donc pas avec le
+     relief, exactement comme en jeu. */
+  const MODES={ "":"Random battles", comp7:"Onslaught" };
+  let curMeta=null, curKey=null, curMode="";
+  function majModes(meta){
+    const g=document.getElementById("modeGrp"), s=document.getElementById("modeSel");
+    const dispo=meta&&meta.modes?Object.keys(meta.modes).filter(k=>MODES[k]):[];
+    if(!dispo.length){ g.style.display="none"; return; }
+    g.style.display="";
+    s.innerHTML="";
+    for(const k of ["",...dispo]){ const o=document.createElement("option");
+      o.value=k; o.textContent=t(MODES[k]); s.appendChild(o); }
+    s.value=dispo.includes(curMode)?curMode:"";
+  }
+  /* On garde le mode d'une carte à l'autre quand elle le propose : on
+     compare deux cartes dans le même mode, pas une carte dans deux. */
+  const modeVoulu=meta=>(meta&&meta.modes&&meta.modes[curMode])?curMode:"";
+  async function poseRelief(mode){
+    const meta=curMeta; if(!meta) return;
+    const m=(mode&&meta.modes&&meta.modes[mode])||null;
+    const ab=await fetch("maps3d/"+curKey+"/"+(m?m.relief:"height.u16")).then(r=>r.arrayBuffer());
+    const heights=new Uint16Array(ab);
+    /* zmin/zmax sont les altitudes RÉELLES du relief, en mètres. Les
+       cartes pas encore réextraites n'ont que l'ancien couple hmin/hmax
+       sans unité : on leur laisse leur échelle d'avant, faute de mieux. */
+    const zmin=meta.zmin!==undefined?meta.zmin:0;
+    const zmax=meta.zmax!==undefined?meta.zmax:(meta.spanM||50);
+    /* nz et worldz ne figurent que sur les cartes non carrées ; ailleurs
+       la grille et le monde sont les mêmes dans les deux sens. */
+    buildMesh(heights,meta.n,WORLD,zmin,zmax,meta.nz||meta.n,meta.worldz||WORLD,meta.origine);
+    /* La limite et l'eau se redressent sur le nouveau relief : l'eau se
+       découpe au sol, elle ne peut pas rester celle d'avant. */
+    buildLimite((m&&m.jeu)||meta.jeu);
+    buildEau(meta.eau);
+    curMode=mode;
+  }
+  document.getElementById("modeSel").addEventListener("change",async e=>{
+    const l=document.getElementById("load"); l.classList.add("on");
+    try{ await poseRelief(e.target.value); }
+    catch(err){ console.error("carte3d : mode « "+e.target.value+" » —",err); }
+    l.classList.remove("on");
+  });
+
   // ---- chargement d'une carte ----
   const loadEl=document.getElementById("load");
   async function loadMap(key){
@@ -765,19 +815,10 @@ function pretty(k){ return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
     document.getElementById("mapName").textContent=pretty(key);
     try{
       const meta=await fetch("maps3d/"+key+"/meta.json").then(r=>r.json());
-      const ab=await fetch("maps3d/"+key+"/height.u16").then(r=>r.arrayBuffer());
-      const heights=new Uint16Array(ab); const HN=meta.n;
+      curMeta=meta; curKey=key;
       WORLD=meta.world||1100;
-      /* zmin/zmax sont les altitudes RÉELLES du relief, en mètres. Les
-         cartes pas encore réextraites n'ont que l'ancien couple hmin/hmax
-         sans unité : on leur laisse leur échelle d'avant, faute de mieux. */
-      const zmin = meta.zmin!==undefined ? meta.zmin : 0;
-      const zmax = meta.zmax!==undefined ? meta.zmax : (meta.spanM||50);
-      /* nz et worldz ne figurent que sur les cartes non carrées ; ailleurs
-         la grille et le monde sont les mêmes dans les deux sens. */
-      buildMesh(heights,HN,WORLD,zmin,zmax,meta.nz||HN,meta.worldz||WORLD,meta.origine);
-      buildLimite(meta.jeu);
-      buildEau(meta.eau);
+      majModes(meta);
+      await poseRelief(modeVoulu(meta));
       /* La minimap du jeu, en vis-à-vis : c est elle qui dit si la carte
          3D est dans le bon sens, et le joueur la reconnaît. */
       { const mi=document.getElementById("mini"), im=document.getElementById("miniImg");
