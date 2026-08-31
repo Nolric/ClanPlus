@@ -164,6 +164,9 @@
         <button class="btn on" id="stAmi">Allies</button>
         <button class="btn" id="stEnn">Enemies</button>
       </div>
+      <div class="stRow">
+        <button class="btn" id="stVue" title="From the selected tank, what it can and cannot see">Line of sight</button>
+      </div>
       <div id="stSelBox" style="display:none">
         <input id="stElNom" maxlength="18" placeholder="Tank name">
         <select id="stElChar"><option value="">Marker only</option></select>
@@ -935,6 +938,200 @@ function pretty(k){ const L=LABELS[k];
     gl.bufferData(gl.ARRAY_BUFFER,buf,gl.DYNAMIC_DRAW);
   }
 
+  /* ── LES LIGNES DE VUE, DESSINÉES ────────────────────────────────
+     Depuis le char SÉLECTIONNÉ vers chacun des autres. Le trait est vert
+     jusqu'à l'obstacle et rouge au-delà : on voit non seulement QU'on ne
+     voit pas, mais OÙ ça s'arrête — c'est cela qui dit s'il faut avancer
+     de dix mètres ou changer de position.
+     Un trait n'a pas d'épaisseur en 3D : on en fait une croix, un ruban
+     horizontal et un vertical, pour qu'il reste visible de n'importe
+     quel angle. Un simple ruban plat disparaît vu par la tranche. */
+  /* Le verdict par marqueur, en texte, gardé de côté : les étiquettes se
+     redessinent à chaque image, la ligne de vue seulement quand quelque
+     chose bouge. La recalculer soixante fois par seconde reviendrait à
+     relancer dix-huit mille tests de boîte pour rien. */
+  const vueB=gl.createBuffer(); let vueLots=[], montreVue=0, vueCache={}, vueRad=0;
+  const VUE_COUL={vue:[0.42,0.86,0.48], mur:[0.93,0.36,0.31], loin:[0.62,0.62,0.66]};
+  function buildVue(){
+    vueLots=[]; vueCache={};
+    if(!montreVue||!curHeights||ST.sel<0||ST.els.length<2) return;
+    const P=[], moi=ST.els[ST.sel];
+    /* La largeur du trait se calcule EN PIXELS, pas en mètres. Fixée à
+       trente-cinq centimètres, la ligne avait la bonne échelle de près
+       et disparaissait dès qu'on prenait du recul : mesuré, un ruban de
+       6,58 m vu de 1 645 m fait 1,3 pixel.
+       On inverse donc la projection : à la distance d, une longueur L
+       occupe L·H/(2·d·tan(fov/2)) pixels. On veut cinq pixels, on en
+       déduit L. Le demi-angle de vue est 0,43 rad, d'où le 0,9. */
+    vueRad=rad;
+    const larg=Math.max(0.35, 5*0.9*rad/Math.max(200,cv.clientHeight));
+    const ruban=(A,B,coul,alpha)=>{
+      const d=[B[0]-A[0],B[1]-A[1],B[2]-A[2]];
+      const L=Math.hypot(d[0],d[2])||1e-6, w=larg;
+      const h=[-d[2]/L*w, 0, d[0]/L*w];           // perpendiculaire au sol
+      for(const p of [[h[0],0,h[2]],[0,w,0]]){
+        const k=P.length/4;
+        P.push(A[0]-p[0],A[1]-p[1],-(A[2]-p[2]),0, A[0]+p[0],A[1]+p[1],-(A[2]+p[2]),0,
+               B[0]-p[0],B[1]-p[1],-(B[2]-p[2]),0, B[0]+p[0],B[1]+p[1],-(B[2]+p[2]),0);
+        vueLots.push({d:k,n:4,coul,mode:gl.TRIANGLE_STRIP,voile:0,haut:1,alpha});
+      }
+    };
+    for(let i=0;i<ST.els.length;i++){
+      if(i===ST.sel) continue;
+      const r=ligneDeVue(moi,ST.els[i]);
+      const L=Math.hypot(r.B[0]-r.A[0],r.B[1]-r.A[1],r.B[2]-r.A[2])||1;
+      const point=(t)=>[r.A[0]+(r.B[0]-r.A[0])*t, r.A[1]+(r.B[1]-r.A[1])*t, r.A[2]+(r.B[2]-r.A[2])*t];
+      const clair=r.portee?VUE_COUL.vue:VUE_COUL.loin;
+      vueCache[i]=Math.round(r.dist)+" m"+(r.vue?(r.portee?"":" · "+t("out of view range")):" · "+t(r.cause==="relief"?"terrain":"building"));
+      if(r.vue) ruban(r.A,r.B,clair,0.85);
+      else{
+        /* l'obstacle est mesuré au sol ; le segment, lui, est en 3D */
+        const t=Math.min(0.98,Math.max(0.02,r.obstacle/L));
+        ruban(r.A,point(t),clair,0.85);
+        ruban(point(t),r.B,VUE_COUL.mur,0.55);
+      }
+    }
+    if(!P.length){ vueLots=[]; return; }
+    gl.bindBuffer(gl.ARRAY_BUFFER,vueB);
+    gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(P),gl.DYNAMIC_DRAW);
+  }
+
+  /* ══ LA LIGNE DE VUE ═══════════════════════════════════════════════
+     « Depuis cette position, est-ce que je le vois ? » C'est la question
+     qui décide d'un placement, et jusqu'ici la carte n'y répondait pas.
+
+     Deux choses arrêtent un regard, et on les traite séparément parce
+     qu'elles ne se mesurent pas pareil :
+     • LE RELIEF — on avance le long du segment et on regarde si le sol
+       monte au-dessus. La carte de hauteurs est déjà là, c'est direct.
+     • LE BÂTI — on lance le segment contre la BOÎTE de chaque objet,
+       dans son propre repère. Un immeuble est à peu près une boîte ;
+       c'est l'approximation, et elle est honnête.
+
+     La FLORE est volontairement absente : un buisson cache un char au
+     jeu, mais il n'arrête ni un obus ni un regard au sens où on l'entend
+     ici, et sa boîte ne ressemble en rien à sa forme. La compter
+     déclarerait aveugle une position qui ne l'est pas. */
+  const PORTEE_VUE=445;                 // la portée de vue maximale du jeu, en mètres
+  const solY=(x,z)=>terrainNorm(x,z)*curMaxH*exag;
+  /* D'où regarde un char : le toit de sa tourelle. À défaut de modèle,
+     deux mètres — la hauteur d'un char moyen. */
+  function oeilDe(el){
+    const mod=charDe(el.char);
+    const h=mod?(mod.bbClic[1][1]-mod.bbCaisse[0][1]):2.0;
+    return [el.x, solY(el.x,el.y)+h, el.y];
+  }
+  /* Le relief coupe-t-il le segment ? On avance par pas de deux mètres :
+     plus fin ne change rien à la réponse, plus grossier saute une crête. */
+  function bloqueRelief(A,B){
+    const L=Math.hypot(B[0]-A[0],B[2]-A[2]);
+    const n=Math.max(2,Math.ceil(L/2));
+    for(let i=1;i<n;i++){
+      const t=i/n, x=A[0]+(B[0]-A[0])*t, z=A[2]+(B[2]-A[2])*t;
+      /* un demi-mètre de tolérance : sans elle, le sol sous le char
+         lui-même se déclarerait obstacle */
+      if(solY(x,z) > A[1]+(B[1]-A[1])*t+0.5) return t*L;
+    }
+    return 0;
+  }
+  /* Les boîtes du bâti, préparées une fois par carte : pour chaque
+     exemplaire, sa boîte dans le monde (filtre grossier) et de quoi
+     repasser dans son repère propre (test exact). */
+  function prepareBoites(jeu){
+    if(jeu.boites!==undefined) return jeu.boites;
+    jeu.boites=null;
+    if(!jeu.inst||!jeu.modeles.length) return null;
+    const l=[];
+    for(const M of jeu.modeles){
+      if(!M.bb) continue;
+      for(let k=0;k<M.nx;k++){
+        const o=(M.x0+k)*14, I=jeu.inst;
+        const a=[I[o],I[o+1],I[o+2]], b=[I[o+4],I[o+5],I[o+6]], c=[I[o+8],I[o+9],I[o+10]];
+        const T=[I[o+3], I[o+12]*curMaxH*exag+I[o+7], I[o+11]];
+        /* la boîte du monde : les huit coins du modèle, transformés */
+        const mn=[1e30,1e30,1e30], mx=[-1e30,-1e30,-1e30];
+        for(let s=0;s<8;s++){
+          const p=[M.bb[s&1?1:0][0], M.bb[s&2?1:0][1], M.bb[s&4?1:0][2]];
+          const w=[a[0]*p[0]+a[1]*p[1]+a[2]*p[2]+T[0],
+                   b[0]*p[0]+b[1]*p[1]+b[2]*p[2]+T[1],
+                   c[0]*p[0]+c[1]*p[1]+c[2]*p[2]+T[2]];
+          for(let q=0;q<3;q++){ if(w[q]<mn[q]) mn[q]=w[q]; if(w[q]>mx[q]) mx[q]=w[q]; }
+        }
+        /* l'inverse de la partie 3×3, pour le test exact */
+        const det=a[0]*(b[1]*c[2]-b[2]*c[1])-a[1]*(b[0]*c[2]-b[2]*c[0])+a[2]*(b[0]*c[1]-b[1]*c[0]);
+        /* Le seuil doit être RELATIF. La matrice absorbe l'échelle de
+           quantification du modèle — de l'ordre de 10⁻⁴ — si bien qu'un
+           déterminant parfaitement sain vaut 10⁻¹². Un seuil absolu à
+           cette valeur écartait la MOITIÉ des objets de Prokhorovka
+           (2 419 boîtes retenues sur 5 494 exemplaires), et la ligne de
+           vue traversait tranquillement ce qu'elle aurait dû heurter. */
+        const n3=Math.max(Math.abs(a[0]),Math.abs(a[1]),Math.abs(a[2]),
+                          Math.abs(b[0]),Math.abs(b[1]),Math.abs(b[2]),
+                          Math.abs(c[0]),Math.abs(c[1]),Math.abs(c[2]));
+        if(!isFinite(det)||Math.abs(det)<1e-9*n3*n3*n3) continue;
+        const iv=1/det;
+        const R=[(b[1]*c[2]-b[2]*c[1])*iv, (a[2]*c[1]-a[1]*c[2])*iv, (a[1]*b[2]-a[2]*b[1])*iv,
+                 (b[2]*c[0]-b[0]*c[2])*iv, (a[0]*c[2]-a[2]*c[0])*iv, (a[2]*b[0]-a[0]*b[2])*iv,
+                 (b[0]*c[1]-b[1]*c[0])*iv, (a[1]*c[0]-a[0]*c[1])*iv, (a[0]*b[1]-a[1]*b[0])*iv];
+        l.push({mn,mx,T,R,bb:M.bb});
+      }
+    }
+    jeu.boites=l;
+    return l;
+  }
+  /* Le bâti coupe-t-il le segment ? Rend la distance de l'obstacle, ou 0. */
+  function bloqueBati(A,B){
+    const d=[B[0]-A[0],B[1]-A[1],B[2]-A[2]];
+    const L=Math.hypot(d[0],d[1],d[2]);
+    const smn=[Math.min(A[0],B[0]),Math.min(A[1],B[1]),Math.min(A[2],B[2])];
+    const smx=[Math.max(A[0],B[0]),Math.max(A[1],B[1]),Math.max(A[2],B[2])];
+    let plusProche=0;
+    for(const jeu of JEUX){
+      if(jeu.flore) continue;
+      const l=prepareBoites(jeu); if(!l) continue;
+      for(const o of l){
+        /* filtre grossier : si les boîtes ne se croisent pas, rien à faire */
+        if(o.mx[0]<smn[0]||o.mn[0]>smx[0]||o.mx[1]<smn[1]||o.mn[1]>smx[1]
+           ||o.mx[2]<smn[2]||o.mn[2]>smx[2]) continue;
+        /* test exact, dans le repère de l'objet */
+        const p=[A[0]-o.T[0],A[1]-o.T[1],A[2]-o.T[2]], R=o.R;
+        const om=[R[0]*p[0]+R[1]*p[1]+R[2]*p[2], R[3]*p[0]+R[4]*p[1]+R[5]*p[2], R[6]*p[0]+R[7]*p[1]+R[8]*p[2]];
+        /* L'OBSERVATEUR EST DANS LA BOÎTE : on l'ignore.
+           Une boîte est plus grosse que l'objet qu'elle enferme, et se
+           poster contre un rocher ou une haie — ce qu'on fait tout le
+           temps en jeu — met le point d'observation à l'intérieur. Sans
+           cette règle, 7 % des lignes se déclaraient coupées par un
+           obstacle à moins de trois mètres : par le décor DERRIÈRE
+           lequel on est, pas par celui qui est devant. */
+        if(om[0]>=o.bb[0][0]&&om[0]<=o.bb[1][0]&&om[1]>=o.bb[0][1]&&om[1]<=o.bb[1][1]
+           &&om[2]>=o.bb[0][2]&&om[2]<=o.bb[1][2]) continue;
+        const dm=[R[0]*d[0]+R[1]*d[1]+R[2]*d[2], R[3]*d[0]+R[4]*d[1]+R[5]*d[2], R[6]*d[0]+R[7]*d[1]+R[8]*d[2]];
+        let t0=0, t1=1, dehors=0;
+        for(let k=0;k<3;k++){
+          if(Math.abs(dm[k])<1e-9){ if(om[k]<o.bb[0][k]||om[k]>o.bb[1][k]){ dehors=1; break; } continue; }
+          let u=(o.bb[0][k]-om[k])/dm[k], w=(o.bb[1][k]-om[k])/dm[k];
+          if(u>w){ const s=u; u=w; w=s; }
+          if(u>t0) t0=u; if(w<t1) t1=w;
+          if(t0>t1){ dehors=1; break; }
+        }
+        if(dehors) continue;
+        const dist=t0*L;
+        if(!plusProche||dist<plusProche) plusProche=dist;
+      }
+    }
+    return plusProche;
+  }
+  /* Le verdict complet entre deux marqueurs. */
+  function ligneDeVue(a,b){
+    const A=oeilDe(a), B=oeilDe(b);
+    const dist=Math.hypot(B[0]-A[0],B[2]-A[2]);
+    const r=bloqueRelief(A,B), t=bloqueBati(A,B);
+    const bloc=(r&&t)?Math.min(r,t):(r||t);
+    return {A,B,dist, vue:!bloc, obstacle:bloc,
+            cause:!bloc?"":(r&&(!t||r<=t))?"relief":"bâtiment",
+            portee:dist<=PORTEE_VUE};
+  }
+
   /* Une position du monde → un point de l'écran. Sert aux étiquettes et
      à savoir quel marqueur est sous le curseur. Rend null si le point est
      derrière la caméra. */
@@ -997,10 +1194,33 @@ function pretty(k){ const L=LABELS[k];
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint8Array(ab,oI,nI*2),gl.STATIC_DRAW);
     gl.bindBuffer(gl.ARRAY_BUFFER,jeu.xb);
     gl.bufferData(gl.ARRAY_BUFFER,new Uint8Array(ab,oX,nX*56),gl.STATIC_DRAW);
+    /* ── CE QU'ON GARDE DU CÔTÉ DU NAVIGATEUR ──────────────────────
+       Le maillage part sur la carte graphique et la page ne le revoit
+       jamais : c'est bien pour dessiner, et inutile pour RAISONNER. Or
+       une ligne de vue doit savoir ce qui l'arrête. On garde donc, en
+       plus, deux choses menues : la BOÎTE de chaque modèle (une passe
+       sur ses sommets, faite une fois) et la matrice de chaque
+       exemplaire. Un mégaoctet pour dix-huit mille objets — le maillage,
+       lui, en pèse treize.
+       La flore est écartée : un buisson cache, il n'arrête pas un obus,
+       et sa boîte n'a de toute façon rien à voir avec sa forme. */
+    if(!jeu.flore){
+      for(const M of jeu.modeles){
+        const mn=[1e30,1e30,1e30], mx=[-1e30,-1e30,-1e30];
+        for(let k=0;k<M.ns;k++){ const o=oS+(M.s0+k)*8;
+          for(let c=0;c<3;c++){ const q=v.getInt16(o+c*2,true);
+            if(q<mn[c]) mn[c]=q; if(q>mx[c]) mx[c]=q; } }
+        M.bb=[mn,mx];
+      }
+      jeu.inst=new Float32Array(nX*14);
+      for(let i=0;i<nX*14;i++) jeu.inst[i]=v.getFloat32(oX+i*4,true);
+    } else { jeu.inst=null; }
     return {nM,nS,nI,nX};
   }
   async function loadObjects(key){
-    for(const j of JEUX) j.modeles=[];
+    /* les boîtes et les matrices sont celles de la carte PRÉCÉDENTE :
+       les garder ferait buter la ligne de vue sur des murs d'ailleurs */
+    for(const j of JEUX){ j.modeles=[]; j.inst=null; j.boites=undefined; }
     const btn=document.getElementById("bldBtn");
     /* Toutes les cartes n ont pas forcément leur géométrie : l index dit
        lesquelles l ont. Demander les fichiers à l aveugle coûtait un 404
@@ -1420,7 +1640,7 @@ function pretty(k){ const L=LABELS[k];
       const e1=document.getElementById("stEdit"), l1=document.getElementById("stListe");
       if(e1){ e1.style.display="none"; } if(l1){ l1.style.display=""; }
       document.getElementById("stLbl").innerHTML="";
-      buildStrat(); buildChars();
+      buildStrat(); buildChars(); buildVue();
     }
     try{
       const meta=await fetch("maps3d/"+key+"/meta.json").then(r=>r.json());
@@ -1521,7 +1741,8 @@ function pretty(k){ const L=LABELS[k];
   function stMaj(){
     /* les marqueurs de la carte OUVERTE seulement : une stratégie
        appartient à une carte, on ne mélange pas */
-    buildStrat(); buildChars();
+    buildStrat(); buildChars(); buildVue();
+    $("stVue").classList.toggle("on",!!montreVue);
     const box=$("stSelBox"), e=ST.els[ST.sel];
     box.style.display=e?"":"none";
     if(e){ $("stElNom").value=e.name||"";
@@ -1550,7 +1771,13 @@ function pretty(k){ const L=LABELS[k];
       const cls=(ST_CLS.find(x=>x[0]===e.cls)||ST_CLS[1])[1];
       d.style.display=""; d.style.left=p[0]+"px"; d.style.top=p[1]+"px";
       d.style.color=(e.camp==="ennemi")?"#f0a49b":"#a9e0b4";
-      d.textContent=(e.name||cls)+(i===ST.sel?" ●":"");
+      let txt=(e.name||cls)+(i===ST.sel?" ●":"");
+      /* Le trait dit s'il y a vue ; l'étiquette dit de combien et par
+         quoi c'est coupé. Un « 312 m · bâtiment » vaut mieux qu'un trait
+         rouge dont il faut deviner la cause. */
+      if(montreVue&&ST.sel>=0&&i!==ST.sel&&vueCache[i])
+        txt+=" · "+vueCache[i];
+      d.textContent=txt;
     }
   }
   /* quel marqueur est sous ce point de l'écran ? */
@@ -1673,7 +1900,7 @@ function pretty(k){ const L=LABELS[k];
   function stFerme(){
     ST.edition=0;
     $("stListe").style.display=""; $("stEdit").style.display="none";
-    ST.id=null; ST.els=[]; ST.sel=-1; buildStrat(); buildChars(); stCharge();
+    ST.id=null; ST.els=[]; ST.sel=-1; buildStrat(); buildChars(); buildVue(); stCharge();
   }
   async function stEnregistre(){
     if(!ST.canEdit) return;
@@ -1711,6 +1938,7 @@ function pretty(k){ const L=LABELS[k];
       b.addEventListener("click",()=>{ ST.outil=k; stMaj(); });
       cls.appendChild(b);
     }
+    $("stVue").addEventListener("click",()=>{ montreVue^=1; stMaj(); stLabels(); });
     $("stAmi").addEventListener("click",()=>{ ST.camp="ami"; stMaj(); });
     $("stEnn").addEventListener("click",()=>{ ST.camp="ennemi"; stMaj(); });
     $("stNom").addEventListener("input",e=>{ ST.nom=e.target.value; });
@@ -1722,7 +1950,7 @@ function pretty(k){ const L=LABELS[k];
          une : sur une carte, « Object 279 » dit plus que « char 3 ». */
       const m=charDe(el.char);
       if(m&&!el.name){ el.name=m.nom.slice(0,18); $("stElNom").value=el.name; }
-      buildStrat(); buildChars(); stLabels();
+      buildStrat(); buildChars(); buildVue(); stLabels();
     });
     $("stElCap").addEventListener("input",e=>{
       const el=ST.els[ST.sel]; if(!el) return;
@@ -1734,7 +1962,7 @@ function pretty(k){ const L=LABELS[k];
     $("stDel").addEventListener("click",stSupprime);
     $("stQuit").addEventListener("click",stFerme);
     $("stClose").addEventListener("click",()=>{ ST.ouvert=0; $("strat").style.display="none";
-      $("stLbl").innerHTML=""; ST.els=[]; ST.sel=-1; buildStrat(); buildChars(); });
+      $("stLbl").innerHTML=""; ST.els=[]; ST.sel=-1; buildStrat(); buildChars(); buildVue(); });
     $("stratBtn").addEventListener("click",()=>{
       ST.ouvert^=1;
       $("strat").style.display=ST.ouvert?"block":"none";
@@ -1743,7 +1971,7 @@ function pretty(k){ const L=LABELS[k];
          12,7 Mo qu'il serait absurde de payer pour qui regarde une carte
          sans rien y poser. */
       if(ST.ouvert){ chargeChars(); stCharge(); }
-      else { $("stLbl").innerHTML=""; ST.els=[]; ST.sel=-1; ST.edition=0; buildStrat(); buildChars(); }
+      else { $("stLbl").innerHTML=""; ST.els=[]; ST.sel=-1; ST.edition=0; buildStrat(); buildChars(); buildVue(); }
     });
     /* Le bouton n'apparaît que si l'on est connecté : sans session, le
        serveur refuserait, et proposer une action qui échoue à coup sûr
@@ -1754,7 +1982,10 @@ function pretty(k){ const L=LABELS[k];
        refusera l'enregistrement. C'est un banc d'essai, pas une porte. */
     if(DEV3D) window.__strat={ST,stMaj,stLabels,buildStrat,buildChars,chargeChars,
       versEcran,stSous,charDe,boiteChar,viseBoite,rayonCurseur,
-      etatChars:()=>charsEtat,lots:()=>charsLots,solLots:()=>stLots,biblio:()=>CHARS};
+      ligneDeVue,bloqueRelief,bloqueBati,oeilDe,buildVue,
+      vue:v=>{ montreVue=v?1:0; },
+      etatChars:()=>charsEtat,lots:()=>charsLots,solLots:()=>stLots,
+      vueLots:()=>vueLots,biblio:()=>CHARS,jeux:()=>JEUX,boites:prepareBoites};
     document.addEventListener("keydown",e=>{
       if(!ST.ouvert||ST.sel<0) return;
       if(/^(input|textarea|select)$/i.test((e.target.tagName||""))) return;
@@ -1766,6 +1997,9 @@ function pretty(k){ const L=LABELS[k];
     const dt=Math.min(0.1,(t-tPrec)/1000)||0.016; tPrec=t;
     clavier(dt); suivre(dt);
     if(ST.ouvert) stLabels();   /* les étiquettes suivent la caméra */
+    /* la ligne de vue se retaille quand le zoom a nettement changé —
+       pas à chaque image : elle coûte un balayage du bâti */
+    if(montreVue&&vueLots.length&&Math.abs(rad-vueRad)>vueRad*0.15) buildVue();
     gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
     if(idxLen){
       const P=persp(0.86,cv.width/cv.height,WORLD*0.02,WORLD*7);
@@ -1850,7 +2084,10 @@ function pretty(k){ const L=LABELS[k];
           gl.disableVertexAttribArray(a); }
         gl.disableVertexAttribArray(cPos);
       }
-      if((showLim&&limN)||(showEau&&eauN)||objLots.length){
+      /* stLots et vueLots manquaient à cette liste : sur une carte sans
+         limite, sans eau ni objectif affichés, les marqueurs de la
+         stratégie n'auraient pas été dessinés du tout. */
+      if((showLim&&limN)||(showEau&&eauN)||objLots.length||stLots.length||vueLots.length){
         gl.useProgram(lprog);
         gl.uniformMatrix4fv(luPV,false,new Float32Array(mul(P,V)));
         gl.uniform1f(luHS,curMaxH); gl.uniform1f(luExag,exag); gl.uniform1f(luHaut,LIM_HAUT);
@@ -1886,6 +2123,20 @@ function pretty(k){ const L=LABELS[k];
         }
         /* Les marqueurs de la stratégie, par-dessus les objectifs : ce
            sont eux qu'on manipule, ils doivent rester lisibles. */
+        /* Les lignes de vue, sous les marqueurs : elles renseignent, les
+           marqueurs se manipulent — c'est ce qu'on touche qui passe
+           devant. */
+        if(vueLots.length){
+          gl.bindBuffer(gl.ARRAY_BUFFER,vueB);
+          gl.vertexAttribPointer(lPos,3,gl.FLOAT,false,16,0);
+          gl.vertexAttribPointer(lBase,1,gl.FLOAT,false,16,12);
+          for(const L of vueLots){
+            gl.uniform1f(luVoile,L.voile); gl.uniform1f(luHaut,L.haut);
+            gl.uniform4f(luCoul,L.coul[0],L.coul[1],L.coul[2],L.alpha);
+            gl.drawArrays(L.mode,L.d,L.n);
+          }
+          gl.uniform1f(luHaut,LIM_HAUT);
+        }
         if(stLots.length){
           gl.bindBuffer(gl.ARRAY_BUFFER,stB);
           gl.vertexAttribPointer(lPos,3,gl.FLOAT,false,16,0);
