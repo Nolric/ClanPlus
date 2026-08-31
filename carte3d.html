@@ -103,6 +103,12 @@
   #strat .stItem small{display:block;color:var(--muted);font-size:11px;margin-top:2px}
   #strat .stPos{font-size:11px;color:var(--muted);margin:0 0 7px;font-variant-numeric:tabular-nums}
   #strat select{width:100%;min-width:0;margin:0 0 7px;font-size:12px;padding:6px 26px 6px 8px}
+  /* la posture : trois états, trois couleurs, et rien quand on ne sait pas */
+  #strat .stHull{font-size:11px;line-height:1.4;margin:0 0 7px}
+  #strat .stHull:empty{display:none}
+  #strat .stHull.hulldown{color:#8fd8a3}
+  #strat .stHull.decouvert{color:#e8a99f}
+  #strat .stHull.masque{color:#c9b98a}
   #strat .stCap{align-items:center;flex-wrap:nowrap;gap:7px}
   #strat .stCap label{font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap}
   #strat .stCap input[type=range]{flex:1;min-width:0;width:auto;margin:0;padding:0;background:none;border:0;accent-color:var(--gold)}
@@ -178,6 +184,7 @@
           <span id="stCapV">0°</span>
         </div>
         <div class="stPos" id="stElPos"></div>
+        <div class="stHull" id="stHull"></div>
       </div>
       <div class="stRow">
         <button class="btn" id="stSave">Save</button>
@@ -1003,7 +1010,37 @@ function pretty(k){ const L=LABELS[k];
      que le char sélectionné voit. Un quadrilatère par pas visible : les
      découper suivant le relief est ce qui fait qu'elle l'épouse au lieu
      de le traverser. */
-  const champB=gl.createBuffer(); let champN=0, montreChamp=0, champStat="";
+  /* ── CE QUE LE CANON ATTEINT ─────────────────────────────────────
+     Voir n'est pas tirer. Un char qui domine un creux le voit
+     parfaitement et ne peut pas y mettre un obus si le sol descend plus
+     vite que son canon ne baisse. C'est même la question qui décide
+     d'une position sur une crête.
+
+     La dépression vient du jeu, et ce n'est pas UN nombre : c'est une
+     courbe selon l'angle de la tourelle. Sur 116 chars de rang X, 69 ont
+     une dépression qui change avec cet angle — le Leopard 1 pique de
+     neuf degrés vers l'avant et de ZÉRO au-dessus de son moteur. La
+     nappe montre donc un secteur mort derrière ces chars-là, et c'est
+     une vraie information, pas un artefact. */
+  const interpole=(courbe,f)=>{
+    if(!courbe||!courbe.length) return null;
+    if(f<=courbe[0][0]) return courbe[0][1];
+    for(let i=1;i<courbe.length;i++){
+      if(f<=courbe[i][0]){
+        const [x0,y0]=courbe[i-1], [x1,y1]=courbe[i];
+        return x1===x0 ? y1 : y0+(y1-y0)*(f-x0)/(x1-x0);
+      }
+    }
+    return courbe[courbe.length-1][1];
+  };
+  /* L'angle de tourelle correspondant à un azimut du monde. Le châssis
+     regarde vers (sin cap, cos cap) ; l'azimut, lui, se mesure depuis
+     l'axe des x. D'où le quart de tour. */
+  const yawRelatif=(azimut,capDeg)=>{
+    const f=(azimut+capDeg*Math.PI/180-Math.PI/2)/(Math.PI*2);
+    return f-Math.floor(f);
+  };
+  const champB=gl.createBuffer(); let champN=0, champNTir=0, montreChamp=0, champStat="";
   /* Le pas du balayage a été choisi par la mesure, en confrontant le
      champ de vision au rayon exact sur cinq cents paires de points :
      à quatre mètres, les deux méthodes s'accordent sur 92 % des cas mais
@@ -1018,12 +1055,15 @@ function pretty(k){ const L=LABELS[k];
        refaire à chaque image PENDANT qu'on fait glisser un char hacherait
        le geste ; on le refait au moment où on lâche. */
     if(stDrag) return;
-    champN=0; champStat="";
+    champN=0; champNTir=0; champStat="";
     if(!montreChamp||!curHeights||ST.sel<0||!ST.els[ST.sel]) return;
     carteOcclusion();
     const el=ST.els[ST.sel], O=oeilDe(el);
-    const P=[];
-    let vus=0, total=0;
+    const mod=charDe(el.char), pt=mod&&mod.pointage;
+    const capDeg=Number(el.cap)||0;
+    /* deux tas séparés : ce qu'on atteint, et ce qu'on ne fait que voir */
+    const Ptir=[], Pvu=[];
+    let vus=0, total=0, tirs=0;
     /* ── LE CHAR ENFOUI DANS UN OBJET ────────────────────────────────
        Se poster contre un rocher met le point d'observation à
        l'intérieur de sa boîte — la boîte est plus grosse que la pierre.
@@ -1057,14 +1097,27 @@ function pretty(k){ const L=LABELS[k];
         const q=[[O[0]+c0*r0, O[2]+s0*r0], [O[0]+c1*r0, O[2]+s1*r0],
                  [O[0]+c1*r1, O[2]+s1*r1], [O[0]+c0*r1, O[2]+s0*r1]];
         const v=q.map(([qx,qz])=>[qx,0.4,-qz,terrainNorm(qx,qz)]);
-        for(const k of [0,1,2,0,2,3]) P.push(v[k][0],v[k][1],v[k][2],v[k][3]);
+        /* atteint-on ce point ? l'angle qu'il faut piquer, contre celui
+           que le canon accepte à cet angle de tourelle */
+        let atteint=true;
+        if(pt){
+          const f=yawRelatif((a0+a1)/2,capDeg);
+          const piqueVoulu=Math.atan2(O[1]-sol,r)*180/Math.PI;
+          const dep=interpole(pt.depression,f), elev=interpole(pt.elevation,f);
+          atteint=(piqueVoulu>=0) ? (dep!==null&&piqueVoulu<=dep)
+                                  : (elev!==null&&-piqueVoulu<=elev);
+        }
+        if(atteint) tirs++;
+        const P2=atteint?Ptir:Pvu;
+        for(const k of [0,1,2,0,2,3]) P2.push(v[k][0],v[k][1],v[k][2],v[k][3]);
       }
     }
-    champStat=total?Math.round(vus/total*100)+"%":"";
-    if(!P.length) return;
+    champStat=total?(Math.round(vus/total*100)+"% "+t("of the ground within view range")):"";
+    if(!Ptir.length&&!Pvu.length) return;
     gl.bindBuffer(gl.ARRAY_BUFFER,champB);
-    gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(P),gl.DYNAMIC_DRAW);
-    champN=P.length/4;
+    gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(Ptir.concat(Pvu)),gl.DYNAMIC_DRAW);
+    champNTir=Ptir.length/4; champN=(Ptir.length+Pvu.length)/4;
+    if(pt&&vus) champStat+=" · "+Math.round(tirs/vus*100)+"% "+t("reachable by the gun");
   }
 
   /* ══ LA LIGNE DE VUE ═══════════════════════════════════════════════
@@ -1266,6 +1319,42 @@ function pretty(k){ const L=LABELS[k];
     const b=OCC.h[j*OCC.nx+i];
     return b>sol ? b : sol;
   }
+  /* ── LA POSITION EN HULL-DOWN ────────────────────────────────────
+     Se poster derrière une crête assez haute pour couvrir la caisse et
+     assez basse pour laisser passer la tourelle : c'est LA position que
+     l'on cherche sur une arête, et elle se lit sur trois hauteurs.
+
+     On regarde devant, dans l'axe du châssis, la crête la plus haute
+     entre cinq et quarante mètres. On la compare au toit de la caisse et
+     à celui de la tourelle, pris sur le modèle du char. Trois réponses,
+     et elles ne se discutent pas :
+       la crête est plus basse que la caisse  → à découvert
+       elle couvre la caisse, pas la tourelle → hull-down
+       elle couvre les deux                   → masqué, mais aveugle */
+  function hullDown(el){
+    const mod=charDe(el.char); if(!mod||!curHeights) return null;
+    const sol=solY(el.x,el.y);
+    const hCaisse=sol+(mod.bbCaisse[1][1]-mod.bbCaisse[0][1]);
+    const hTourelle=sol+(mod.bbClic[1][1]-mod.bbCaisse[0][1]);
+    const cap=(Number(el.cap)||0)*Math.PI/180;
+    /* le châssis regarde vers (sin cap, cos cap) */
+    const ux=Math.sin(cap), uz=Math.cos(cap);
+    /* Trois à vingt mètres, pas davantage : une crête abrite un char
+       quand il est POSTÉ derrière, à quelques longueurs. Un relief qui
+       monte quarante mètres plus loin n'est pas un abri, c'est du
+       terrain — et le compter faisait déclarer « masqué » à peu près
+       tout le monde. */
+    let crete=-1e30, ou=0;
+    for(let r=3;r<=20;r+=0.5){
+      const h=hauteurOcc(el.x+ux*r, el.y+uz*r);
+      if(h>crete){ crete=h; ou=r; }
+    }
+    if(crete<=-1e29) return null;
+    return {crete:+crete.toFixed(1), a:ou, sol:+sol.toFixed(1),
+            caisse:+hCaisse.toFixed(1), tourelle:+hTourelle.toFixed(1),
+            etat: crete>=hTourelle ? "masque" : crete>=hCaisse ? "hulldown" : "decouvert"};
+  }
+
   /* Le verdict complet entre deux marqueurs. */
   function ligneDeVue(a,b){
     const A=oeilDe(a), B=oeilDe(b);
@@ -1893,8 +1982,7 @@ function pretty(k){ const L=LABELS[k];
     buildStrat(); buildChars(); buildVue(); buildChamp();
     $("stVue").classList.toggle("on",!!montreVue);
     $("stChamp").classList.toggle("on",!!montreChamp);
-    $("stChampV").textContent=(montreChamp&&champStat)
-      ? champStat+" "+t("of the ground within view range") : "";
+    $("stChampV").textContent=montreChamp?champStat:"";
     const box=$("stSelBox"), e=ST.els[ST.sel];
     box.style.display=e?"":"none";
     if(e){ $("stElNom").value=e.name||"";
@@ -1902,7 +1990,17 @@ function pretty(k){ const L=LABELS[k];
       stRemplitChoix();
       $("stElChar").value=e.char||"";
       $("stElCap").value=Number(e.cap)||0;
-      $("stCapV").textContent=(Number(e.cap)||0)+"°"; }
+      $("stCapV").textContent=(Number(e.cap)||0)+"°";
+      /* la posture, dans l'axe où le char regarde */
+      const hd=hullDown(e), b=$("stHull");
+      if(!hd){ b.textContent=""; b.className="stHull"; }
+      else{
+        const m=hd.etat==="hulldown" ? t("Hull-down: the crest covers the hull, the turret clears it")
+              : hd.etat==="masque" ? t("Fully masked: the crest hides the turret too")
+              : t("In the open: no crest covers the hull ahead");
+        b.textContent=m+" ("+t("crest")+" "+hd.a+" m, "+(hd.crete-hd.sol).toFixed(1)+" m)";
+        b.className="stHull "+hd.etat;
+      } }
     for(const b of $("stCls").children) b.classList.toggle("on",b.dataset.cls===ST.outil);
     $("stAmi").classList.toggle("on",ST.camp==="ami");
     $("stEnn").classList.toggle("on",ST.camp==="ennemi");
@@ -2138,7 +2236,8 @@ function pretty(k){ const L=LABELS[k];
       ligneDeVue,bloqueRelief,bloqueBati,oeilDe,buildVue,buildChamp,
       carteOcclusion,hauteurOcc,
       vue:v=>{ montreVue=v?1:0; }, champ:v=>{ montreChamp=v?1:0; },
-      champInfo:()=>({n:champN,taux:champStat}), solY,
+      champInfo:()=>({n:champN,tir:champNTir,taux:champStat}), solY,
+      hullDown,interpole,yawRelatif,
       etatChars:()=>charsEtat,lots:()=>charsLots,solLots:()=>stLots,
       vueLots:()=>vueLots,biblio:()=>CHARS,jeux:()=>JEUX,boites:prepareBoites};
     document.addEventListener("keydown",e=>{
@@ -2291,8 +2390,17 @@ function pretty(k){ const L=LABELS[k];
              détache aussi bien du vert que du brun, et ne se confond pas
              avec le vert/rouge des lignes de vue, qui veut dire autre
              chose. */
-          gl.uniform4f(luCoul,0.30,0.82,0.95,0.34);
-          gl.drawArrays(gl.TRIANGLES,0,champN);
+          if(champNTir){
+            gl.uniform4f(luCoul,0.30,0.82,0.95,0.34);
+            gl.drawArrays(gl.TRIANGLES,0,champNTir);
+          }
+          /* Ce qu'on VOIT sans pouvoir l'atteindre : de l'ambre, une
+             couleur d'avertissement, et plus pâle — c'est une réserve
+             sur la zone, pas une seconde zone. */
+          if(champN>champNTir){
+            gl.uniform4f(luCoul,0.95,0.72,0.28,0.30);
+            gl.drawArrays(gl.TRIANGLES,champNTir,champN-champNTir);
+          }
           gl.uniform1f(luHaut,LIM_HAUT);
         }
         /* Les lignes de vue, sous les marqueurs : elles renseignent, les
