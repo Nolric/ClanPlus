@@ -1276,7 +1276,13 @@ function pretty(k){ const L=LABELS[k];
   const SB_URL="https://hlvqofgtwkkmbjmstmuc.supabase.co";
   const SB_ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhsdnFvZmd0d2trbWJqbXN0bXVjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM5MzA5MDksImV4cCI6MjA5OTUwNjkwOX0.-zetkqR2LMffbCDfrDe4bz4MJVngUzbcxGdbazdWqEI";
   const stSession=()=>{ try{ return localStorage.getItem("cp_session"); }catch(_){ return null; } };
-  const DEV3D=/[?&]dev(=|&|$)/.test(location.search);
+  /* Le mode test est MÉMORISÉ dans `cp_dev`, comme partout ailleurs sur
+     le site : je ne le lisais que dans l'URL, si bien qu'un administrateur
+     arrivé sur la page sans « ?dev » n'envoyait pas le drapeau au serveur
+     — lequel lui refusait alors l'édition, à raison. La page se déverrouille
+     déjà sur ce même `cp_dev` : lire l'un et pas l'autre était incohérent. */
+  const DEV3D=(()=>{ if(/[?&]dev(=|&|$)/.test(location.search)) return true;
+    try{ return localStorage.getItem("cp_dev")==="1"; }catch(_){ return false; } })();
   async function stApi(body){
     const r=await fetch(SB_URL+"/functions/v1/strategies",{method:"POST",
       headers:{"content-type":"application/json",apikey:SB_ANON,Authorization:"Bearer "+SB_ANON},
