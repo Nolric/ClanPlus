@@ -102,6 +102,11 @@
   #strat .stItem:hover{border-color:var(--gold)}
   #strat .stItem small{display:block;color:var(--muted);font-size:11px;margin-top:2px}
   #strat .stPos{font-size:11px;color:var(--muted);margin:0 0 7px;font-variant-numeric:tabular-nums}
+  #strat select{width:100%;min-width:0;margin:0 0 7px;font-size:12px;padding:6px 26px 6px 8px}
+  #strat .stCap{align-items:center;flex-wrap:nowrap;gap:7px}
+  #strat .stCap label{font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap}
+  #strat .stCap input[type=range]{flex:1;min-width:0;width:auto;margin:0;padding:0;background:none;border:0;accent-color:var(--gold)}
+  #strat .stCap span{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;min-width:30px;text-align:right}
   #strat .stAide{font-size:11px;line-height:1.45;color:var(--muted);margin:6px 0 0}
   #strat .stVide{font-size:12px;color:var(--muted);padding:6px 2px 8px}
   /* les étiquettes des marqueurs, posées par-dessus la scène */
@@ -161,6 +166,12 @@
       </div>
       <div id="stSelBox" style="display:none">
         <input id="stElNom" maxlength="18" placeholder="Tank name">
+        <select id="stElChar"><option value="">Marker only</option></select>
+        <div class="stRow stCap">
+          <label for="stElCap" id="stCapL">Facing</label>
+          <input type="range" id="stElCap" min="0" max="355" step="5" value="0">
+          <span id="stCapV">0°</span>
+        </div>
         <div class="stPos" id="stElPos"></div>
       </div>
       <div class="stRow">
@@ -390,6 +401,47 @@ function pretty(k){ const L=LABELS[k];
   const buPV=gl.getUniformLocation(bprog,"uPV"),buHS=gl.getUniformLocation(bprog,"uHS"),buExag=gl.getUniformLocation(bprog,"uExag");
   const buEye=gl.getUniformLocation(bprog,"uEye"),buFlore=gl.getUniformLocation(bprog,"uFlore");
   const buCalque=gl.getUniformLocation(bprog,"uCalque");
+
+  /* ══ LE PROGRAMME DES CHARS ═══════════════════════════════════════
+     Même transformation que les bâtiments — un modèle écrit une fois,
+     une matrice par exemplaire, l'altitude du terrain à part — avec une
+     différence qui commande tout : la TEINTE vient de l'exemplaire.
+     Sur un bâtiment la couleur décrit la matière ; sur un char elle dit
+     le CAMP, et deux chars du même modèle doivent pouvoir s'opposer.
+     Elle ne peut donc pas vivre dans le nuanceur.
+     C'est aussi pourquoi je n'ai pas étendu `bprog` : y ajouter un
+     attribut, c'est risquer les 18 374 objets de la carte pour un char. */
+  const cvs=`attribute vec3 aPos;
+    attribute vec4 iA;attribute vec4 iB;attribute vec4 iC;attribute float iBase;attribute vec3 iTeinte;
+    uniform mat4 uPV;uniform float uHS;uniform float uExag;
+    varying vec3 vW;varying vec3 vT;
+    void main(){
+      vec3 w=vec3(dot(iA.xyz,aPos)+iA.w, dot(iB.xyz,aPos)+iB.w, -(dot(iC.xyz,aPos)+iC.w));
+      vec3 p=vec3(w.x, iBase*uHS*uExag+w.y, w.z);
+      vW=p; vT=iTeinte;
+      gl_Position=uPV*vec4(p,1.0); }`;
+  const cfs=`#extension GL_OES_standard_derivatives : enable
+    precision highp float;varying vec3 vW;varying vec3 vT;uniform vec3 uEye;
+    void main(){
+      /* Normale par dérivées d écran, orientée vers la caméra : la
+         géométrie extraite n a pas d enroulement cohérent, et sans cela
+         une facette sur deux tombe au noir. Même raison que le bâti. */
+      vec3 N=normalize(cross(dFdx(vW),dFdy(vW)));
+      if(dot(N,uEye-vW)<0.0) N=-N;
+      float d=max(dot(N,normalize(vec3(0.5,0.8,0.35))),0.0);
+      float ciel=0.5+0.5*N.y;
+      /* Un char doit se DÉTACHER du décor : sa lumière est plus vive que
+         celle des bâtiments, sinon il se fond dans la ville qu il occupe. */
+      vec3 amb=mix(vec3(0.34,0.34,0.36), vec3(0.66,0.69,0.74), ciel);
+      gl_FragColor=vec4(vT*(amb+vec3(d)*0.80),1.0); }`;
+  const cprog=gl.createProgram();
+  gl.attachShader(cprog,sh(gl.VERTEX_SHADER,cvs));gl.attachShader(cprog,sh(gl.FRAGMENT_SHADER,cfs));gl.linkProgram(cprog);
+  const cPos=gl.getAttribLocation(cprog,"aPos");
+  const cIA=gl.getAttribLocation(cprog,"iA"),cIB=gl.getAttribLocation(cprog,"iB"),
+        cIC=gl.getAttribLocation(cprog,"iC"),cIBase=gl.getAttribLocation(cprog,"iBase"),
+        cITeinte=gl.getAttribLocation(cprog,"iTeinte");
+  const cuPV=gl.getUniformLocation(cprog,"uPV"),cuHS=gl.getUniformLocation(cprog,"uHS"),
+        cuExag=gl.getUniformLocation(cprog,"uExag"),cuEye=gl.getUniformLocation(cprog,"uEye");
   /* L'instanciation : sans elle il faudrait écrire la géométrie de
      chacun des 18 374 objets, soit cinquante mégaoctets au lieu de
      treize — et pour une qualité moindre. */
@@ -730,7 +782,7 @@ function pretty(k){ const L=LABELS[k];
     stLots=[];
     if(!curHeights||!ST.els.length) return;
     const P=[];
-    const pose=(x,z,coul,haut,r,selection)=>{
+    const pose=(x,z,coul,haut,r,selection,fut)=>{
       const n=40, bord=[];
       for(let i=0;i<=n;i++){ const a=i/n*Math.PI*2, px=x+Math.cos(a)*r, pz=z+Math.sin(a)*r;
         bord.push([px,pz,terrainNorm(px,pz)]); }
@@ -738,9 +790,14 @@ function pretty(k){ const L=LABELS[k];
       P.push(x,0.8,-z,terrainNorm(x,z));
       for(const [px,pz,b] of bord) P.push(px,0.8,-pz,b);
       stLots.push({d:d0,n:P.length/4-d0,coul,mode:gl.TRIANGLE_FAN,voile:0,haut,alpha:selection?0.85:0.55});
-      const d1=P.length/4;
-      for(const [px,pz,b] of bord) P.push(px,0,-pz,b, px,haut,-pz,b);
-      stLots.push({d:d1,n:P.length/4-d1,coul,mode:gl.TRIANGLE_STRIP,voile:1,haut,alpha:0.75});
+      /* Le fût ne sert qu'À DÉFAUT du char : dès qu'on a le vrai modèle,
+         il le traverserait de part en part. Le disque, lui, reste — c'est
+         par lui qu'on voit le camp de loin, et qu'on saisit le marqueur. */
+      if(fut){
+        const d1=P.length/4;
+        for(const [px,pz,b] of bord) P.push(px,0,-pz,b, px,haut,-pz,b);
+        stLots.push({d:d1,n:P.length/4-d1,coul,mode:gl.TRIANGLE_STRIP,voile:1,haut,alpha:0.75});
+      }
       /* le sélectionné reçoit un anneau clair, pour qu'on sache lequel on tient */
       if(selection){
         const ext=[], d2=P.length/4;
@@ -758,11 +815,118 @@ function pretty(k){ const L=LABELS[k];
          informations qu'on lit d'un coup d'œil sans étiquette */
       const coul=(e.camp==="ennemi")?ST_COUL.ennemi:ST_COUL.ami;
       const haut=({light:9,medium:12,heavy:15,td:11,spg:8})[cls[0]]||12;
-      pose(e.x, e.y, coul, haut, 6, i===ST.sel);
+      pose(e.x, e.y, coul, haut, 6, i===ST.sel, !charDe(e.char));
     }
     if(!P.length){ stLots=[]; return; }
     gl.bindBuffer(gl.ARRAY_BUFFER,stB);
     gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(P),gl.STATIC_DRAW);
+  }
+
+  /* ══ LA BIBLIOTHÈQUE DES CHARS DE RANG X ═════════════════════════
+     116 chars, caisse + tourelle + canon, extraits du jeu au niveau de
+     détail lod2 : 12,7 Mo. C'est trop pour le payer à chaque visite de
+     carte, et inutile tant qu'on ne pose rien — on ne les demande donc
+     qu'à l'ouverture de l'éditeur, une seule fois par session.
+
+     Le fichier ne contient AUCUN exemplaire : la page les fabrique. Ce
+     qui suppose de connaître, pour chaque pièce, l'échelle de
+     quantification et le centre du modèle — c'est ce que porte
+     `pieces` dans l'index. Sur les cartes ces deux nombres sont absorbés
+     dans la matrice de chaque exemplaire ; ici il n'y en a pas. */
+  let CHARS=null, charsEtat=0;            // 0 rien · 1 en cours · 2 prêt · 3 échec
+  const charsJeu={vb:null,ib:null,xb:null,modeles:[]};
+  const charsXB=gl.createBuffer(); let charsLots=[];
+  async function chargeChars(){
+    if(charsEtat===2) return true;
+    if(charsEtat===3||charsEtat===1) return false;
+    charsEtat=1;
+    try{
+      const [j,ab]=await Promise.all([
+        fetch("chars/chars.json").then(r=>{ if(!r.ok) throw new Error(r.status); return r.json(); }),
+        fetch("chars/chars.bin").then(r=>{ if(!r.ok) throw new Error(r.status); return r.arrayBuffer(); })]);
+      lisCPF4(ab,charsJeu);
+      CHARS=j; charsEtat=2;
+      stRemplitChoix(); buildChars();
+      return true;
+    }catch(e){
+      /* Sans la bibliothèque, l'éditeur garde ses fûts : il reste
+         utilisable, il est seulement moins parlant. */
+      charsEtat=3; console.error("carte3d : bibliothèque de chars indisponible —", e);
+      return false;
+    }
+  }
+  const charDe=cle=>{ if(charsEtat!==2||!cle) return null;
+    return CHARS.chars.find(c=>c.cle===cle)||null; };
+
+  /* Deux matrices 3×4 composées, en coordonnées du JEU — le nuanceur
+     retourne Z, comme pour les bâtiments. */
+  function mulT(A,B){
+    const o=new Array(12);
+    for(let r=0;r<3;r++){
+      for(let c=0;c<3;c++) o[r*4+c]=A[r*4]*B[c]+A[r*4+1]*B[4+c]+A[r*4+2]*B[8+c];
+      o[r*4+3]=A[r*4]*B[3]+A[r*4+1]*B[7]+A[r*4+2]*B[11]+A[r*4+3];
+    }
+    return o;
+  }
+  const rotY=(a,tx,ty,tz)=>{ const c=Math.cos(a),s=Math.sin(a);
+    return [c,0,s,tx, 0,1,0,ty, -s,0,c,tz]; };
+
+  /* Les exemplaires : un lot par pièce, pour qu'un même modèle posé
+     plusieurs fois ne coûte qu'un appel de dessin. */
+  function buildChars(){
+    charsLots=[];
+    if(charsEtat!==2||!curHeights||!ST.els.length) return;
+    const par=new Map();
+    const pousse=(im,M,base,teinte)=>{
+      if(im===undefined||im===null||im<0) return;
+      const p=CHARS.pieces[im]; if(!p) return;
+      let a=par.get(im); if(!a){ a=[]; par.set(im,a); }
+      /* aPos est un entier BRUT de −32768 à 32767 : l'échelle et le
+         centre du modèle entrent dans la matrice. Les lire comme des
+         mètres poserait des chars de trente kilomètres. */
+      const e=p.e, c=p.c;
+      for(let r=0;r<3;r++) a.push(M[r*4]*e, M[r*4+1]*e, M[r*4+2]*e,
+        M[r*4]*c[0]+M[r*4+1]*c[1]+M[r*4+2]*c[2]+M[r*4+3]);
+      a.push(base, teinte[0], teinte[1], teinte[2]);
+    };
+    for(let i=0;i<ST.els.length;i++){
+      const el=ST.els[i], mod=charDe(el.char);
+      if(!mod) continue;
+      const base=terrainNorm(el.x,el.y);
+      const cap=(Number(el.cap)||0)*Math.PI/180;
+      const tour=cap+(Number(el.tour)||0)*Math.PI/180;
+      /* La caisse est POSÉE : son point le plus bas touche le sol. Sans
+         ce décalage elle flotterait ou s'enfoncerait, l'origine du modèle
+         n'étant pas au niveau des chenilles. */
+      const sol=-mod.bbCaisse[0][1];
+      const Mc=rotY(cap, el.x, sol, el.y);
+      const cl=el.camp==="ennemi"?ST_COUL.ennemi:ST_COUL.ami;
+      const vif=(i===ST.sel)?1.35:1;
+      const teinte=k=>[Math.min(1,cl[0]*k*vif),Math.min(1,cl[1]*k*vif),Math.min(1,cl[2]*k*vif)];
+      pousse(mod.caisse, Mc, base, teinte(1));
+      if(mod.tourelle>=0){
+        const jT=mod.jTourelle;
+        /* la tourelle tourne sur SON anneau, pas autour du centre du char */
+        const Mt=mulT(Mc, mulT([1,0,0,jT[0], 0,1,0,jT[1], 0,0,1,jT[2]], rotY(tour-cap,0,0,0)));
+        pousse(mod.tourelle, Mt, base, teinte(1.12));
+        if(mod.canon>=0){
+          const jG=mod.jCanon;
+          pousse(mod.canon, mulT(Mt,[1,0,0,jG[0], 0,1,0,jG[1], 0,0,1,jG[2]]), base, teinte(0.82));
+        }
+      } else if(mod.canon>=0){
+        /* casemate : le canon est solidaire de la caisse */
+        pousse(mod.canon, Mc, base, teinte(0.82));
+      }
+    }
+    if(!par.size) return;
+    let n=0; for(const a of par.values()) n+=a.length;
+    const buf=new Float32Array(n); let o=0;
+    for(const [im,a] of par){
+      charsLots.push({im, d:o/16, n:a.length/16});
+      buf.set(a,o); o+=a.length;
+    }
+    gl.bindBuffer(gl.ARRAY_BUFFER,charsXB);
+    gl.bufferData(gl.ARRAY_BUFFER,buf,gl.DYNAMIC_DRAW);
   }
 
   /* Une position du monde → un point de l'écran. Sert aux étiquettes et
@@ -1030,7 +1194,8 @@ function pretty(k){ const L=LABELS[k];
       else {
         const p=solSousCurseur(e.clientX,e.clientY);
         if(p){
-          ST.els.push({type:"tank",cls:ST.outil,x:p[0],y:-p[1],name:"",camp:ST.camp,size:0.78});
+          ST.els.push({type:"tank",cls:ST.outil,x:p[0],y:-p[1],name:"",camp:ST.camp,size:0.78,
+                       char:"",cap:0});
           ST.sel=ST.els.length-1; stMaj();
         }
       }
@@ -1233,6 +1398,17 @@ function pretty(k){ const L=LABELS[k];
   async function loadMap(key){
     loadEl.classList.add("on");
     document.getElementById("mapName").textContent=pretty(key);
+    /* Une stratégie appartient à UNE carte : changer de carte la referme.
+       Les marqueurs restaient posés, et se retrouvaient sur un relief
+       qui n'était pas le leur — invisible tant qu'ils n'étaient que des
+       fûts, criant depuis qu'ils sont des chars. */
+    if(typeof ST!=="undefined"&&ST.els.length){
+      ST.els=[]; ST.sel=-1; ST.edition=0; ST.id=null;
+      const e1=document.getElementById("stEdit"), l1=document.getElementById("stListe");
+      if(e1){ e1.style.display="none"; } if(l1){ l1.style.display=""; }
+      document.getElementById("stLbl").innerHTML="";
+      buildStrat(); buildChars();
+    }
     try{
       const meta=await fetch("maps3d/"+key+"/meta.json").then(r=>r.json());
       curMeta=meta; curKey=key;
@@ -1253,6 +1429,8 @@ function pretty(k){ const L=LABELS[k];
       await g;
       frameCam();
       document.getElementById("mapSub").textContent=t("Real elevation")+" · "+WORLD+" m";
+      /* le panneau ouvert doit lister les stratégies de la NOUVELLE carte */
+      if(typeof ST!=="undefined"&&ST.ouvert) stCharge();
       try{ localStorage.setItem("cp_map3d",key); }catch(_){}
     }catch(e){
       /* « Erreur de chargement » sans la cause ne dit rien à personne — ni
@@ -1299,14 +1477,46 @@ function pretty(k){ const L=LABELS[k];
     clearTimeout(stMsgT); stMsgT=setTimeout(()=>{ d.style.display="none"; },3200);
   }
 
+  /* La liste des chars proposés, réduite à la CLASSE du marqueur : cent
+     seize noms d'affilée, c'est une liste qu'on ne lit pas. Le jeu range
+     déjà chaque char dans sa classe, on s'en sert.
+     Le char déjà choisi reste proposé même s'il sort du filtre — sinon
+     changer la classe d'un marqueur effacerait son modèle en silence. */
+  function stRemplitChoix(){
+    const s=$("stElChar"), e=ST.els[ST.sel];
+    if(!s) return;
+    if(charsEtat!==2){
+      s.innerHTML='<option value="">'+
+        (charsEtat===3?t("Tank models unavailable"):t("Loading tank models…"))+"</option>";
+      s.disabled=true; return;
+    }
+    s.disabled=false;
+    const garde=e?(e.char||""):"";
+    const cls=e?e.cls:null;
+    const l=CHARS.chars.filter(c=>!cls||c.classe===cls||c.cle===garde);
+    let h='<option value="">'+t("Marker only")+"</option>";
+    let nat="";
+    for(const c of l.sort((a,b)=>a.nation.localeCompare(b.nation)||a.nom.localeCompare(b.nom,"fr"))){
+      if(c.nation!==nat){ if(nat) h+="</optgroup>"; nat=c.nation; h+='<optgroup label="'+nat.toUpperCase()+'">'; }
+      h+='<option value="'+c.cle+'">'+c.nom.replace(/[<>&]/g,"")+"</option>";
+    }
+    if(nat) h+="</optgroup>";
+    s.innerHTML=h;
+    s.value=garde;
+  }
+
   function stMaj(){
     /* les marqueurs de la carte OUVERTE seulement : une stratégie
        appartient à une carte, on ne mélange pas */
-    buildStrat();
+    buildStrat(); buildChars();
     const box=$("stSelBox"), e=ST.els[ST.sel];
     box.style.display=e?"":"none";
     if(e){ $("stElNom").value=e.name||"";
-      $("stElPos").textContent="x "+Math.round(e.x)+" · z "+Math.round(e.y)+" m"; }
+      $("stElPos").textContent="x "+Math.round(e.x)+" · z "+Math.round(e.y)+" m";
+      stRemplitChoix();
+      $("stElChar").value=e.char||"";
+      $("stElCap").value=Number(e.cap)||0;
+      $("stCapV").textContent=(Number(e.cap)||0)+"°"; }
     for(const b of $("stCls").children) b.classList.toggle("on",b.dataset.cls===ST.outil);
     $("stAmi").classList.toggle("on",ST.camp==="ami");
     $("stEnn").classList.toggle("on",ST.camp==="ennemi");
@@ -1387,7 +1597,8 @@ function pretty(k){ const L=LABELS[k];
        sait pas dessiner */
     ST.els=els.filter(e=>e&&e.type==="tank").map(e=>({type:"tank",cls:e.cls||"medium",
       x:Number(e.x)||0, y:Number(e.y)||0, name:e.name||"",
-      camp:(e.color==="#e5544b")?"ennemi":"ami", color:e.color||"#4ea36a", size:e.size||0.78}));
+      camp:(e.color==="#e5544b")?"ennemi":"ami", color:e.color||"#4ea36a", size:e.size||0.78,
+      char:typeof e.char==="string"?e.char:"", cap:Number(e.cap)||0}));
     ST.sel=-1;
     $("stNom").value=ST.nom;
     $("stListe").style.display="none"; $("stEdit").style.display="";
@@ -1396,13 +1607,16 @@ function pretty(k){ const L=LABELS[k];
   function stFerme(){
     ST.edition=0;
     $("stListe").style.display=""; $("stEdit").style.display="none";
-    ST.id=null; ST.els=[]; ST.sel=-1; buildStrat(); stCharge();
+    ST.id=null; ST.els=[]; ST.sel=-1; buildStrat(); buildChars(); stCharge();
   }
   async function stEnregistre(){
     if(!ST.canEdit) return;
     const nom=($("stNom").value||"").trim()||t("Strategy");
     const els=ST.els.map(e=>({type:"tank",cls:e.cls,x:Math.round(e.x),y:Math.round(e.y),
-      name:e.name||"", size:e.size||0.78, color:(e.camp==="ennemi")?"#e5544b":"#4ea36a"}));
+      name:e.name||"", size:e.size||0.78, color:(e.camp==="ennemi")?"#e5544b":"#4ea36a",
+      /* le modèle et son cap : la stratégie ne dit pas seulement OÙ, elle
+         dit quel char et vers où il regarde */
+      char:e.char||"", cap:Number(e.cap)||0}));
     const b=$("stSave"); b.disabled=true; b.textContent=t("Saving…");
     const r=await stApi({action:"save",strategy:{id:ST.id,name:nom,map:curKey,mode:curMode||"ctf",
       steps:[{els,note:"",t:null}],elements:els,editors:[]}});
@@ -1435,16 +1649,35 @@ function pretty(k){ const L=LABELS[k];
     $("stEnn").addEventListener("click",()=>{ ST.camp="ennemi"; stMaj(); });
     $("stNom").addEventListener("input",e=>{ ST.nom=e.target.value; });
     $("stElNom").addEventListener("input",e=>{ const el=ST.els[ST.sel]; if(el){ el.name=e.target.value; stLabels(); } });
+    $("stElChar").addEventListener("change",e=>{
+      const el=ST.els[ST.sel]; if(!el) return;
+      el.char=e.target.value||"";
+      /* Le nom du char sert d'étiquette tant que l'auteur n'en a pas mis
+         une : sur une carte, « Object 279 » dit plus que « char 3 ». */
+      const m=charDe(el.char);
+      if(m&&!el.name){ el.name=m.nom.slice(0,18); $("stElNom").value=el.name; }
+      buildStrat(); buildChars(); stLabels();
+    });
+    $("stElCap").addEventListener("input",e=>{
+      const el=ST.els[ST.sel]; if(!el) return;
+      el.cap=Number(e.target.value)||0;
+      $("stCapV").textContent=el.cap+"°";
+      buildChars();
+    });
     $("stSave").addEventListener("click",stEnregistre);
     $("stDel").addEventListener("click",stSupprime);
     $("stQuit").addEventListener("click",stFerme);
     $("stClose").addEventListener("click",()=>{ ST.ouvert=0; $("strat").style.display="none";
-      $("stLbl").innerHTML=""; ST.els=[]; ST.sel=-1; buildStrat(); });
+      $("stLbl").innerHTML=""; ST.els=[]; ST.sel=-1; buildStrat(); buildChars(); });
     $("stratBtn").addEventListener("click",()=>{
       ST.ouvert^=1;
       $("strat").style.display=ST.ouvert?"block":"none";
       $("stratBtn").classList.toggle("on",!!ST.ouvert);
-      if(ST.ouvert) stCharge(); else { $("stLbl").innerHTML=""; ST.els=[]; ST.sel=-1; ST.edition=0; buildStrat(); }
+      /* La bibliothèque de chars ne se demande QU'ICI, et une seule fois :
+         12,7 Mo qu'il serait absurde de payer pour qui regarde une carte
+         sans rien y poser. */
+      if(ST.ouvert){ chargeChars(); stCharge(); }
+      else { $("stLbl").innerHTML=""; ST.els=[]; ST.sel=-1; ST.edition=0; buildStrat(); buildChars(); }
     });
     /* Le bouton n'apparaît que si l'on est connecté : sans session, le
        serveur refuserait, et proposer une action qui échoue à coup sûr
@@ -1453,7 +1686,8 @@ function pretty(k){ const L=LABELS[k];
     /* En mode test seulement : de quoi exercer la pose et le rendu sans
        session de clan. Le serveur, lui, ne s'en laisse pas conter — il
        refusera l'enregistrement. C'est un banc d'essai, pas une porte. */
-    if(DEV3D) window.__strat={ST,stMaj,stLabels,buildStrat,versEcran,stSous};
+    if(DEV3D) window.__strat={ST,stMaj,stLabels,buildStrat,buildChars,chargeChars,
+      versEcran,stSous,charDe,etatChars:()=>charsEtat,lots:()=>charsLots,biblio:()=>CHARS};
     document.addEventListener("keydown",e=>{
       if(!ST.ouvert||ST.sel<0) return;
       if(/^(input|textarea|select)$/i.test((e.target.tagName||""))) return;
@@ -1515,6 +1749,39 @@ function pretty(k){ const L=LABELS[k];
            lire un seul sommet au maillage du terrain à l'image suivante. */
         for(const a of [bIA,bIB,bIC,bIBase,bIGenre]){ instExt.vertexAttribDivisorANGLE(a,0);
           gl.disableVertexAttribArray(a); }
+      }
+      /* ── LES CHARS ────────────────────────────────────────────────
+         Opaques, et dessinés AVANT la passe transparente : ils doivent
+         écrire la profondeur, sinon le voile de limite et les anneaux
+         d'objectif les traverseraient. Ils ne dépendent pas du bouton
+         « Bâtiments » — on ne cache pas ce qu'on est en train de poser. */
+      if(charsLots.length&&instExt){
+        gl.useProgram(cprog);
+        gl.uniformMatrix4fv(cuPV,false,new Float32Array(mul(P,V)));
+        gl.uniform1f(cuHS,curMaxH); gl.uniform1f(cuExag,exag);
+        { const E=eye(); gl.uniform3f(cuEye,E[0],E[1],E[2]); }
+        gl.disableVertexAttribArray(aUv);
+        for(const a of [cPos,cIA,cIB,cIC,cIBase,cITeinte]) gl.enableVertexAttribArray(a);
+        for(const a of [cIA,cIB,cIC,cIBase,cITeinte]) instExt.vertexAttribDivisorANGLE(a,1);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,charsJeu.ib);
+        for(const L of charsLots){
+          const M2=charsJeu.modeles[L.im]; if(!M2) continue;
+          gl.bindBuffer(gl.ARRAY_BUFFER,charsJeu.vb);
+          gl.vertexAttribPointer(cPos,3,gl.SHORT,false,8,M2.s0*8);
+          gl.bindBuffer(gl.ARRAY_BUFFER,charsXB);
+          const b0=L.d*64;
+          gl.vertexAttribPointer(cIA,4,gl.FLOAT,false,64,b0);
+          gl.vertexAttribPointer(cIB,4,gl.FLOAT,false,64,b0+16);
+          gl.vertexAttribPointer(cIC,4,gl.FLOAT,false,64,b0+32);
+          gl.vertexAttribPointer(cIBase,1,gl.FLOAT,false,64,b0+48);
+          gl.vertexAttribPointer(cITeinte,3,gl.FLOAT,false,64,b0+52);
+          instExt.drawElementsInstancedANGLE(gl.TRIANGLES,M2.ni,gl.UNSIGNED_SHORT,M2.i0*2,L.n);
+        }
+        /* Le diviseur est un état du CONTEXTE : le laisser à 1 ferait
+           lire un seul sommet au terrain à l'image suivante. */
+        for(const a of [cIA,cIB,cIC,cIBase,cITeinte]){ instExt.vertexAttribDivisorANGLE(a,0);
+          gl.disableVertexAttribArray(a); }
+        gl.disableVertexAttribArray(cPos);
       }
       if((showLim&&limN)||(showEau&&eauN)||objLots.length){
         gl.useProgram(lprog);
