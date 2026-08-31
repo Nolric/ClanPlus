@@ -106,6 +106,8 @@
   #strat .stVide{font-size:12px;color:var(--muted);padding:6px 2px 8px}
   /* les étiquettes des marqueurs, posées par-dessus la scène */
   #stLbl{position:fixed;inset:0;pointer-events:none;z-index:5}
+  #stMsg{position:absolute;left:50%;top:78px;transform:translateX(-50%);display:none;
+    padding:8px 14px;font-size:12.5px;z-index:7;pointer-events:none;max-width:60vw;text-align:center}
   #stLbl .e{position:absolute;transform:translate(-50%,-100%);white-space:nowrap;
     font-size:11.5px;font-weight:700;padding:2px 6px;border-radius:3px;
     background:rgba(12,13,16,.72);border:1px solid rgba(255,255,255,.16);
@@ -170,6 +172,7 @@
     </div>
   </div>
   <div id="stLbl"></div>
+  <div id="stMsg" class="glass"></div>
   <div id="mini" class="glass"><div class="lg">Minimap</div><img id="miniImg" alt=""><div class="n">N ↑</div></div>
   <div id="leg" class="glass"><div class="lg" id="legT">Legend</div><div id="legL"></div><p class="no" id="legN"></p></div>
   <div id="hint"><b>Drag</b> to rotate · <b>Scroll</b> zooms where you point · <b>Double-click</b> to go there<br><b>Right-click</b> or <b>Shift</b> to pan · <b>WASD</b> to move · <b>Shift</b> to go faster</div>
@@ -718,8 +721,8 @@ function pretty(k){ const L=LABELS[k];
                 ["spg","SPG",[0.95,0.45,0.42]]];
   const ST_COUL={ami:[0.36,0.74,0.42], ennemi:[0.92,0.42,0.34]};
   /* l'état de l'éditeur : la stratégie ouverte et ses marqueurs */
-  let ST={ouvert:0, id:null, nom:"", els:[], sel:-1, outil:"medium", camp:"ami",
-          canEdit:0, liste:[], moi:null};
+  let ST={ouvert:0, edition:0, id:null, nom:"", els:[], sel:-1, outil:"medium", camp:"ami",
+          canEdit:0, liste:[], moi:null, refus:""};
 
   /* Un marqueur : un disque au sol, un fût vertical, et un liseré sombre.
      Même nuanceur que les objectifs — il fait déjà exactement ça. */
@@ -1017,12 +1020,19 @@ function pretty(k){ const L=LABELS[k];
        c'est une demande de poser un char là. On distingue le clic du
        glisser par la distance parcourue — sans quoi toute rotation de
        caméra sèmerait un marqueur. */
-    if(ST.ouvert&&ST.canEdit&&e.button===0&&!stDrag&&drag&&!drag.shift&&drag.btn===0
-       && Math.hypot(e.clientX-drag.x,e.clientY-drag.y)<4){
-      const p=solSousCurseur(e.clientX,e.clientY);
-      if(p&&!$("strat").contains(e.target)){
-        ST.els.push({type:"tank",cls:ST.outil,x:p[0],y:-p[1],name:"",camp:ST.camp,size:0.78});
-        ST.sel=ST.els.length-1; stMaj();
+    if(ST.ouvert&&e.button===0&&!stDrag&&drag&&!drag.shift&&drag.btn===0
+       && Math.hypot(e.clientX-drag.x,e.clientY-drag.y)<4 && !$("strat").contains(e.target)){
+      /* Un clic qui ne pose rien doit DIRE pourquoi. Sans ça, on clique
+         le sol, il ne se passe rien, et rien n'explique si c'est le
+         grade, la session, ou qu'aucune stratégie n'est ouverte. */
+      if(!ST.canEdit) stDit(ST.refus||t("Read-only: your rank doesn't allow editing strategies."));
+      else if(!ST.edition) stDit(t("Open a strategy first, or create a new one."));
+      else {
+        const p=solSousCurseur(e.clientX,e.clientY);
+        if(p){
+          ST.els.push({type:"tank",cls:ST.outil,x:p[0],y:-p[1],name:"",camp:ST.camp,size:0.78});
+          ST.sel=ST.els.length-1; stMaj();
+        }
       }
     }
     if(stDrag&&!stDrag.bouge){ /* simple clic sur un marqueur : il reste sélectionné */ }
@@ -1275,6 +1285,13 @@ function pretty(k){ const L=LABELS[k];
     return {ok:r.ok,status:r.status,j};
   }
   const $=id=>document.getElementById(id);
+  /* Un mot bref au milieu de la carte, qui s'efface seul : c'est là que
+     l'œil est quand on vient de cliquer, pas dans le panneau. */
+  let stMsgT=0;
+  function stDit(txt){
+    const d=$("stMsg"); d.textContent=txt; d.style.display="block";
+    clearTimeout(stMsgT); stMsgT=setTimeout(()=>{ d.style.display="none"; },3200);
+  }
 
   function stMaj(){
     /* les marqueurs de la carte OUVERTE seulement : une stratégie
@@ -1320,9 +1337,20 @@ function pretty(k){ const L=LABELS[k];
   async function stCharge(){
     const r=await stApi({action:"list"});
     const l=$("stListe");
-    if(!r.ok){ l.innerHTML='<div class="stVide">'+t("Couldn't load strategies.")+' '+
-      ((r.j&&r.j.error)==="missing_session"||(r.j&&r.j.error)==="invalid_session"
-        ? t("Sign in on the site first.") : ((r.j&&r.j.error)||r.status))+'</div>'; return; }
+    if(!r.ok){
+      /* Trois causes possibles, et il faut les distinguer : sans session,
+         avec une session périmée, ou parce que la base n'a pas encore la
+         colonne `vue`. Un message unique laisserait chercher au mauvais
+         endroit. */
+      const e=String((r.j&&r.j.error)||r.status);
+      const cause=/missing_session|invalid_session/.test(e) ? t("Sign in on the site first.")
+        : /vue|42703|PGRST204/i.test(e) ? t("The database is missing the 'vue' column — apply schema_strategies_3d.sql.")
+        : e;
+      ST.canEdit=0; ST.refus=t("Couldn't load strategies.")+" "+cause;
+      l.innerHTML='<div class="stVide">'+ST.refus+'</div>';
+      return;
+    }
+    ST.refus="";
     ST.canEdit=!!r.j.canEdit; ST.moi=r.j.me;
     ST.liste=(r.j.strategies||[]).filter(s=>s.map===curKey);
     l.innerHTML="";
@@ -1344,6 +1372,7 @@ function pretty(k){ const L=LABELS[k];
     }
   }
   function stOuvre(s){
+    ST.edition=1;
     ST.id=s?s.id:null;
     ST.nom=s?s.name:"";
     const els=s?((s.steps&&s.steps[0]&&s.steps[0].els)||s.elements||[]):[];
@@ -1359,6 +1388,7 @@ function pretty(k){ const L=LABELS[k];
     stMaj();
   }
   function stFerme(){
+    ST.edition=0;
     $("stListe").style.display=""; $("stEdit").style.display="none";
     ST.id=null; ST.els=[]; ST.sel=-1; buildStrat(); stCharge();
   }
@@ -1408,7 +1438,7 @@ function pretty(k){ const L=LABELS[k];
       ST.ouvert^=1;
       $("strat").style.display=ST.ouvert?"block":"none";
       $("stratBtn").classList.toggle("on",!!ST.ouvert);
-      if(ST.ouvert) stCharge(); else { $("stLbl").innerHTML=""; ST.els=[]; ST.sel=-1; buildStrat(); }
+      if(ST.ouvert) stCharge(); else { $("stLbl").innerHTML=""; ST.els=[]; ST.sel=-1; ST.edition=0; buildStrat(); }
     });
     /* Le bouton n'apparaît que si l'on est connecté : sans session, le
        serveur refuserait, et proposer une action qui échoue à coup sûr

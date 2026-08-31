@@ -8,6 +8,8 @@ window.t = window.t || function (s) { return s; };
    Généré : la clé est la phrase anglaise telle qu'elle est écrite dans
    le HTML. Une phrase absente d'ici reste affichée en anglais. */
 window.CP_FR = Object.assign(window.CP_FR || {}, {
+  "Open a strategy first, or create a new one.": "Ouvre d’abord une stratégie, ou crée-en une nouvelle.",
+  "The database is missing the 'vue' column — apply schema_strategies_3d.sql.": "La base n’a pas encore la colonne « vue » — applique schema_strategies_3d.sql.",
   "Strategy": "Stratégie",
   "Clan strategies": "Stratégies du clan",
   "Strategy name": "Nom de la stratégie",
