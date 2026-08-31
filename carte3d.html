@@ -165,8 +165,10 @@
         <button class="btn" id="stEnn">Enemies</button>
       </div>
       <div class="stRow">
-        <button class="btn" id="stVue" title="From the selected tank, what it can and cannot see">Line of sight</button>
+        <button class="btn" id="stVue" title="A line to each other tank: green as far as it sees, red beyond">Line of sight</button>
+        <button class="btn" id="stChamp" title="Everything the selected tank can see around it, out to its 445 m view range">Field of view</button>
       </div>
+      <div class="stPos" id="stChampV"></div>
       <div id="stSelBox" style="display:none">
         <input id="stElNom" maxlength="18" placeholder="Tank name">
         <select id="stElChar"><option value="">Marker only</option></select>
@@ -996,6 +998,75 @@ function pretty(k){ const L=LABELS[k];
     gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(P),gl.DYNAMIC_DRAW);
   }
 
+  /* ── LA NAPPE DU CHAMP DE VISION ─────────────────────────────────
+     Une seule surface verte translucide, posée sur le sol, couvrant ce
+     que le char sélectionné voit. Un quadrilatère par pas visible : les
+     découper suivant le relief est ce qui fait qu'elle l'épouse au lieu
+     de le traverser. */
+  const champB=gl.createBuffer(); let champN=0, montreChamp=0, champStat="";
+  /* Le pas du balayage a été choisi par la mesure, en confrontant le
+     champ de vision au rayon exact sur cinq cents paires de points :
+     à quatre mètres, les deux méthodes s'accordent sur 92 % des cas mais
+     le balayage promet parfois une vue qui n'existe pas ; à deux mètres,
+     l'accord est le même et ce défaut-là DISPARAÎT — il ne reste qu'une
+     prudence excessive. Pour choisir une position, se voir refuser une
+     vue qu'on a est sans gravité ; se croire à couvert quand on ne l'est
+     pas coûte le char. */
+  const AZIMUTS=360, PAS_RAYON=2;
+  function buildChamp(){
+    /* Le balayage coûte de vingt-cinq à cent dix millisecondes. Le
+       refaire à chaque image PENDANT qu'on fait glisser un char hacherait
+       le geste ; on le refait au moment où on lâche. */
+    if(stDrag) return;
+    champN=0; champStat="";
+    if(!montreChamp||!curHeights||ST.sel<0||!ST.els[ST.sel]) return;
+    carteOcclusion();
+    const el=ST.els[ST.sel], O=oeilDe(el);
+    const P=[];
+    let vus=0, total=0;
+    /* ── LE CHAR ENFOUI DANS UN OBJET ────────────────────────────────
+       Se poster contre un rocher met le point d'observation à
+       l'intérieur de sa boîte — la boîte est plus grosse que la pierre.
+       L'horizon montait alors au premier pas et TOUT était déclaré
+       caché : mesuré, le point le plus haut de Prokhorovka voyait 0 %.
+       Quand c'est le cas, on ignore la traînée de départ jusqu'à sortir
+       de l'objet. La condition est ce qui compte : un char à découvert
+       n'en bénéficie pas, et un mur à quatre mètres l'arrête toujours. */
+    const enfoui=hauteurOcc(O[0],O[2])>O[1];
+    for(let a=0;a<AZIMUTS;a++){
+      const a0=a/AZIMUTS*Math.PI*2, a1=(a+1)/AZIMUTS*Math.PI*2;
+      const c0=Math.cos(a0), s0=Math.sin(a0), c1=Math.cos(a1), s1=Math.sin(a1);
+      /* l'angle le plus haut vu jusqu'ici, dans cette direction */
+      let horizon=-1e30, sorti=!enfoui;
+      const cm=Math.cos((a0+a1)/2), sm=Math.sin((a0+a1)/2);
+      for(let r=PAS_RAYON;r<=PORTEE_VUE;r+=PAS_RAYON){
+        const x=O[0]+cm*r, z=O[2]+sm*r;
+        if(x<ORIG[0]||x>ORIG[0]+WORLD||z<ORIG[1]||z>ORIG[1]+WORLDZ) break;
+        const sol=solY(x,z), occ=hauteurOcc(x,z);
+        if(!sorti){ if(occ<=O[1]) sorti=1; else continue; }
+        const aSol=(sol-O[1])/r, aOcc=(occ-O[1])/r;
+        total++;
+        /* vu si le SOL dépasse l'horizon accumulé — et s'il n'y a rien
+           de posé dessus : sous un toit, ce n'est plus le sol qu'on voit */
+        const vu=(aSol>=horizon)&&(occ<=sol+0.01);
+        if(aOcc>horizon) horizon=aOcc;
+        if(!vu) continue;
+        vus++;
+        const r0=r-PAS_RAYON, r1=r;
+        /* les quatre coins du secteur : deux azimuts × deux rayons */
+        const q=[[O[0]+c0*r0, O[2]+s0*r0], [O[0]+c1*r0, O[2]+s1*r0],
+                 [O[0]+c1*r1, O[2]+s1*r1], [O[0]+c0*r1, O[2]+s0*r1]];
+        const v=q.map(([qx,qz])=>[qx,0.4,-qz,terrainNorm(qx,qz)]);
+        for(const k of [0,1,2,0,2,3]) P.push(v[k][0],v[k][1],v[k][2],v[k][3]);
+      }
+    }
+    champStat=total?Math.round(vus/total*100)+"%":"";
+    if(!P.length) return;
+    gl.bindBuffer(gl.ARRAY_BUFFER,champB);
+    gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(P),gl.DYNAMIC_DRAW);
+    champN=P.length/4;
+  }
+
   /* ══ LA LIGNE DE VUE ═══════════════════════════════════════════════
      « Depuis cette position, est-ce que je le vois ? » C'est la question
      qui décide d'un placement, et jusqu'ici la carte n'y répondait pas.
@@ -1073,7 +1144,7 @@ function pretty(k){ const L=LABELS[k];
         const R=[(b[1]*c[2]-b[2]*c[1])*iv, (a[2]*c[1]-a[1]*c[2])*iv, (a[1]*b[2]-a[2]*b[1])*iv,
                  (b[2]*c[0]-b[0]*c[2])*iv, (a[0]*c[2]-a[2]*c[0])*iv, (a[2]*b[0]-a[0]*b[2])*iv,
                  (b[0]*c[1]-b[1]*c[0])*iv, (a[1]*c[0]-a[0]*c[1])*iv, (a[0]*b[1]-a[1]*b[0])*iv];
-        l.push({mn,mx,T,R,bb:M.bb});
+        l.push({mn,mx,T,R,bb:M.bb,a,b,c});
       }
     }
     jeu.boites=l;
@@ -1120,6 +1191,80 @@ function pretty(k){ const L=LABELS[k];
       }
     }
     return plusProche;
+  }
+  /* ══ LE CHAMP DE VISION ════════════════════════════════════════════
+     Non plus « est-ce que je vois CE char », mais « qu'est-ce que je
+     vois, tout autour ». C'est la question qu'on se pose en choisissant
+     une position, et elle demande une autre méthode : lancer un rayon
+     complet vers chacun des cent mille points du sol serait hors de prix.
+
+     On procède comme le fait n'importe quel calcul d'horizon : on
+     balaie en cercle, et pour chaque direction on avance en gardant
+     l'ANGLE LE PLUS HAUT rencontré jusque-là. Un point est vu si le sol
+     y monte plus haut que cet angle ; sinon il est dans l'ombre de ce
+     qui le précède. Une seule passe par direction, au lieu d'un rayon
+     par point.
+
+     Pour que le bâti compte dans ce balayage, il faut qu'il soit une
+     HAUTEUR, pas une boîte. On le rastérise donc une fois par carte :
+     chaque objet dépose le sommet de sa boîte dans les cellules qu'il
+     couvre. Un immeuble devient une colline de son toit — ce qui est
+     exactement ce qu'il est, pour un regard. */
+  const PAS_OCC=2;                       // la maille de la carte d'occultation, en mètres
+  let OCC=null;                          // {h, nx, nz, x0, z0} ou null
+  function carteOcclusion(){
+    if(OCC) return OCC;
+    if(!curHeights) return null;
+    const nx=Math.max(2,Math.ceil(WORLD/PAS_OCC)), nz=Math.max(2,Math.ceil(WORLDZ/PAS_OCC));
+    const h=new Float32Array(nx*nz);     // 0 = rien par-dessus le sol
+    for(const jeu of JEUX){
+      if(jeu.flore) continue;
+      const l=prepareBoites(jeu); if(!l) continue;
+      for(const o of l){
+        /* ── ON PARCOURT L'OBJET, PAS LA GRILLE ───────────────────────
+           Balayer les cellules et ne retenir que celles dont le CENTRE
+           tombe dans l'objet paraît naturel, et rate tout ce qui est
+           plus mince que la maille. Or ce qui bloque une vue, sur ces
+           cartes, c'est souvent un mur : mesuré sur Prokhorovka, les
+           obstacles font 0,9 m d'épaisseur pour 8,7 m de long et 3,4 m
+           de haut, et 40 % des objets ont un côté sous les deux mètres.
+           Le champ de vision et le rayon exact ne s'accordaient alors
+           que sur 63 % des cas — le balayage voyait à travers les murs.
+           On échantillonne donc la SURFACE de l'objet, tous les mètres,
+           et chaque échantillon marque sa cellule. Un mur mince laisse
+           ainsi une trace continue. */
+        const a=o.a, b=o.b, c=o.c, T=o.T, bb=o.bb;
+        /* combien vaut, en mètres, une unité locale sur chaque axe */
+        const ex=Math.hypot(a[0],b[0],c[0]), ez=Math.hypot(a[2],b[2],c[2]);
+        if(!(ex>0)||!(ez>0)) continue;
+        const npx=Math.min(400,Math.max(1,Math.ceil((bb[1][0]-bb[0][0])*ex))),
+              npz=Math.min(400,Math.max(1,Math.ceil((bb[1][2]-bb[0][2])*ez)));
+        /* le sommet de la colonne : on prend l'extrémité en y qui monte */
+        const yh=b[1]>0?bb[1][1]:bb[0][1];
+        for(let u=0;u<=npx;u++) for(let w=0;w<=npz;w++){
+          const px=bb[0][0]+(bb[1][0]-bb[0][0])*u/npx;
+          const pz=bb[0][2]+(bb[1][2]-bb[0][2])*w/npz;
+          const wx=a[0]*px+a[2]*pz+T[0]+a[1]*yh;
+          const wz=c[0]*px+c[2]*pz+T[2]+c[1]*yh;
+          const i=Math.floor((wx-ORIG[0])/PAS_OCC), j=Math.floor((wz-ORIG[1])/PAS_OCC);
+          if(i<0||j<0||i>=nx||j>=nz) continue;
+          const wy=b[0]*px+b[1]*yh+b[2]*pz+T[1];
+          const k=j*nx+i;
+          if(wy>h[k]) h[k]=wy;
+        }
+      }
+    }
+    OCC={h,nx,nz};
+    return OCC;
+  }
+  /* La hauteur qui ARRÊTE le regard en ce point : le sol, ou le toit. */
+  function hauteurOcc(x,z){
+    const sol=solY(x,z);
+    if(!OCC) return sol;
+    const i=Math.floor((x-ORIG[0])/PAS_OCC), j=Math.floor((z-ORIG[1])/PAS_OCC);
+    if(i<0||j<0||i>=OCC.nx||j>=OCC.nz) return sol;
+    const b=OCC.h[j*OCC.nx+i];
+    return b>sol ? b : sol;
   }
   /* Le verdict complet entre deux marqueurs. */
   function ligneDeVue(a,b){
@@ -1221,6 +1366,7 @@ function pretty(k){ const L=LABELS[k];
     /* les boîtes et les matrices sont celles de la carte PRÉCÉDENTE :
        les garder ferait buter la ligne de vue sur des murs d'ailleurs */
     for(const j of JEUX){ j.modeles=[]; j.inst=null; j.boites=undefined; }
+    OCC=null;
     const btn=document.getElementById("bldBtn");
     /* Toutes les cartes n ont pas forcément leur géométrie : l index dit
        lesquelles l ont. Demander les fichiers à l aveugle coûtait un 404
@@ -1434,7 +1580,10 @@ function pretty(k){ const L=LABELS[k];
       }
     }
     if(stDrag&&!stDrag.bouge){ /* simple clic sur un marqueur : il reste sélectionné */ }
+    const bougeait=stDrag&&stDrag.bouge;
     stDrag=null; drag=null;
+    /* le char est posé : le champ de vision peut enfin se recalculer */
+    if(bougeait&&montreChamp){ buildChamp(); stMaj(); }
   });
   cv.addEventListener("pointercancel",()=>{stDrag=null;drag=null;});
   /* DOUBLE-CLIC : on va voir là. C'est le geste le plus simple pour se
@@ -1640,7 +1789,7 @@ function pretty(k){ const L=LABELS[k];
       const e1=document.getElementById("stEdit"), l1=document.getElementById("stListe");
       if(e1){ e1.style.display="none"; } if(l1){ l1.style.display=""; }
       document.getElementById("stLbl").innerHTML="";
-      buildStrat(); buildChars(); buildVue();
+      buildStrat(); buildChars(); buildVue(); buildChamp();
     }
     try{
       const meta=await fetch("maps3d/"+key+"/meta.json").then(r=>r.json());
@@ -1741,8 +1890,11 @@ function pretty(k){ const L=LABELS[k];
   function stMaj(){
     /* les marqueurs de la carte OUVERTE seulement : une stratégie
        appartient à une carte, on ne mélange pas */
-    buildStrat(); buildChars(); buildVue();
+    buildStrat(); buildChars(); buildVue(); buildChamp();
     $("stVue").classList.toggle("on",!!montreVue);
+    $("stChamp").classList.toggle("on",!!montreChamp);
+    $("stChampV").textContent=(montreChamp&&champStat)
+      ? champStat+" "+t("of the ground within view range") : "";
     const box=$("stSelBox"), e=ST.els[ST.sel];
     box.style.display=e?"":"none";
     if(e){ $("stElNom").value=e.name||"";
@@ -1900,7 +2052,7 @@ function pretty(k){ const L=LABELS[k];
   function stFerme(){
     ST.edition=0;
     $("stListe").style.display=""; $("stEdit").style.display="none";
-    ST.id=null; ST.els=[]; ST.sel=-1; buildStrat(); buildChars(); buildVue(); stCharge();
+    ST.id=null; ST.els=[]; ST.sel=-1; buildStrat(); buildChars(); buildVue(); buildChamp(); stCharge();
   }
   async function stEnregistre(){
     if(!ST.canEdit) return;
@@ -1939,6 +2091,7 @@ function pretty(k){ const L=LABELS[k];
       cls.appendChild(b);
     }
     $("stVue").addEventListener("click",()=>{ montreVue^=1; stMaj(); stLabels(); });
+    $("stChamp").addEventListener("click",()=>{ montreChamp^=1; stMaj(); });
     $("stAmi").addEventListener("click",()=>{ ST.camp="ami"; stMaj(); });
     $("stEnn").addEventListener("click",()=>{ ST.camp="ennemi"; stMaj(); });
     $("stNom").addEventListener("input",e=>{ ST.nom=e.target.value; });
@@ -1950,7 +2103,7 @@ function pretty(k){ const L=LABELS[k];
          une : sur une carte, « Object 279 » dit plus que « char 3 ». */
       const m=charDe(el.char);
       if(m&&!el.name){ el.name=m.nom.slice(0,18); $("stElNom").value=el.name; }
-      buildStrat(); buildChars(); buildVue(); stLabels();
+      buildStrat(); buildChars(); buildVue(); buildChamp(); stLabels();
     });
     $("stElCap").addEventListener("input",e=>{
       const el=ST.els[ST.sel]; if(!el) return;
@@ -1962,7 +2115,7 @@ function pretty(k){ const L=LABELS[k];
     $("stDel").addEventListener("click",stSupprime);
     $("stQuit").addEventListener("click",stFerme);
     $("stClose").addEventListener("click",()=>{ ST.ouvert=0; $("strat").style.display="none";
-      $("stLbl").innerHTML=""; ST.els=[]; ST.sel=-1; buildStrat(); buildChars(); buildVue(); });
+      $("stLbl").innerHTML=""; ST.els=[]; ST.sel=-1; buildStrat(); buildChars(); buildVue(); buildChamp(); });
     $("stratBtn").addEventListener("click",()=>{
       ST.ouvert^=1;
       $("strat").style.display=ST.ouvert?"block":"none";
@@ -1971,7 +2124,7 @@ function pretty(k){ const L=LABELS[k];
          12,7 Mo qu'il serait absurde de payer pour qui regarde une carte
          sans rien y poser. */
       if(ST.ouvert){ chargeChars(); stCharge(); }
-      else { $("stLbl").innerHTML=""; ST.els=[]; ST.sel=-1; ST.edition=0; buildStrat(); buildChars(); buildVue(); }
+      else { $("stLbl").innerHTML=""; ST.els=[]; ST.sel=-1; ST.edition=0; buildStrat(); buildChars(); buildVue(); buildChamp(); }
     });
     /* Le bouton n'apparaît que si l'on est connecté : sans session, le
        serveur refuserait, et proposer une action qui échoue à coup sûr
@@ -1982,8 +2135,10 @@ function pretty(k){ const L=LABELS[k];
        refusera l'enregistrement. C'est un banc d'essai, pas une porte. */
     if(DEV3D) window.__strat={ST,stMaj,stLabels,buildStrat,buildChars,chargeChars,
       versEcran,stSous,charDe,boiteChar,viseBoite,rayonCurseur,
-      ligneDeVue,bloqueRelief,bloqueBati,oeilDe,buildVue,
-      vue:v=>{ montreVue=v?1:0; },
+      ligneDeVue,bloqueRelief,bloqueBati,oeilDe,buildVue,buildChamp,
+      carteOcclusion,hauteurOcc,
+      vue:v=>{ montreVue=v?1:0; }, champ:v=>{ montreChamp=v?1:0; },
+      champInfo:()=>({n:champN,taux:champStat}), solY,
       etatChars:()=>charsEtat,lots:()=>charsLots,solLots:()=>stLots,
       vueLots:()=>vueLots,biblio:()=>CHARS,jeux:()=>JEUX,boites:prepareBoites};
     document.addEventListener("keydown",e=>{
@@ -2087,7 +2242,7 @@ function pretty(k){ const L=LABELS[k];
       /* stLots et vueLots manquaient à cette liste : sur une carte sans
          limite, sans eau ni objectif affichés, les marqueurs de la
          stratégie n'auraient pas été dessinés du tout. */
-      if((showLim&&limN)||(showEau&&eauN)||objLots.length||stLots.length||vueLots.length){
+      if((showLim&&limN)||(showEau&&eauN)||objLots.length||stLots.length||vueLots.length||champN){
         gl.useProgram(lprog);
         gl.uniformMatrix4fv(luPV,false,new Float32Array(mul(P,V)));
         gl.uniform1f(luHS,curMaxH); gl.uniform1f(luExag,exag); gl.uniform1f(luHaut,LIM_HAUT);
@@ -2123,6 +2278,23 @@ function pretty(k){ const L=LABELS[k];
         }
         /* Les marqueurs de la stratégie, par-dessus les objectifs : ce
            sont eux qu'on manipule, ils doivent rester lisibles. */
+        /* La nappe du champ de vision, tout en dessous : c'est un fond,
+           pas un objet. Elle n'écrit pas la profondeur, comme le reste
+           de cette passe. */
+        if(champN){
+          gl.bindBuffer(gl.ARRAY_BUFFER,champB);
+          gl.vertexAttribPointer(lPos,3,gl.FLOAT,false,16,0);
+          gl.vertexAttribPointer(lBase,1,gl.FLOAT,false,16,12);
+          gl.uniform1f(luVoile,0.0); gl.uniform1f(luHaut,1.0);
+          /* Un lavis CYAN, pas vert : la nappe se pose sur des champs et
+             des bois, et un vert sur du vert ne se voit pas. Le cyan se
+             détache aussi bien du vert que du brun, et ne se confond pas
+             avec le vert/rouge des lignes de vue, qui veut dire autre
+             chose. */
+          gl.uniform4f(luCoul,0.30,0.82,0.95,0.34);
+          gl.drawArrays(gl.TRIANGLES,0,champN);
+          gl.uniform1f(luHaut,LIM_HAUT);
+        }
         /* Les lignes de vue, sous les marqueurs : elles renseignent, les
            marqueurs se manipulent — c'est ce qu'on touche qui passe
            devant. */
