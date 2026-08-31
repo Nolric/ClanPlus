@@ -310,7 +310,15 @@ function pretty(k){ const L=LABELS[k];
      « formes-prefab » vient des préfabs Onslaught (l'épave du dirigeable
      d'Himmelsdorf) ; « formes-comp7 » vient de la carte elle-même, dans
      les zones que le mode remplit. Les deux coexistent. */
+  /* ── UN JEU D'OBJETS PAR MODE ────────────────────────────────────
+     Les modes ne diffèrent pas que par leurs objectifs dessinés : le jeu
+     pose un marqueur de base PAR MODE, et parfois quelques accessoires.
+     Le fichier n'est donc plus fixé d'avance — il vient du meta du mode
+     choisi, `meta.modes[mode].formes`. Les entrées « dyn » sont celles
+     dont le nom se calcule au chargement. */
   const JEUX=[{nom:"formes",flore:0,vb:null,ib:null,xb:null,modeles:[]},
+    {dyn:"formes", flore:0,vb:null,ib:null,xb:null,modeles:[]},
+    {dyn:"flore",  flore:1,vb:null,ib:null,xb:null,modeles:[]},
     {nom:"formes-comp7", flore:0,mode:"comp7",cle:"formes",vb:null,ib:null,xb:null,modeles:[]},
     {nom:"formes-prefab",flore:0,mode:"comp7",cle:"prefab",vb:null,ib:null,xb:null,modeles:[]},
     {nom:"flore-comp7",  flore:1,mode:"comp7",cle:"flore", vb:null,ib:null,xb:null,modeles:[]},
@@ -668,16 +676,24 @@ function pretty(k){ const L=LABELS[k];
         const m=curMeta&&curMeta.base;
         if(j.sauf===curMode||!m||!m[j.cle]) continue;
       }
+      /* Le jeu propre au MODE COURANT : son nom vient du meta, pas d'une
+         liste figée — chaque mode a le sien. Rien à charger si le mode
+         n'en déclare pas, ce qui est le cas de la plupart. */
+      if(j.dyn){
+        const m=curMeta&&curMeta.modes&&curMeta.modes[curMode];
+        j.fichier=m&&m[j.dyn]?m[j.dyn].replace(/\.bin$/,""):null;
+        if(!j.fichier){ j.modeles=[]; continue; }
+      } else j.fichier=j.nom;
       aLire.push(j);
     }
     const brut=await Promise.all(aLire.map(j=>
-      fetch("maps3d/"+((curMeta&&curMeta.dossier)||key)+"/"+j.nom+".bin")
+      fetch("maps3d/"+((curMeta&&curMeta.dossier)||key)+"/"+j.fichier+".bin")
         .then(r=>r.ok?r.arrayBuffer():null)
-        .catch(e=>{ console.error("carte3d : "+j.nom+".bin illisible —", e); return null; })));
+        .catch(e=>{ console.error("carte3d : "+j.fichier+".bin illisible —", e); return null; })));
     for(let k=0;k<aLire.length;k++){
       if(!brut[k]) continue;
       try{ lisCPF4(brut[k], aLire[k]); charge++; }
-      catch(e){ console.error("carte3d : "+aLire[k].nom+".bin illisible —", e); }
+      catch(e){ console.error("carte3d : "+aLire[k].fichier+".bin illisible —", e); }
     }
     const cal=document.getElementById("calGrp"), sep=document.getElementById("calSep");
     /* On n'allume les objets qu'à la PREMIÈRE carte : changer de mode
