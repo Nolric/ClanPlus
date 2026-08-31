@@ -86,6 +86,30 @@
      n'expliquerait rien, et elle mangerait le coin de l'écran. */
   /* Au-dessus de l'aide, qui occupe déjà le coin : superposées, ni
      l'une ni l'autre ne se lisait. */
+  /* ── l'éditeur de stratégie ── */
+  #strat{position:absolute;right:16px;top:16px;padding:11px 12px;display:none;width:268px;
+    max-height:calc(100vh - 130px);overflow:auto;z-index:6}
+  #strat .stHead{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+  #strat .lg{font-size:10px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted)}
+  #strat .x{background:none;border:0;color:var(--muted);font-size:19px;line-height:1;cursor:pointer;padding:0 2px}
+  #strat .x:hover{color:#fff}
+  #strat input{width:100%;box-sizing:border-box;margin:0 0 7px;padding:6px 8px;font:inherit;font-size:12.5px;
+    background:rgba(0,0,0,.32);border:1px solid var(--line);border-radius:3px;color:inherit}
+  #strat .stRow{display:flex;flex-wrap:wrap;gap:5px;margin:0 0 7px}
+  #strat .stRow .btn{padding:5px 9px;font-size:11.5px}
+  #strat .stItem{display:block;width:100%;text-align:left;padding:7px 9px;margin:0 0 5px;cursor:pointer;
+    background:rgba(0,0,0,.25);border:1px solid var(--line);border-radius:3px;color:inherit;font:inherit;font-size:12.5px}
+  #strat .stItem:hover{border-color:var(--gold)}
+  #strat .stItem small{display:block;color:var(--muted);font-size:11px;margin-top:2px}
+  #strat .stPos{font-size:11px;color:var(--muted);margin:0 0 7px;font-variant-numeric:tabular-nums}
+  #strat .stAide{font-size:11px;line-height:1.45;color:var(--muted);margin:6px 0 0}
+  #strat .stVide{font-size:12px;color:var(--muted);padding:6px 2px 8px}
+  /* les étiquettes des marqueurs, posées par-dessus la scène */
+  #stLbl{position:fixed;inset:0;pointer-events:none;z-index:5}
+  #stLbl .e{position:absolute;transform:translate(-50%,-100%);white-space:nowrap;
+    font-size:11.5px;font-weight:700;padding:2px 6px;border-radius:3px;
+    background:rgba(12,13,16,.72);border:1px solid rgba(255,255,255,.16);
+    text-shadow:0 1px 2px rgba(0,0,0,.8)}
   #leg{position:absolute;right:16px;bottom:64px;padding:9px 11px;display:none;max-width:230px}
   #leg .lg{font-size:10px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;
     color:var(--muted);margin:0 0 6px 1px}
@@ -121,7 +145,31 @@
     <button class="btn on" id="eauBtn" style="display:none" title="Water, cut where the ground rises above its level">Water</button>
     <button class="btn on" id="miniBtn">Minimap</button>
     <button class="btn" id="resetBtn">Recentre</button>
+    <button class="btn" id="stratBtn" style="display:none" title="Place tanks on the map and save the plan for your clan">Strategy</button>
   </div>
+  <div id="strat" class="glass">
+    <div class="stHead"><span class="lg" id="stTitre">Clan strategies</span><button class="x" id="stClose">×</button></div>
+    <div id="stListe"></div>
+    <div id="stEdit" style="display:none">
+      <input id="stNom" maxlength="80" placeholder="Strategy name">
+      <div class="stRow" id="stCls"></div>
+      <div class="stRow">
+        <button class="btn on" id="stAmi">Allies</button>
+        <button class="btn" id="stEnn">Enemies</button>
+      </div>
+      <div id="stSelBox" style="display:none">
+        <input id="stElNom" maxlength="18" placeholder="Tank name">
+        <div class="stPos" id="stElPos"></div>
+      </div>
+      <div class="stRow">
+        <button class="btn" id="stSave">Save</button>
+        <button class="btn" id="stDel">Delete</button>
+        <button class="btn" id="stQuit">Close</button>
+      </div>
+      <p class="stAide" id="stAide"></p>
+    </div>
+  </div>
+  <div id="stLbl"></div>
   <div id="mini" class="glass"><div class="lg">Minimap</div><img id="miniImg" alt=""><div class="n">N ↑</div></div>
   <div id="leg" class="glass"><div class="lg" id="legT">Legend</div><div id="legL"></div><p class="no" id="legN"></p></div>
   <div id="hint"><b>Drag</b> to rotate · <b>Scroll</b> zooms where you point · <b>Double-click</b> to go there<br><b>Right-click</b> or <b>Shift</b> to pan · <b>WASD</b> to move · <b>Shift</b> to go faster</div>
@@ -648,6 +696,86 @@ function pretty(k){ const L=LABELS[k];
     gl.bindBuffer(gl.ARRAY_BUFFER,objB);
     gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(P),gl.STATIC_DRAW);
   }
+  /* ══ L'ÉDITEUR DE STRATÉGIE ══════════════════════════════════════
+     Poser des chars sur la carte, les déplacer, les nommer, enregistrer.
+
+     ── Où vivent les stratégies ────────────────────────────────────
+     Dans la MÊME table que celles de la minimap, derrière la MÊME
+     fonction serveur. Tout ce qui les protège est déjà là et éprouvé :
+     le clan vient du jeton de session, la lecture comme l'écriture le
+     filtrent, et l'écriture passe en service_role. Ouvrir un second
+     chemin d'accès, ce serait refaire les mêmes contrôles avec le risque
+     de les affaiblir. Une colonne `vue` sépare les deux listes.
+
+     ── Les coordonnées ─────────────────────────────────────────────
+     En 2D elles sont en pixels de minimap ; ici ce sont les MÈTRES DU
+     MONDE du jeu, ceux-là mêmes que la carte 3D emploie. C'est
+     exactement pourquoi les deux vues ne doivent pas se mélanger. */
+  let curMVP=null;
+  const stB=gl.createBuffer(); let stLots=[];
+  const ST_CLS=[["light","Light",[0.55,0.85,0.45]],["medium","Medium",[0.45,0.75,0.95]],
+                ["heavy","Heavy",[0.95,0.72,0.30]],["td","TD",[0.85,0.45,0.90]],
+                ["spg","SPG",[0.95,0.45,0.42]]];
+  const ST_COUL={ami:[0.36,0.74,0.42], ennemi:[0.92,0.42,0.34]};
+  /* l'état de l'éditeur : la stratégie ouverte et ses marqueurs */
+  let ST={ouvert:0, id:null, nom:"", els:[], sel:-1, outil:"medium", camp:"ami",
+          canEdit:0, liste:[], moi:null};
+
+  /* Un marqueur : un disque au sol, un fût vertical, et un liseré sombre.
+     Même nuanceur que les objectifs — il fait déjà exactement ça. */
+  function buildStrat(){
+    stLots=[];
+    if(!curHeights||!ST.els.length) return;
+    const P=[];
+    const pose=(x,z,coul,haut,r,selection)=>{
+      const n=40, bord=[];
+      for(let i=0;i<=n;i++){ const a=i/n*Math.PI*2, px=x+Math.cos(a)*r, pz=z+Math.sin(a)*r;
+        bord.push([px,pz,terrainNorm(px,pz)]); }
+      const d0=P.length/4;
+      P.push(x,0.8,-z,terrainNorm(x,z));
+      for(const [px,pz,b] of bord) P.push(px,0.8,-pz,b);
+      stLots.push({d:d0,n:P.length/4-d0,coul,mode:gl.TRIANGLE_FAN,voile:0,haut,alpha:selection?0.85:0.55});
+      const d1=P.length/4;
+      for(const [px,pz,b] of bord) P.push(px,0,-pz,b, px,haut,-pz,b);
+      stLots.push({d:d1,n:P.length/4-d1,coul,mode:gl.TRIANGLE_STRIP,voile:1,haut,alpha:0.75});
+      /* le sélectionné reçoit un anneau clair, pour qu'on sache lequel on tient */
+      if(selection){
+        const ext=[], d2=P.length/4;
+        for(let i=0;i<=n;i++){ const a=i/n*Math.PI*2, px=x+Math.cos(a)*r*1.5, pz=z+Math.sin(a)*r*1.5;
+          ext.push([px,pz,terrainNorm(px,pz)]); }
+        for(let i=0;i<=n;i++){ const a=bord[i], c=ext[i];
+          P.push(a[0],0.8,-a[1],a[2], c[0],0.8,-c[1],c[2]); }
+        stLots.push({d:d2,n:P.length/4-d2,coul:[1,1,1],mode:gl.TRIANGLE_STRIP,voile:0,haut,alpha:0.55});
+      }
+    };
+    for(let i=0;i<ST.els.length;i++){
+      const e=ST.els[i];
+      const cls=ST_CLS.find(c=>c[0]===e.cls)||ST_CLS[1];
+      /* la couleur dit le CAMP, la hauteur du fût dit la classe : deux
+         informations qu'on lit d'un coup d'œil sans étiquette */
+      const coul=(e.camp==="ennemi")?ST_COUL.ennemi:ST_COUL.ami;
+      const haut=({light:9,medium:12,heavy:15,td:11,spg:8})[cls[0]]||12;
+      pose(e.x, e.y, coul, haut, 6, i===ST.sel);
+    }
+    if(!P.length){ stLots=[]; return; }
+    gl.bindBuffer(gl.ARRAY_BUFFER,stB);
+    gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(P),gl.STATIC_DRAW);
+  }
+
+  /* Une position du monde → un point de l'écran. Sert aux étiquettes et
+     à savoir quel marqueur est sous le curseur. Rend null si le point est
+     derrière la caméra. */
+  function versEcran(x,z){
+    if(!curMVP||!curHeights) return null;
+    const y=curZmin+terrainNorm(x,z)*curMaxH+6;
+    const m=curMVP;
+    const cw=x*m[3]+y*m[7]+(-z)*m[11]+m[15];
+    if(cw<=0.0001) return null;
+    const cx=(x*m[0]+y*m[4]+(-z)*m[8]+m[12])/cw;
+    const cy=(x*m[1]+y*m[5]+(-z)*m[9]+m[13])/cw;
+    const r=cv.getBoundingClientRect();
+    return [r.left+(cx*0.5+0.5)*r.width, r.top+(1-(cy*0.5+0.5))*r.height];
+  }
   function buildLimite(jeu){
     limN=0; const btn=document.getElementById("limBtn");
     if(!jeu||!curHeights){ btn.style.display="none"; return; }
@@ -856,16 +984,51 @@ function pretty(k){ const L=LABELS[k];
     return [e[0]+d[0]*t, e[2]+d[2]*t];
   }
   let drag=null;
+  /* Quand l'éditeur est ouvert, le clic gauche sert d'abord aux
+     marqueurs : saisir celui qui est sous le curseur, sinon en poser un.
+     La caméra garde le clic droit, Maj, et le glisser sur le vide — on
+     ne lui retire rien. */
+  let stDrag=null;
   cv.addEventListener("pointerdown",e=>{cv.setPointerCapture(e.pointerId);
+    if(ST.ouvert&&e.button===0&&!e.shiftKey){
+      const i=stSous(e.clientX,e.clientY);
+      if(i>=0){ ST.sel=i; stDrag={i,bouge:0}; stMaj(); return; }
+    }
     drag={x:e.clientX,y:e.clientY,az:cible.az,pol:cible.pol,px:cible.px,pz:cible.pz,
           btn:e.button,shift:e.shiftKey};});
-  cv.addEventListener("pointermove",e=>{if(!drag)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;
+  cv.addEventListener("pointermove",e=>{
+    if(stDrag){
+      if(!ST.canEdit) return;
+      const p=solSousCurseur(e.clientX,e.clientY); if(!p) return;
+      const el=ST.els[stDrag.i]; if(!el) return;
+      /* solSousCurseur rend le repère de RENDU : le z du monde en est
+         l'opposé, comme partout ailleurs dans cette page. */
+      el.x=p[0]; el.y=-p[1]; stDrag.bouge=1; stMaj();
+      return;
+    }
+    if(!drag)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;
     /* clic droit, molette enfoncée ou Maj : on déplace. Sinon on tourne. */
     if(drag.btn===2||drag.btn===1||drag.shift){
       const s=cible.rad/900,rx=-Math.sin(az),rz=Math.cos(az),fx=-Math.cos(az),fz=-Math.sin(az);
       cible.px=drag.px+(-dx*rx+dy*fx)*s; cible.pz=drag.pz+(-dx*rz+dy*fz)*s;}
     else{cible.az=drag.az-dx*0.008;cible.pol=clamp(drag.pol-dy*0.008,0.12,1.45);}});
-  cv.addEventListener("pointerup",()=>drag=null); cv.addEventListener("pointercancel",()=>drag=null);
+  cv.addEventListener("pointerup",e=>{
+    /* Un clic gauche qui n'a NI saisi un marqueur NI tourné la caméra :
+       c'est une demande de poser un char là. On distingue le clic du
+       glisser par la distance parcourue — sans quoi toute rotation de
+       caméra sèmerait un marqueur. */
+    if(ST.ouvert&&ST.canEdit&&e.button===0&&!stDrag&&drag&&!drag.shift&&drag.btn===0
+       && Math.hypot(e.clientX-drag.x,e.clientY-drag.y)<4){
+      const p=solSousCurseur(e.clientX,e.clientY);
+      if(p&&!$("strat").contains(e.target)){
+        ST.els.push({type:"tank",cls:ST.outil,x:p[0],y:-p[1],name:"",camp:ST.camp,size:0.78});
+        ST.sel=ST.els.length-1; stMaj();
+      }
+    }
+    if(stDrag&&!stDrag.bouge){ /* simple clic sur un marqueur : il reste sélectionné */ }
+    stDrag=null; drag=null;
+  });
+  cv.addEventListener("pointercancel",()=>{stDrag=null;drag=null;});
   /* DOUBLE-CLIC : on va voir là. C'est le geste le plus simple pour se
      rendre quelque part — on désigne, la caméra s'y rend en glissant,
      au lieu de tourner puis déplacer puis zoomer. */
@@ -1096,15 +1259,186 @@ function pretty(k){ const L=LABELS[k];
   window.addEventListener("resize",resize); resize();
   gl.enable(gl.DEPTH_TEST); gl.clearColor(0.047,0.051,0.059,1);
   function bind(loc,b,sz){gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.enableVertexAttribArray(loc);gl.vertexAttribPointer(loc,sz,gl.FLOAT,false,0,0);}
+  /* ══ L'ÉDITEUR : accès, liste, pose, enregistrement ═══════════════
+     Le serveur seul décide de ce qu'on voit et de ce qu'on peut écrire :
+     le jeton de session donne le clan, et la fonction filtre tout par
+     clan_id. La page ne fait que demander — elle ne choisit rien. */
+  const SB_URL="https://hlvqofgtwkkmbjmstmuc.supabase.co";
+  const SB_ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhsdnFvZmd0d2trbWJqbXN0bXVjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM5MzA5MDksImV4cCI6MjA5OTUwNjkwOX0.-zetkqR2LMffbCDfrDe4bz4MJVngUzbcxGdbazdWqEI";
+  const stSession=()=>{ try{ return localStorage.getItem("cp_session"); }catch(_){ return null; } };
+  const DEV3D=/[?&]dev(=|&|$)/.test(location.search);
+  async function stApi(body){
+    const r=await fetch(SB_URL+"/functions/v1/strategies",{method:"POST",
+      headers:{"content-type":"application/json",apikey:SB_ANON,Authorization:"Bearer "+SB_ANON},
+      body:JSON.stringify(Object.assign({session:stSession(),vue:"3d"},DEV3D?{dev:true}:{},body))});
+    const j=await r.json().catch(()=>({error:"réponse invalide"}));
+    return {ok:r.ok,status:r.status,j};
+  }
+  const $=id=>document.getElementById(id);
+
+  function stMaj(){
+    /* les marqueurs de la carte OUVERTE seulement : une stratégie
+       appartient à une carte, on ne mélange pas */
+    buildStrat();
+    const box=$("stSelBox"), e=ST.els[ST.sel];
+    box.style.display=e?"":"none";
+    if(e){ $("stElNom").value=e.name||"";
+      $("stElPos").textContent="x "+Math.round(e.x)+" · z "+Math.round(e.y)+" m"; }
+    for(const b of $("stCls").children) b.classList.toggle("on",b.dataset.cls===ST.outil);
+    $("stAmi").classList.toggle("on",ST.camp==="ami");
+    $("stEnn").classList.toggle("on",ST.camp==="ennemi");
+    $("stSave").style.display=ST.canEdit?"":"none";
+    $("stDel").style.display=(ST.canEdit&&ST.id)?"":"none";
+    $("stAide").textContent=ST.canEdit
+      ? t("Click the ground to place a tank · drag to move it · Delete removes it")
+      : t("Read-only: your rank doesn't allow editing strategies.");
+  }
+  function stLabels(){
+    const c=$("stLbl");
+    if(!ST.ouvert||!ST.els.length){ if(c.childElementCount) c.innerHTML=""; return; }
+    while(c.childElementCount<ST.els.length) c.appendChild(Object.assign(document.createElement("div"),{className:"e"}));
+    while(c.childElementCount>ST.els.length) c.removeChild(c.lastChild);
+    for(let i=0;i<ST.els.length;i++){
+      const e=ST.els[i], d=c.children[i], p=versEcran(e.x,e.y);
+      if(!p){ d.style.display="none"; continue; }
+      const cls=(ST_CLS.find(x=>x[0]===e.cls)||ST_CLS[1])[1];
+      d.style.display=""; d.style.left=p[0]+"px"; d.style.top=p[1]+"px";
+      d.style.color=(e.camp==="ennemi")?"#f0a49b":"#a9e0b4";
+      d.textContent=(e.name||cls)+(i===ST.sel?" ●":"");
+    }
+  }
+  /* quel marqueur est sous ce point de l'écran ? */
+  function stSous(ex,ey){
+    let best=-1, bd=26;
+    for(let i=0;i<ST.els.length;i++){
+      const p=versEcran(ST.els[i].x,ST.els[i].y); if(!p) continue;
+      const d=Math.hypot(p[0]-ex,p[1]-ey);
+      if(d<bd){ bd=d; best=i; }
+    }
+    return best;
+  }
+  async function stCharge(){
+    const r=await stApi({action:"list"});
+    const l=$("stListe");
+    if(!r.ok){ l.innerHTML='<div class="stVide">'+t("Couldn't load strategies.")+' '+
+      ((r.j&&r.j.error)==="missing_session"||(r.j&&r.j.error)==="invalid_session"
+        ? t("Sign in on the site first.") : ((r.j&&r.j.error)||r.status))+'</div>'; return; }
+    ST.canEdit=!!r.j.canEdit; ST.moi=r.j.me;
+    ST.liste=(r.j.strategies||[]).filter(s=>s.map===curKey);
+    l.innerHTML="";
+    if(!ST.liste.length) l.innerHTML='<div class="stVide">'+t("No strategy for this map yet.")+'</div>';
+    for(const s of ST.liste){
+      const b=document.createElement("button"); b.className="stItem";
+      const n=(s.steps&&s.steps[0]&&s.steps[0].els||s.elements||[]).length;
+      b.innerHTML='<b></b><small></small>';
+      b.querySelector("b").textContent=s.name;
+      b.querySelector("small").textContent=n+" "+t("tanks")+" · "+(s.created_by_name||"—");
+      b.addEventListener("click",()=>stOuvre(s));
+      l.appendChild(b);
+    }
+    if(ST.canEdit){
+      const b=document.createElement("button"); b.className="stItem";
+      b.textContent="+ "+t("New strategy");
+      b.addEventListener("click",()=>stOuvre(null));
+      l.appendChild(b);
+    }
+  }
+  function stOuvre(s){
+    ST.id=s?s.id:null;
+    ST.nom=s?s.name:"";
+    const els=s?((s.steps&&s.steps[0]&&s.steps[0].els)||s.elements||[]):[];
+    /* on ne garde que les chars : c'est tout ce que cette première
+       version pose, et accepter le reste afficherait des objets qu'on ne
+       sait pas dessiner */
+    ST.els=els.filter(e=>e&&e.type==="tank").map(e=>({type:"tank",cls:e.cls||"medium",
+      x:Number(e.x)||0, y:Number(e.y)||0, name:e.name||"",
+      camp:(e.color==="#e5544b")?"ennemi":"ami", color:e.color||"#4ea36a", size:e.size||0.78}));
+    ST.sel=-1;
+    $("stNom").value=ST.nom;
+    $("stListe").style.display="none"; $("stEdit").style.display="";
+    stMaj();
+  }
+  function stFerme(){
+    $("stListe").style.display=""; $("stEdit").style.display="none";
+    ST.id=null; ST.els=[]; ST.sel=-1; buildStrat(); stCharge();
+  }
+  async function stEnregistre(){
+    if(!ST.canEdit) return;
+    const nom=($("stNom").value||"").trim()||t("Strategy");
+    const els=ST.els.map(e=>({type:"tank",cls:e.cls,x:Math.round(e.x),y:Math.round(e.y),
+      name:e.name||"", size:e.size||0.78, color:(e.camp==="ennemi")?"#e5544b":"#4ea36a"}));
+    const b=$("stSave"); b.disabled=true; b.textContent=t("Saving…");
+    const r=await stApi({action:"save",strategy:{id:ST.id,name:nom,map:curKey,mode:curMode||"ctf",
+      steps:[{els,note:"",t:null}],elements:els,editors:[]}});
+    b.disabled=false; b.textContent=t("Save");
+    if(!r.ok){
+      const e=r.j&&r.j.error;
+      alert(e==="no_clan" ? t("Can't save: your account isn't attached to a clan.")
+          : e==="forbidden" ? t("Save refused: you need to be a combat officer.")
+          : t("Error")+" : "+(e||r.status));
+      return;
+    }
+    stFerme();
+  }
+  async function stSupprime(){
+    if(!ST.id||!ST.canEdit) return;
+    if(!confirm(t("Delete this strategy?"))) return;
+    const r=await stApi({action:"delete",id:Number(ST.id)});
+    if(!r.ok){ alert(t("Error")+" : "+((r.j&&r.j.error)||r.status)); return; }
+    stFerme();
+  }
+  /* ── le panneau et ses commandes ── */
+  (function stInit(){
+    const cls=$("stCls");
+    for(const [k,nom] of ST_CLS){
+      const b=document.createElement("button"); b.className="btn"; b.dataset.cls=k; b.textContent=t(nom);
+      b.addEventListener("click",()=>{ ST.outil=k; stMaj(); });
+      cls.appendChild(b);
+    }
+    $("stAmi").addEventListener("click",()=>{ ST.camp="ami"; stMaj(); });
+    $("stEnn").addEventListener("click",()=>{ ST.camp="ennemi"; stMaj(); });
+    $("stNom").addEventListener("input",e=>{ ST.nom=e.target.value; });
+    $("stElNom").addEventListener("input",e=>{ const el=ST.els[ST.sel]; if(el){ el.name=e.target.value; stLabels(); } });
+    $("stSave").addEventListener("click",stEnregistre);
+    $("stDel").addEventListener("click",stSupprime);
+    $("stQuit").addEventListener("click",stFerme);
+    $("stClose").addEventListener("click",()=>{ ST.ouvert=0; $("strat").style.display="none";
+      $("stLbl").innerHTML=""; ST.els=[]; ST.sel=-1; buildStrat(); });
+    $("stratBtn").addEventListener("click",()=>{
+      ST.ouvert^=1;
+      $("strat").style.display=ST.ouvert?"block":"none";
+      $("stratBtn").classList.toggle("on",!!ST.ouvert);
+      if(ST.ouvert) stCharge(); else { $("stLbl").innerHTML=""; ST.els=[]; ST.sel=-1; buildStrat(); }
+    });
+    /* Le bouton n'apparaît que si l'on est connecté : sans session, le
+       serveur refuserait, et proposer une action qui échoue à coup sûr
+       n'aide personne. */
+    if(stSession()) $("stratBtn").style.display="";
+    /* En mode test seulement : de quoi exercer la pose et le rendu sans
+       session de clan. Le serveur, lui, ne s'en laisse pas conter — il
+       refusera l'enregistrement. C'est un banc d'essai, pas une porte. */
+    if(DEV3D) window.__strat={ST,stMaj,stLabels,buildStrat,versEcran,stSous};
+    document.addEventListener("keydown",e=>{
+      if(!ST.ouvert||ST.sel<0) return;
+      if(/^(input|textarea|select)$/i.test((e.target.tagName||""))) return;
+      if(e.key==="Delete"||e.key==="Backspace"){ e.preventDefault();
+        ST.els.splice(ST.sel,1); ST.sel=-1; stMaj(); stLabels(); }
+    });
+  })();
   function frame(t){
     const dt=Math.min(0.1,(t-tPrec)/1000)||0.016; tPrec=t;
     clavier(dt); suivre(dt);
+    if(ST.ouvert) stLabels();   /* les étiquettes suivent la caméra */
     gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
     if(idxLen){
       const P=persp(0.86,cv.width/cv.height,WORLD*0.02,WORLD*7);
       const e=eye(),V=look(e,[tgt[0]+pan.x,tgt[1],tgt[2]+pan.z],[0,1,0]);
       const M=[1,0,0,0,0,exag,0,0,0,0,1,0,0,0,0,1];
       const MVP=new Float32Array(mul(mul(P,V),M));
+      /* On garde la matrice : l'éditeur de stratégie en a besoin pour
+         projeter une position du monde à l'écran — poser une étiquette,
+         savoir quel marqueur est sous le curseur. */
+      curMVP=MVP;
       gl.useProgram(prog);
       gl.uniformMatrix4fv(uMVP,false,MVP);
       gl.uniform1f(uUseTex,useTex?1:0); gl.uniform1f(uMaxH,curMaxH); gl.uniform1f(uWorldLoc,WORLD);
@@ -1174,6 +1508,19 @@ function pretty(k){ const L=LABELS[k];
           gl.vertexAttribPointer(lPos,3,gl.FLOAT,false,16,0);
           gl.vertexAttribPointer(lBase,1,gl.FLOAT,false,16,12);
           for(const L of objLots){
+            gl.uniform1f(luVoile,L.voile); gl.uniform1f(luHaut,L.haut);
+            gl.uniform4f(luCoul,L.coul[0],L.coul[1],L.coul[2],L.alpha);
+            gl.drawArrays(L.mode,L.d,L.n);
+          }
+          gl.uniform1f(luHaut,LIM_HAUT);
+        }
+        /* Les marqueurs de la stratégie, par-dessus les objectifs : ce
+           sont eux qu'on manipule, ils doivent rester lisibles. */
+        if(stLots.length){
+          gl.bindBuffer(gl.ARRAY_BUFFER,stB);
+          gl.vertexAttribPointer(lPos,3,gl.FLOAT,false,16,0);
+          gl.vertexAttribPointer(lBase,1,gl.FLOAT,false,16,12);
+          for(const L of stLots){
             gl.uniform1f(luVoile,L.voile); gl.uniform1f(luHaut,L.haut);
             gl.uniform4f(luCoul,L.coul[0],L.coul[1],L.coul[2],L.alpha);
             gl.drawArrays(L.mode,L.d,L.n);
