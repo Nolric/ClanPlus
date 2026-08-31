@@ -776,46 +776,52 @@ function pretty(k){ const L=LABELS[k];
   let ST={ouvert:0, edition:0, id:null, nom:"", els:[], sel:-1, outil:"medium", camp:"ami",
           canEdit:0, liste:[], moi:null, refus:""};
 
-  /* Un marqueur : un disque au sol, un fût vertical, et un liseré sombre.
-     Même nuanceur que les objectifs — il fait déjà exactement ça. */
+  /* Ce qu'on pose au SOL sous un marqueur.
+
+     À DÉFAUT de modèle : un disque plein et un fût vertical — le camp par
+     la couleur, la classe par la hauteur.
+
+     AVEC le modèle : plus rien. Le char se voit, il est déjà teinté à son
+     camp ; le disque de six mètres le cachait plus qu'il ne l'aidait.
+     Seul le char sélectionné garde un anneau, mince et à sa taille, pour
+     qu'on sache lequel on tient. */
   function buildStrat(){
     stLots=[];
     if(!curHeights||!ST.els.length) return;
     const P=[];
-    const pose=(x,z,coul,haut,r,selection,fut)=>{
-      const n=40, bord=[];
+    const cercle=(x,z,r,n)=>{ const l=[];
       for(let i=0;i<=n;i++){ const a=i/n*Math.PI*2, px=x+Math.cos(a)*r, pz=z+Math.sin(a)*r;
-        bord.push([px,pz,terrainNorm(px,pz)]); }
-      const d0=P.length/4;
-      P.push(x,0.8,-z,terrainNorm(x,z));
-      for(const [px,pz,b] of bord) P.push(px,0.8,-pz,b);
-      stLots.push({d:d0,n:P.length/4-d0,coul,mode:gl.TRIANGLE_FAN,voile:0,haut,alpha:selection?0.85:0.55});
-      /* Le fût ne sert qu'À DÉFAUT du char : dès qu'on a le vrai modèle,
-         il le traverserait de part en part. Le disque, lui, reste — c'est
-         par lui qu'on voit le camp de loin, et qu'on saisit le marqueur. */
-      if(fut){
-        const d1=P.length/4;
-        for(const [px,pz,b] of bord) P.push(px,0,-pz,b, px,haut,-pz,b);
-        stLots.push({d:d1,n:P.length/4-d1,coul,mode:gl.TRIANGLE_STRIP,voile:1,haut,alpha:0.75});
-      }
-      /* le sélectionné reçoit un anneau clair, pour qu'on sache lequel on tient */
-      if(selection){
-        const ext=[], d2=P.length/4;
-        for(let i=0;i<=n;i++){ const a=i/n*Math.PI*2, px=x+Math.cos(a)*r*1.5, pz=z+Math.sin(a)*r*1.5;
-          ext.push([px,pz,terrainNorm(px,pz)]); }
-        for(let i=0;i<=n;i++){ const a=bord[i], c=ext[i];
-          P.push(a[0],0.8,-a[1],a[2], c[0],0.8,-c[1],c[2]); }
-        stLots.push({d:d2,n:P.length/4-d2,coul:[1,1,1],mode:gl.TRIANGLE_STRIP,voile:0,haut,alpha:0.55});
-      }
+        l.push([px,pz,terrainNorm(px,pz)]); }
+      return l; };
+    /* un ruban entre deux cercles : c'est tout ce qu'est un anneau */
+    const anneau=(x,z,r0,r1,coul,alpha,haut)=>{
+      const n=48, a0=cercle(x,z,r0,n), a1=cercle(x,z,r1,n), d=P.length/4;
+      for(let i=0;i<=n;i++) P.push(a0[i][0],0.8,-a0[i][1],a0[i][2], a1[i][0],0.8,-a1[i][1],a1[i][2]);
+      stLots.push({d,n:P.length/4-d,coul,mode:gl.TRIANGLE_STRIP,voile:0,haut,alpha});
     };
     for(let i=0;i<ST.els.length;i++){
-      const e=ST.els[i];
+      const e=ST.els[i], sel=(i===ST.sel), mod=charDe(e.char);
       const cls=ST_CLS.find(c=>c[0]===e.cls)||ST_CLS[1];
-      /* la couleur dit le CAMP, la hauteur du fût dit la classe : deux
-         informations qu'on lit d'un coup d'œil sans étiquette */
       const coul=(e.camp==="ennemi")?ST_COUL.ennemi:ST_COUL.ami;
       const haut=({light:9,medium:12,heavy:15,td:11,spg:8})[cls[0]]||12;
-      pose(e.x, e.y, coul, haut, 6, i===ST.sel, !charDe(e.char));
+      if(mod){
+        /* l'anneau épouse le char : la moitié de sa plus grande dimension
+           au sol, et un demi-mètre de large. Rien s'il n'est pas choisi. */
+        if(sel){
+          const r=Math.max(mod.taille[0],mod.taille[2])/2+0.7;
+          anneau(e.x,e.y,r,r+0.5,[1,1,1],0.8,haut);
+        }
+        continue;
+      }
+      const n=40, bord=cercle(e.x,e.y,6,n);
+      const d0=P.length/4;
+      P.push(e.x,0.8,-e.y,terrainNorm(e.x,e.y));
+      for(const [px,pz,b] of bord) P.push(px,0.8,-pz,b);
+      stLots.push({d:d0,n:P.length/4-d0,coul,mode:gl.TRIANGLE_FAN,voile:0,haut,alpha:sel?0.85:0.55});
+      const d1=P.length/4;
+      for(const [px,pz,b] of bord) P.push(px,0,-pz,b, px,haut,-pz,b);
+      stLots.push({d:d1,n:P.length/4-d1,coul,mode:gl.TRIANGLE_STRIP,voile:1,haut,alpha:0.75});
+      if(sel) anneau(e.x,e.y,6,9,[1,1,1],0.55,haut);
     }
     if(!P.length){ stLots=[]; return; }
     gl.bindBuffer(gl.ARRAY_BUFFER,stB);
@@ -1130,7 +1136,10 @@ function pretty(k){ const L=LABELS[k];
   }
   /* Le point du sol visé par un pixel de l'écran, à altitude constante :
      c'est ce qui permet de zoomer vers le curseur. */
-  function solSousCurseur(ex,ey){
+  /* Le RAYON sous le curseur, dans le repère de RENDU (z inversé) :
+     { o: l'œil, d: la direction }. Il servait déjà à trouver le sol ; il
+     sert maintenant aussi à savoir quel char on vise. */
+  function rayonCurseur(ex,ey){
     const r=cv.getBoundingClientRect();
     const nx=((ex-r.left)/r.width)*2-1, ny=1-((ey-r.top)/r.height)*2;
     const e=eye(), c=[tgt[0]+pan.x,tgt[1],tgt[2]+pan.z];
@@ -1145,6 +1154,10 @@ function pretty(k){ const L=LABELS[k];
     const d=[f[0]+s[0]*nx*th*asp+u[0]*ny*th,
              f[1]+s[1]*nx*th*asp+u[1]*ny*th,
              f[2]+s[2]*nx*th*asp+u[2]*ny*th];
+    return {o:e, d};
+  }
+  function solSousCurseur(ex,ey){
+    const {o:e,d}=rayonCurseur(ex,ey);
     if(Math.abs(d[1])<1e-6) return null;
     const t=(tgt[1]-e[1])/d[1];
     if(t<0) return null;
@@ -1541,12 +1554,65 @@ function pretty(k){ const L=LABELS[k];
     }
   }
   /* quel marqueur est sous ce point de l'écran ? */
+  /* ── QUEL MARQUEUR EST SOUS LE CURSEUR ? ─────────────────────────
+     Deux cas, et ils ne se mesurent pas de la même façon.
+
+     Sans modèle, il n'y a qu'un disque au sol : la distance à l'écran
+     suffit, et c'est ce que faisait cette fonction.
+
+     Avec le modèle, on veut CLIQUER LE CHAR. On lance donc le rayon du
+     curseur contre sa boîte — caisse et tourelle réunies — placée,
+     tournée et posée sur le relief comme au rendu. Le char le plus
+     proche de l'œil l'emporte : c'est celui qu'on voit.
+
+     Une boîte, pas les 3 000 triangles de la pièce : à la souris, la
+     différence ne se sent pas, et le coût n'est pas le même. */
+  function boiteChar(el,mod){
+    const sol=-mod.bbCaisse[0][1];
+    const y0=terrainNorm(el.x,el.y)*curMaxH*exag;
+    return {cap:(Number(el.cap)||0)*Math.PI/180, cx:el.x, cy:y0, cz:el.y,
+            mn:[mod.bbClic[0][0], mod.bbClic[0][1]+sol, mod.bbClic[0][2]],
+            mx:[mod.bbClic[1][0], mod.bbClic[1][1]+sol, mod.bbClic[1][2]]};
+  }
+  /* Distance à laquelle le rayon entre dans la boîte, ou null. */
+  function viseBoite(o,d,B){
+    /* le rayon vient du repère de RENDU : on repasse en coordonnées du
+       jeu (z opposé), puis dans le repère PROPRE du char */
+    const px=o[0]-B.cx, py=o[1]-B.cy, pz=(-o[2])-B.cz;
+    const dx=d[0], dy=d[1], dz=-d[2];
+    const c=Math.cos(-B.cap), s=Math.sin(-B.cap);
+    const ol=[px*c+pz*s, py, -px*s+pz*c];
+    const dl=[dx*c+dz*s, dy, -dx*s+dz*c];
+    let t0=-1e30, t1=1e30;
+    for(let k=0;k<3;k++){
+      if(Math.abs(dl[k])<1e-9){ if(ol[k]<B.mn[k]||ol[k]>B.mx[k]) return null; continue; }
+      let a=(B.mn[k]-ol[k])/dl[k], b=(B.mx[k]-ol[k])/dl[k];
+      if(a>b){ const w=a; a=b; b=w; }
+      if(a>t0) t0=a; if(b<t1) t1=b;
+      if(t0>t1) return null;
+    }
+    return t1<0 ? null : Math.max(t0,0);
+  }
   function stSous(ex,ey){
-    let best=-1, bd=26;
+    const {o,d}=rayonCurseur(ex,ey);
+    let best=-1, bt=Infinity;
+    for(let i=0;i<ST.els.length;i++){
+      const mod=charDe(ST.els[i].char); if(!mod) continue;
+      const t=viseBoite(o,d,boiteChar(ST.els[i],mod));
+      if(t!==null&&t<bt){ bt=t; best=i; }
+    }
+    if(best>=0) return best;
+    /* Aucune boîte touchée. On retombe sur la distance à l'écran — pas
+       seulement pour les marqueurs sans modèle : vue de haut, une carte
+       entière tient dans l'écran et un char y fait deux pixels. Exiger
+       de le viser au pixel près le rendrait insaisissable. Le rayon
+       reste plus serré pour un char que pour un disque de six mètres. */
+    let bd=Infinity;
     for(let i=0;i<ST.els.length;i++){
       const p=versEcran(ST.els[i].x,ST.els[i].y); if(!p) continue;
-      const d=Math.hypot(p[0]-ex,p[1]-ey);
-      if(d<bd){ bd=d; best=i; }
+      const lim=charDe(ST.els[i].char)?14:26;
+      const dd=Math.hypot(p[0]-ex,p[1]-ey);
+      if(dd<lim&&dd<bd){ bd=dd; best=i; }
     }
     return best;
   }
@@ -1687,7 +1753,8 @@ function pretty(k){ const L=LABELS[k];
        session de clan. Le serveur, lui, ne s'en laisse pas conter — il
        refusera l'enregistrement. C'est un banc d'essai, pas une porte. */
     if(DEV3D) window.__strat={ST,stMaj,stLabels,buildStrat,buildChars,chargeChars,
-      versEcran,stSous,charDe,etatChars:()=>charsEtat,lots:()=>charsLots,biblio:()=>CHARS};
+      versEcran,stSous,charDe,boiteChar,viseBoite,rayonCurseur,
+      etatChars:()=>charsEtat,lots:()=>charsLots,solLots:()=>stLots,biblio:()=>CHARS};
     document.addEventListener("keydown",e=>{
       if(!ST.ouvert||ST.sel<0) return;
       if(/^(input|textarea|select)$/i.test((e.target.tagName||""))) return;
