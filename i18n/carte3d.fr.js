@@ -59,6 +59,12 @@ window.CP_FR = Object.assign(window.CP_FR || {}, {
   "No allied tank placed.": "Aucun char allié posé.",
   "of the ground in range that nobody covers": "du sol à portée que personne ne couvre",
   "covered out of": "couverts sur",
+  /* ── les crêtes hull-down ── */
+  "Hull-down ridges": "Crêtes hull-down",
+  "This marker has no tank model yet.": "Ce marqueur n’a pas encore de modèle de char.",
+  "where this tank can go hull-down": "où ce char peut se mettre en hull-down",
+  "useful crest": "crête utile",
+  "posted but the gun is useless": "où l’on se poste sans rien pouvoir toucher",
   "Drag to look around · Scroll to zoom in · Esc to leave": "Glisser pour regarder autour · molette pour resserrer · Échap pour sortir",
   "Line of sight": "Ligne de vue",
   "Field of view": "Champ de vision",

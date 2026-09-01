@@ -614,6 +614,7 @@
             <button class="btn" id="stVue">Line of sight</button>
             <button class="btn" id="stChamp">Field of view</button>
             <button class="btn" id="stDanger">Danger map</button>
+            <button class="btn" id="stCrete">Hull-down ridges</button>
           </div>
           <div class="stPos" id="stChampV" style="margin-top:7px"></div>
         </div>
@@ -1723,6 +1724,7 @@ function pretty(k){ const L=LABELS[k];
        demandent aucune sélection, et l’exiger empêcherait de les lire
        après un clic dans le vide. */
     if(modeChamp==="aveugle"){ buildAveugle(); return; }
+    if(modeChamp==="crete"){ buildCretes(); return; }
     if(ST.sel<0||!ST.els[ST.sel]) return;
     if(ST.els[ST.sel].type!=="tank") return;   /* une flèche ne voit rien */
     carteOcclusion();
@@ -2563,6 +2565,98 @@ function pretty(k){ const L=LABELS[k];
     champNTir=champN=P.length/4;
   }
 
+  /* ══ LES CRÊTES EXPLOITABLES ═══════════════════════════════════════
+     « Où puis-je me mettre en hull-down avec CE char ? »
+
+     Le panneau répond déjà pour UNE position. Ici on répond pour toute
+     la carte, et surtout POUR CE CHAR-LÀ : un engin à dix degrés de
+     dépression et un engin à trois degrés ne voient pas la même carte,
+     et c'est exactement ce que les joueurs peinent à intégrer.
+
+     ── La condition, et celle que j'ai dû retirer ───────────────────
+     LA CRÊTE COUVRE ET LAISSE PASSER : devant soi, entre trois et vingt
+     mètres, il faut un relief plus haut que le toit de caisse et plus
+     bas que le toit de tourelle. C'est le test du panneau, appliqué à
+     toute la carte. La fenêtre change d'un char à l'autre — 1,6 à 2,7 m
+     sur le 113 — et c'est ce qui rend la carte propre à CE char.
+
+     J'avais ajouté une seconde condition : que le canon puisse plonger
+     par-dessus la crête pour toucher le sol au-delà. Elle avait l'air
+     rigoureuse. MESURÉE, elle ne discriminait rien : sur le STB-1, en
+     forçant la dépression de 0° à 25° — bien au-delà de ce que le jeu
+     propose —, la surface retenue passe de 23 694 à 24 666 cases, soit
+     quatre pour cent, et sature dès trois degrés. Au-delà d'une crête le
+     sol remonte ou reste plat assez souvent pour qu'un degré suffise.
+
+     Une condition inerte qui colore la carte est pire qu'une condition
+     absente : elle a l'apparence d'une analyse. Retirée.
+
+     ── L'orientation ────────────────────────────────────────────────
+     On essaie seize directions et l'on retient la meilleure : on cherche
+     un EMPLACEMENT, et l'on orientera le char en arrivant. Peindre
+     seulement ce qui marche au cap actuel donnerait une carte qui change
+     à chaque coup de curseur. */
+  const G_CRETE=128, DIRS_CRETE=16;
+  function buildCretes(){
+    carteOcclusion();
+    const el=ST.els[ST.sel];
+    if(!el||el.type!=="tank"){ champStat=t("Pick a tank on the map first."); return; }
+    const mod=charDe(el.char);
+    if(!mod){ champStat=t("This marker has no tank model yet."); return; }
+    const bas=mod.bbCaisse[0][1];
+    const hCaisse=mod.bbCaisse[1][1]-bas;          // toit de caisse au-dessus du sol
+    const hTour=mod.bbClic[1][1]-bas;              // toit de tourelle
+    const G=G_CRETE, cx=WORLD/G, cz=WORLDZ/G;
+    const dirs=[];
+    for(let d=0;d<DIRS_CRETE;d++){
+      const a=d/DIRS_CRETE*Math.PI*2;
+      dirs.push([Math.cos(a),Math.sin(a)]);
+    }
+    const Pbon=[], Pvue=[]; let n=0, nVue=0, nSol=0;
+    for(let j=0;j<G;j++) for(let i=0;i<G;i++){
+      const x=ORIG[0]+(i+0.5)*cx, z=ORIG[1]+(j+0.5)*cz;
+      const sol=solY(x,z);
+      /* on ne propose pas de se poster sur un toit ni dans un mur */
+      if(hauteurOcc(x,z)>sol+0.3) continue;
+      nSol++;
+      /* false, "vue" ou "bon" : on parcourt TOUTES les directions et
+         l'on garde la meilleure. S'arrêter à la première crête venue
+         classerait « inutile » un emplacement qui marche en se tournant
+         d'un quart de tour. */
+      let bon=false;
+      for(const [ux,uz] of dirs){
+        let crete=-1e30, rc=0;
+        for(let r=3;r<=20;r+=1){
+          const h=hauteurOcc(x+ux*r,z+uz*r);
+          if(h>crete){ crete=h; rc=r; }
+        }
+        if(crete<sol+hCaisse||crete>=sol+hTour) continue;
+        bon="bon"; break;
+      }
+      if(!bon) continue;
+      n++; if(bon==="vue") nVue++;
+      const x0=ORIG[0]+i*cx, x1=x0+cx, z0=ORIG[1]+j*cz, z1=z0+cz;
+      const v=[[x0,z0],[x1,z0],[x1,z1],[x0,z1]]
+        .map(([qx,qz])=>[qx,0.4,-qz,terrainNorm(qx,qz)]);
+      const P=(bon==="vue")?Pvue:Pbon;
+      for(const k of [0,1,2,0,2,3]) P.push(v[k][0],v[k][1],v[k][2],v[k][3]);
+    }
+    const ha=cx*cz/10000;
+    /* On annonce la FENÊTRE plutôt que la dépression : c'est elle qui
+       fait la carte, elle change d'un char à l'autre, et elle se lit
+       sur le modèle. Annoncer la dépression à côté d'une carte qu'elle
+       ne change pas serait un chiffre décoratif. */
+    champStat=(n*ha).toFixed(1)+" ha "+t("where this tank can go hull-down")
+      /* Une flèche plutôt qu'un « et » : le moteur de traduction
+         remplace tout nœud de texte qui correspond à une clé, et « and »
+         en serait une bien trop courte pour être sûre. */
+      +" · "+t("useful crest")+" "+hCaisse.toFixed(1)+" → "+hTour.toFixed(1)+" m";
+    if(!Pbon.length) return;
+    gl.bindBuffer(gl.ARRAY_BUFFER,champB);
+    gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(Pbon),gl.DYNAMIC_DRAW);
+    champNTir=champN=Pbon.length/4;
+  }
+
   /* Poser un point de mesure. Le premier clic ouvre, le second ferme,
      le troisième recommence — c'est le geste de tous les outils de
      mesure, et il n'a besoin d'aucune explication. */
@@ -3332,6 +3426,7 @@ function pretty(k){ const L=LABELS[k];
     $("stChamp").classList.toggle("on",!!montreChamp&&modeChamp==="vision");
     $("stDanger").classList.toggle("on",!!montreChamp&&modeChamp==="danger");
     $("stAveugle").classList.toggle("on",!!montreChamp&&modeChamp==="aveugle");
+    $("stCrete").classList.toggle("on",!!montreChamp&&modeChamp==="crete");
     $("avStat").textContent=(montreChamp&&modeChamp==="aveugle")?champStat:"";
     $("stChampV").textContent=montreChamp?champStat:"";
     /* La vue subjective ne survit pas à son sujet : le char peut avoir
@@ -3808,6 +3903,7 @@ function pretty(k){ const L=LABELS[k];
     };
     $("stChamp").addEventListener("click",()=>bascule("vision"));
     $("stAveugle").addEventListener("click",()=>bascule("aveugle"));
+    $("stCrete").addEventListener("click",()=>bascule("crete"));
     $("stCroix").addEventListener("click",()=>{
       const c=$("croix"); c.classList.toggle("on");
       $("stCroix").classList.toggle("on",c.classList.contains("on"));
@@ -4164,6 +4260,9 @@ function pretty(k){ const L=LABELS[k];
                des lignes de vue. Une couleur libre, pour une lecture
                qui n’est ni l’une ni l’autre. */
             if(modeChamp==="aveugle") gl.uniform4f(luCoul,0.58,0.44,0.88,0.38);
+            /* Vert pour les crêtes : c’est la seule des cinq nappes qui
+               désigne une BONNE nouvelle, et le vert le dit sans légende. */
+            else if(modeChamp==="crete") gl.uniform4f(luCoul,0.36,0.86,0.46,0.34);
             else if(danger) gl.uniform4f(luCoul,0.95,0.66,0.24,0.30);
             else       gl.uniform4f(luCoul,0.30,0.82,0.95,0.34);
             gl.drawArrays(gl.TRIANGLES,0,champNTir);
