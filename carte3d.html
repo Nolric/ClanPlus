@@ -2234,7 +2234,11 @@ function pretty(k){ const L=LABELS[k];
   cv.addEventListener("contextmenu",e=>e.preventDefault());
   cv.addEventListener("wheel",e=>{e.preventDefault();
     const avant=solSousCurseur(e.clientX,e.clientY);
-    const k=e.deltaY>0?1.12:1/1.12;
+    /* Le zoom suit l'AMPLEUR du geste. Un pas fixe convient à une
+       molette crantée et hache le pavé tactile, qui envoie de tout
+       petits incréments. On borne pour qu'un cran de souris reste franc. */
+    const dz=Math.max(-3,Math.min(3,(e.deltaMode===1?e.deltaY*16:e.deltaY)/100));
+    const k=Math.pow(1.14,dz);
     cible.rad=clamp(cible.rad*k,RMIN(),WORLD*2.4);
     /* on ramène sous le curseur le point qui s'y trouvait : le zoom suit
        la souris au lieu de fuir vers le centre. */
@@ -2242,29 +2246,68 @@ function pretty(k){ const L=LABELS[k];
                cible.pz+= (avant[1]-(tgt[2]+cible.pz))*(1-k)*0.9; }
   },{passive:false});
 
-  /* Le clavier : ZQSD ou les flèches pour se déplacer, A/E pour tourner,
-     Maj pour accélérer. Sur une carte de 1100 m, c'est souvent plus
-     précis que la souris. */
+  /* ══ LE PILOTAGE AU CLAVIER ════════════════════════════════════════
+     ── On écoute la touche PHYSIQUE, pas la lettre ──────────────────
+     `e.key` rend la lettre imprimée : « z » sur un clavier français là
+     où un clavier anglais rend « w ». Il fallait donc lister les deux,
+     et les listes se marchaient dessus — le « a » d'AZERTY sert à
+     tourner, celui de QWERTY à se déporter. `e.code` rend la POSITION :
+     `KeyW` est la touche en haut à gauche quelle que soit la langue.
+     Un seul jeu de règles, et le geste est le même pour tout le monde.
+
+     ── Et l'on ne pilote PAS pendant qu'on écrit ────────────────────
+     Le gestionnaire ne s'écartait que des listes déroulantes. Taper un
+     « s » dans le nom d'une stratégie faisait donc reculer la vue — et
+     le `preventDefault` mangeait la lettre par-dessus le marché. */
+  const saisieEnCours=()=>{
+    const a=document.activeElement;
+    if(!a) return false;
+    return /^(input|textarea|select)$/i.test(a.tagName) || a.isContentEditable;
+  };
   const touches={};
-  addEventListener("keydown",e=>{ if(e.target.tagName==="SELECT") return;
-    touches[e.key.toLowerCase()]=1;
-    if(" wasdzqe".includes(e.key.toLowerCase())||e.key.startsWith("Arrow")) e.preventDefault(); });
-  addEventListener("keyup",e=>{ touches[e.key.toLowerCase()]=0; });
+  const PILOTE=new Set(["KeyW","KeyA","KeyS","KeyD","KeyQ","KeyE","KeyR","KeyF",
+    "ArrowUp","ArrowDown","ArrowLeft","ArrowRight","PageUp","PageDown",
+    "Equal","Minus","NumpadAdd","NumpadSubtract"]);
+  addEventListener("keydown",e=>{
+    if(saisieEnCours()){ touches.majuscule=0; return; }
+    touches[e.code]=1; touches.majuscule=e.shiftKey?1:0; touches.precis=(e.ctrlKey||e.metaKey)?1:0;
+    if(PILOTE.has(e.code)) e.preventDefault();
+  });
+  addEventListener("keyup",e=>{ touches[e.code]=0;
+    touches.majuscule=e.shiftKey?1:0; touches.precis=(e.ctrlKey||e.metaKey)?1:0; });
+  /* si la page perd le focus, on relâche tout : sinon une touche restée
+     « enfoncée » fait dériver la vue sans qu'on y touche */
+  addEventListener("blur",()=>{ for(const k of Object.keys(touches)) touches[k]=0; });
   function clavier(dt){
-    const k=touches, vite=(k.shift?3:1)*dt*60;
-    const av=(k.z||k.w||k.arrowup?1:0)-(k.s||k.arrowdown?1:0);
-    const la=(k.d||k.arrowright?1:0)-(k.q||k.a||k.arrowleft?1:0);
+    if(saisieEnCours()) return;
+    const k=touches;
+    /* Maj accélère, Ctrl ralentit : on cadre au mètre près comme on
+       traverse la carte, sans changer de commande. */
+    const vite=(k.majuscule?3:k.precis?0.3:1)*dt*60;
+    const av=(k.KeyW||k.ArrowUp?1:0)-(k.KeyS||k.ArrowDown?1:0);
+    const la=(k.KeyD||k.ArrowRight?1:0)-(k.KeyA||k.ArrowLeft?1:0);
     if(av||la){
-      /* la vitesse suit la distance : au mètre de près, à la carte de loin */
-      const s=cible.rad*0.012*vite;
+      /* La vitesse suit la distance : au mètre de près, à la carte de
+         loin. Le facteur est CALIBRÉ, pas choisi : une seconde d'appui
+         doit couvrir environ le tiers de ce qu'on a sous les yeux —
+         assez pour se déplacer sans relâcher, assez peu pour s'arrêter
+         où l'on voulait. Mesuré à 21 m/s avec l'ancien réglage, il
+         fallait trente-cinq secondes pour traverser une carte. */
+      const s=cible.rad*0.006*vite;
       const fx=-Math.cos(az),fz=-Math.sin(az),rx=-Math.sin(az),rz=Math.cos(az);
       cible.px+=(av*fx+la*rx)*s; cible.pz+=(av*fz+la*rz)*s;
     }
+    /* tourner autour du point visé, sans lâcher le clavier */
+    const tourne=(k.KeyE?1:0)-(k.KeyQ?1:0);
+    if(tourne) cible.az+=tourne*0.022*vite;
+    /* Se pencher : R relève le regard, F l'abaisse. La plage entière ne
+       fait qu'un radian et demi — au pas d'avant on la traversait en une
+       seconde et demie et l'on butait dans les bornes sans le vouloir. */
+    const pente=(k.KeyR||k.PageUp?1:0)-(k.KeyF||k.PageDown?1:0);
+    if(pente) cible.pol=clamp(cible.pol+pente*0.009*vite,0.12,1.45);
     const p=dt*60;
-    if(k["+"]||k["="]) cible.rad=clamp(cible.rad*Math.pow(0.97,p),RMIN(),WORLD*2.4);
-    if(k["-"]) cible.rad=clamp(cible.rad*Math.pow(1.03,p),RMIN(),WORLD*2.4);
-    if(k.pageup) cible.pol=clamp(cible.pol+0.02*p,0.12,1.45);
-    if(k.pagedown) cible.pol=clamp(cible.pol-0.02*p,0.12,1.45);
+    if(k.Equal||k.NumpadAdd) cible.rad=clamp(cible.rad*Math.pow(0.97,p),RMIN(),WORLD*2.4);
+    if(k.Minus||k.NumpadSubtract) cible.rad=clamp(cible.rad*Math.pow(1.03,p),RMIN(),WORLD*2.4);
   }
 
   /* Le doigt : deux doigts pour zoomer et déplacer, comme partout. */
@@ -2899,8 +2942,11 @@ function pretty(k){ const L=LABELS[k];
         "<kbd>Ctrl</kbd><kbd>Z</kbd> "+t("undo")+" · <kbd>Ctrl</kbd><kbd>D</kbd> "+t("duplicate")+
         " · <kbd>F</kbd> "+t("frame")+" · <kbd>Origine</kbd> "+t("frame all")+" · <kbd>Suppr</kbd> "+t("delete")+"<br>"+
         "<kbd>Maj</kbd>+"+t("click to add to the selection")
-      : "<b>"+t("Drag")+"</b> "+t("to rotate")+" · <b>"+t("Scroll")+"</b> "+t("zooms where you point")+"<br>"+
-        "<b>"+t("Right-click")+"</b> "+t("to pan")+" · <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> "+t("to move");
+      : "<b>"+t("Drag")+"</b> "+t("to rotate")+" · <b>"+t("Scroll")+"</b> "+t("zooms where you point")+
+        " · <b>"+t("Double-click")+"</b> "+t("to go there")+"<br>"+
+        "<b>"+t("Right-click")+"</b> "+t("to pan")+" · <kbd>Z</kbd><kbd>Q</kbd><kbd>S</kbd><kbd>D</kbd> "+t("to move")+
+        " · <kbd>A</kbd><kbd>E</kbd> "+t("to turn")+" · <kbd>R</kbd><kbd>F</kbd> "+t("to tilt")+"<br>"+
+        "<kbd>Maj</kbd> "+t("faster")+" · <kbd>Ctrl</kbd> "+t("finer");
   }
 
   /* ── L'HISTORIQUE ─────────────────────────────────────────────────
@@ -3106,6 +3152,7 @@ function pretty(k){ const L=LABELS[k];
       histo:()=>({n:histo.length,i:histoI,sale:histoSale}),
       /* cadrer la caméra sur un point : le banc d'essai en a besoin pour
          regarder un char de près sans piloter la souris à l'aveugle */
+      cam:()=>({rad:cible.rad,px:cible.px,pz:cible.pz,az:cible.az,pol:cible.pol}),
       cadre:(x,z,r,polDeg,azDeg)=>{ tgt=[x, terrainNorm(x,z)*curMaxH*exag, -z]; pan.x=0; pan.z=0;
         rad=r; pol=polDeg*Math.PI/180; if(azDeg!==undefined) az=azDeg*Math.PI/180;
         cible={az,pol,rad,px:0,pz:0}; },
@@ -3164,8 +3211,7 @@ function pretty(k){ const L=LABELS[k];
        reste suit les conventions que personne n'a besoin d'apprendre. */
     const TOUCHE_OUTIL={v:"select",t:"char",a:"fleche",n:"texte"};
     document.addEventListener("keydown",e=>{
-      if(!ST.ouvert) return;
-      if(/^(input|textarea|select)$/i.test((e.target.tagName||""))) return;
+      if(!ST.ouvert||saisieEnCours()) return;
       const mod=e.ctrlKey||e.metaKey;
       if(mod&&(e.key==="z"||e.key==="Z")){ e.preventDefault(); histoVa(e.shiftKey?1:-1); return; }
       if(mod&&(e.key==="y"||e.key==="Y")){ e.preventDefault(); histoVa(1); return; }
