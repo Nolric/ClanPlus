@@ -1377,8 +1377,19 @@ function pretty(k){ const L=LABELS[k];
           pousse(mod.canon, mulT(Mt,[1,0,0,jG[0], 0,1,0,jG[1], 0,0,1,jG[2]]), base, teinte(0.82));
         }
       } else if(mod.canon>=0){
-        /* casemate : le canon est solidaire de la caisse */
-        pousse(mod.canon, Mc, base, teinte(0.82));
+        /* ── LE CANON D'UNE CASEMATE ────────────────────────────────
+           Neuf chasseurs de chars n'ont AUCUN fichier de tourelle : leur
+           canon est solidaire de la caisse. Je le posais donc à l'origine
+           de celle-ci — c'est-à-dire n'importe où, et le tube sortait du
+           milieu du char.
+           Ils ont pourtant bien un point d'accroche : le jeu le déclare
+           sous `hull/turretPositions`, comme pour un char à tourelle. Le
+           Foch 155 l'a à 2,16 m devant, le Jagdpanzer E 100 à 1,26 m de
+           haut. On l'applique, simplement sans rotation : une casemate
+           ne pivote pas. */
+        const jT=mod.jTourelle, jG=mod.jCanon;
+        pousse(mod.canon, mulT(Mc,[1,0,0,jT[0]+jG[0], 0,1,0,jT[1]+jG[1], 0,0,1,jT[2]+jG[2]]),
+               base, teinte(0.82));
       }
     }
     if(!par.size) return;
