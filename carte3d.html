@@ -2329,7 +2329,18 @@ function pretty(k){ const L=LABELS[k];
          où l'on voulait. Mesuré à 21 m/s avec l'ancien réglage, il
          fallait trente-cinq secondes pour traverser une carte. */
       const s=cible.rad*0.006*vite;
-      const fx=-Math.cos(az),fz=-Math.sin(az),rx=-Math.sin(az),rz=Math.cos(az);
+      /* (rx,rz) va vers la DROITE de l'écran. Il était pris à l'envers :
+         (−sin, cos) pointe vers la GAUCHE, si bien que la flèche gauche
+         — et le Q d'un clavier AZERTY, qui est la même touche que le A
+         d'un QWERTY — emmenait la caméra à droite.
+
+         Mesuré plutôt que raisonné, parce que le signe dépend de deux
+         conventions imbriquées (le nuanceur retourne Z, et le repère de
+         la page compte y = −z du monde) et que j'ai commencé par me
+         tromper en le déduisant : sur Falaise, le phare centré à 530 px
+         passe à 406 px après une pression sur la flèche gauche. Le
+         décor part à gauche, donc la caméra allait à droite. */
+      const fx=-Math.cos(az),fz=-Math.sin(az),rx=Math.sin(az),rz=-Math.cos(az);
       cible.px+=(av*fx+la*rx)*s; cible.pz+=(av*fz+la*rz)*s;
     }
     /* tourner autour du point visé, sans lâcher le clavier */
