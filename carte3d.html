@@ -123,6 +123,11 @@
     font-size:11.5px;font-weight:700;padding:2px 6px;border-radius:3px;
     background:rgba(12,13,16,.72);border:1px solid rgba(255,255,255,.16);
     text-shadow:0 1px 2px rgba(0,0,0,.8)}
+  /* Une NOTE n'est pas une étiquette de char : elle porte une consigne,
+     elle doit se lire de loin et pouvoir tenir sur plusieurs lignes. */
+  #stLbl .e.note{font-size:13px;font-weight:600;padding:5px 9px;white-space:normal;
+    max-width:230px;line-height:1.35;border-color:rgba(229,185,92,.45);
+    background:rgba(12,13,16,.85)}
   #leg{position:absolute;right:16px;bottom:64px;padding:9px 11px;display:none;max-width:230px}
   #leg .lg{font-size:10px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;
     color:var(--muted);margin:0 0 6px 1px}
@@ -166,6 +171,7 @@
     <div id="stEdit" style="display:none">
       <input id="stNom" maxlength="80" placeholder="Strategy name">
       <div class="stRow" id="stCls"></div>
+      <div class="stRow" id="stAnnot"></div>
       <div class="stRow">
         <button class="btn on" id="stAmi">Allies</button>
         <button class="btn" id="stEnn">Enemies</button>
@@ -179,9 +185,14 @@
         <input id="stElNom" maxlength="18" placeholder="Tank name">
         <select id="stElChar"><option value="">Marker only</option></select>
         <div class="stRow stCap">
-          <label for="stElCap" id="stCapL">Facing</label>
+          <label for="stElCap" id="stCapL">Hull</label>
           <input type="range" id="stElCap" min="0" max="355" step="5" value="0">
           <span id="stCapV">0°</span>
+        </div>
+        <div class="stRow stCap">
+          <label for="stElTour" id="stTourL">Turret</label>
+          <input type="range" id="stElTour" min="-180" max="180" step="5" value="0">
+          <span id="stTourV">0°</span>
         </div>
         <div class="stPos" id="stElPos"></div>
         <div class="stHull" id="stHull"></div>
@@ -811,8 +822,62 @@ function pretty(k){ const L=LABELS[k];
       for(let i=0;i<=n;i++) P.push(a0[i][0],0.8,-a0[i][1],a0[i][2], a1[i][0],0.8,-a1[i][1],a1[i][2]);
       stLots.push({d,n:P.length/4-d,coul,mode:gl.TRIANGLE_STRIP,voile:0,haut,alpha});
     };
+    /* ── LES FLÈCHES ────────────────────────────────────────────────
+       Un ruban posé sur le sol, suivi d'une pointe. Il est découpé tous
+       les quelques mètres pour épouser le relief : une flèche droite
+       traverserait les bosses au lieu de les suivre, et une flèche qui
+       s'enfonce dans une colline ne montre plus rien.
+       La largeur suit l'éloignement de la caméra, comme les lignes de
+       vue — en mètres, un trait devient invisible dès qu'on recule. */
+    const larg=Math.max(0.6, 6*0.9*rad/Math.max(200,cv.clientHeight));
+    for(let i=0;i<ST.els.length;i++){
+      const e=ST.els[i];
+      if(e.type!=="fleche") continue;
+      const sel=(i===ST.sel);
+      const coul=(e.camp==="ennemi")?ST_COUL.ennemi:ST_COUL.ami;
+      const dx=e.x2-e.x, dz=e.y2-e.y, L=Math.hypot(dx,dz)||1;
+      const ux=dx/L, uz=dz/L, nx=-uz, nz=ux;
+      const pointe=Math.min(L*0.35, larg*5);
+      const corps=L-pointe;
+      const n=Math.max(2,Math.ceil(corps/4));
+      const d0=P.length/4;
+      for(let k=0;k<=n;k++){
+        const s=corps*k/n, cx=e.x+ux*s, cz=e.y+uz*s;
+        const ax=cx-nx*larg, az2=cz-nz*larg, bx=cx+nx*larg, bz=cz+nz*larg;
+        P.push(ax,0.6,-az2,terrainNorm(ax,az2), bx,0.6,-bz,terrainNorm(bx,bz));
+      }
+      stLots.push({d:d0,n:P.length/4-d0,coul,mode:gl.TRIANGLE_STRIP,voile:0,haut:1,alpha:sel?0.95:0.75,sansProf:1});
+      /* la pointe : un triangle, trois fois plus large que le fût */
+      const bx=e.x+ux*corps, bz=e.y+uz*corps;
+      const d1=P.length/4;
+      const g=[bx-nx*larg*2.6, bz-nz*larg*2.6], dr=[bx+nx*larg*2.6, bz+nz*larg*2.6];
+      P.push(g[0],0.6,-g[1],terrainNorm(g[0],g[1]),
+             dr[0],0.6,-dr[1],terrainNorm(dr[0],dr[1]),
+             e.x2,0.6,-e.y2,terrainNorm(e.x2,e.y2));
+      stLots.push({d:d1,n:3,coul,mode:gl.TRIANGLES,voile:0,haut:1,alpha:sel?0.95:0.75,sansProf:1});
+      /* les deux bouts, quand elle est choisie : ce sont les poignées */
+      if(sel) for(const [hx,hz] of [[e.x,e.y],[e.x2,e.y2]]){
+        const d2=P.length/4, m=24, r0=larg*1.6, r1=larg*2.2;
+        for(let k=0;k<=m;k++){ const a=k/m*Math.PI*2;
+          const p0=[hx+Math.cos(a)*r0, hz+Math.sin(a)*r0], p1=[hx+Math.cos(a)*r1, hz+Math.sin(a)*r1];
+          P.push(p0[0],0.7,-p0[1],terrainNorm(p0[0],p0[1]), p1[0],0.7,-p1[1],terrainNorm(p1[0],p1[1])); }
+        stLots.push({d:d2,n:P.length/4-d2,coul:[1,1,1],mode:gl.TRIANGLE_STRIP,voile:0,haut:1,alpha:0.85,sansProf:1});
+      }
+    }
     for(let i=0;i<ST.els.length;i++){
       const e=ST.els[i], sel=(i===ST.sel), mod=charDe(e.char);
+      if(e.type==="fleche") continue;
+      if(e.type==="texte"){
+        /* une note n'a qu'un point d'ancrage : un petit disque, pour
+           qu'on sache d'où elle parle et qu'on puisse l'attraper */
+        const coul=(e.camp==="ennemi")?ST_COUL.ennemi:ST_COUL.ami;
+        const n=24, r=Math.max(1.2, larg*1.4), d0=P.length/4;
+        P.push(e.x,0.7,-e.y,terrainNorm(e.x,e.y));
+        for(let k=0;k<=n;k++){ const a=k/n*Math.PI*2, px=e.x+Math.cos(a)*r, pz=e.y+Math.sin(a)*r;
+          P.push(px,0.7,-pz,terrainNorm(px,pz)); }
+        stLots.push({d:d0,n:P.length/4-d0,coul,mode:gl.TRIANGLE_FAN,voile:0,haut:1,alpha:sel?0.95:0.7,sansProf:1});
+        continue;
+      }
       const cls=ST_CLS.find(c=>c[0]===e.cls)||ST_CLS[1];
       const coul=(e.camp==="ennemi")?ST_COUL.ennemi:ST_COUL.ami;
       const haut=({light:9,medium:12,heavy:15,td:11,spg:8})[cls[0]]||12;
@@ -985,8 +1050,9 @@ function pretty(k){ const L=LABELS[k];
         vueLots.push({d:k,n:4,coul,mode:gl.TRIANGLE_STRIP,voile:0,haut:1,alpha});
       }
     };
+    if(moi.type!=="tank") return;
     for(let i=0;i<ST.els.length;i++){
-      if(i===ST.sel) continue;
+      if(i===ST.sel||ST.els[i].type!=="tank") continue;
       const r=ligneDeVue(moi,ST.els[i]);
       const L=Math.hypot(r.B[0]-r.A[0],r.B[1]-r.A[1],r.B[2]-r.A[2])||1;
       const point=(t)=>[r.A[0]+(r.B[0]-r.A[0])*t, r.A[1]+(r.B[1]-r.A[1])*t, r.A[2]+(r.B[2]-r.A[2])*t];
@@ -1057,6 +1123,7 @@ function pretty(k){ const L=LABELS[k];
     if(stDrag) return;
     champN=0; champNTir=0; champStat="";
     if(!montreChamp||!curHeights||ST.sel<0||!ST.els[ST.sel]) return;
+    if(ST.els[ST.sel].type!=="tank") return;   /* une flèche ne voit rien */
     carteOcclusion();
     const el=ST.els[ST.sel], O=oeilDe(el);
     const mod=charDe(el.char), pt=mod&&mod.pointage;
@@ -1369,9 +1436,20 @@ function pretty(k){ const L=LABELS[k];
   /* Une position du monde → un point de l'écran. Sert aux étiquettes et
      à savoir quel marqueur est sous le curseur. Rend null si le point est
      derrière la caméra. */
-  function versEcran(x,z){
+  function versEcran(x,z,h){
     if(!curMVP||!curHeights) return null;
-    const y=curZmin+terrainNorm(x,z)*curMaxH+6;
+    /* La hauteur était figée à six mètres — au-dessus d'un char de deux
+       mètres et demi, l'étiquette flottait loin de lui, et comme c'est
+       elle qui servait de cible au clic, on attrapait le char en visant
+       le vide. Elle se pose maintenant sur le char. */
+    /* PAS de curZmin ici. Le maillage du terrain est construit
+       RELATIVEMENT à l'altitude minimale de la carte : sa hauteur vaut
+       `norm × curMaxH`, sans décalage. L'ajouter plaçait les étiquettes
+       autant de mètres trop haut qu'il y a de dénivelé sous la carte —
+       une vingtaine sur Himmelsdorf, soit une vingtaine de pixels. Tant
+       qu'elles n'étaient qu'un nom flottant, cela ne se voyait pas ;
+       depuis qu'elles servent aussi de repère au clic, cela se paie. */
+    const y=terrainNorm(x,z)*curMaxH*exag+(h===undefined?6:h);
     const m=curMVP;
     const cw=x*m[3]+y*m[7]+(-z)*m[11]+m[15];
     if(cw<=0.0001) return null;
@@ -1585,7 +1663,10 @@ function pretty(k){ const L=LABELS[k];
        plus une fraction de la distance pour rester au-dessus des toits. */
     if(curHeights){
       const gx=tgt[0]+pan.x, gz=-(tgt[2]+pan.z);
-      const sol=curZmin+terrainNorm(gx,gz)*curMaxH;
+      /* même correction qu'aux étiquettes : le relief est relatif à zmin.
+         Le pivot flottait donc de toute l'altitude minimale au-dessus du
+         sol, et zoomer vers lui faisait passer la caméra SOUS le terrain. */
+      const sol=terrainNorm(gx,gz)*curMaxH*exag;
       tgt[1]+=((sol+rad*0.05)-tgt[1])*k*0.7;
     }
   }
@@ -1611,12 +1692,38 @@ function pretty(k){ const L=LABELS[k];
              f[2]+s[2]*nx*th*asp+u[2]*ny*th];
     return {o:e, d};
   }
+  /* ── OÙ LE CURSEUR TOUCHE LE SOL ─────────────────────────────────
+     Cette fonction coupait le rayon avec un PLAN HORIZONTAL pris à la
+     hauteur du pivot de la caméra. Tant qu'on regarde de haut et que le
+     terrain est plat, la différence ne se voit pas. Mais vue de biais,
+     l'intersection avec ce plan part à des centaines de mètres — et un
+     char qu'on saisissait pour le déplacer de trois mètres se retrouvait
+     à l'autre bout du monde, sans raison visible.
+
+     On suit donc le rayon jusqu'à ce qu'il passe SOUS le relief, puis on
+     affine par bissection. Un point hors de la carte n'est pas un point :
+     on rend null plutôt qu'une position inventée. */
   function solSousCurseur(ex,ey){
-    const {o:e,d}=rayonCurseur(ex,ey);
-    if(Math.abs(d[1])<1e-6) return null;
-    const t=(tgt[1]-e[1])/d[1];
-    if(t<0) return null;
-    return [e[0]+d[0]*t, e[2]+d[2]*t];
+    if(!curHeights) return null;
+    const {o,d}=rayonCurseur(ex,ey);
+    const L=Math.hypot(d[0],d[1],d[2])||1;
+    const u=[d[0]/L,d[1]/L,d[2]/L];
+    const dedans=(x,z)=>x>=ORIG[0]&&x<=ORIG[0]+WORLD&&z>=ORIG[1]&&z<=ORIG[1]+WORLDZ;
+    const auDessus=(t)=>{
+      const x=o[0]+u[0]*t, y=o[1]+u[1]*t, z=-(o[2]+u[2]*t);
+      return y-solY(x,z);
+    };
+    const portee=Math.max(WORLD,WORLDZ)*3;
+    const pas=Math.max(1.5,Math.max(WORLD,WORLDZ)/700);
+    let tp=0;
+    for(let t=pas;t<portee;t+=pas){
+      if(auDessus(t)>0){ tp=t; continue; }
+      let a=tp, b=t;
+      for(let k=0;k<26;k++){ const m=(a+b)/2; if(auDessus(m)>0) a=m; else b=m; }
+      const x=o[0]+u[0]*b, zr=o[2]+u[2]*b;
+      return dedans(x,-zr) ? [x,zr] : null;
+    }
+    return null;
   }
   let drag=null;
   /* Quand l'éditeur est ouvert, le clic gauche sert d'abord aux
@@ -1627,7 +1734,7 @@ function pretty(k){ const L=LABELS[k];
   cv.addEventListener("pointerdown",e=>{cv.setPointerCapture(e.pointerId);
     if(ST.ouvert&&e.button===0&&!e.shiftKey){
       const i=stSous(e.clientX,e.clientY);
-      if(i>=0){ ST.sel=i; stDrag={i,bouge:0}; stMaj(); return; }
+      if(i>=0){ ST.sel=i; stDrag={i,bouge:0,p:stPoignee}; stMaj(); return; }
     }
     drag={x:e.clientX,y:e.clientY,az:cible.az,pol:cible.pol,px:cible.px,pz:cible.pz,
           btn:e.button,shift:e.shiftKey};});
@@ -1638,7 +1745,17 @@ function pretty(k){ const L=LABELS[k];
       const el=ST.els[stDrag.i]; if(!el) return;
       /* solSousCurseur rend le repère de RENDU : le z du monde en est
          l'opposé, comme partout ailleurs dans cette page. */
-      el.x=p[0]; el.y=-p[1]; stDrag.bouge=1; stMaj();
+      /* une flèche se reprend par l'un ou l'autre de ses bouts ; tout le
+         reste n'a qu'un point */
+      if(el.type==="fleche"&&stDrag.p===1){ el.x2=p[0]; el.y2=-p[1]; }
+      else if(el.type==="fleche"){
+        /* la queue tire la flèche entière : sinon on ne peut plus la
+           déplacer sans la redessiner */
+        const dx=p[0]-el.x, dz=-p[1]-el.y;
+        el.x=p[0]; el.y=-p[1]; el.x2+=dx; el.y2+=dz;
+      }
+      else { el.x=p[0]; el.y=-p[1]; }
+      stDrag.bouge=1; stMaj();
       return;
     }
     if(!drag)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;
@@ -1662,8 +1779,20 @@ function pretty(k){ const L=LABELS[k];
       else {
         const p=solSousCurseur(e.clientX,e.clientY);
         if(p){
-          ST.els.push({type:"tank",cls:ST.outil,x:p[0],y:-p[1],name:"",camp:ST.camp,size:0.78,
-                       char:"",cap:0});
+          if(ST.outil==="fleche"){
+            /* Une flèche naît COUCHÉE DANS L'AXE DE LA CAMÉRA : c'est le
+               sens dans lequel on regarde la carte, donc celui qu'on a en
+               tête. On la reprend ensuite par ses deux bouts. */
+            const L=Math.max(30,WORLD*0.045);
+            ST.els.push({type:"fleche",x:p[0]-Math.cos(az)*L/2,y:-(p[1]-Math.sin(az)*L/2),
+              x2:p[0]+Math.cos(az)*L/2,y2:-(p[1]+Math.sin(az)*L/2),
+              name:"",camp:ST.camp});
+          } else if(ST.outil==="texte"){
+            ST.els.push({type:"texte",x:p[0],y:-p[1],name:t("Note"),camp:ST.camp});
+          } else {
+            ST.els.push({type:"tank",cls:ST.outil,x:p[0],y:-p[1],name:"",camp:ST.camp,size:0.78,
+                         char:"",cap:0,tour:0});
+          }
           ST.sel=ST.els.length-1; stMaj();
         }
       }
@@ -1986,11 +2115,25 @@ function pretty(k){ const L=LABELS[k];
     const box=$("stSelBox"), e=ST.els[ST.sel];
     box.style.display=e?"":"none";
     if(e){ $("stElNom").value=e.name||"";
-      $("stElPos").textContent="x "+Math.round(e.x)+" · z "+Math.round(e.y)+" m";
-      stRemplitChoix();
+      $("stElPos").textContent="x "+Math.round(e.x)+" · z "+Math.round(e.y)+" m"
+        +(e.type==="fleche"?" → x "+Math.round(e.x2)+" · z "+Math.round(e.y2)+" m ("
+          +Math.round(Math.hypot(e.x2-e.x,e.y2-e.y))+" m)":"");
+      /* Une flèche et une note n'ont ni char, ni cap, ni tourelle, ni
+         posture : montrer ces commandes désactivées serait du bruit. */
+      const estChar=e.type==="tank";
+      for(const id of ["stElChar","stElCap","stElTour"]) $(id).parentNode.style.display="";
+      $("stElChar").style.display=estChar?"":"none";
+      $("stElCap").parentNode.style.display=estChar?"":"none";
+      $("stElTour").parentNode.style.display=estChar?"":"none";
+      $("stElNom").placeholder=e.type==="texte"?t("Note text")
+        :e.type==="fleche"?t("Arrow label"):t("Tank name");
+      if(!estChar){ $("stHull").textContent=""; $("stHull").className="stHull"; }
+      if(estChar) stRemplitChoix();
       $("stElChar").value=e.char||"";
       $("stElCap").value=Number(e.cap)||0;
       $("stCapV").textContent=(Number(e.cap)||0)+"°";
+      $("stElTour").value=Number(e.tour)||0;
+      $("stTourV").textContent=(Number(e.tour)||0)+"°";
       /* la posture, dans l'axe où le char regarde */
       const hd=hullDown(e), b=$("stHull");
       if(!hd){ b.textContent=""; b.className="stHull"; }
@@ -2002,6 +2145,7 @@ function pretty(k){ const L=LABELS[k];
         b.className="stHull "+hd.etat;
       } }
     for(const b of $("stCls").children) b.classList.toggle("on",b.dataset.cls===ST.outil);
+    for(const b of $("stAnnot").children) b.classList.toggle("on",b.dataset.cls===ST.outil);
     $("stAmi").classList.toggle("on",ST.camp==="ami");
     $("stEnn").classList.toggle("on",ST.camp==="ennemi");
     $("stSave").style.display=ST.canEdit?"":"none";
@@ -2010,17 +2154,30 @@ function pretty(k){ const L=LABELS[k];
       ? t("Click the ground to place a tank · drag to move it · Delete removes it")
       : t("Read-only: your rank doesn't allow editing strategies.");
   }
+  /* Le nom se pose JUSTE AU-DESSUS du char : le toit de sa tourelle et
+     un mètre de dégagement. Sans modèle, on garde la hauteur du fût. */
+  function hautEtiquette(e){
+    if(e.type==="fleche") return 2.5;
+    if(e.type==="texte") return 4;
+    const m=charDe(e.char);
+    return m ? (m.bbClic[1][1]-m.bbCaisse[0][1])+1.2 : 6;
+  }
   function stLabels(){
     const c=$("stLbl");
     if(!ST.ouvert||!ST.els.length){ if(c.childElementCount) c.innerHTML=""; return; }
     while(c.childElementCount<ST.els.length) c.appendChild(Object.assign(document.createElement("div"),{className:"e"}));
     while(c.childElementCount>ST.els.length) c.removeChild(c.lastChild);
     for(let i=0;i<ST.els.length;i++){
-      const e=ST.els[i], d=c.children[i], p=versEcran(e.x,e.y);
+      const e=ST.els[i], d=c.children[i];
+      /* une flèche parle depuis son MILIEU, pas depuis sa queue */
+      const ax=e.type==="fleche"?(e.x+e.x2)/2:e.x, az=e.type==="fleche"?(e.y+e.y2)/2:e.y;
+      const p=versEcran(ax,az,hautEtiquette(e));
       if(!p){ d.style.display="none"; continue; }
+      if(e.type!=="tank"&&!e.name){ d.style.display="none"; continue; }
       const cls=(ST_CLS.find(x=>x[0]===e.cls)||ST_CLS[1])[1];
       d.style.display=""; d.style.left=p[0]+"px"; d.style.top=p[1]+"px";
       d.style.color=(e.camp==="ennemi")?"#f0a49b":"#a9e0b4";
+      d.className="e"+(e.type==="texte"?" note":"");
       let txt=(e.name||cls)+(i===ST.sel?" ●":"");
       /* Le trait dit s'il y a vue ; l'étiquette dit de combien et par
          quoi c'est coupé. Un « 312 m · bâtiment » vaut mieux qu'un trait
@@ -2070,24 +2227,46 @@ function pretty(k){ const L=LABELS[k];
     }
     return t1<0 ? null : Math.max(t0,0);
   }
+  /* Quelle POIGNÉE de l'élément i est sous le curseur : 0 par défaut,
+     1 pour la pointe d'une flèche. Rempli par stSous, lu par le glisser. */
+  let stPoignee=0;
   function stSous(ex,ey){
     const {o,d}=rayonCurseur(ex,ey);
     let best=-1, bt=Infinity;
+    stPoignee=0;
     for(let i=0;i<ST.els.length;i++){
-      const mod=charDe(ST.els[i].char); if(!mod) continue;
+      const mod=charDe(ST.els[i].char); if(!mod||ST.els[i].type!=="tank") continue;
       const t=viseBoite(o,d,boiteChar(ST.els[i],mod));
       if(t!==null&&t<bt){ bt=t; best=i; }
     }
     if(best>=0) return best;
-    /* Aucune boîte touchée. On retombe sur la distance à l'écran — pas
-       seulement pour les marqueurs sans modèle : vue de haut, une carte
-       entière tient dans l'écran et un char y fait deux pixels. Exiger
-       de le viser au pixel près le rendrait insaisissable. Le rayon
-       reste plus serré pour un char que pour un disque de six mètres. */
+    /* Les annotations se saisissent par leurs ancres, au sol : une
+       flèche par ses DEUX bouts, une note par son point. */
+    let ba=Infinity, bp=0;
+    for(let i=0;i<ST.els.length;i++){
+      const e=ST.els[i];
+      if(e.type!=="fleche"&&e.type!=="texte") continue;
+      const pts=e.type==="fleche"?[[e.x,e.y,0],[e.x2,e.y2,1]]:[[e.x,e.y,0]];
+      for(const [px,pz,h] of pts){
+        const p=versEcran(px,pz,0.7); if(!p) continue;
+        const dd=Math.hypot(p[0]-ex,p[1]-ey);
+        if(dd<18&&dd<ba){ ba=dd; best=i; bp=h; }
+      }
+    }
+    if(best>=0){ stPoignee=bp; return best; }
+    /* Aucune boîte touchée. Le repli existe parce que, vue de haut, une
+       carte entière tient dans l'écran et un char y fait deux pixels :
+       exiger de le viser au pixel près le rendrait insaisissable.
+       Mais il vise le CHAR — à mi-hauteur de sa caisse — et non plus son
+       étiquette, qui flottait six mètres au-dessus : on attrapait le
+       char en cliquant le vide, et le nom faisait office de poignée. */
     let bd=Infinity;
     for(let i=0;i<ST.els.length;i++){
-      const p=versEcran(ST.els[i].x,ST.els[i].y); if(!p) continue;
-      const lim=charDe(ST.els[i].char)?14:26;
+      const e=ST.els[i]; if(e.type!=="tank") continue;
+      const mod=charDe(e.char);
+      const p=versEcran(e.x,e.y,mod?(mod.bbClic[1][1]-mod.bbCaisse[0][1])/2:1);
+      if(!p) continue;
+      const lim=mod?10:22;
       const dd=Math.hypot(p[0]-ex,p[1]-ey);
       if(dd<lim&&dd<bd){ bd=dd; best=i; }
     }
@@ -2116,10 +2295,15 @@ function pretty(k){ const L=LABELS[k];
     if(!ST.liste.length) l.innerHTML='<div class="stVide">'+t("No strategy for this map yet.")+'</div>';
     for(const s of ST.liste){
       const b=document.createElement("button"); b.className="stItem";
-      const n=(s.steps&&s.steps[0]&&s.steps[0].els||s.elements||[]).length;
+      /* on compte les CHARS : une flèche n'en est pas un, et annoncer
+         « 9 chars » pour six chars et trois flèches serait faux */
+      const tous=(s.steps&&s.steps[0]&&s.steps[0].els||s.elements||[]);
+      const n=tous.filter(e=>e&&(!e.type||e.type==="tank")).length;
+      const nAnnot=tous.length-n;
       b.innerHTML='<b></b><small></small>';
       b.querySelector("b").textContent=s.name;
-      b.querySelector("small").textContent=n+" "+t("tanks")+" · "+(s.created_by_name||"—");
+      b.querySelector("small").textContent=n+" "+t("tanks")
+        +(nAnnot?" · "+nAnnot+" "+t("notes"):"")+" · "+(s.created_by_name||"—");
       b.addEventListener("click",()=>stOuvre(s));
       l.appendChild(b);
     }
@@ -2138,10 +2322,14 @@ function pretty(k){ const L=LABELS[k];
     /* on ne garde que les chars : c'est tout ce que cette première
        version pose, et accepter le reste afficherait des objets qu'on ne
        sait pas dessiner */
-    ST.els=els.filter(e=>e&&e.type==="tank").map(e=>({type:"tank",cls:e.cls||"medium",
-      x:Number(e.x)||0, y:Number(e.y)||0, name:e.name||"",
-      camp:(e.color==="#e5544b")?"ennemi":"ami", color:e.color||"#4ea36a", size:e.size||0.78,
-      char:typeof e.char==="string"?e.char:"", cap:Number(e.cap)||0}));
+    ST.els=els.filter(e=>e&&(e.type==="tank"||e.type==="fleche"||e.type==="texte")).map(e=>{
+      const base={type:e.type, x:Number(e.x)||0, y:Number(e.y)||0, name:e.name||"",
+        camp:(e.color==="#e5544b")?"ennemi":"ami", color:e.color||"#4ea36a"};
+      if(e.type==="fleche") return Object.assign(base,{x2:Number(e.x2)||0, y2:Number(e.y2)||0});
+      if(e.type==="texte") return base;
+      return Object.assign(base,{cls:e.cls||"medium", size:e.size||0.78,
+        char:typeof e.char==="string"?e.char:"", cap:Number(e.cap)||0, tour:Number(e.tour)||0});
+    });
     ST.sel=-1;
     $("stNom").value=ST.nom;
     $("stListe").style.display="none"; $("stEdit").style.display="";
@@ -2155,11 +2343,16 @@ function pretty(k){ const L=LABELS[k];
   async function stEnregistre(){
     if(!ST.canEdit) return;
     const nom=($("stNom").value||"").trim()||t("Strategy");
-    const els=ST.els.map(e=>({type:"tank",cls:e.cls,x:Math.round(e.x),y:Math.round(e.y),
-      name:e.name||"", size:e.size||0.78, color:(e.camp==="ennemi")?"#e5544b":"#4ea36a",
-      /* le modèle et son cap : la stratégie ne dit pas seulement OÙ, elle
-         dit quel char et vers où il regarde */
-      char:e.char||"", cap:Number(e.cap)||0}));
+    const els=ST.els.map(e=>{
+      const base={type:e.type||"tank", x:Math.round(e.x), y:Math.round(e.y),
+        name:e.name||"", color:(e.camp==="ennemi")?"#e5544b":"#4ea36a"};
+      if(e.type==="fleche") return Object.assign(base,{x2:Math.round(e.x2),y2:Math.round(e.y2)});
+      if(e.type==="texte") return base;
+      /* le modèle, son cap et sa tourelle : la stratégie ne dit pas
+         seulement OÙ, elle dit quel char, d'où il vient et où il regarde */
+      return Object.assign(base,{cls:e.cls, size:e.size||0.78,
+        char:e.char||"", cap:Number(e.cap)||0, tour:Number(e.tour)||0});
+    });
     const b=$("stSave"); b.disabled=true; b.textContent=t("Saving…");
     const r=await stApi({action:"save",strategy:{id:ST.id,name:nom,map:curKey,mode:curMode||"ctf",
       steps:[{els,note:"",t:null}],elements:els,editors:[]}});
@@ -2188,6 +2381,14 @@ function pretty(k){ const L=LABELS[k];
       b.addEventListener("click",()=>{ ST.outil=k; stMaj(); });
       cls.appendChild(b);
     }
+    /* Les deux outils d'ANNOTATION, à part des classes de char : ce ne
+       sont pas des chars, et c'est par eux qu'une stratégie se raconte —
+       où l'on va, et pourquoi. */
+    for(const [k,nom] of [["fleche","Arrow"],["texte","Note"]]){
+      const b=document.createElement("button"); b.className="btn stAnnot"; b.dataset.cls=k; b.textContent=t(nom);
+      b.addEventListener("click",()=>{ ST.outil=k; stMaj(); });
+      $("stAnnot").appendChild(b);
+    }
     $("stVue").addEventListener("click",()=>{ montreVue^=1; stMaj(); stLabels(); });
     $("stChamp").addEventListener("click",()=>{ montreChamp^=1; stMaj(); });
     $("stAmi").addEventListener("click",()=>{ ST.camp="ami"; stMaj(); });
@@ -2207,6 +2408,16 @@ function pretty(k){ const L=LABELS[k];
       const el=ST.els[ST.sel]; if(!el) return;
       el.cap=Number(e.target.value)||0;
       $("stCapV").textContent=el.cap+"°";
+      /* le cap change le secteur mort du canon et la crête regardée :
+         la nappe et la posture doivent suivre */
+      buildChars(); buildChamp(); stMaj();
+    });
+    /* La tourelle tourne À PART du châssis : c'est elle qui dit où le
+       char REGARDE, quand le châssis dit d'où il vient. */
+    $("stElTour").addEventListener("input",e=>{
+      const el=ST.els[ST.sel]; if(!el) return;
+      el.tour=Number(e.target.value)||0;
+      $("stTourV").textContent=el.tour+"°";
       buildChars();
     });
     $("stSave").addEventListener("click",stEnregistre);
@@ -2237,7 +2448,7 @@ function pretty(k){ const L=LABELS[k];
       carteOcclusion,hauteurOcc,
       vue:v=>{ montreVue=v?1:0; }, champ:v=>{ montreChamp=v?1:0; },
       champInfo:()=>({n:champN,tir:champNTir,taux:champStat}), solY,
-      hullDown,interpole,yawRelatif,
+      hullDown,interpole,yawRelatif,solSousCurseur,hautEtiquette,poignee:()=>stPoignee,
       etatChars:()=>charsEtat,lots:()=>charsLots,solLots:()=>stLots,
       vueLots:()=>vueLots,biblio:()=>CHARS,jeux:()=>JEUX,boites:prepareBoites};
     document.addEventListener("keydown",e=>{
@@ -2424,7 +2635,14 @@ function pretty(k){ const L=LABELS[k];
           for(const L of stLots){
             gl.uniform1f(luVoile,L.voile); gl.uniform1f(luHaut,L.haut);
             gl.uniform4f(luCoul,L.coul[0],L.coul[1],L.coul[2],L.alpha);
+            /* Les ANNOTATIONS ignorent la profondeur. Une flèche posée
+               dans une rue d'Himmelsdorf disparaissait derrière les
+               immeubles qui la bordent — or c'est le trajet qu'elle
+               montre, pas un objet du décor. Les marqueurs et les chars,
+               eux, restent dans la scène et se font masquer normalement. */
+            if(L.sansProf) gl.disable(gl.DEPTH_TEST);
             gl.drawArrays(L.mode,L.d,L.n);
+            if(L.sansProf) gl.enable(gl.DEPTH_TEST);
           }
           gl.uniform1f(luHaut,LIM_HAUT);
         }
