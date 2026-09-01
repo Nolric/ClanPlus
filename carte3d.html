@@ -264,6 +264,51 @@
     align-items:center;padding:6px 8px;flex-wrap:wrap;max-width:min(94vw,860px);
     justify-content:center;z-index:6}
   body.editeur #hud{left:50%}
+  /* ══ LA VUE SUBJECTIVE ═══════════════════════════════════════════
+     Tout l'appareillage d'édition s'efface : on est venu voir ce que
+     voit un char, et un panneau devant les yeux ruine exactement ce
+     qu'on est venu chercher. Ne restent que la minimap — pour savoir
+     où l'on est — les étiquettes des autres chars, et cette barre. */
+  #oeilBar{display:none}
+  body.vueOeil #oeilBar{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);
+    display:flex;gap:14px;align-items:center;padding:8px 10px 8px 14px;z-index:9;
+    max-width:min(94vw,760px);flex-wrap:wrap;justify-content:center}
+  body.vueOeil #rail,body.vueOeil #insp,body.vueOeil #hud,body.vueOeil #leg,
+  body.vueOeil #barreEd,body.vueOeil #hint,body.vueOeil #strat{display:none!important}
+  body.editeur.vueOeil #vue{inset:0}
+  .obBloc{display:flex;flex-direction:column;gap:1px;min-width:0}
+  .obEt{font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--muted2);
+    font-family:var(--d-mono)}
+  #oeilBar b{font-size:13px;color:var(--ink);font-weight:600;white-space:nowrap;
+    overflow:hidden;text-overflow:ellipsis;max-width:190px}
+  .obV{font-size:13px;color:var(--gold);font-family:var(--d-mono);
+    font-variant-numeric:tabular-nums;white-space:nowrap}
+  .obRang{display:flex;gap:4px;align-items:center}
+  #obVers{font-size:12px;padding:3px 22px 3px 7px;max-width:200px}
+  #obFace{padding:3px 8px;font-size:13px;line-height:1.15}
+  #obCmp{padding:6px 10px;font-size:13px;line-height:1.15}
+  #obSort{padding:6px 12px;font-size:11.5px}
+  /* La moitié figée. Le trait d'or au milieu sépare les deux prises de
+     vue : sans lui on croit voir une seule image mal raccordée. */
+  #cmpG{display:none}
+  body.vueOeil.compare #cmpG{display:block;position:absolute;left:0;top:0;bottom:0;width:50%;
+    z-index:4;background:#000;border-right:1px solid var(--gold);overflow:hidden}
+  body.editeur.vueOeil.compare #vue{inset:0 0 0 50%}
+  #cmpG img{width:100%;height:100%;object-fit:cover;display:block}
+  .cmpNom{position:absolute;left:10px;top:10px;font-size:11.5px;font-family:var(--d-mono);
+    color:var(--gold);background:rgba(13,14,17,.78);border:1px solid var(--line);
+    border-radius:var(--r);padding:3px 8px}
+  body.vueOeil.compare #oeilBar{left:auto;right:12px;transform:none;max-width:min(48vw,520px)}
+  body.vueOeil.compare #mini{display:none}
+  /* Le viseur : deux traits fins au centre. Sans repère central on ne
+     sait pas ce que l'on vise, et la mesure d'exposition porte
+     justement sur ce point-là. */
+  body.vueOeil #vue::after{content:"";position:absolute;left:50%;top:50%;width:22px;height:22px;
+    margin:-11px 0 0 -11px;pointer-events:none;z-index:5;
+    background:
+      linear-gradient(var(--gold),var(--gold)) center/1px 100% no-repeat,
+      linear-gradient(var(--gold),var(--gold)) center/100% 1px no-repeat;
+    opacity:.42}
   #hud .grp{display:flex;align-items:center;gap:6px}
   #hud .btn{padding:6px 10px;font-size:11.5px}
   #hud select{font-size:11.5px;padding:6px 24px 6px 9px}
@@ -532,9 +577,14 @@
             <div class="stHull" id="stHull"></div></div>
         </div>
         <div id="propVide" class="stVide"></div>
+        <div class="champ" id="chParcours" style="display:none">
+          <label id="lbParcours">Analysis</label>
+          <div class="stRow"><button class="btn" id="stParcours">Drive this route</button></div>
+        </div>
         <div class="champ" id="chAnalyse" style="display:none">
           <label id="lbAnalyse">Analysis</label>
           <div class="stRow">
+            <button class="btn" id="stOeil">Tank's eye</button>
             <button class="btn" id="stVue">Line of sight</button>
             <button class="btn" id="stChamp">Field of view</button>
           </div>
@@ -591,6 +641,34 @@
     <div class="pickChips" id="pickChips"></div>
     <div class="pickListe" id="pickListe"></div>
   </div>
+  <!-- LA BARRE DE LA VUE SUBJECTIVE. Elle ne s'affiche qu'à l'œil du
+       char, et remplace les panneaux d'édition : on est venu regarder,
+       pas éditer. -->
+  <div id="oeilBar" class="glass">
+    <div class="obBloc">
+      <span class="obEt" id="obEt">Tank's eye</span>
+      <b id="obNom"></b>
+    </div>
+    <div class="obBloc" id="obVersBloc">
+      <span class="obEt" id="obVersEt">Look at</span>
+      <div class="obRang">
+        <select id="obVers"></select>
+        <button class="btn" id="obFace" title="Opposite view">⇄</button>
+      </div>
+    </div>
+    <div class="obBloc" id="obExpoBloc">
+      <span class="obEt" id="obExpoEt">Exposure</span>
+      <span id="obExpo" class="obV">—</span>
+    </div>
+    <div class="obBloc">
+      <span class="obEt" id="obFovEt">Field</span>
+      <span id="obFov" class="obV">—</span>
+    </div>
+    <button class="btn" id="obCmp" title="Compare with another position">⧉</button>
+    <button class="btn" id="obSort">Leave</button>
+  </div>
+  <!-- LA MOITIÉ FIGÉE, quand on compare deux positions. -->
+  <div id="cmpG"><img id="cmpImg" alt=""><span class="cmpNom" id="cmpNom"></span></div>
   <div id="stLbl"></div>
   <div id="stMsg" class="glass"></div>
   <div id="mini" class="glass"><div class="lg" id="miniT">Minimap</div><img id="miniImg" alt=""><div class="n">N ↑</div></div>
@@ -1237,6 +1315,9 @@ function pretty(k){ const L=LABELS[k];
     for(let i=0;i<ST.els.length;i++){
       const e=ST.els[i];
       if(e.masque||e.type!=="fleche") continue;
+      /* La flèche qu’on est en train de PARCOURIR ne se dessine pas :
+         on part de son origine, et son ruban vert bouchait l’écran. */
+      if(oeil&&e===oeil.el) continue;
       const sel=(i===ST.sel);
       const coul=(e.camp==="ennemi")?ST_COUL.ennemi:ST_COUL.ami;
       const dx=e.x2-e.x, dz=e.y2-e.y, L=Math.hypot(dx,dz)||1;
@@ -1379,6 +1460,12 @@ function pretty(k){ const L=LABELS[k];
     for(let i=0;i<ST.els.length;i++){
       const el=ST.els[i], mod=charDe(el.char);
       if(!mod||el.masque) continue;
+      /* Le char dans lequel on est ne se dessine pas. L'œil est posé sur
+         le toit de sa tourelle : rendu, il remplissait la moitié basse
+         de l'écran d'une masse verte, et l'on ne voyait plus le terrain
+         qu'on était venu regarder. Un commandant ne voit pas son
+         propre blindage depuis sa coupole. */
+      if(oeil&&el===oeil.el) continue;
       const base=terrainNorm(el.x,el.y);
       const cap=(Number(el.cap)||0)*Math.PI/180;
       const tour=cap+(Number(el.tour)||0)*Math.PI/180;
@@ -2024,6 +2111,274 @@ function pretty(k){ const L=LABELS[k];
      qu à rattraper une échelle inventée. */
   const exag=1;
   let WORLD=1100, az=Math.PI/2, pol=0.72, rad=1250, tgt=[0,60,0], useTex=1, wire=0, pan={x:0,z:0};
+  /* ══ LA VUE SUBJECTIVE ═════════════════════════════════════════════
+     Se mettre à la place du char. C'est la seule chose qu'une minimap
+     ne pourra jamais faire, et c'est ce qui répond en trois secondes à
+     la question qu'on met dix minutes à raisonner sur une carte plate :
+     « qu'est-ce que je vois d'ici ? »
+
+     ── Comment, sans réécrire la caméra ─────────────────────────────
+     La caméra du site est ORBITALE : l'œil se déduit d'un pivot, d'un
+     azimut, d'une pente et d'un rayon. Une vue subjective, c'est
+     l'inverse — l'œil est fixe et c'est le regard qui tourne.
+
+     Plutôt que d'écrire une seconde caméra qu'il faudrait tenir à jour
+     en double, on garde CELLE-LÀ et on renverse le calcul : à chaque
+     image, on place le pivot là où il faut pour que l'œil tombe
+     exactement sur le point voulu. Tout ce qui existe — l'amortissement,
+     le glisser pour tourner, la projection, les étiquettes — continue de
+     marcher sans le savoir.
+
+     `oeil` vaut null en vue normale, sinon { pos, el, cible, retour }. */
+  let oeil=null;
+  /* Le champ de vision, en radians. Il était écrit en dur à deux
+     endroits, et l'un des deux servait à savoir quel char est sous le
+     curseur : les faire diverger aurait décalé le clic sans qu'on
+     comprenne pourquoi. Une seule source, et la molette peut la régler
+     en vue subjective — resserrer le champ, c'est la lunette du jeu. */
+  const FOV_LARGE=0.86, FOV_SERRE=0.22;
+  let FOV=FOV_LARGE;
+  /* La pente du regard ne se borne pas pareil selon la vue. En orbite on
+     ne passe ni sous le sol ni à la verticale ; à l'œil du char il faut
+     pouvoir lever la tête vers une crête et la baisser vers le pied du
+     talus. */
+  const POL_MIN=()=>oeil?-0.50:0.12, POL_MAX=()=>oeil?0.60:1.45;
+
+  /* Le cap d'un char, converti en azimut de caméra.
+     Le char regarde vers (sin cap, cos cap) dans le MONDE ; la caméra
+     regarde vers (−cos az, −sin az) dans le repère de RENDU, dont le z
+     est l'opposé de celui du monde. Égaler les deux donne cette
+     arctangente. Contrôle sur les deux caps évidents : cap 0 — plein
+     nord — rend az = π/2, et cap 90 rend az = π. */
+  const capVersAz=(cap)=>{ const c=(Number(cap)||0)*Math.PI/180;
+    return Math.atan2(Math.cos(c),-Math.sin(c)); };
+
+  /* Pointer le regard vers un point du monde, depuis l'œil courant. */
+  function viseVers(p){
+    if(!oeil) return;
+    const dx=p[0]-oeil.pos[0], dy=p[1]-oeil.pos[1], dz=p[2]-oeil.pos[2];
+    const h=Math.hypot(dx,dz)||1e-6;
+    az=cible.az=Math.atan2(dz,-dx);
+    pol=cible.pol=clamp(Math.atan2(-dy,h),POL_MIN(),POL_MAX());
+  }
+
+  /* Entrer à l'œil d'un char. `retour` garde la caméra d'avant : on
+     revient exactement d'où l'on venait, sinon la sortie désoriente
+     autant que l'entrée renseignait. */
+  function entreOeil(el,retour){
+    if(!el) return;
+    const av=retour||(oeil?oeil.retour:{az:cible.az,pol:cible.pol,rad:cible.rad,
+                                        px:cible.px,pz:cible.pz,tgt:tgt.slice()});
+    oeil={el, pos:oeilDe(el), vers:null, retour:av};
+    /* Le rayon ne se voit plus, mais il règle encore le plan de coupe et
+       la finesse retenue pour le bâti : on le fixe à un cadrage
+       rapproché plutôt que de le laisser à la valeur d'avant. */
+    rad=cible.rad=60;
+    pan.x=pan.z=cible.px=cible.pz=0;
+    az=cible.az=capVersAz(el.cap);
+    pol=cible.pol=0.02;
+    FOV=FOV_LARGE;
+    document.body.classList.add("vueOeil");
+    /* Le viewport reprend toute la page : la barre du haut s’efface,
+       et sans ce recalcul le canevas garderait sa taille d’avant — la
+       projection serait étirée de quarante-huit pixels. */
+    requestAnimationFrame(resize);
+    /* Le char qu’on quitte des yeux doit sortir du tampon : la
+       géométrie a été bâtie avant qu’on entre, et sans reconstruction il
+       restait dessiné — une masse verte sur la moitié basse de l’écran. */
+    buildChars(); buildStrat();
+    majOeil();
+    stDit(t("Drag to look around · Scroll to zoom in · Esc to leave"));
+  }
+  function sortOeil(){
+    if(!oeil) return;
+    const r=oeil.retour;
+    oeil=null; voyage=null; compare=null; FOV=FOV_LARGE;
+    document.body.classList.remove("compare");
+    document.body.classList.remove("vueOeil");
+    requestAnimationFrame(resize);
+    buildChars(); buildStrat();
+    if(r){
+      tgt=r.tgt.slice();
+      cible.az=r.az; cible.rad=r.rad; cible.px=r.px; cible.pz=r.pz;
+      cible.pol=r.pol; pol=clamp(pol,POL_MIN(),POL_MAX());
+    }
+    majOeil();
+  }
+
+  /* ── CE QUE J'EXPOSE ──────────────────────────────────────────────
+     Depuis un œil, quelle part de la hauteur d'un char se voit ?
+
+     On ne rastérise pas la silhouette : ce serait cher et le résultat
+     dépendrait de la finesse du maillage. On échantillonne la VERTICALE
+     du char, du bas de caisse au haut de tourelle, et l'on regarde
+     jusqu'où la vue passe. C'est exactement la lecture qui intéresse un
+     stratège — la caisse est-elle couverte, la tourelle passe-t-elle —
+     et c'est la même mesure que le hull-down, prise depuis l'ennemi au
+     lieu de la crête.
+
+     Le chiffre rendu est donc une part de HAUTEUR, pas de surface, et
+     l'interface le dit. */
+  const N_EXPO=24;
+  function expositionDepuis(A,elCible){
+    const mod=charDe(elCible.char);
+    const sol=solY(elCible.x,elCible.y);
+    const bas=mod?mod.bbCaisse[0][1]:0, haut=mod?mod.bbClic[1][1]:2.0;
+    const H=Math.max(0.5,haut-bas);
+    let vus=0, premier=-1;
+    for(let i=0;i<N_EXPO;i++){
+      const f=(i+0.5)/N_EXPO;
+      const B=[elCible.x, sol+f*H, elCible.y];
+      if(!bloqueRelief(A,B)&&!bloqueBati(A,B)){ vus++; if(premier<0) premier=f; }
+    }
+    return {frac:vus/N_EXPO, hauteur:H,
+            /* la hauteur au-dessus du sol à partir de laquelle on est vu */
+            coupe: premier<0?null:+(premier*H).toFixed(1),
+            etat: vus===0?"masque" : vus===N_EXPO?"entier" : "partiel"};
+  }
+
+  /* ── LA BARRE DE LA VUE SUBJECTIVE ──────────────────────────────── */
+  const echapHtml=(s)=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  function nomMarqueur(el,i){
+    const mod=charDe(el.char);
+    return (el.name&&el.name.trim()) || (mod&&mod.nom) || (t("Tank")+" "+(i+1));
+  }
+  function majOeil(){
+    const b=document.getElementById("stOeil");
+    if(b) b.classList.toggle("on",!!oeil);
+    if(!oeil) return;
+    const $o=(id)=>document.getElementById(id);
+    $o("obNom").textContent=nomMarqueur(oeil.el,ST.els.indexOf(oeil.el));
+    /* Les autres chars, le camp OPPOSÉ en tête : c'est lui qu'on vient
+       regarder neuf fois sur dix. */
+    const autres=ST.els.map((e,i)=>({e,i}))
+      .filter(o=>o.e!==oeil.el&&o.e.type==="tank");
+    autres.sort((a,c)=>(a.e.camp===oeil.el.camp?1:0)-(c.e.camp===oeil.el.camp?1:0));
+    const cour=oeil.vers?ST.els.indexOf(oeil.vers):-1;
+    $o("obVers").innerHTML='<option value="-1">'+echapHtml(t("Free look"))+'</option>'+
+      autres.map(o=>'<option value="'+o.i+'"'+(o.i===cour?' selected':'')+'>'+
+        (o.e.camp===oeil.el.camp?"○ ":"● ")+echapHtml(nomMarqueur(o.e,o.i))+'</option>').join("");
+    $o("obFace").disabled=!oeil.vers;
+    /* En voyage il n’y a ni cible à viser ni position à comparer : le
+       bloc de visée s’efface et la mesure devient un compteur de
+       mètres parcourus. */
+    $o("obVersBloc").style.display=voyage?"none":"";
+    $o("obCmp").style.display=voyage?"none":"";
+    $o("obExpoEt").textContent=voyage?t("Progress"):t("Exposure");
+    $o("obEt").textContent=voyage?t("Route"):t("Tank's eye");
+    $o("obFov").textContent="×"+(FOV_LARGE/FOV).toFixed(1);
+    if(voyage) return;
+    /* L'exposition : ce que je vois de la cible, en part de sa HAUTEUR.
+       Le mot compte — ce n'est pas une part de surface, et l'annoncer
+       comme telle serait plus faux qu'utile. */
+    const ex=$o("obExpo");
+    if(!oeil.vers){ ex.textContent="—"; ex.style.color=""; }
+    else{
+      const r=expositionDepuis(oeil.pos,oeil.vers);
+      const pc=Math.round(r.frac*100);
+      ex.textContent = r.etat==="masque" ? t("hidden")
+        : pc+" % "+t("of its height")+(r.coupe!==null&&r.etat==="partiel"?"  ·  "+t("from")+" "+r.coupe+" m":"");
+      ex.style.color = r.etat==="masque" ? "var(--ami)"
+        : r.etat==="entier" ? "var(--enn)" : "var(--gold)";
+    }
+  }
+  /* ── COMPARER DEUX POSITIONS ──────────────────────────────────────
+     « On se poste sur la crête, ou derrière le rocher ? » La réponse
+     est une comparaison d'images, et on ne compare pas de mémoire.
+
+     Plutôt que de dessiner la scène deux fois — ce qui obligerait à
+     paramétrer toute la boucle de rendu et à la payer double —, on
+     RÉTRÉCIT le viewport à la moitié droite, on fige une image de la
+     première position dans la moitié gauche, puis on va voir la
+     seconde. Les deux moitiés ont alors exactement le même cadrage,
+     puisque la capture est prise APRÈS le rétrécissement.
+
+     Le figé n'est pas une approximation : c'est le rendu lui-même. */
+  let demandeCapture=null, compare=null;
+  function basculeCompare(){
+    if(!oeil) return;
+    if(compare){ compare=null; document.body.classList.remove("compare");
+      requestAnimationFrame(resize); majOeil(); return; }
+    document.body.classList.add("compare");
+    /* Deux images d'attente : la première pour que le canevas soit
+       redimensionné, la seconde pour qu'il ait été redessiné à sa
+       nouvelle taille. Capturer trop tôt fige l'ancien cadrage. */
+    resize();
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      const nom=nomMarqueur(oeil.el,ST.els.indexOf(oeil.el));
+      demandeCapture=(url)=>{
+        if(!url){ document.body.classList.remove("compare"); requestAnimationFrame(resize); return; }
+        compare={img:url,nom};
+        document.getElementById("cmpImg").src=url;
+        document.getElementById("cmpNom").textContent=nom;
+        majOeil();
+      };
+    }));
+  }
+
+  /* ── LE VOYAGE DE CAMÉRA ──────────────────────────────────────────
+     Une position se juge sur un point ; un TRAJET se juge en le
+     parcourant. On suit une flèche au ras du sol, à la hauteur d'une
+     tourelle et à l'allure d'un char : c'est là qu'apparaissent les
+     angles morts et les instants d'exposition, que ni la carte vue de
+     haut ni aucun point fixe ne montrent.
+
+     La vitesse n'est pas décorative : à douze mètres par seconde —
+     l'allure de croisière d'un moyen — la durée du trajet est celle
+     qu'il prendra vraiment, et l'on voit ce qu'on verra quand. */
+  const VITESSE_VOYAGE=12;
+  let voyage=null;
+  function lanceVoyage(el){
+    if(!el||el.type!=="fleche") return;
+    const L=Math.hypot(el.x2-el.x,el.y2-el.y);
+    if(L<2) return;
+    /* La hauteur d'œil : celle du char sélectionné s'il y en a un,
+       sinon les deux mètres que `oeilDe` prend déjà par défaut. */
+    const s=ST.els[ST.sel], mod=s&&s.type==="tank"?charDe(s.char):null;
+    const h=mod?(mod.bbClic[1][1]-mod.bbCaisse[0][1]):2.0;
+    entreOeil(el);
+    voyage={a:[el.x,el.y], b:[el.x2,el.y2], h, L, duree:L/VITESSE_VOYAGE*1000, t0:null};
+    /* On repart du sol : `entreOeil` a placé l’œil à la hauteur d’une
+       tourelle de char, or on suit ici un trajet, pas un marqueur. */
+    oeil.pos=[el.x, solY(el.x,el.y)+h, el.y];
+    /* Et l’on regarde déjà dans la bonne direction. Sans cela la vue
+       part au cap zéro et passe la première seconde à pivoter, ce qui
+       est exactement le moment où il y aurait quelque chose à voir. */
+    az=cible.az=Math.atan2(el.y2-el.y,-(el.x2-el.x));
+    pol=cible.pol=0.02;
+    majOeil();
+  }
+  /* Appelée par la boucle de rendu, avant l'amortissement. */
+  function avanceVoyage(tms){
+    if(!voyage||!oeil) return;
+    if(voyage.t0===null) voyage.t0=tms;
+    const u=Math.min(1,(tms-voyage.t0)/voyage.duree);
+    const x=voyage.a[0]+(voyage.b[0]-voyage.a[0])*u;
+    const z=voyage.a[1]+(voyage.b[1]-voyage.a[1])*u;
+    oeil.pos=[x,solY(x,z)+voyage.h,z];
+    /* Le regard suit la marche — mais par la CIBLE, pas par l'angle :
+       l'amortissement de la caméra fait le reste, et le virage se lit
+       au lieu de claquer. */
+    cible.az=Math.atan2(voyage.b[1]-voyage.a[1],-(voyage.b[0]-voyage.a[0]));
+    const el=document.getElementById("obExpo");
+    if(el) el.textContent=Math.round(u*voyage.L)+" / "+Math.round(voyage.L)+" m";
+    /* À l’arrivée, on ne coupe pas : on RESTE sur place, œil posé au
+       bout du trajet. C’est le moment où l’on veut regarder autour de
+       soi, et la barre reprend donc ses commandes de visée. */
+    if(u>=1){ voyage=null; majOeil(); }
+  }
+
+  /* Passer de l'autre côté : on va à l'œil de la cible, et l'on se
+     retourne vers soi. C'est le geste qui transforme le hull-down d'un
+     verdict écrit en une image — on voit ce que l'on expose. */
+  function vueDEnFace(){
+    if(!oeil||!oeil.vers) return;
+    const moi=oeil.el, lui=oeil.vers, ret=oeil.retour;
+    entreOeil(lui,ret);
+    oeil.vers=moi;
+    viseVers(oeilDe(moi));
+    majOeil();
+  }
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   /* La distance minimale valait 6 % de la carte, soit 66 m sur
      Himmelsdorf : on ne pouvait pas descendre dans une rue. Le pivot
@@ -2075,6 +2430,19 @@ function pretty(k){ const L=LABELS[k];
     rad+=(cible.rad-rad)*k;
     pan.x+=(cible.px-pan.x)*k;
     pan.z+=(cible.pz-pan.z)*k;
+    /* ── L'ŒIL ÉPINGLÉ ────────────────────────────────────────────
+       En vue subjective, on ne choisit plus où la caméra REGARDE : on
+       choisit où elle EST. Le pivot se déduit donc de l'œil voulu, en
+       renversant `eye()`. Et le pivot ne suit surtout pas le sol —
+       il est maintenant derrière la caméra, souvent sous le terrain,
+       et l'y recaler ferait dériver la vue vers le ciel. */
+    if(oeil){
+      const ce=Math.cos(pol)*rad;
+      tgt[0]=oeil.pos[0]-pan.x-Math.cos(az)*ce;
+      tgt[1]=oeil.pos[1]-Math.sin(pol)*rad;
+      tgt[2]=(-oeil.pos[2])-pan.z-Math.sin(az)*ce;
+      return;
+    }
     /* LE PIVOT SUIT LE SOL. Il restait à une altitude fixe, celle du
        cadrage initial : en se déplaçant vers la colline du château on
        finissait par tourner autour d'un point enfoui, et la vue partait
@@ -2105,7 +2473,7 @@ function pretty(k){ const L=LABELS[k];
     const s=[f[1]*up[2]-f[2]*up[1], f[2]*up[0]-f[0]*up[2], f[0]*up[1]-f[1]*up[0]];
     const sl=Math.hypot(s[0],s[1],s[2]); for(let k=0;k<3;k++) s[k]/=sl;
     const u=[s[1]*f[2]-s[2]*f[1], s[2]*f[0]-s[0]*f[2], s[0]*f[1]-s[1]*f[0]];
-    const th=Math.tan(0.86/2), asp=cv.width/cv.height;
+    const th=Math.tan(FOV/2), asp=cv.width/cv.height;
     const d=[f[0]+s[0]*nx*th*asp+u[0]*ny*th,
              f[1]+s[1]*nx*th*asp+u[1]*ny*th,
              f[2]+s[2]*nx*th*asp+u[2]*ny*th];
@@ -2214,7 +2582,7 @@ function pretty(k){ const L=LABELS[k];
     if(drag.btn===2||drag.btn===1||drag.shift){
       const s=cible.rad/900,rx=-Math.sin(az),rz=Math.cos(az),fx=-Math.cos(az),fz=-Math.sin(az);
       cible.px=drag.px+(-dx*rx+dy*fx)*s; cible.pz=drag.pz+(-dx*rz+dy*fz)*s;}
-    else{cible.az=drag.az-dx*0.008;cible.pol=clamp(drag.pol-dy*0.008,0.12,1.45);}});
+    else{cible.az=drag.az-dx*0.008;cible.pol=clamp(drag.pol-dy*0.008,POL_MIN(),POL_MAX());}});
   cv.addEventListener("pointerup",e=>{
     /* Un clic gauche qui n'a NI saisi un marqueur NI tourné la caméra :
        c'est une demande de poser un char là. On distingue le clic du
@@ -2262,12 +2630,22 @@ function pretty(k){ const L=LABELS[k];
      rendre quelque part — on désigne, la caméra s'y rend en glissant,
      au lieu de tourner puis déplacer puis zoomer. */
   cv.addEventListener("dblclick",e=>{
+    if(oeil) return;                 /* l'œil du char ne se déplace pas */
     const p=solSousCurseur(e.clientX,e.clientY); if(!p) return;
     cible.px=p[0]-tgt[0]; cible.pz=p[1]-tgt[2];
     cible.rad=clamp(cible.rad*0.55,RMIN(),WORLD*2.4);
   });
   cv.addEventListener("contextmenu",e=>e.preventDefault());
   cv.addEventListener("wheel",e=>{e.preventDefault();
+    /* À l'œil du char, la molette ne recule pas : elle RESSERRE LE
+       CHAMP, comme la lunette du jeu. C'est le geste qui répond à
+       « est-ce que je vois vraiment ce coin de mur d'ici ? ». */
+    if(oeil){
+      const d=Math.max(-3,Math.min(3,(e.deltaMode===1?e.deltaY*16:e.deltaY)/100));
+      FOV=clamp(FOV*Math.pow(1.14,d),FOV_SERRE,FOV_LARGE);
+      majOeil();
+      return;
+    }
     const avant=solSousCurseur(e.clientX,e.clientY);
     /* Le zoom suit l'AMPLEUR du geste. Un pas fixe convient à une
        molette crantée et hache le pavé tactile, qui envoie de tout
@@ -2321,7 +2699,10 @@ function pretty(k){ const L=LABELS[k];
     const vite=(k.majuscule?3:k.precis?0.3:1)*dt*60;
     const av=(k.KeyW||k.ArrowUp?1:0)-(k.KeyS||k.ArrowDown?1:0);
     const la=(k.KeyD||k.ArrowRight?1:0)-(k.KeyA||k.ArrowLeft?1:0);
-    if(av||la){
+    /* À l'œil du char, on ne se déplace pas : un char posé est posé. On
+       tourne la tête, c'est tout. Laisser ZQSD glisser la caméra
+       donnerait une vue qui n'est plus celle de personne. */
+    if((av||la)&&!oeil){
       /* La vitesse suit la distance : au mètre de près, à la carte de
          loin. Le facteur est CALIBRÉ, pas choisi : une seconde d'appui
          doit couvrir environ le tiers de ce qu'on a sous les yeux —
@@ -2350,7 +2731,7 @@ function pretty(k){ const L=LABELS[k];
        fait qu'un radian et demi — au pas d'avant on la traversait en une
        seconde et demie et l'on butait dans les bornes sans le vouloir. */
     const pente=(k.KeyR||k.PageUp?1:0)-(k.KeyF||k.PageDown?1:0);
-    if(pente) cible.pol=clamp(cible.pol+pente*0.009*vite,0.12,1.45);
+    if(pente) cible.pol=clamp(cible.pol+pente*0.009*vite,POL_MIN(),POL_MAX());
     const p=dt*60;
     if(k.Equal||k.NumpadAdd) cible.rad=clamp(cible.rad*Math.pow(0.97,p),RMIN(),WORLD*2.4);
     if(k.Minus||k.NumpadSubtract) cible.rad=clamp(cible.rad*Math.pow(1.03,p),RMIN(),WORLD*2.4);
@@ -2671,6 +3052,13 @@ function pretty(k){ const L=LABELS[k];
     $("stVue").classList.toggle("on",!!montreVue);
     $("stChamp").classList.toggle("on",!!montreChamp);
     $("stChampV").textContent=montreChamp?champStat:"";
+    /* La vue subjective ne survit pas à son sujet : le char peut avoir
+       été supprimé, ou la stratégie fermée sous nos pieds. Sans ce
+       garde-fou, la caméra restait épinglée à un point qui n'appartient
+       plus à personne, sans aucun moyen d'en sortir. */
+    if(oeil&&!voyage&&ST.els.indexOf(oeil.el)<0) sortOeil();
+    if(oeil&&oeil.vers&&ST.els.indexOf(oeil.vers)<0) oeil.vers=null;
+    majOeil();
     const box=$("stSelBox"), e=ST.els[ST.sel];
     box.style.display=e?"":"none";
     if(e){ $("stElNom").value=e.name||"";
@@ -2713,6 +3101,7 @@ function pretty(k){ const L=LABELS[k];
     const pv=$("propVide");
     pv.style.display=e?"none":"";
     $("chAnalyse").style.display=(e&&e.type==="tank")?"":"none";
+    $("chParcours").style.display=(e&&e.type==="fleche")?"":"none";
     /* Quand plusieurs éléments sont pris, on ne montre pas les
        propriétés de l'un d'eux : on dit combien, et ce qu'on peut en
        faire. Afficher le cap d'un seul char sur sept serait un piège. */
@@ -3128,6 +3517,26 @@ function pretty(k){ const L=LABELS[k];
     $("btnRedo").addEventListener("click",()=>histoVa(1));
     $("stVue").addEventListener("click",()=>{ montreVue^=1; stMaj(); stLabels(); });
     $("stChamp").addEventListener("click",()=>{ montreChamp^=1; stMaj(); });
+    /* ── LA VUE SUBJECTIVE ─────────────────────────────────────────
+       Le bouton fait l'aller ET le retour : c'est une bascule, comme
+       les deux analyses voisines. */
+    $("stOeil").addEventListener("click",()=>{
+      if(oeil){ sortOeil(); return; }
+      const el=ST.els[ST.sel];
+      if(!el||el.type!=="tank"){ stDit(t("Pick a tank on the map first.")); return; }
+      entreOeil(el);
+    });
+    $("obSort").addEventListener("click",sortOeil);
+    $("obFace").addEventListener("click",vueDEnFace);
+    $("obCmp").addEventListener("click",basculeCompare);
+    $("stParcours").addEventListener("click",()=>lanceVoyage(ST.els[ST.sel]));
+    $("obVers").addEventListener("change",e=>{
+      if(!oeil) return;
+      const i=Number(e.target.value);
+      oeil.vers = i>=0 ? ST.els[i] : null;
+      if(oeil.vers) viseVers(oeilDe(oeil.vers));
+      majOeil();
+    });
     $("stTitreIn").addEventListener("input",e=>{ ST.nom=e.target.value; histoSale=1; majHistoBoutons(); });
     $("stElNom").addEventListener("input",e=>{ const el=ST.els[ST.sel]; if(el){ el.name=e.target.value; stLabels(); } });
     /* le sélecteur de char : bouton, recherche, filtres */
@@ -3203,7 +3612,9 @@ function pretty(k){ const L=LABELS[k];
         rad=r; pol=polDeg*Math.PI/180; if(azDeg!==undefined) az=azDeg*Math.PI/180;
         cible={az,pol,rad,px:0,pz:0}; },
       etatChars:()=>charsEtat,lots:()=>charsLots,solLots:()=>stLots,
-      vueLots:()=>vueLots,biblio:()=>CHARS,jeux:()=>JEUX,boites:prepareBoites};
+      vueLots:()=>vueLots,biblio:()=>CHARS,jeux:()=>JEUX,boites:prepareBoites,
+      /* la vue subjective, exposée pour pouvoir la mesurer du dehors */
+      expo:expositionDepuis,oeilEntre:entreOeil,oeilSort:sortOeil,oeilEtat:()=>oeil};
     /* ── LES VUES ────────────────────────────────────────────────────
        Trois angles nommés, plutôt que de chercher le bon à la souris.
        Le dessus lit une ligne de vue, le côté lit un dénivelé, le
@@ -3274,6 +3685,9 @@ function pretty(k){ const L=LABELS[k];
         return;
       }
       if(mod) return;
+      /* Échap sort d'abord de la vue subjective : tant qu'on y est,
+         c'est de là qu'on veut sortir, pas de sa sélection. */
+      if(e.key==="Escape"&&oeil){ sortOeil(); return; }
       if(e.key==="Escape"){ ST.sel=-1; ST.multi=[]; stMaj(); stLabels(); return; }
       if(e.key==="f"||e.key==="F"){ cadreSel(); return; }
       if(e.key==="Home"){ e.preventDefault(); cadreTout(); return; }
@@ -3289,7 +3703,7 @@ function pretty(k){ const L=LABELS[k];
   })();
   function frame(t){
     const dt=Math.min(0.1,(t-tPrec)/1000)||0.016; tPrec=t;
-    clavier(dt); suivre(dt);
+    clavier(dt); avanceVoyage(t); suivre(dt);
     if(ST.ouvert) stLabels();   /* les étiquettes suivent la caméra */
     /* la ligne de vue se retaille quand le zoom a nettement changé —
        pas à chaque image : elle coûte un balayage du bâti */
@@ -3303,7 +3717,7 @@ function pretty(k){ const L=LABELS[k];
          plein milieu et ce qui reste ressemble à des morceaux épars.
          Un mètre suffit : le rapport au plan lointain reste de l'ordre
          de 10⁴, ce que la profondeur sur 24 bits encaisse sans broncher. */
-      const P=persp(0.86,cv.width/cv.height,1.0,WORLD*7);
+      const P=persp(FOV,cv.width/cv.height,1.0,WORLD*7);
       const e=eye(),V=look(e,[tgt[0]+pan.x,tgt[1],tgt[2]+pan.z],[0,1,0]);
       const M=[1,0,0,0,0,exag,0,0,0,0,1,0,0,0,0,1];
       const MVP=new Float32Array(mul(mul(P,V),M));
@@ -3494,6 +3908,13 @@ function pretty(k){ const L=LABELS[k];
         gl.disableVertexAttribArray(lPos); gl.disableVertexAttribArray(lBase);
       }
     }
+    /* ── LA CAPTURE, ICI ET NULLE PART AILLEURS ────────────────────
+       Le contexte est créé sans `preserveDrawingBuffer` : hors de
+       l'image qui vient d'être dessinée, `toDataURL` ne rend qu'un
+       rectangle vide. La demande est donc posée par un drapeau et
+       servie à la fin du rendu, jamais depuis un gestionnaire. */
+    if(demandeCapture){ const f=demandeCapture; demandeCapture=null;
+      try{ f(cv.toDataURL("image/jpeg",0.88)); }catch(e){ f(null); } }
     requestAnimationFrame(frame);
   }
 
