@@ -283,6 +283,25 @@
     overflow:hidden;text-overflow:ellipsis;max-width:190px}
   .obV{font-size:13px;color:var(--gold);font-family:var(--d-mono);
     font-variant-numeric:tabular-nums;white-space:nowrap}
+  /* ── LE TABLEAU CROISÉ ─────────────────────────────────────────── */
+  #croix{display:none;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+    z-index:12;padding:14px;max-width:min(92vw,760px);max-height:82vh;overflow:auto}
+  #croix.on{display:block}
+  #croix table{border-collapse:collapse;font-size:11.5px;font-family:var(--d-mono)}
+  #croix th,#croix td{border:1px solid var(--line);padding:5px 7px;white-space:nowrap}
+  #croix th{color:var(--muted2);font-weight:500;text-align:left;position:sticky;top:0;
+    background:rgba(18,19,22,.96)}
+  #croix th.ami{color:var(--ami)} #croix th.enn{color:var(--enn)}
+  #croix td{text-align:center;font-size:12px}
+  #croix td.oui{color:#0f120f;background:rgba(108,194,135,.82);font-weight:600}
+  #croix td.loin{color:#151007;background:rgba(229,185,92,.72);font-weight:600}
+  #croix td.non{color:var(--muted2);background:rgba(255,255,255,.03)}
+  .croixLeg{font-size:11px;color:var(--muted2);margin:10px 0 0;line-height:1.6}
+  #mesBar{display:none}
+  #mesBar.on{position:absolute;left:50%;bottom:64px;transform:translateX(-50%);display:flex;
+    gap:16px;align-items:center;padding:8px 12px;z-index:9;flex-wrap:wrap;justify-content:center}
+  body.vueOeil #mesBar{display:none!important}
+  #mesX{padding:5px 10px;font-size:11.5px}
   .obRang{display:flex;gap:4px;align-items:center}
   #obVers{font-size:12px;padding:3px 22px 3px 7px;max-width:200px}
   #obFace{padding:3px 8px;font-size:13px;line-height:1.15}
@@ -545,6 +564,8 @@
     <button class="outil" data-outil="fleche" data-bulle="Arrow · A"><svg viewBox="0 0 20 20"><path d="M3 16L16 4"/><path d="M9 4h7v7"/></svg><span class="cle">A</span></button>
     <button class="outil" data-outil="texte" data-bulle="Note · N"><svg viewBox="0 0 20 20"><path d="M4 4h12v9l-4 4H4z"/><path d="M16 13h-4v4"/><path d="M7 8h6M7 11h4"/></svg><span class="cle">N</span></button>
     <div class="sepR"></div>
+    <button class="outil" data-outil="mesure" id="stMesure" data-bulle="Measure · M"><svg viewBox="0 0 20 20"><path d="M3 13l10-10 4 4-10 10z"/><path d="M6 10l1.6 1.6M9 7l1.6 1.6M12 4l1.6 1.6"/></svg><span class="cle">M</span></button>
+    <div class="sepR"></div>
     <button class="outil" id="btnCamp" data-bulle="Side · C"><svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="6"/><path d="M10 4v12"/></svg><span class="cle">C</span></button>
   </div>
 
@@ -554,6 +575,9 @@
       <div class="inspTete">
         <span class="lg" id="lgElems">Elements</span>
         <span class="acCompte" id="elCompte"></span>
+      </div>
+      <div class="stRow" style="padding:0 0 8px">
+        <button class="btn" id="stCroix">Who sees whom</button>
       </div>
       <div class="inspCorps" id="elListe"></div>
     </div>
@@ -587,6 +611,7 @@
             <button class="btn" id="stOeil">Tank's eye</button>
             <button class="btn" id="stVue">Line of sight</button>
             <button class="btn" id="stChamp">Field of view</button>
+            <button class="btn" id="stDanger">Danger map</button>
           </div>
           <div class="stPos" id="stChampV" style="margin-top:7px"></div>
         </div>
@@ -669,6 +694,26 @@
   </div>
   <!-- LA MOITIÉ FIGÉE, quand on compare deux positions. -->
   <div id="cmpG"><img id="cmpImg" alt=""><span class="cmpNom" id="cmpNom"></span></div>
+
+  <!-- LE TABLEAU CROISÉ. Une grille alliés × ennemis : on lit d'un coup
+       l'état de la confrontation, au lieu de sélectionner les chars un
+       par un. Sur un quinze contre quinze, l'analyse une-à-une demande
+       quinze clics et ne se retient pas. -->
+  <div id="croix" class="glass">
+    <div class="inspTete" style="border:0;padding:0 0 9px">
+      <span class="lg" id="croixT">Who sees whom</span>
+      <button class="icone" id="croixX" aria-label="Close"><svg viewBox="0 0 20 20"><path d="M5 5l10 10M15 5L5 15"/></svg></button>
+    </div>
+    <div id="croixCorps"></div>
+    <p class="croixLeg" id="croixLeg"></p>
+  </div>
+  <!-- LA MESURE : trois chiffres, parce qu’il en faut trois. -->
+  <div id="mesBar" class="glass">
+    <div class="obBloc"><span class="obEt" id="mesPlatEt">Flat</span><span class="obV" id="mesPlat">—</span></div>
+    <div class="obBloc"><span class="obEt" id="mesSolEt">Over the ground</span><span class="obV" id="mesSol">—</span></div>
+    <div class="obBloc"><span class="obEt" id="mesDenEt">Height change</span><span class="obV" id="mesDen">—</span></div>
+    <button class="btn" id="mesX">Clear</button>
+  </div>
   <div id="stLbl"></div>
   <div id="stMsg" class="glass"></div>
   <div id="mini" class="glass"><div class="lg" id="miniT">Minimap</div><img id="miniImg" alt=""><div class="n">N ↑</div></div>
@@ -1276,7 +1321,17 @@ function pretty(k){ const L=LABELS[k];
   const ST_CLS=[["light","Light",[0.55,0.85,0.45]],["medium","Medium",[0.45,0.75,0.95]],
                 ["heavy","Heavy",[0.95,0.72,0.30]],["td","TD",[0.85,0.45,0.90]],
                 ["spg","SPG",[0.95,0.45,0.42]]];
-  const ST_COUL={ami:[0.36,0.74,0.42], ennemi:[0.92,0.42,0.34]};
+  const ST_COUL={ami:[0.36,0.74,0.42], ennemi:[0.92,0.42,0.34], mesure:[0.90,0.73,0.36]};
+  /* ══ LA MESURE ═════════════════════════════════════════════════════
+     « C'est à combien, en vrai ? » Deux points à trois cents mètres sur
+     la minimap peuvent être à trois cent quarante mètres de chemin réel
+     et quarante mètres de dénivelé — ce qui change la portée de vue, le
+     temps de trajet et la ligne de tir.
+
+     On rend donc TROIS chiffres et pas un : la distance à plat, celle
+     qui épouse le sol, et le dénivelé. C'est l'écart entre les deux
+     premiers qui renseigne. */
+  let mesure=null;
   /* l'état de l'éditeur : la stratégie ouverte et ses marqueurs */
   let ST={ouvert:0, edition:0, id:null, nom:"", els:[], sel:-1, multi:[], outil:"char", camp:"ami",
           canEdit:0, liste:[], moi:null, refus:""};
@@ -1292,7 +1347,10 @@ function pretty(k){ const L=LABELS[k];
      qu'on sache lequel on tient. */
   function buildStrat(){
     stLots=[];
-    if(!curHeights||!ST.els.length) return;
+    /* La mesure se dessine ici mais n’est pas un élément du plan : sur
+       une carte où rien n’est posé, la sortie anticipée la faisait
+       disparaître alors que ses trois chiffres s’affichaient. */
+    if(!curHeights||(!ST.els.length&&!(mesure&&mesure.b))) return;
     const P=[];
     const cercle=(x,z,r,n)=>{ const l=[];
       for(let i=0;i<=n;i++){ const a=i/n*Math.PI*2, px=x+Math.cos(a)*r, pz=z+Math.sin(a)*r;
@@ -1312,14 +1370,21 @@ function pretty(k){ const L=LABELS[k];
        La largeur suit l'éloignement de la caméra, comme les lignes de
        vue — en mètres, un trait devient invisible dès qu'on recule. */
     const larg=Math.max(0.6, 6*0.9*rad/Math.max(200,cv.clientHeight));
-    for(let i=0;i<ST.els.length;i++){
-      const e=ST.els[i];
+    /* La mesure se DESSINE comme une flèche mais n’appartient pas au
+       plan : elle n’entre jamais dans ST.els, donc jamais dans ce qui
+       s’enregistre. Un ruban d’or, pour ne la confondre avec aucun camp. */
+    const dessines=(mesure&&mesure.b)
+      ? ST.els.concat([{type:"fleche",mesure:1,x:mesure.a[0],y:mesure.a[1],
+                        x2:mesure.b[0],y2:mesure.b[1],name:"",camp:"ami"}])
+      : ST.els;
+    for(let i=0;i<dessines.length;i++){
+      const e=dessines[i];
       if(e.masque||e.type!=="fleche") continue;
       /* La flèche qu’on est en train de PARCOURIR ne se dessine pas :
          on part de son origine, et son ruban vert bouchait l’écran. */
       if(oeil&&e===oeil.el) continue;
       const sel=(i===ST.sel);
-      const coul=(e.camp==="ennemi")?ST_COUL.ennemi:ST_COUL.ami;
+      const coul=e.mesure?ST_COUL.mesure:(e.camp==="ennemi")?ST_COUL.ennemi:ST_COUL.ami;
       const dx=e.x2-e.x, dz=e.y2-e.y, L=Math.hypot(dx,dz)||1;
       const ux=dx/L, uz=dz/L, nx=-uz, nz=ux;
       const pointe=Math.min(L*0.35, larg*5);
@@ -1609,6 +1674,33 @@ function pretty(k){ const L=LABELS[k];
     return f-Math.floor(f);
   };
   const champB=gl.createBuffer(); let champN=0, champNTir=0, montreChamp=0, champStat="";
+  /* ══ DEUX LECTURES D'UN MÊME BALAYAGE ══════════════════════════════
+     « vision »  — ce que JE vois du sol, autour de moi.
+     « danger »  — le sol d'où l'ON ME VOIT.
+
+     Ce n'est pas la même carte, et la différence n'est pas un détail :
+     la première teste si le SOL est visible, la seconde si la TOURELLE
+     d'un char posté là le serait. Un char dépasse d'une crête que le sol
+     ne franchit pas — la zone dangereuse est donc plus large que la zone
+     vue, et c'est précisément l'écart qui tue.
+
+     La réciprocité fait le reste : « il voit ma tourelle depuis là »
+     et « je vois sa tourelle depuis ici » sont la même phrase, puisque
+     c'est le même segment. On calcule donc depuis MON œil, ce qui coûte
+     un balayage et non un par case. */
+  let modeChamp="vision";
+  /* La hauteur d'œil qu'on prête à l'ennemi : la MÉDIANE des hauteurs de
+     tourelle de la bibliothèque, mesurée une fois. Ce n'est pas un
+     chiffre choisi — c'est le char médian du rang X, et le panneau
+     l'annonce pour qu'on sache ce qu'on regarde. */
+  let hEnnemi=null;
+  function hauteurEnnemie(){
+    if(hEnnemi!==null) return hEnnemi;
+    const l=(CHARS&&CHARS.chars||[]).map(c=>c.bbClic[1][1]-c.bbCaisse[0][1])
+      .filter(v=>v>0.5&&v<6).sort((a,b)=>a-b);
+    hEnnemi = l.length ? +l[l.length>>1].toFixed(2) : 2.5;
+    return hEnnemi;
+  }
   /* Le pas du balayage a été choisi par la mesure, en confrontant le
      champ de vision au rayon exact sur cinq cents paires de points :
      à quatre mètres, les deux méthodes s'accordent sur 92 % des cas mais
@@ -1629,6 +1721,9 @@ function pretty(k){ const L=LABELS[k];
     carteOcclusion();
     const el=ST.els[ST.sel], O=oeilDe(el);
     const mod=charDe(el.char), pt=mod&&mod.pointage;
+    /* Zéro en vision — on teste le sol ; la tourelle d’un char en
+       danger — on teste ce qui s’y tiendrait. */
+    const HE=(modeChamp==="danger")?hauteurEnnemie():0;
     const capDeg=Number(el.cap)||0;
     /* deux tas séparés : ce qu'on atteint, et ce qu'on ne fait que voir */
     const Ptir=[], Pvu=[];
@@ -1653,7 +1748,7 @@ function pretty(k){ const L=LABELS[k];
         if(x<ORIG[0]||x>ORIG[0]+WORLD||z<ORIG[1]||z>ORIG[1]+WORLDZ) break;
         const sol=solY(x,z), occ=hauteurOcc(x,z);
         if(!sorti){ if(occ<=O[1]) sorti=1; else continue; }
-        const aSol=(sol-O[1])/r, aOcc=(occ-O[1])/r;
+        const aSol=(sol+HE-O[1])/r, aOcc=(occ-O[1])/r;
         total++;
         /* vu si le SOL dépasse l'horizon accumulé — et s'il n'y a rien
            de posé dessus : sous un toit, ce n'est plus le sol qu'on voit */
@@ -1671,7 +1766,7 @@ function pretty(k){ const L=LABELS[k];
         let atteint=true;
         if(pt){
           const f=yawRelatif((a0+a1)/2,capDeg);
-          const piqueVoulu=Math.atan2(O[1]-sol,r)*180/Math.PI;
+          const piqueVoulu=Math.atan2(O[1]-(sol+HE),r)*180/Math.PI;
           const dep=interpole(pt.depression,f), elev=interpole(pt.elevation,f);
           atteint=(piqueVoulu>=0) ? (dep!==null&&piqueVoulu<=dep)
                                   : (elev!==null&&-piqueVoulu<=elev);
@@ -1681,12 +1776,16 @@ function pretty(k){ const L=LABELS[k];
         for(const k of [0,1,2,0,2,3]) P2.push(v[k][0],v[k][1],v[k][2],v[k][3]);
       }
     }
-    champStat=total?(Math.round(vus/total*100)+"% "+t("of the ground within view range")):"";
+    champStat=total?(Math.round(vus/total*100)+"% "+
+      (modeChamp==="danger"?t("of the ground you can be seen from")
+                           :t("of the ground within view range"))):"";
     if(!Ptir.length&&!Pvu.length) return;
     gl.bindBuffer(gl.ARRAY_BUFFER,champB);
     gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(Ptir.concat(Pvu)),gl.DYNAMIC_DRAW);
     champNTir=Ptir.length/4; champN=(Ptir.length+Pvu.length)/4;
-    if(pt&&vus) champStat+=" · "+Math.round(tirs/vus*100)+"% "+t("reachable by the gun");
+    if(pt&&vus) champStat+=" · "+Math.round(tirs/vus*100)+"% "+
+      (modeChamp==="danger"?t("your gun can answer"):t("reachable by the gun"));
+    if(modeChamp==="danger") champStat+=" · "+t("enemy eye at")+" "+HE.toFixed(1)+" m";
   }
 
   /* ══ LA LIGNE DE VUE ═══════════════════════════════════════════════
@@ -2265,7 +2364,7 @@ function pretty(k){ const L=LABELS[k];
     $o("obVersBloc").style.display=voyage?"none":"";
     $o("obCmp").style.display=voyage?"none":"";
     $o("obExpoEt").textContent=voyage?t("Progress"):t("Exposure");
-    $o("obEt").textContent=voyage?t("Route"):t("Tank's eye");
+    $o("obEt").textContent=voyage?t("Driving route"):t("Tank's eye");
     $o("obFov").textContent="×"+(FOV_LARGE/FOV).toFixed(1);
     if(voyage) return;
     /* L'exposition : ce que je vois de la cible, en part de sa HAUTEUR.
@@ -2366,6 +2465,82 @@ function pretty(k){ const L=LABELS[k];
        bout du trajet. C’est le moment où l’on veut regarder autour de
        soi, et la barre reprend donc ses commandes de visée. */
     if(u>=1){ voyage=null; majOeil(); }
+  }
+
+  /* Poser un point de mesure. Le premier clic ouvre, le second ferme,
+     le troisième recommence — c'est le geste de tous les outils de
+     mesure, et il n'a besoin d'aucune explication. */
+  function poseMesure(p){
+    if(!mesure||mesure.b) mesure={a:p,b:null};
+    else mesure.b=p;
+    buildStrat(); majMesure();
+  }
+  function effaceMesure(){ mesure=null; buildStrat(); majMesure(); }
+  function majMesure(){
+    const bar=document.getElementById("mesBar");
+    const b=document.getElementById("stMesure");
+    if(b) b.classList.toggle("on",ST.outil==="mesure");
+    if(!mesure||!mesure.b){ bar.classList.remove("on"); return; }
+    bar.classList.add("on");
+    const [x0,z0]=mesure.a, [x1,z1]=mesure.b;
+    const plat=Math.hypot(x1-x0,z1-z0);
+    /* Le chemin qui épouse le sol : on somme des petits segments en
+       trois dimensions. Deux mètres de pas — le même que la ligne de
+       vue, et pour la même raison : plus fin ne change pas la réponse,
+       plus grossier saute une crête. */
+    const n=Math.max(2,Math.ceil(plat/2));
+    let sol=0, py=solY(x0,z0), px=x0, pz=z0;
+    for(let i=1;i<=n;i++){
+      const u=i/n, x=x0+(x1-x0)*u, z=z0+(z1-z0)*u, y=solY(x,z);
+      sol+=Math.hypot(x-px,y-py,z-pz);
+      px=x; py=y; pz=z;
+    }
+    const den=solY(x1,z1)-solY(x0,z0);
+    document.getElementById("mesPlat").textContent=Math.round(plat)+" m";
+    document.getElementById("mesSol").textContent=Math.round(sol)+" m";
+    document.getElementById("mesDen").textContent=(den>=0?"+":"−")+Math.abs(den).toFixed(1)+" m";
+  }
+
+  /* ── QUI VOIT QUI ─────────────────────────────────────────────────
+     La ligne de vue existe depuis longtemps, mais elle se lit UN CHAR À
+     LA FOIS : sur un quinze contre quinze, il faut quinze sélections et
+     l'on a oublié la première avant d'arriver à la dernière. La même
+     donnée rangée en grille se lit d'un coup, et c'est tout ce qui
+     change — aucun calcul nouveau, juste une mise en table.
+
+     Trois états, parce qu'il y en a trois : on se voit, on se verrait
+     mais c'est trop loin pour le jeu, on ne se voit pas. Confondre les
+     deux premiers ferait croire à un contact qui n'aura pas lieu. */
+  function majCroix(){
+    const c=document.getElementById("croix");
+    if(!c.classList.contains("on")) return;
+    const chars=ST.els.map((e,i)=>({e,i})).filter(o=>o.e.type==="tank");
+    const amis=chars.filter(o=>o.e.camp!=="ennemi"), enns=chars.filter(o=>o.e.camp==="ennemi");
+    const corps=document.getElementById("croixCorps");
+    if(!amis.length||!enns.length){
+      corps.innerHTML='<p class="stVide">'+echapHtml(t("Place tanks on both sides to compare them."))+"</p>";
+      document.getElementById("croixLeg").textContent="";
+      return;
+    }
+    let n=0, vus=0;
+    let h='<table><thead><tr><th></th>'+
+      enns.map(o=>'<th class="enn">'+echapHtml(nomMarqueur(o.e,o.i))+"</th>").join("")+"</tr></thead><tbody>";
+    for(const a of amis){
+      h+='<tr><th class="ami">'+echapHtml(nomMarqueur(a.e,a.i))+"</th>";
+      for(const b of enns){
+        const r=ligneDeVue(a.e,b.e);
+        n++;
+        const cl=r.vue?(r.portee?"oui":"loin"):"non";
+        if(cl==="oui") vus++;
+        h+='<td class="'+cl+'" title="'+Math.round(r.dist)+' m">'+
+          (cl==="oui"?"●":cl==="loin"?"◐":"·")+"</td>";
+      }
+      h+="</tr>";
+    }
+    corps.innerHTML=h+"</tbody></table>";
+    document.getElementById("croixLeg").innerHTML=
+      "● "+echapHtml(t("in contact"))+"  ·  ◐ "+echapHtml(t("clear line but beyond 445 m"))+
+      "  ·  · "+echapHtml(t("blocked"))+"<br>"+vus+" / "+n+" "+echapHtml(t("pairs in contact"));
   }
 
   /* Passer de l'autre côté : on va à l'œil de la cible, et l'on se
@@ -2593,7 +2768,15 @@ function pretty(k){ const L=LABELS[k];
       /* Un clic qui ne pose rien doit DIRE pourquoi. Sans ça, on clique
          le sol, il ne se passe rien, et rien n'explique si c'est le
          grade, la session, ou qu'aucune stratégie n'est ouverte. */
-      if(!ST.canEdit) stDit(ST.refus||t("Read-only: your rank doesn't allow editing strategies."));
+      /* MESURER NE MODIFIE RIEN. C’est une lecture, et un soldat qui
+         consulte le plan de son clan a autant besoin d’une distance que
+         l’officier qui l’a préparé. L’outil passe donc avant le contrôle
+         de grade, qui ne protège que l’écriture. */
+      if(ST.outil==="mesure"){
+        const p=solSousCurseur(e.clientX,e.clientY);
+        if(p) poseMesure([p[0],-p[1]]);
+      }
+      else if(!ST.canEdit) stDit(ST.refus||t("Read-only: your rank doesn't allow editing strategies."));
       else if(!ST.edition) stDit(t("Open a strategy first, or create a new one."));
       else {
         const p=solSousCurseur(e.clientX,e.clientY);
@@ -3050,7 +3233,8 @@ function pretty(k){ const L=LABELS[k];
        appartient à une carte, on ne mélange pas */
     buildStrat(); buildChars(); buildVue(); buildChamp();
     $("stVue").classList.toggle("on",!!montreVue);
-    $("stChamp").classList.toggle("on",!!montreChamp);
+    $("stChamp").classList.toggle("on",!!montreChamp&&modeChamp==="vision");
+    $("stDanger").classList.toggle("on",!!montreChamp&&modeChamp==="danger");
     $("stChampV").textContent=montreChamp?champStat:"";
     /* La vue subjective ne survit pas à son sujet : le char peut avoir
        été supprimé, ou la stratégie fermée sous nos pieds. Sans ce
@@ -3058,7 +3242,7 @@ function pretty(k){ const L=LABELS[k];
        plus à personne, sans aucun moyen d'en sortir. */
     if(oeil&&!voyage&&ST.els.indexOf(oeil.el)<0) sortOeil();
     if(oeil&&oeil.vers&&ST.els.indexOf(oeil.vers)<0) oeil.vers=null;
-    majOeil();
+    majOeil(); majCroix(); majMesure();
     const box=$("stSelBox"), e=ST.els[ST.sel];
     box.style.display=e?"":"none";
     if(e){ $("stElNom").value=e.name||"";
@@ -3516,7 +3700,24 @@ function pretty(k){ const L=LABELS[k];
     $("btnUndo").addEventListener("click",()=>histoVa(-1));
     $("btnRedo").addEventListener("click",()=>histoVa(1));
     $("stVue").addEventListener("click",()=>{ montreVue^=1; stMaj(); stLabels(); });
-    $("stChamp").addEventListener("click",()=>{ montreChamp^=1; stMaj(); });
+    /* Les deux nappes se posent sur le même sol : les superposer
+       donnerait une bouillie où aucune des deux ne se lit. Elles se
+       relaient donc, comme deux calques d’une même carte. */
+    const bascule=(m)=>{
+      if(montreChamp&&modeChamp===m) montreChamp=0;
+      else { montreChamp=1; modeChamp=m; }
+      stMaj();
+    };
+    $("stChamp").addEventListener("click",()=>bascule("vision"));
+    $("stCroix").addEventListener("click",()=>{
+      const c=$("croix"); c.classList.toggle("on");
+      $("stCroix").classList.toggle("on",c.classList.contains("on"));
+      majCroix();
+    });
+    $("mesX").addEventListener("click",effaceMesure);
+    $("croixX").addEventListener("click",()=>{
+      $("croix").classList.remove("on"); $("stCroix").classList.remove("on"); });
+    $("stDanger").addEventListener("click",()=>bascule("danger"));
     /* ── LA VUE SUBJECTIVE ─────────────────────────────────────────
        Le bouton fait l'aller ET le retour : c'est une bascule, comme
        les deux analyses voisines. */
@@ -3601,7 +3802,8 @@ function pretty(k){ const L=LABELS[k];
       ligneDeVue,bloqueRelief,bloqueBati,oeilDe,buildVue,buildChamp,
       carteOcclusion,hauteurOcc,
       vue:v=>{ montreVue=v?1:0; }, champ:v=>{ montreChamp=v?1:0; },
-      champInfo:()=>({n:champN,tir:champNTir,taux:champStat}), solY,
+      champInfo:()=>({n:champN,tir:champNTir,taux:champStat,mode:modeChamp}), solY,
+      champMode:(m)=>{ modeChamp=m; }, hEnn:hauteurEnnemie,
       hullDown,interpole,yawRelatif,solSousCurseur,hautEtiquette,poignee:()=>stPoignee,
       modeEditeur,histoPose,histoRaz,histoVa,majListe,majAide,
       histo:()=>({n:histo.length,i:histoI,sale:histoSale}),
@@ -3666,7 +3868,7 @@ function pretty(k){ const L=LABELS[k];
        Un éditeur se tient d'une main sur le clavier. Les chiffres
        choisissent l'outil, comme dans tous les outils de dessin ; le
        reste suit les conventions que personne n'a besoin d'apprendre. */
-    const TOUCHE_OUTIL={v:"select",t:"char",a:"fleche",n:"texte"};
+    const TOUCHE_OUTIL={v:"select",t:"char",a:"fleche",n:"texte",m:"mesure"};
     document.addEventListener("keydown",e=>{
       if(!ST.ouvert||saisieEnCours()) return;
       const mod=e.ctrlKey||e.metaKey;
@@ -3851,15 +4053,23 @@ function pretty(k){ const L=LABELS[k];
              détache aussi bien du vert que du brun, et ne se confond pas
              avec le vert/rouge des lignes de vue, qui veut dire autre
              chose. */
+          /* En DANGER la lecture s’inverse : ce que le canon atteint
+             n’est plus la bonne nouvelle mais la moins mauvaise — on est
+             vu, mais on peut répondre. Ambre pour cela, rouge pour le
+             sol d’où l’on vous voit sans que vous puissiez rendre le
+             coup : c’est là qu’on meurt sans comprendre. */
+          const danger=(modeChamp==="danger");
           if(champNTir){
-            gl.uniform4f(luCoul,0.30,0.82,0.95,0.34);
+            if(danger) gl.uniform4f(luCoul,0.95,0.66,0.24,0.30);
+            else       gl.uniform4f(luCoul,0.30,0.82,0.95,0.34);
             gl.drawArrays(gl.TRIANGLES,0,champNTir);
           }
           /* Ce qu'on VOIT sans pouvoir l'atteindre : de l'ambre, une
              couleur d'avertissement, et plus pâle — c'est une réserve
              sur la zone, pas une seconde zone. */
           if(champN>champNTir){
-            gl.uniform4f(luCoul,0.95,0.72,0.28,0.30);
+            if(danger) gl.uniform4f(luCoul,0.93,0.28,0.24,0.34);
+            else       gl.uniform4f(luCoul,0.95,0.72,0.28,0.30);
             gl.drawArrays(gl.TRIANGLES,champNTir,champN-champNTir);
           }
           gl.uniform1f(luHaut,LIM_HAUT);

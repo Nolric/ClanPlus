@@ -29,8 +29,31 @@ window.CP_FR = Object.assign(window.CP_FR || {}, {
   "Pick a tank on the map first.": "Choisis d’abord un char sur la carte.",
   "Compare with another position": "Comparer avec une autre position",
   "Drive this route": "Parcourir ce trajet",
-  "Route": "Trajet",
+  /* Clé volontairement longue : le moteur de traduction remplace TOUT
+     nœud de texte qui correspond à une clé. Avec « Route », un marqueur
+     que Robert aurait nommé Route se serait fait renommer « Trajet »
+     sous ses yeux — vu pendant les essais. Une clé d’interface ne doit
+     pas ressembler à une donnée d’utilisateur. */
+  "Driving route": "Trajet",
   "Progress": "Parcouru",
+  /* ── la carte du danger ── */
+  "Danger map": "Carte du danger",
+  "of the ground you can be seen from": "du sol d’où l’on vous voit",
+  "your gun can answer": "où votre canon peut répondre",
+  "enemy eye at": "œil ennemi à",
+  /* ── le tableau croisé ── */
+  "Who sees whom": "Qui voit qui",
+  "Place tanks on both sides to compare them.": "Pose des chars dans les deux camps pour les comparer.",
+  "in contact": "en contact",
+  "clear line but beyond 445 m": "vue dégagée mais au-delà de 445 m",
+  "blocked": "bloqué",
+  "pairs in contact": "couples en contact",
+  /* ── la mesure ── */
+  "Measure · M": "Mesure · M",
+  "Flat": "À plat",
+  "Over the ground": "En épousant le sol",
+  "Height change": "Dénivelé",
+  "Clear": "Effacer",
   "Drag to look around · Scroll to zoom in · Esc to leave": "Glisser pour regarder autour · molette pour resserrer · Échap pour sortir",
   "Line of sight": "Ligne de vue",
   "Field of view": "Champ de vision",
