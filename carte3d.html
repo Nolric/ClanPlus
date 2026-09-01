@@ -20,196 +20,520 @@
 <script src="i18n.js?v=ed3f8a4f"></script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
-  /* ── typographie de la DA publique ──────────────────────────────── */
+  /* ═══════════════════════════════════════════════════════════════
+     CARTE 3D — trois états, un seul monde visuel
+
+     1. L'ACCUEIL : une grille de cartes. C'est par là qu'on entre.
+     2. LA VUE    : le relief, avec le strict nécessaire autour.
+     3. L'ÉDITEUR : le canevas ENCASTRÉ entre des rails d'application.
+
+     La bascule tient à peu de chose et change tout : en éditeur le
+     canevas n'est plus recouvert de panneaux flottants, il est bordé.
+     Un panneau posé sur une image dit « visionneuse » ; une image tenue
+     par des rails dit « outil ».
+
+     La couleur suit la règle du site : l'or ne sert qu'à l'action
+     principale, à la sélection et à l'outil actif. Jamais à décorer.
+     Et la couleur ne porte jamais seule le sens — un camp se lit aussi
+     à son signe. */
   :root{
     --d-cond:"IBM Plex Sans Condensed",system-ui,sans-serif;
     --d-sans:"IBM Plex Sans",system-ui,sans-serif;
     --d-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
-  }
-  /* Cette page couvre tout l ecran d un rendu 3D : le grain de la DA n a
-     pas de surface visible. On ne pose que la typographie. */
-  h1,h2,h3{font-family:var(--d-cond);letter-spacing:.005em}
-  h1{font-weight:700} h2,h3{font-weight:600}
-  /* toute donnée chiffrée s'aligne en colonne */
-  .num,td.num,code,kbd,.mono{font-family:var(--d-mono);font-variant-numeric:tabular-nums}
-  :focus-visible{outline:2px solid var(--gold,#d8b566);outline-offset:3px}
 
-  :root{
-    --bg:#0c0d0f; --panel:rgba(18,19,22,.86); --line:#2b2d31;
-    --gold:#e5b95c; --gold2:#f4d78c; --gold-soft:rgba(229,185,92,.14);
-    --ink:#ece6d6; --muted:#9a9280;
+    --bg:#0c0d0f;
+    /* la seconde couche neutre : les rails de l'éditeur, un peu plus
+       froids que le sol, pour que la chrome se distingue du contenu */
+    --chrome:#131418; --chrome2:#191a1f; --creux:rgba(0,0,0,.34);
+    --panel:rgba(18,19,22,.88);
+    --line:#2b2d31; --line2:#3a3d43;
+    --gold:#e5b95c; --gold2:#f4d78c; --gold-soft:rgba(229,185,92,.13);
+    /* muted2 porte les étiquettes de section, en dix pixels capitales :
+       du petit texte, donc 4,5:1 exigés. À #726b5c il tombait à 3,7 sur
+       la chrome — mesuré, pas estimé. */
+    --ink:#ece6d6; --muted:#9a9280; --muted2:#8b8474;
+    --ami:#6cc287; --enn:#e5776b;
+    --rail:56px; --insp:304px; --bar:48px;
+    --r:3px;
   }
   *{box-sizing:border-box}
-  html,body{margin:0;height:100%;background:radial-gradient(120% 90% at 50% -5%,#171614 0%,var(--bg) 60%);
-    color:var(--ink);font-family:var(--d-sans);overflow:hidden}
-  #wrap{position:fixed;inset:0}
-  canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
-  canvas:active{cursor:grabbing}
-  .glass{background:var(--panel);border:1px solid var(--line);border-radius:3px;
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+    font-family:var(--d-sans);overflow:hidden;-webkit-font-smoothing:antialiased}
+  h1,h2,h3{font-family:var(--d-cond);letter-spacing:.005em;margin:0}
+  h1{font-weight:700} h2,h3{font-weight:600}
+  .num,code,kbd,.mono{font-family:var(--d-mono);font-variant-numeric:tabular-nums}
+  :focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:#2f3238;border:3px solid transparent;
+    background-clip:content-box;border-radius:6px}
+  ::-webkit-scrollbar-thumb:hover{background:#454951;background-clip:content-box}
+
+  /* ── les pièces communes ─────────────────────────────────────── */
+  .glass{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);
     box-shadow:0 10px 34px rgba(0,0,0,.5);backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px)}
-  #title{position:absolute;top:16px;left:16px;padding:12px 16px 13px;max-width:60vw}
-  #title .eyebrow{font-size:10.5px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--gold);display:flex;align-items:center;gap:7px}
-  #title .eyebrow::before{content:"";width:16px;height:1.5px;background:var(--gold)}
-  #title h1{margin:5px 0 0;font-size:21px;font-weight:800;line-height:1.05}
-  #title .sub{margin-top:3px;font-size:12px;color:var(--muted)}
-  #back{position:absolute;top:16px;right:16px;padding:9px 13px;font-size:12.5px;font-weight:700;
-    color:var(--ink);text-decoration:none;display:flex;align-items:center;gap:6px}
-  #back:hover{color:var(--gold2);border-color:var(--gold)}
-  #hud{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);display:flex;gap:8px;align-items:center;
-    padding:8px 10px;flex-wrap:wrap;max-width:94vw;justify-content:center}
-  #hud .grp{display:flex;align-items:center;gap:8px;padding:0 3px}
-  #hud label{font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap;letter-spacing:.3px}
-  #hud input[type=range]{width:120px;accent-color:var(--gold)}
-  select{appearance:none;background:#1c1b18 url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M0 0l5 6 5-6z' fill='%23e5b95c'/></svg>") no-repeat right 10px center;
-    border:1px solid var(--line);color:var(--ink);font:inherit;font-size:13px;font-weight:600;padding:8px 28px 8px 12px;border-radius:3px;cursor:pointer;min-width:172px}
-  select:hover{border-color:var(--gold)}
-  .sep{width:1px;height:24px;background:var(--line)}
-  .btn{appearance:none;border:1px solid var(--line);background:#1c1b18;color:var(--ink);font:inherit;font-size:12px;
-    font-weight:700;padding:8px 12px;border-radius:3px;cursor:pointer;transition:.12s;white-space:nowrap}
-  .btn:hover{border-color:var(--gold);color:var(--gold2)}
+  .lg{font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted2)}
+  .btn{appearance:none;border:1px solid var(--line);background:var(--chrome2);color:var(--ink);
+    font:inherit;font-size:12px;font-weight:600;padding:7px 11px;border-radius:var(--r);
+    cursor:pointer;transition:border-color .15s,color .15s,background .15s;white-space:nowrap}
+  .btn:hover{border-color:var(--line2);color:var(--gold2)}
   .btn.on{border-color:var(--gold);color:var(--gold);background:var(--gold-soft)}
-  #hint{position:absolute;right:16px;bottom:18px;font-size:11.5px;color:var(--muted);text-align:right;line-height:1.5;pointer-events:none}
-  #hint b{color:var(--ink);font-weight:700}
-  #load{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
-  #load .box{padding:14px 20px;font-size:13px;color:var(--muted);opacity:0;transition:opacity .2s}
-  #load.on .box{opacity:1}
+  .btn:disabled{opacity:.36;cursor:default;color:var(--muted)}
+  .btn:disabled:hover{border-color:var(--line);color:var(--muted)}
+  .btn.primaire{background:var(--gold);border-color:var(--gold);color:#1a1508;font-weight:700}
+  .btn.primaire:hover{background:var(--gold2);border-color:var(--gold2);color:#1a1508}
+  .btn.primaire:disabled{background:var(--chrome2);border-color:var(--line);color:var(--muted)}
+  select{appearance:none;background:var(--chrome2) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M0 0l5 6 5-6z' fill='%23e5b95c'/></svg>") no-repeat right 10px center;
+    border:1px solid var(--line);color:var(--ink);font:inherit;font-size:12.5px;font-weight:600;
+    padding:7px 28px 7px 11px;border-radius:var(--r);cursor:pointer}
+  select:hover{border-color:var(--line2)}
+  input[type=text],input:not([type]),input[type=search]{background:var(--creux);border:1px solid var(--line);
+    color:var(--ink);font:inherit;font-size:12.5px;padding:7px 10px;border-radius:var(--r);width:100%}
+  input::placeholder{color:var(--muted2)}
+  input:hover{border-color:var(--line2)}
+  input:focus{border-color:var(--gold);outline:none}
+  .sep{width:1px;height:22px;background:var(--line);flex:0 0 1px}
+  kbd{display:inline-block;min-width:16px;padding:1px 4px;font-size:10px;line-height:14px;text-align:center;
+    color:var(--muted);background:var(--creux);border:1px solid var(--line);border-radius:2px}
   .spin{display:inline-block;width:14px;height:14px;border:2px solid var(--line);border-top-color:var(--gold);
     border-radius:50%;animation:sp .8s linear infinite;vertical-align:-2px;margin-right:8px}
   @keyframes sp{to{transform:rotate(360deg)}}
-  #mini{position:absolute;left:16px;bottom:18px;padding:7px;display:none}
-  #mini img{display:block;width:190px;height:190px;image-rendering:auto;border-radius:2px}
-  #mini .lg{font-size:10px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;
-    color:var(--muted);margin:0 0 5px 1px}
+
+  /* ═══ 1. L'ACCUEIL ═══════════════════════════════════════════════
+     Quarante-huit cartes : on ne choisit pas dans une liste déroulante,
+     on choisit à la vue. La minimap du jeu EST la vignette — c'est
+     l'image que le joueur reconnaît sans lire. */
+  #accueil{position:fixed;inset:0;overflow-y:auto;overflow-x:hidden;
+    background:radial-gradient(120% 80% at 50% -10%,#191713 0%,var(--bg) 55%);z-index:20}
+  #accueil.parti{display:none}
+  .acWrap{max-width:1400px;margin:0 auto;padding:34px 28px 56px}
+  .acTete{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap;
+    padding-bottom:20px;border-bottom:1px solid var(--line)}
+  .acTete .eyebrow{font-size:10.5px;font-weight:800;letter-spacing:2px;text-transform:uppercase;
+    color:var(--gold);display:flex;align-items:center;gap:8px}
+  .acTete .eyebrow::before{content:"";width:18px;height:1.5px;background:var(--gold)}
+  .acTete h1{font-size:30px;font-weight:800;line-height:1.04;margin-top:8px}
+  .acTete p{margin:6px 0 0;font-size:13px;color:var(--muted);max-width:62ch;line-height:1.5}
+  .acRetour{padding:8px 12px;font-size:12.5px;font-weight:600;color:var(--ink);text-decoration:none;
+    border:1px solid var(--line);border-radius:var(--r);background:var(--chrome2);white-space:nowrap;
+    transition:border-color .15s,color .15s}
+  .acRetour:hover{border-color:var(--gold);color:var(--gold2)}
+
+  .acFiltres{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:20px 0 22px}
+  .acCherche{position:relative;flex:1 1 260px;max-width:340px}
+  .acCherche input{padding-left:32px}
+  .acCherche svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);
+    width:14px;height:14px;stroke:var(--muted2);fill:none;stroke-width:1.8;pointer-events:none}
+  .acChips{display:flex;gap:6px;flex-wrap:wrap}
+  .acCompte{margin-left:auto;font-size:12px;color:var(--muted);font-family:var(--d-mono);
+    font-variant-numeric:tabular-nums;white-space:nowrap}
+
+  .acGrille{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(228px,1fr))}
+  .acCarte{position:relative;display:block;width:100%;text-align:left;padding:0;cursor:pointer;
+    background:var(--chrome);border:1px solid var(--line);border-radius:5px;color:inherit;font:inherit;
+    overflow:hidden;transition:border-color .18s,transform .18s,box-shadow .18s}
+  .acCarte:hover{border-color:var(--line2);transform:translateY(-2px);box-shadow:0 12px 30px rgba(0,0,0,.45)}
+  .acCarte:focus-visible{border-color:var(--gold)}
+  .acVign{position:relative;aspect-ratio:1;background:#0a0b0c;overflow:hidden}
+  .acVign img{width:100%;height:100%;object-fit:cover;display:block;
+    filter:saturate(.82) contrast(1.04);transition:filter .25s,transform .35s}
+  .acCarte:hover .acVign img{filter:saturate(1) contrast(1.04);transform:scale(1.035)}
+  .acVign::after{content:"";position:absolute;inset:0;pointer-events:none;
+    background:linear-gradient(to top,rgba(10,11,12,.92) 0%,rgba(10,11,12,.34) 34%,transparent 62%)}
+  .acVide{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    color:var(--muted2);font-size:11px}
+  .acNom{position:absolute;left:11px;right:11px;bottom:9px;z-index:1;
+    font-family:var(--d-cond);font-weight:700;font-size:16px;line-height:1.15;
+    text-wrap:balance;text-shadow:0 1px 6px rgba(0,0,0,.9)}
+  .acPied{display:flex;align-items:center;gap:8px;padding:9px 11px;border-top:1px solid var(--line);
+    font-size:11px;color:var(--muted)}
+  .acPied .m{font-family:var(--d-mono);font-variant-numeric:tabular-nums;color:var(--muted)}
+  .acModes{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap;justify-content:flex-end}
+  .acMode{font-size:9.5px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;
+    padding:2px 5px;border:1px solid var(--line2);border-radius:2px;color:var(--muted)}
+  /* le badge des stratégies : chiffre ET mot, jamais la couleur seule */
+  .acStrat{position:absolute;top:9px;right:9px;z-index:1;display:flex;align-items:center;gap:5px;
+    padding:3px 7px;border-radius:2px;background:rgba(12,13,16,.86);border:1px solid var(--gold);
+    color:var(--gold);font-size:10.5px;font-weight:700}
+  .acStrat b{font-family:var(--d-mono)}
+  .acRien{grid-column:1/-1;padding:44px 8px;text-align:center;color:var(--muted)}
+  .acRien h3{font-size:15px;color:var(--ink);margin-bottom:6px}
+  .acRien p{margin:0;font-size:12.5px;line-height:1.5}
+
+  /* ═══ 2 & 3. L'APPLICATION ═══════════════════════════════════════ */
+  #wrap{position:fixed;inset:0;display:none}
+  #wrap.on{display:block}
+  /* Le canevas est un élément REMPLACÉ : sa largeur « auto » vient de sa
+     taille intrinsèque, pas des décalages — posés sur lui, ils le
+     laissaient à zéro. C'est donc un conteneur qui porte l'encastrement,
+     et le canevas le remplit. */
+  #vue{position:absolute;inset:0;transition:inset .22s cubic-bezier(.2,.7,.3,1)}
+  canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+  canvas:active{cursor:grabbing}
+  /* LE GESTE CENTRAL : en éditeur, le canevas s'encastre entre les rails
+     au lieu d'être recouvert. Le viewport devient une pièce de
+     l'interface, pas un fond. */
+  body.editeur #vue{inset:var(--bar) var(--insp) 0 var(--rail)}
+  body.editeur.sansInsp #vue{right:0}
+
+  /* la barre du haut : elle existe dans les deux états, plus fournie en
+     éditeur */
+  #barre{position:absolute;top:0;left:0;right:0;height:var(--bar);z-index:8;
+    display:flex;align-items:center;gap:10px;padding:0 12px;
+    background:var(--chrome);border-bottom:1px solid var(--line)}
+  #barre .titre{display:flex;align-items:baseline;gap:9px;min-width:0}
+  #barre .titre h1{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #barre .titre .m{font-size:11px;color:var(--muted2);font-family:var(--d-mono);white-space:nowrap}
+  #barre .pousse{margin-left:auto}
+  body.editeur #back{display:none}
+  /* le nom garde sa place : c est le reste qui cède */
+  #barre .titre{flex:0 1 auto}
+  @media(max-width:1150px){ body.editeur #barre .titre .m{display:none} }
+  .icone{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;
+    padding:0;border:1px solid transparent;background:none;color:var(--muted);border-radius:var(--r);
+    cursor:pointer;transition:color .15s,background .15s,border-color .15s}
+  .icone:hover{color:var(--ink);background:var(--chrome2);border-color:var(--line)}
+  .icone:disabled{opacity:.3;cursor:default}
+  .icone:disabled:hover{color:var(--muted);background:none;border-color:transparent}
+  .icone svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.7;
+    stroke-linecap:round;stroke-linejoin:round}
+  #stTitreIn{width:190px;font-size:12.5px;font-weight:600}
+  #barre .etat{font-size:11px;color:var(--muted2);white-space:nowrap;font-variant-numeric:tabular-nums}
+  #barre .etat.sale{color:var(--gold)}
+
+  /* le rail d'outils, à gauche */
+  #rail{position:absolute;left:0;top:var(--bar);bottom:0;width:var(--rail);z-index:8;
+    display:none;flex-direction:column;align-items:center;gap:3px;padding:8px 0;
+    background:var(--chrome);border-right:1px solid var(--line);overflow-y:auto}
+  body.editeur #rail{display:flex}
+  #rail .sepR{width:26px;height:1px;background:var(--line);margin:6px 0}
+  .outil{position:relative;width:38px;height:38px;display:flex;align-items:center;justify-content:center;
+    border:1px solid transparent;background:none;color:var(--muted);border-radius:var(--r);cursor:pointer;
+    transition:color .15s,background .15s,border-color .15s;flex:0 0 38px}
+  .outil:hover{color:var(--ink);background:var(--chrome2);border-color:var(--line)}
+  .outil.on{color:var(--gold);background:var(--gold-soft);border-color:var(--gold)}
+  .outil svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.6;
+    stroke-linecap:round;stroke-linejoin:round}
+  .outil .cle{position:absolute;right:2px;bottom:1px;font-size:8.5px;font-weight:700;
+    color:var(--muted2);font-family:var(--d-mono)}
+  .outil.on .cle{color:var(--gold)}
+  /* l'infobulle : elle sort du rail, donc en position fixe */
+  .outil[data-bulle]::after{content:attr(data-bulle);position:absolute;left:46px;top:50%;
+    transform:translateY(-50%);padding:5px 9px;background:#1e2026;border:1px solid var(--line2);
+    border-radius:var(--r);font-size:11.5px;font-weight:600;color:var(--ink);white-space:nowrap;
+    opacity:0;pointer-events:none;transition:opacity .12s;z-index:30;box-shadow:0 6px 18px rgba(0,0,0,.5)}
+  .outil:hover::after{opacity:1}
+
+  /* l'inspecteur, à droite : deux sections empilées */
+  #insp{position:absolute;right:0;top:var(--bar);bottom:0;width:var(--insp);z-index:8;
+    display:none;flex-direction:column;background:var(--chrome);border-left:1px solid var(--line)}
+  body.editeur #insp{display:flex}
+  body.editeur.sansInsp #insp{display:none}
+  .inspSec{display:flex;flex-direction:column;min-height:0}
+  .inspTete{display:flex;align-items:center;gap:8px;padding:10px 12px 8px;
+    border-bottom:1px solid var(--line);flex:0 0 auto}
+  .inspTete .lg{flex:1}
+  .inspCorps{padding:11px 12px;overflow-y:auto}
+  #secElems{flex:1 1 auto;min-height:104px;border-bottom:1px solid var(--line)}
+  #secElems .inspCorps{padding:6px}
+  #secAff,#secProps{flex:0 1 auto;border-bottom:1px solid var(--line)}
+  #secProps{border-bottom:0}
+  /* un volet replié ne garde que son en-tête : c est ainsi qu on tient
+     trois sections dans une colonne sans qu elles se disputent la place */
+  .inspSec.plie{flex:0 0 auto;min-height:0}
+  .inspSec.plie .inspCorps{display:none}
+  .inspTete{cursor:pointer;user-select:none}
+  .inspTete .chev{width:12px;height:12px;flex:0 0 12px;stroke:var(--muted2);fill:none;stroke-width:2;
+    transition:transform .18s}
+  .inspSec.plie .inspTete .chev{transform:rotate(-90deg)}
+  .inspTete:hover .chev{stroke:var(--ink)}
+
+  /* la LISTE DES ÉLÉMENTS : le cœur du sentiment « éditeur ». On y
+     sélectionne, on y renomme, on y masque, sans chercher sur la carte. */
+  .elRow{display:flex;align-items:center;gap:8px;width:100%;padding:6px 7px;border-radius:var(--r);
+    background:none;border:1px solid transparent;color:inherit;font:inherit;font-size:12px;
+    cursor:pointer;text-align:left;transition:background .12s,border-color .12s}
+  .elRow:hover{background:var(--chrome2);border-color:var(--line)}
+  .elRow.sel{background:var(--gold-soft);border-color:var(--gold)}
+  .elRow .ic{flex:0 0 15px;display:flex;color:var(--muted)}
+  .elRow.sel .ic{color:var(--gold)}
+  .elRow .ic svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.6;
+    stroke-linecap:round;stroke-linejoin:round}
+  .elRow .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .elRow.off .nm{color:var(--muted2);text-decoration:line-through}
+  /* le camp : une pastille ET une lettre, parce que la couleur ne porte
+     jamais seule le sens */
+  .elRow .camp{flex:0 0 auto;font-size:9.5px;font-weight:800;letter-spacing:.3px;
+    padding:1px 4px;border-radius:2px;border:1px solid currentColor}
+  .elRow .camp.a{color:var(--ami)} .elRow .camp.e{color:var(--enn)}
+  .elRow .oeil{flex:0 0 20px;opacity:0;color:var(--muted);background:none;border:0;padding:0;
+    cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .elRow:hover .oeil,.elRow.off .oeil{opacity:1}
+  .elRow .oeil:hover{color:var(--ink)}
+  .elRow .oeil svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.6}
+  .elVide{padding:18px 10px;text-align:center;color:var(--muted2);font-size:11.5px;line-height:1.5}
+
+  /* les champs de l'inspecteur */
+  .champ{margin:0 0 10px}
+  .champ:last-child{margin-bottom:0}
+  .champ>label{display:block;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+    color:var(--muted2);margin:0 0 5px}
+  .champ select,.champ input{width:100%}
+  .cadran{display:flex;align-items:center;gap:9px}
+  .cadran input[type=range]{flex:1;min-width:0;accent-color:var(--gold);height:18px}
+  .cadran .v{font-family:var(--d-mono);font-variant-numeric:tabular-nums;font-size:11.5px;
+    color:var(--muted);min-width:34px;text-align:right}
+  .stPos{font-size:11px;color:var(--muted2);font-family:var(--d-mono);font-variant-numeric:tabular-nums;
+    line-height:1.5}
+  .stHull{font-size:11.5px;line-height:1.45;margin:9px 0 0;padding:7px 9px;border-radius:var(--r);
+    background:var(--creux);border-left:1px solid currentColor}
+  .stHull:empty{display:none}
+  .stHull.hulldown{color:#8fd8a3} .stHull.decouvert{color:#e8a99f} .stHull.masque{color:#c9b98a}
+  .duo{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .stRow{display:flex;flex-wrap:wrap;gap:5px}
+  .stRow .btn{padding:5px 9px;font-size:11.5px}
+
+  /* la liste des stratégies, en éditeur comme en vue */
+  .stItem{display:block;width:100%;text-align:left;padding:8px 10px;margin:0 0 5px;cursor:pointer;
+    background:var(--chrome2);border:1px solid var(--line);border-radius:var(--r);color:inherit;
+    font:inherit;font-size:12.5px;transition:border-color .15s}
+  .stItem:hover{border-color:var(--gold)}
+  .stItem b{font-weight:600}
+  .stItem small{display:block;color:var(--muted2);font-size:11px;margin-top:2px}
+  .stVide{font-size:12px;color:var(--muted2);padding:8px 2px;line-height:1.5}
+  .stAide{font-size:11px;line-height:1.5;color:var(--muted2);margin:10px 0 0}
+
+  /* ── ce qui flotte sur le canevas ─────────────────────────────── */
+  #hud{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);display:flex;gap:7px;
+    align-items:center;padding:7px 9px;flex-wrap:wrap;max-width:min(94vw,900px);justify-content:center;z-index:6}
+  body.editeur #hud{left:calc(50% + (var(--rail) - var(--insp))/2)}
+  body.editeur.sansInsp #hud{left:calc(50% + var(--rail)/2)}
+  #hud .grp{display:flex;align-items:center;gap:7px}
+  #hud .btn{padding:6px 10px;font-size:11.5px}
+  /* dans le panneau, la barre cesse d être une barre */
+  #hud.enPanneau{position:static;transform:none;display:flex;flex-direction:column;align-items:stretch;
+    gap:6px;padding:0;background:none;border:0;box-shadow:none;backdrop-filter:none;max-width:none}
+  #hud.enPanneau .grp{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+  #hud.enPanneau .grp#vues{grid-template-columns:1fr 1fr}
+  #hud.enPanneau .sep{display:none}
+  #hud.enPanneau select{width:100%}
+  #hud.enPanneau>.btn{width:100%}
+  #hud select{font-size:11.5px;padding:6px 24px 6px 9px}
+  #mini{position:absolute;right:16px;bottom:16px;padding:7px;display:none;z-index:6}
+  body.editeur #mini{right:calc(var(--insp) + 16px)}
+  body.editeur.sansInsp #mini{right:16px}
+  #mini img{display:block;width:168px;height:168px;border-radius:2px}
+  #mini .lg{margin:0 0 5px 1px}
   #mini .n{position:absolute;top:24px;right:12px;font-size:10px;font-weight:800;color:var(--gold)}
-  @media(max-width:900px){ #mini{display:none!important} }
-  /* La légende ne s'affiche qu'avec un calque : sans calque elle
-     n'expliquerait rien, et elle mangerait le coin de l'écran. */
-  /* Au-dessus de l'aide, qui occupe déjà le coin : superposées, ni
-     l'une ni l'autre ne se lisait. */
-  /* ── l'éditeur de stratégie ── */
-  #strat{position:absolute;right:16px;top:16px;padding:11px 12px;display:none;width:268px;
-    max-height:calc(100vh - 130px);overflow:auto;z-index:6}
-  #strat .stHead{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-  #strat .lg{font-size:10px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted)}
-  #strat .x{background:none;border:0;color:var(--muted);font-size:19px;line-height:1;cursor:pointer;padding:0 2px}
-  #strat .x:hover{color:#fff}
-  #strat input{width:100%;box-sizing:border-box;margin:0 0 7px;padding:6px 8px;font:inherit;font-size:12.5px;
-    background:rgba(0,0,0,.32);border:1px solid var(--line);border-radius:3px;color:inherit}
-  #strat .stRow{display:flex;flex-wrap:wrap;gap:5px;margin:0 0 7px}
-  #strat .stRow .btn{padding:5px 9px;font-size:11.5px}
-  #strat .stItem{display:block;width:100%;text-align:left;padding:7px 9px;margin:0 0 5px;cursor:pointer;
-    background:rgba(0,0,0,.25);border:1px solid var(--line);border-radius:3px;color:inherit;font:inherit;font-size:12.5px}
-  #strat .stItem:hover{border-color:var(--gold)}
-  #strat .stItem small{display:block;color:var(--muted);font-size:11px;margin-top:2px}
-  #strat .stPos{font-size:11px;color:var(--muted);margin:0 0 7px;font-variant-numeric:tabular-nums}
-  #strat select{width:100%;min-width:0;margin:0 0 7px;font-size:12px;padding:6px 26px 6px 8px}
-  /* la posture : trois états, trois couleurs, et rien quand on ne sait pas */
-  #strat .stHull{font-size:11px;line-height:1.4;margin:0 0 7px}
-  #strat .stHull:empty{display:none}
-  #strat .stHull.hulldown{color:#8fd8a3}
-  #strat .stHull.decouvert{color:#e8a99f}
-  #strat .stHull.masque{color:#c9b98a}
-  #strat .stCap{align-items:center;flex-wrap:nowrap;gap:7px}
-  #strat .stCap label{font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap}
-  #strat .stCap input[type=range]{flex:1;min-width:0;width:auto;margin:0;padding:0;background:none;border:0;accent-color:var(--gold)}
-  #strat .stCap span{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;min-width:30px;text-align:right}
-  #strat .stAide{font-size:11px;line-height:1.45;color:var(--muted);margin:6px 0 0}
-  #strat .stVide{font-size:12px;color:var(--muted);padding:6px 2px 8px}
-  /* les étiquettes des marqueurs, posées par-dessus la scène */
-  #stLbl{position:fixed;inset:0;pointer-events:none;z-index:5}
-  #stMsg{position:absolute;left:50%;top:78px;transform:translateX(-50%);display:none;
-    padding:8px 14px;font-size:12.5px;z-index:7;pointer-events:none;max-width:60vw;text-align:center}
-  #stLbl .e{position:absolute;transform:translate(-50%,-100%);white-space:nowrap;
-    font-size:11.5px;font-weight:700;padding:2px 6px;border-radius:3px;
-    background:rgba(12,13,16,.72);border:1px solid rgba(255,255,255,.16);
-    text-shadow:0 1px 2px rgba(0,0,0,.8)}
-  /* Une NOTE n'est pas une étiquette de char : elle porte une consigne,
-     elle doit se lire de loin et pouvoir tenir sur plusieurs lignes. */
-  #stLbl .e.note{font-size:13px;font-weight:600;padding:5px 9px;white-space:normal;
-    max-width:230px;line-height:1.35;border-color:rgba(229,185,92,.45);
-    background:rgba(12,13,16,.85)}
-  #leg{position:absolute;right:16px;bottom:64px;padding:9px 11px;display:none;max-width:230px}
-  #leg .lg{font-size:10px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;
-    color:var(--muted);margin:0 0 6px 1px}
+  @media(max-width:1000px){ #mini{display:none!important} }
+  /* L'aide vit dans le coin LIBRE : à droite en exploration, où rien ne
+     la gêne ; à gauche en édition, la droite étant prise par la minimap.
+     C'est en édition qu'elle sert le plus — elle y liste les raccourcis. */
+  #hint{position:absolute;right:16px;bottom:16px;font-size:11px;color:var(--muted2);text-align:right;
+    line-height:1.7;pointer-events:none;z-index:5;max-width:46ch}
+  #hint b{color:var(--muted);font-weight:600}
+  #hint kbd{margin:0 1px}
+  body.editeur #hint{right:auto;left:calc(var(--rail) + 14px);text-align:left}
+  @media(max-width:1000px){ #hint{display:none} }
+  #leg{position:absolute;right:16px;top:calc(var(--bar) + 16px);padding:9px 11px;display:none;
+    max-width:224px;z-index:6}
+  body.editeur #leg{right:calc(var(--insp) + 16px)}
+  #leg .lg{margin:0 0 6px 1px}
   #leg .li{display:flex;align-items:center;gap:8px;font-size:12px;line-height:1.35;margin:4px 0}
   #leg .pu{width:13px;height:13px;border-radius:3px;flex:0 0 13px;box-shadow:0 0 0 1px rgba(0,0,0,.35) inset}
-  #leg .no{font-size:11px;color:var(--muted);margin:7px 0 0;line-height:1.35}
-  @media(max-width:900px){ #leg{display:none!important} }
-  #err{position:absolute;inset:0;display:none;align-items:center;justify-content:center;text-align:center;padding:30px;color:var(--muted);font-size:14px}
-  @media(max-width:640px){ #title h1{font-size:17px} #hint{display:none} #hud input[type=range]{width:84px} }
+  #leg .no{font-size:11px;color:var(--muted2);margin:7px 0 0;line-height:1.4}
+  @media(max-width:1000px){ #leg{display:none!important} }
+
+  #stLbl{position:fixed;inset:0;pointer-events:none;z-index:5}
+  #stLbl .e{position:absolute;transform:translate(-50%,-100%);white-space:nowrap;
+    font-size:11.5px;font-weight:600;padding:2px 7px;border-radius:3px;
+    background:rgba(12,13,16,.78);border:1px solid rgba(255,255,255,.14);
+    text-shadow:0 1px 2px rgba(0,0,0,.8)}
+  #stLbl .e.note{font-size:13px;font-weight:500;padding:6px 10px;white-space:normal;
+    max-width:230px;line-height:1.4;border-color:rgba(229,185,92,.45);background:rgba(12,13,16,.88)}
+  #stMsg{position:absolute;left:50%;top:calc(var(--bar) + 18px);transform:translateX(-50%);display:none;
+    padding:9px 15px;font-size:12.5px;z-index:9;pointer-events:none;max-width:60vw;text-align:center}
+
+  #load{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:7}
+  #load .box{padding:13px 19px;font-size:13px;color:var(--muted);opacity:0;transition:opacity .2s}
+  #load.on .box{opacity:1}
+  #err{position:absolute;inset:0;display:none;align-items:center;justify-content:center;text-align:center;
+    padding:30px;color:var(--muted);font-size:14px;z-index:10}
+
+  /* L'inspecteur se resserre avant de disparaître : un portable de
+     1280 de large doit garder son éditeur complet, pas basculer sur la
+     version réduite. */
+  @media(max-width:1200px){ :root{--insp:256px} }
+  @media(max-width:860px){
+    :root{--insp:0px}
+    #rail,#insp{display:none!important}
+    body.editeur #vue{inset:var(--bar) 0 0 0}
+    .acWrap{padding:22px 16px 40px}
+    .acTete h1{font-size:23px}
+  }
+  @media(prefers-reduced-motion:reduce){
+    *,*::before,*::after{transition-duration:.01ms!important;animation-duration:.01ms!important}
+  }
 </style>
 </head>
 <body>
-<div id="wrap">
-  <canvas id="c"></canvas>
-  <div id="title" class="glass">
-    <div class="eyebrow">World of Tanks · 3D map</div>
-    <h1 id="mapName">Loading…</h1>
-    <div class="sub" id="mapSub">Real elevation extracted from the game</div>
+<!-- ═══ 1. L'ACCUEIL : on choisit sa carte à la vue ═══════════════ -->
+<div id="accueil">
+  <div class="acWrap">
+    <header class="acTete">
+      <div>
+        <div class="eyebrow">World of Tanks · 3D map</div>
+        <h1 id="acTitre">Pick a map</h1>
+        <p id="acSous">Real elevation pulled from the game, with its buildings and its battle boundary. Open one to scout it, or to draw your clan's plan on it.</p>
+      </div>
+      <a class="acRetour" href="index.html" id="acRetour">← Back to the site</a>
+    </header>
+
+    <div class="acFiltres">
+      <div class="acCherche">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5 14 14"/></svg>
+        <input type="search" id="acQ" placeholder="Search a map" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="acChips" id="acChips"></div>
+      <div class="acCompte" id="acCompte"></div>
+    </div>
+
+    <div class="acGrille" id="acGrille"></div>
   </div>
-  <a id="back" class="glass" href="index.html">← Back to the site</a>
-  <div id="hud" class="glass">
-    <div class="grp"><select id="mapSel"></select></div>
-    <div class="sep"></div>
-    <div class="grp" id="cpLang"></div>
+</div>
+
+<!-- ═══ 2 & 3. L'APPLICATION ═════════════════════════════════════ -->
+<div id="wrap">
+  <div id="vue"><canvas id="c"></canvas></div>
+
+  <div id="barre">
+    <button class="icone" id="btnCartes" title="Back to the maps" aria-label="Back to the maps">
+      <svg viewBox="0 0 20 20"><path d="M4 5h5M4 10h5M4 15h5"/><path d="M13 6l-3 4 3 4"/></svg>
+    </button>
+    <div class="titre">
+      <h1 id="mapName">Loading…</h1>
+      <span class="m" id="mapSub"></span>
+    </div>
     <div class="sep"></div>
     <div class="grp" id="modeGrp" style="display:none"><select id="modeSel"></select></div>
-    <div class="grp" id="calGrp" style="display:none"><select id="calSel"></select></div>
-    <div class="sep" id="calSep" style="display:none"></div>
-    <button class="btn on" id="texBtn">Texture</button>
-    <button class="btn" id="wireBtn">Grid</button>
-    <button class="btn" id="bldBtn" style="display:none" title="Building preview (positions extracted from the game)">Buildings</button>
-    <button class="btn on" id="limBtn" style="display:none" title="The battle boundary, from the game's arena definition">Boundary</button>
-    <button class="btn on" id="eauBtn" style="display:none" title="Water, cut where the ground rises above its level">Water</button>
-    <button class="btn on" id="miniBtn">Minimap</button>
-    <button class="btn" id="resetBtn">Recentre</button>
-    <button class="btn" id="stratBtn" style="display:none" title="Place tanks on the map and save the plan for your clan">Strategy</button>
-  </div>
-  <div id="strat" class="glass">
-    <div class="stHead"><span class="lg" id="stTitre">Clan strategies</span><button class="x" id="stClose">×</button></div>
-    <div id="stListe"></div>
-    <div id="stEdit" style="display:none">
-      <input id="stNom" maxlength="80" placeholder="Strategy name">
-      <div class="stRow" id="stCls"></div>
-      <div class="stRow" id="stAnnot"></div>
-      <div class="stRow">
-        <button class="btn on" id="stAmi">Allies</button>
-        <button class="btn" id="stEnn">Enemies</button>
-      </div>
-      <div class="stRow">
-        <button class="btn" id="stVue" title="A line to each other tank: green as far as it sees, red beyond">Line of sight</button>
-        <button class="btn" id="stChamp" title="Everything the selected tank can see around it, out to its 445 m view range">Field of view</button>
-      </div>
-      <div class="stPos" id="stChampV"></div>
-      <div id="stSelBox" style="display:none">
-        <input id="stElNom" maxlength="18" placeholder="Tank name">
-        <select id="stElChar"><option value="">Marker only</option></select>
-        <div class="stRow stCap">
-          <label for="stElCap" id="stCapL">Hull</label>
-          <input type="range" id="stElCap" min="0" max="355" step="5" value="0">
-          <span id="stCapV">0°</span>
-        </div>
-        <div class="stRow stCap">
-          <label for="stElTour" id="stTourL">Turret</label>
-          <input type="range" id="stElTour" min="-180" max="180" step="5" value="0">
-          <span id="stTourV">0°</span>
-        </div>
-        <div class="stPos" id="stElPos"></div>
-        <div class="stHull" id="stHull"></div>
-      </div>
-      <div class="stRow">
-        <button class="btn" id="stSave">Save</button>
-        <button class="btn" id="stDel">Delete</button>
+
+    <div class="pousse"></div>
+
+    <!-- en éditeur seulement -->
+    <div id="barreEd" style="display:none">
+      <div style="display:flex;align-items:center;gap:8px">
+        <input type="text" id="stTitreIn" maxlength="80" placeholder="Strategy name">
+        <span class="etat" id="stEtat"></span>
+        <div class="sep"></div>
+        <select id="stPas" title="Snap placement to a regular step"></select>
+        <div class="sep"></div>
+        <button class="icone" id="btnUndo" title="Undo" aria-label="Undo" disabled>
+          <svg viewBox="0 0 20 20"><path d="M7 5L3 9l4 4"/><path d="M3 9h8a5 5 0 0 1 0 10H8"/></svg>
+        </button>
+        <button class="icone" id="btnRedo" title="Redo" aria-label="Redo" disabled>
+          <svg viewBox="0 0 20 20"><path d="M13 5l4 4-4 4"/><path d="M17 9H9a5 5 0 0 0 0 10h3"/></svg>
+        </button>
+        <div class="sep"></div>
+        <button class="btn primaire" id="stSave">Save</button>
         <button class="btn" id="stQuit">Close</button>
       </div>
-      <p class="stAide" id="stAide"></p>
+    </div>
+    <button class="btn" id="stratBtn" style="display:none">Strategy</button>
+    <a class="acRetour" href="index.html" id="back">← Back to the site</a>
+  </div>
+
+  <!-- le rail d'outils -->
+  <div id="rail">
+    <button class="outil on" data-outil="select" data-bulle="Select · V"><svg viewBox="0 0 20 20"><path d="M4 3l6 14 2-6 6-2z"/></svg><span class="cle">V</span></button>
+    <div class="sepR"></div>
+    <div id="railChars"></div>
+    <div class="sepR"></div>
+    <button class="outil" data-outil="fleche" data-bulle="Arrow · A"><svg viewBox="0 0 20 20"><path d="M3 16L16 4"/><path d="M9 4h7v7"/></svg><span class="cle">A</span></button>
+    <button class="outil" data-outil="texte" data-bulle="Note · N"><svg viewBox="0 0 20 20"><path d="M4 4h12v9l-4 4H4z"/><path d="M16 13h-4v4"/><path d="M7 8h6M7 11h4"/></svg><span class="cle">N</span></button>
+    <div class="sepR"></div>
+    <button class="outil" id="btnCamp" data-bulle="Side · C"><svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="6"/><path d="M10 4v12"/></svg><span class="cle">C</span></button>
+  </div>
+
+  <!-- l'inspecteur -->
+  <div id="insp">
+    <div class="inspSec" id="secElems">
+      <div class="inspTete">
+        <span class="lg" id="lgElems">Elements</span>
+        <span class="acCompte" id="elCompte"></span>
+      </div>
+      <div class="inspCorps" id="elListe"></div>
+    </div>
+    <div class="inspSec" id="secAff" style="display:none">
+      <div class="inspTete"><span class="lg" id="lgAff">Display</span></div>
+      <div class="inspCorps" id="affCorps"></div>
+    </div>
+    <div class="inspSec" id="secProps">
+      <div class="inspTete"><span class="lg" id="lgProps">Properties</span></div>
+      <div class="inspCorps" id="propCorps">
+        <div id="stSelBox" style="display:none">
+          <div class="champ"><label for="stElNom" id="lbNom">Name</label>
+            <input type="text" id="stElNom" maxlength="28" placeholder="Tank name"></div>
+          <div class="champ" id="chChar"><label for="stElChar" id="lbChar">Model</label>
+            <select id="stElChar"><option value="">Marker only</option></select></div>
+          <div class="champ" id="chCap"><label for="stElCap" id="stCapL">Hull</label>
+            <div class="cadran"><input type="range" id="stElCap" min="0" max="355" step="5" value="0"><span class="v" id="stCapV">0°</span></div></div>
+          <div class="champ" id="chTour"><label for="stElTour" id="stTourL">Turret</label>
+            <div class="cadran"><input type="range" id="stElTour" min="-180" max="180" step="5" value="0"><span class="v" id="stTourV">0°</span></div></div>
+          <div class="champ"><div class="stPos" id="stElPos"></div>
+            <div class="stHull" id="stHull"></div></div>
+        </div>
+        <div id="propVide" class="stVide"></div>
+        <div class="champ" id="chAnalyse" style="display:none">
+          <label id="lbAnalyse">Analysis</label>
+          <div class="stRow">
+            <button class="btn" id="stVue">Line of sight</button>
+            <button class="btn" id="stChamp">Field of view</button>
+          </div>
+          <div class="stPos" id="stChampV" style="margin-top:7px"></div>
+        </div>
+      </div>
     </div>
   </div>
+
+  <!-- la liste des stratégies : un panneau, seulement hors édition -->
+  <div id="strat" class="glass">
+    <div class="inspTete" style="border:0;padding:0 0 9px">
+      <span class="lg" id="stTitre">Clan strategies</span>
+      <button class="icone" id="stClose" aria-label="Close"><svg viewBox="0 0 20 20"><path d="M5 5l10 10M15 5L5 15"/></svg></button>
+    </div>
+    <div id="stListe"></div>
+    <div id="stEdit" style="display:none">
+      <div class="stRow" style="margin-top:8px">
+        <button class="btn" id="stDel">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="hud" class="glass">
+    <div class="grp" id="vues">
+      <button class="btn" data-vue="dessus" id="vDessus">Top</button>
+      <button class="btn" data-vue="troisquart" id="vTQ">3/4</button>
+      <button class="btn" data-vue="cote" id="vCote">Side view</button>
+      <button class="btn" id="resetBtn">Recentre</button>
+    </div>
+    <div class="sep"></div>
+    <button class="btn on" id="texBtn">Texture</button>
+    <button class="btn" id="wireBtn">Grid</button>
+    <button class="btn" id="bldBtn" style="display:none">Buildings</button>
+    <button class="btn on" id="limBtn" style="display:none">Boundary</button>
+    <button class="btn on" id="eauBtn" style="display:none">Water</button>
+    <button class="btn on" id="miniBtn">Minimap</button>
+    <div class="sep"></div>
+    <div class="grp" id="calGrp" style="display:none"><select id="calSel"></select></div>
+    <div class="grp" id="cpLang"></div>
+  </div>
+
+
   <div id="stLbl"></div>
   <div id="stMsg" class="glass"></div>
-  <div id="mini" class="glass"><div class="lg">Minimap</div><img id="miniImg" alt=""><div class="n">N ↑</div></div>
+  <div id="mini" class="glass"><div class="lg" id="miniT">Minimap</div><img id="miniImg" alt=""><div class="n">N ↑</div></div>
   <div id="leg" class="glass"><div class="lg" id="legT">Legend</div><div id="legL"></div><p class="no" id="legN"></p></div>
-  <div id="hint"><b>Drag</b> to rotate · <b>Scroll</b> zooms where you point · <b>Double-click</b> to go there<br><b>Right-click</b> or <b>Shift</b> to pan · <b>WASD</b> to move · <b>Shift</b> to go faster</div>
+  <div id="hint"></div>
   <div id="load" class="on"><div class="box glass"><span class="spin"></span>Loading the terrain…</div></div>
   <div id="err" class="glass">Your browser couldn't start 3D (WebGL required).</div>
 </div>
@@ -832,7 +1156,7 @@ function pretty(k){ const L=LABELS[k];
     const larg=Math.max(0.6, 6*0.9*rad/Math.max(200,cv.clientHeight));
     for(let i=0;i<ST.els.length;i++){
       const e=ST.els[i];
-      if(e.type!=="fleche") continue;
+      if(e.masque||e.type!=="fleche") continue;
       const sel=(i===ST.sel);
       const coul=(e.camp==="ennemi")?ST_COUL.ennemi:ST_COUL.ami;
       const dx=e.x2-e.x, dz=e.y2-e.y, L=Math.hypot(dx,dz)||1;
@@ -866,7 +1190,7 @@ function pretty(k){ const L=LABELS[k];
     }
     for(let i=0;i<ST.els.length;i++){
       const e=ST.els[i], sel=(i===ST.sel), mod=charDe(e.char);
-      if(e.type==="fleche") continue;
+      if(e.masque||e.type==="fleche") continue;
       if(e.type==="texte"){
         /* une note n'a qu'un point d'ancrage : un petit disque, pour
            qu'on sache d'où elle parle et qu'on puisse l'attraper */
@@ -974,7 +1298,7 @@ function pretty(k){ const L=LABELS[k];
     };
     for(let i=0;i<ST.els.length;i++){
       const el=ST.els[i], mod=charDe(el.char);
-      if(!mod) continue;
+      if(!mod||el.masque) continue;
       const base=terrainNorm(el.x,el.y);
       const cap=(Number(el.cap)||0)*Math.PI/180;
       const tour=cap+(Number(el.tour)||0)*Math.PI/180;
@@ -1579,17 +1903,18 @@ function pretty(k){ const L=LABELS[k];
       catch(e){ console.error("carte3d : "+aLire[k].fichier+".bin illisible —", e); }
     }
     const cal=document.getElementById("calGrp"), sep=document.getElementById("calSep");
+    const vis=(el,v)=>{ if(el) el.style.display=v; };
     /* On n'allume les objets qu'à la PREMIÈRE carte : changer de mode
        rallumait ce que l'on venait d'éteindre, et toute comparaison
        terrain nu contre terrain nu devenait impossible. */
     if(charge){ btn.style.display="";
       if(!bldTouche){ showBld=1; }
       btn.classList.toggle("on",!!showBld);
-      cal.style.display=""; sep.style.display=""; }
+      vis(cal,""); vis(sep,""); }
     else { btn.style.display="none"; showBld=0; btn.classList.remove("on");
       /* Sans objets, un calque ne colorerait rien : on le remet à zéro
          plutôt que de laisser un sélecteur qui ment. */
-      cal.style.display="none"; sep.style.display="none";
+      vis(cal,"none"); vis(sep,"none");
       calque=0; document.getElementById("calSel").value=0;
       document.getElementById("leg").style.display="none"; }
   }
@@ -1750,14 +2075,14 @@ function pretty(k){ const L=LABELS[k];
          l'opposé, comme partout ailleurs dans cette page. */
       /* une flèche se reprend par l'un ou l'autre de ses bouts ; tout le
          reste n'a qu'un point */
-      if(el.type==="fleche"&&stDrag.p===1){ el.x2=p[0]; el.y2=-p[1]; }
+      if(el.type==="fleche"&&stDrag.p===1){ el.x2=accroche(p[0]); el.y2=accroche(-p[1]); }
       else if(el.type==="fleche"){
         /* la queue tire la flèche entière : sinon on ne peut plus la
            déplacer sans la redessiner */
         const dx=p[0]-el.x, dz=-p[1]-el.y;
-        el.x=p[0]; el.y=-p[1]; el.x2+=dx; el.y2+=dz;
+        el.x=accroche(p[0]); el.y=accroche(-p[1]); el.x2+=dx; el.y2+=dz;
       }
-      else { el.x=p[0]; el.y=-p[1]; }
+      else { el.x=accroche(p[0]); el.y=accroche(-p[1]); }
       stDrag.bouge=1; stMaj();
       return;
     }
@@ -1791,12 +2116,12 @@ function pretty(k){ const L=LABELS[k];
               x2:p[0]+Math.cos(az)*L/2,y2:-(p[1]+Math.sin(az)*L/2),
               name:"",camp:ST.camp});
           } else if(ST.outil==="texte"){
-            ST.els.push({type:"texte",x:p[0],y:-p[1],name:t("Note"),camp:ST.camp});
+            ST.els.push({type:"texte",x:accroche(p[0]),y:accroche(-p[1]),name:t("Note"),camp:ST.camp});
           } else {
-            ST.els.push({type:"tank",cls:ST.outil,x:p[0],y:-p[1],name:"",camp:ST.camp,size:0.78,
+            ST.els.push({type:"tank",cls:ST.outil,x:accroche(p[0]),y:accroche(-p[1]),name:"",camp:ST.camp,size:0.78,
                          char:"",cap:0,tour:0});
           }
-          ST.sel=ST.els.length-1; stMaj();
+          ST.sel=ST.els.length-1; histoPose(); stMaj();
         }
       }
     }
@@ -1804,7 +2129,7 @@ function pretty(k){ const L=LABELS[k];
     const bougeait=stDrag&&stDrag.bouge;
     stDrag=null; drag=null;
     /* le char est posé : le champ de vision peut enfin se recalculer */
-    if(bougeait&&montreChamp){ buildChamp(); stMaj(); }
+    if(bougeait){ histoPose(); if(montreChamp){ buildChamp(); stMaj(); } }
   });
   cv.addEventListener("pointercancel",()=>{stDrag=null;drag=null;});
   /* DOUBLE-CLIC : on va voir là. C'est le geste le plus simple pour se
@@ -2147,15 +2472,21 @@ function pretty(k){ const L=LABELS[k];
         b.textContent=m+" ("+t("crest")+" "+hd.a+" m, "+(hd.crete-hd.sol).toFixed(1)+" m)";
         b.className="stHull "+hd.etat;
       } }
-    for(const b of $("stCls").children) b.classList.toggle("on",b.dataset.cls===ST.outil);
-    for(const b of $("stAnnot").children) b.classList.toggle("on",b.dataset.cls===ST.outil);
-    $("stAmi").classList.toggle("on",ST.camp==="ami");
-    $("stEnn").classList.toggle("on",ST.camp==="ennemi");
+    /* le rail : l'outil actif se lit d'un coup d'œil */
+    for(const b of document.querySelectorAll("#rail .outil[data-outil]"))
+      b.classList.toggle("on", b.dataset.outil===ST.outil);
+    majCamp(); majListe(); majHistoBoutons();
     $("stSave").style.display=ST.canEdit?"":"none";
     $("stDel").style.display=(ST.canEdit&&ST.id)?"":"none";
-    $("stAide").textContent=ST.canEdit
-      ? t("Click the ground to place a tank · drag to move it · Delete removes it")
-      : t("Read-only: your rank doesn't allow editing strategies.");
+    $("stTitreIn").disabled=!ST.canEdit;
+    /* Ce que dit l'inspecteur quand rien n'est choisi : c'est là qu'on
+       apprend l'outil, pas dans une aide reléguée en bas de panneau. */
+    const pv=$("propVide");
+    pv.style.display=e?"none":"";
+    $("chAnalyse").style.display=(e&&e.type==="tank")?"":"none";
+    pv.textContent=!ST.canEdit ? t("Read-only: your rank doesn't allow editing strategies.")
+      : ST.els.length ? t("Pick an element on the map or in the list to edit it.")
+      : t("Pick a tool on the left, then click the ground to place it.");
   }
   /* Le nom se pose JUSTE AU-DESSUS du char : le toit de sa tourelle et
      un mètre de dégagement. Sans modèle, on garde la hauteur du fût. */
@@ -2334,18 +2665,20 @@ function pretty(k){ const L=LABELS[k];
         char:typeof e.char==="string"?e.char:"", cap:Number(e.cap)||0, tour:Number(e.tour)||0});
     });
     ST.sel=-1;
-    $("stNom").value=ST.nom;
+    $("stTitreIn").value=ST.nom;
+    modeEditeur(1);
     $("stListe").style.display="none"; $("stEdit").style.display="";
-    stMaj();
+    histoRaz(); stMaj();
   }
   function stFerme(){
     ST.edition=0;
     $("stListe").style.display=""; $("stEdit").style.display="none";
+    modeEditeur(0);
     ST.id=null; ST.els=[]; ST.sel=-1; buildStrat(); buildChars(); buildVue(); buildChamp(); stCharge();
   }
   async function stEnregistre(){
     if(!ST.canEdit) return;
-    const nom=($("stNom").value||"").trim()||t("Strategy");
+    const nom=($("stTitreIn").value||"").trim()||t("Strategy");
     const els=ST.els.map(e=>{
       const base={type:e.type||"tank", x:Math.round(e.x), y:Math.round(e.y),
         name:e.name||"", color:(e.camp==="ennemi")?"#e5544b":"#4ea36a"};
@@ -2376,27 +2709,190 @@ function pretty(k){ const L=LABELS[k];
     if(!r.ok){ alert(t("Error")+" : "+((r.j&&r.j.error)||r.status)); return; }
     stFerme();
   }
+  /* ══ LE RAIL, LA LISTE, L'HISTORIQUE ══════════════════════════════
+     Trois choses font qu'un outil se comporte en éditeur plutôt qu'en
+     visionneuse : on choisit son outil sans quitter la carte des yeux,
+     on retrouve ce qu'on a posé sans le chercher, et on peut défaire.
+     C'est ce que ce bloc apporte. */
+
+  /* ── LE MODE ÉDITEUR ──────────────────────────────────────────────
+     Il ne change pas seulement des panneaux : il ENCASTRE le canevas
+     entre les rails. Le viewport cesse d'être un fond recouvert pour
+     devenir une pièce de l'interface — c'est ce basculement, plus que
+     tout habillage, qui fait « éditeur ». */
+  function modeEditeur(actif){
+    document.body.classList.toggle("editeur",!!actif);
+    /* La liste des stratégies et la barre d'édition se relaient : en
+       édition c'est la barre du haut qui porte le nom et l'enregistrement,
+       le panneau flottant n'a plus lieu d'être. */
+    $("barreEd").style.display=actif?"":"none";
+    /* L'AFFICHAGE EST UN RÉGLAGE, pas une commande de tous les instants.
+       En édition il descend dans l'inspecteur : la barre du bas devenait
+       assez fournie pour passer sous la minimap, et le viewport doit
+       rester dégagé. En exploration il reprend sa place, il n'y a alors
+       ni rail ni panneau pour l'accueillir. */
+    const hud=$("hud"), aff=$("affCorps");
+    if(actif) $("secAff").classList.add("plie");
+    $("secAff").style.display=actif?"":"none";
+    if(actif&&hud.parentNode!==aff){ aff.appendChild(hud); hud.classList.add("enPanneau"); }
+    else if(!actif&&hud.parentNode===aff){ $("wrap").appendChild(hud); hud.classList.remove("enPanneau"); }
+    $("strat").style.display=(!actif&&ST.ouvert)?"block":"none";
+    $("stratBtn").style.display=(actif||!stSession())?"none":"";
+    majAide();
+    /* le canevas a changé de taille : sans cela le rendu reste étiré */
+    requestAnimationFrame(()=>{ resize(); });
+  }
+  /* L'aide se lit dans le coin, et elle dit ce qui sert MAINTENANT :
+     les gestes de caméra quand on explore, les raccourcis quand on
+     édite. Une aide qui ne change pas est une aide qu'on cesse de lire. */
+  function majAide(){
+    const h=$("hint"); if(!h) return;
+    h.innerHTML=document.body.classList.contains("editeur")
+      ? "<b>"+t("Tools")+"</b> <kbd>V</kbd><kbd>1</kbd>…<kbd>5</kbd><kbd>A</kbd><kbd>N</kbd> · <b>"+t("Side")+"</b> <kbd>C</kbd><br>"+
+        "<kbd>Ctrl</kbd><kbd>Z</kbd> "+t("undo")+" · <kbd>Ctrl</kbd><kbd>D</kbd> "+t("duplicate")+
+        " · <kbd>F</kbd> "+t("frame")+" · <kbd>Suppr</kbd> "+t("delete")
+      : "<b>"+t("Drag")+"</b> "+t("to rotate")+" · <b>"+t("Scroll")+"</b> "+t("zooms where you point")+"<br>"+
+        "<b>"+t("Right-click")+"</b> "+t("to pan")+" · <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> "+t("to move");
+  }
+
+  /* ── L'HISTORIQUE ─────────────────────────────────────────────────
+     Une pile d'états, pas de commandes inversibles : les éléments sont
+     de petits objets, en copier trente coûte moins qu'une milliseconde,
+     et l'on n'a alors aucun cas particulier à écrire — donc aucun à
+     oublier. On ose essayer quand on peut revenir en arrière. */
+  const HISTO_MAX=60;
+  let histo=[], histoI=-1, histoSale=0;
+  const copieEls=()=>ST.els.map(e=>Object.assign({},e));
+  function histoRaz(){ histo=[copieEls()]; histoI=0; histoSale=0; majHistoBoutons(); }
+  function histoPose(){
+    if(histoI>=0&&JSON.stringify(histo[histoI])===JSON.stringify(ST.els)) return;
+    histo=histo.slice(0,histoI+1);
+    histo.push(copieEls());
+    if(histo.length>HISTO_MAX) histo.shift();
+    histoI=histo.length-1; histoSale=1;
+    majHistoBoutons();
+  }
+  function histoVa(d){
+    const j=histoI+d;
+    if(j<0||j>=histo.length) return;
+    histoI=j; histoSale=1;
+    ST.els=histo[j].map(e=>Object.assign({},e));
+    if(ST.sel>=ST.els.length) ST.sel=-1;
+    buildStrat(); buildChars(); buildVue(); buildChamp(); stMaj(); stLabels();
+  }
+  function majHistoBoutons(){
+    const u=$("btnUndo"), r=$("btnRedo");
+    if(u) u.disabled=histoI<=0;
+    if(r) r.disabled=histoI>=histo.length-1;
+    const e=$("stEtat");
+    if(e){ e.textContent=histoSale?t("Unsaved"):""; e.classList.toggle("sale",!!histoSale); }
+  }
+
+  /* ── LA LISTE DES ÉLÉMENTS ────────────────────────────────────────
+     Sur une carte d'un kilomètre, retrouver un char pour le renommer se
+     paie en allers-retours de caméra. La liste le donne directement.
+     Le camp s'y lit à sa LETTRE autant qu'à sa couleur : la règle du
+     site est que la couleur ne porte jamais seule le sens. */
+  const ICONES={
+    tank:'<svg viewBox="0 0 20 20"><path d="M3 12h14v4H3z"/><path d="M5 12V9h8v3"/><path d="M9 9V7h9"/></svg>',
+    fleche:'<svg viewBox="0 0 20 20"><path d="M3 16L16 4"/><path d="M9 4h7v7"/></svg>',
+    texte:'<svg viewBox="0 0 20 20"><path d="M4 4h12v9l-4 4H4z"/><path d="M16 13h-4v4"/></svg>'
+  };
+  function majListe(){
+    const l=$("elListe"); if(!l) return;
+    $("elCompte").textContent=ST.els.length?ST.els.length:"";
+    if(!ST.els.length){
+      l.innerHTML='<div class="elVide">'+t("Nothing placed yet. Pick a tool on the left and click the ground.")+'</div>';
+      return;
+    }
+    l.innerHTML="";
+    for(let i=0;i<ST.els.length;i++){
+      const e=ST.els[i];
+      const b=document.createElement("button");
+      b.className="elRow"+(i===ST.sel?" sel":"")+(e.masque?" off":"");
+      const cls=(ST_CLS.find(x=>x[0]===e.cls)||ST_CLS[1])[1];
+      const nom=e.name|| (e.type==="fleche"?t("Arrow"):e.type==="texte"?t("Note"):t(cls));
+      b.innerHTML='<span class="ic">'+(ICONES[e.type]||ICONES.tank)+'</span>'+
+        '<span class="nm"></span>'+
+        '<span class="camp '+(e.camp==="ennemi"?"e":"a")+'">'+(e.camp==="ennemi"?"E":"A")+'</span>'+
+        '<span class="oeil" role="button" tabindex="-1"><svg viewBox="0 0 20 20">'+
+        (e.masque?'<path d="M4 4l12 12"/><path d="M2 10s3-5 8-5 8 5 8 5-3 5-8 5-8-5-8-5z"/>'
+                 :'<path d="M2 10s3-5 8-5 8 5 8 5-3 5-8 5-8-5-8-5z"/><circle cx="10" cy="10" r="2"/>')+
+        '</svg></span>';
+      b.querySelector(".nm").textContent=nom;
+      b.addEventListener("click",ev=>{
+        if(ev.target.closest(".oeil")){
+          e.masque=!e.masque;
+          buildStrat(); buildChars(); buildVue(); buildChamp(); stMaj(); stLabels();
+          return;
+        }
+        ST.sel=i; stMaj(); stLabels();
+      });
+      l.appendChild(b);
+    }
+  }
+  /* le camp courant, sur un seul bouton : deux boutons pour deux états
+     exclusifs occupaient le double de place pour la même information */
+  function majCamp(){
+    const b=$("btnCamp"); if(!b) return;
+    const ennemi=ST.camp==="ennemi";
+    b.classList.toggle("on",true);
+    b.style.color=ennemi?"var(--enn)":"var(--ami)";
+    b.style.borderColor="currentColor";
+    b.style.background="transparent";
+    b.dataset.bulle=(ennemi?t("Enemies"):t("Allies"))+" · C";
+    b.querySelector(".cle").textContent=ennemi?"E":"A";
+  }
+
+  /* ── LE PAS D'ALIGNEMENT ──────────────────────────────────────────
+     Aligner cinq chars sur une crête à la souris donne cinq positions
+     presque alignées, ce qui se voit. Un pas régulier les met d'aplomb
+     sans effort. Zéro veut dire libre — c'est le défaut, parce qu'une
+     position de char n'a pas de raison d'être ronde. */
+  let PAS_POSE=0;
+  const accroche=(v)=>PAS_POSE?Math.round(v/PAS_POSE)*PAS_POSE:v;
+
   /* ── le panneau et ses commandes ── */
   (function stInit(){
-    const cls=$("stCls");
-    for(const [k,nom] of ST_CLS){
-      const b=document.createElement("button"); b.className="btn"; b.dataset.cls=k; b.textContent=t(nom);
-      b.addEventListener("click",()=>{ ST.outil=k; stMaj(); });
-      cls.appendChild(b);
+    {
+      const s=$("stPas");
+      for(const v of [0,5,10,25]){
+        const o=document.createElement("option");
+        o.value=v; o.textContent=v?(t("Step")+" "+v+" m"):t("Free placement");
+        s.appendChild(o);
+      }
+      s.addEventListener("change",()=>{ PAS_POSE=Number(s.value)||0; });
     }
-    /* Les deux outils d'ANNOTATION, à part des classes de char : ce ne
-       sont pas des chars, et c'est par eux qu'une stratégie se raconte —
-       où l'on va, et pourquoi. */
-    for(const [k,nom] of [["fleche","Arrow"],["texte","Note"]]){
-      const b=document.createElement("button"); b.className="btn stAnnot"; b.dataset.cls=k; b.textContent=t(nom);
-      b.addEventListener("click",()=>{ ST.outil=k; stMaj(); });
-      $("stAnnot").appendChild(b);
+    /* les classes de char, dans le rail */
+    const CLS_IC={
+      light:'<svg viewBox="0 0 20 20"><path d="M3 13h14v3H3z"/><path d="M6 13v-3h7v3"/><path d="M10 10V8h8"/></svg>',
+      medium:ICONES.tank,
+      heavy:'<svg viewBox="0 0 20 20"><path d="M2 11h16v5H2z"/><path d="M5 11V7h9v4"/><path d="M10 7V5h9"/></svg>',
+      td:'<svg viewBox="0 0 20 20"><path d="M3 12h14v4H3z"/><path d="M4 12l4-5h7l-2 5"/><path d="M13 7l5-2"/></svg>',
+      spg:'<svg viewBox="0 0 20 20"><path d="M3 13h14v3H3z"/><path d="M5 13V9h8v4"/><path d="M8 9L17 3"/></svg>'
+    };
+    const rc=$("railChars");
+    ST_CLS.forEach(([k,nom],i)=>{
+      const b=document.createElement("button");
+      b.className="outil"; b.dataset.outil=k; b.dataset.bulle=t(nom)+" · "+(i+1);
+      b.innerHTML=(CLS_IC[k]||ICONES.tank)+'<span class="cle">'+(i+1)+'</span>';
+      rc.appendChild(b);
+    });
+    for(const b of document.querySelectorAll("#rail .outil[data-outil]"))
+      b.addEventListener("click",()=>{ ST.outil=b.dataset.outil; stMaj(); });
+    $("btnCamp").addEventListener("click",()=>{ ST.camp=ST.camp==="ennemi"?"ami":"ennemi"; stMaj(); });
+    /* les volets se replient au clic sur leur en-tête */
+    for(const sec of document.querySelectorAll("#insp .inspSec")){
+      const te=sec.querySelector(".inspTete"); if(!te) continue;
+      te.insertAdjacentHTML("beforeend",'<svg class="chev" viewBox="0 0 12 12"><path d="M2 4l4 4 4-4"/></svg>');
+      te.addEventListener("click",e=>{ if(e.target.closest("button,input,select")) return;
+        sec.classList.toggle("plie"); });
     }
+    $("btnUndo").addEventListener("click",()=>histoVa(-1));
+    $("btnRedo").addEventListener("click",()=>histoVa(1));
     $("stVue").addEventListener("click",()=>{ montreVue^=1; stMaj(); stLabels(); });
     $("stChamp").addEventListener("click",()=>{ montreChamp^=1; stMaj(); });
-    $("stAmi").addEventListener("click",()=>{ ST.camp="ami"; stMaj(); });
-    $("stEnn").addEventListener("click",()=>{ ST.camp="ennemi"; stMaj(); });
-    $("stNom").addEventListener("input",e=>{ ST.nom=e.target.value; });
+    $("stTitreIn").addEventListener("input",e=>{ ST.nom=e.target.value; histoSale=1; majHistoBoutons(); });
     $("stElNom").addEventListener("input",e=>{ const el=ST.els[ST.sel]; if(el){ el.name=e.target.value; stLabels(); } });
     $("stElChar").addEventListener("change",e=>{
       const el=ST.els[ST.sel]; if(!el) return;
@@ -2430,7 +2926,7 @@ function pretty(k){ const L=LABELS[k];
       $("stLbl").innerHTML=""; ST.els=[]; ST.sel=-1; buildStrat(); buildChars(); buildVue(); buildChamp(); });
     $("stratBtn").addEventListener("click",()=>{
       ST.ouvert^=1;
-      $("strat").style.display=ST.ouvert?"block":"none";
+      $("strat").style.display=(ST.ouvert&&!document.body.classList.contains("editeur"))?"block":"none";
       $("stratBtn").classList.toggle("on",!!ST.ouvert);
       /* La bibliothèque de chars ne se demande QU'ICI, et une seule fois :
          12,7 Mo qu'il serait absurde de payer pour qui regarde une carte
@@ -2442,6 +2938,7 @@ function pretty(k){ const L=LABELS[k];
        serveur refuserait, et proposer une action qui échoue à coup sûr
        n'aide personne. */
     if(stSession()) $("stratBtn").style.display="";
+    majAide();
     /* En mode test seulement : de quoi exercer la pose et le rendu sans
        session de clan. Le serveur, lui, ne s'en laisse pas conter — il
        refusera l'enregistrement. C'est un banc d'essai, pas une porte. */
@@ -2452,6 +2949,8 @@ function pretty(k){ const L=LABELS[k];
       vue:v=>{ montreVue=v?1:0; }, champ:v=>{ montreChamp=v?1:0; },
       champInfo:()=>({n:champN,tir:champNTir,taux:champStat}), solY,
       hullDown,interpole,yawRelatif,solSousCurseur,hautEtiquette,poignee:()=>stPoignee,
+      modeEditeur,histoPose,histoRaz,histoVa,majListe,majAide,
+      histo:()=>({n:histo.length,i:histoI,sale:histoSale}),
       /* cadrer la caméra sur un point : le banc d'essai en a besoin pour
          regarder un char de près sans piloter la souris à l'aveugle */
       cadre:(x,z,r,polDeg,azDeg)=>{ tgt=[x, terrainNorm(x,z)*curMaxH*exag, -z]; pan.x=0; pan.z=0;
@@ -2459,11 +2958,53 @@ function pretty(k){ const L=LABELS[k];
         cible={az,pol,rad,px:0,pz:0}; },
       etatChars:()=>charsEtat,lots:()=>charsLots,solLots:()=>stLots,
       vueLots:()=>vueLots,biblio:()=>CHARS,jeux:()=>JEUX,boites:prepareBoites};
+    /* ── LES VUES ────────────────────────────────────────────────────
+       Trois angles nommés, plutôt que de chercher le bon à la souris.
+       Le dessus lit une ligne de vue, le côté lit un dénivelé, le
+       trois-quarts sert au reste. */
+    const VUES={dessus:88, troisquart:38, cote:9};
+    for(const b of document.querySelectorAll("#vues .btn[data-vue]"))
+      b.addEventListener("click",()=>{ cible.pol=VUES[b.dataset.vue]*Math.PI/180; });
+    /* Cadrer sur ce qui est choisi : la touche F, comme partout ailleurs. */
+    function cadreSel(){
+      const e=ST.els[ST.sel]; if(!e) return;
+      cible.px=e.x-tgt[0]; cible.pz=(-e.y)-tgt[2];
+      cible.rad=clamp(Math.max(18,WORLD*0.03),RMIN(),WORLD*2.4);
+    }
+
+    /* ── LES RACCOURCIS ──────────────────────────────────────────────
+       Un éditeur se tient d'une main sur le clavier. Les chiffres
+       choisissent l'outil, comme dans tous les outils de dessin ; le
+       reste suit les conventions que personne n'a besoin d'apprendre. */
+    const TOUCHE_OUTIL={v:"select",a:"fleche",n:"texte"};
+    ST_CLS.forEach(([k],i)=>{ TOUCHE_OUTIL[String(i+1)]=k; });
     document.addEventListener("keydown",e=>{
-      if(!ST.ouvert||ST.sel<0) return;
+      if(!ST.ouvert) return;
       if(/^(input|textarea|select)$/i.test((e.target.tagName||""))) return;
+      const mod=e.ctrlKey||e.metaKey;
+      if(mod&&(e.key==="z"||e.key==="Z")){ e.preventDefault(); histoVa(e.shiftKey?1:-1); return; }
+      if(mod&&(e.key==="y"||e.key==="Y")){ e.preventDefault(); histoVa(1); return; }
+      if(mod&&(e.key==="d"||e.key==="D")){
+        /* DUPLIQUER : le nouveau se pose décalé d'une longueur de char,
+           sinon il se cache exactement sous l'ancien et l'on croit que
+           rien ne s'est passé. */
+        e.preventDefault();
+        const el=ST.els[ST.sel]; if(!el||!ST.canEdit) return;
+        const d=Object.assign({},el), pas=Math.max(8,PAS_POSE||8);
+        d.x+=pas; if(d.type==="fleche") d.x2+=pas;
+        ST.els.push(d); ST.sel=ST.els.length-1;
+        histoPose(); buildStrat(); buildChars(); buildVue(); buildChamp(); stMaj(); stLabels();
+        return;
+      }
+      if(mod) return;
+      if(e.key==="Escape"){ ST.sel=-1; stMaj(); stLabels(); return; }
+      if(e.key==="f"||e.key==="F"){ cadreSel(); return; }
+      const o=TOUCHE_OUTIL[e.key.toLowerCase()];
+      if(o){ ST.outil=o; stMaj(); return; }
+      if(e.key==="c"||e.key==="C"){ ST.camp=ST.camp==="ennemi"?"ami":"ennemi"; stMaj(); return; }
+      if(ST.sel<0) return;
       if(e.key==="Delete"||e.key==="Backspace"){ e.preventDefault();
-        ST.els.splice(ST.sel,1); ST.sel=-1; stMaj(); stLabels(); }
+        ST.els.splice(ST.sel,1); ST.sel=-1; histoPose(); stMaj(); stLabels(); }
     });
   })();
   function frame(t){
@@ -2683,16 +3224,116 @@ function pretty(k){ const L=LABELS[k];
   let MAPS3D={};
   fetch("maps3d/index.json").then(r=>r.json()).then(list=>{
     list.forEach(function(m){ MAPS3D[m.key]=m; if(m.carte&&m.mode) LABELS[m.key]={carte:m.carte,mode:m.mode}; });
-    const sel=document.getElementById("mapSel");
-    list.map(m=>m.key).sort((a,b)=>pretty(a).localeCompare(pretty(b), window.CP_LANG==="fr"?'fr':'en')).forEach(k=>{
-      const o=document.createElement("option"); o.value=k; o.textContent=pretty(k); sel.appendChild(o);
+    /* ══ L'ACCUEIL : QUARANTE-HUIT CARTES, CHOISIES À LA VUE ═════════
+       Une liste déroulante demande de connaître le nom pour trouver la
+       carte. Or ce qu'un joueur reconnaît d'une carte, c'est son DESSIN
+       — la minimap qu'il a sous les yeux à chaque bataille. On en fait
+       donc la vignette, et le nom vient en second.
+       Les filtres existent parce que quarante-huit vignettes ne se
+       parcourent pas de l'œil : on cherche par nom, par taille, ou l'on
+       ne garde que les cartes déjà travaillées par le clan. */
+    const cartes=list.map(m=>m.key)
+      .sort((a,b)=>pretty(a).localeCompare(pretty(b), window.CP_LANG==="fr"?'fr':'en'));
+    let filtreT="", filtreQ="";
+    /* combien de stratégies le clan a par carte — rempli quand le
+       serveur répond ; l'accueil s'affiche sans attendre */
+    const stratParCarte={};
+
+    /* Les tranches viennent des tailles RÉELLES : mesuré sur les
+       quarante-huit cartes, elles vont de 1 000 à 1 600 m, et trente-
+       trois d'entre elles font 1 400. Une tranche « moins d'un
+       kilomètre » ne trouvait donc jamais rien — un filtre qui ne peut
+       pas répondre est une promesse en l'air. */
+    const TAILLES=[["","All sizes"],["p","Compact · 1 to 1.2 km"],["m","Standard · 1.4 km"],["g","Large · 1.5 km and up"]];
+    const tailleDe=(w)=>w<=1200?"p":w<=1400?"m":"g";
+    {
+      const c=$("acChips");
+      for(const [v,lib] of TAILLES){
+        const b=document.createElement("button");
+        b.className="btn"+(v===""?" on":""); b.dataset.taille=v; b.textContent=t(lib);
+        b.addEventListener("click",()=>{ filtreT=v;
+          for(const x of c.children) x.classList.toggle("on",x.dataset.taille===v);
+          dessineGrille(); });
+        c.appendChild(b);
+      }
+      const b=document.createElement("button");
+      b.className="btn"; b.dataset.taille="s"; b.textContent=t("With a plan");
+      b.addEventListener("click",()=>{ filtreT=filtreT==="s"?"":"s";
+        for(const x of c.children) x.classList.toggle("on",x.dataset.taille===filtreT||(filtreT===""&&x.dataset.taille===""));
+        dessineGrille(); });
+      c.appendChild(b);
+    }
+    /* on écarte les accents pour que « Vallee » trouve « Vallée » */
+    const plat=(s)=>s.normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
+    $("acQ").addEventListener("input",e=>{ filtreQ=plat(e.target.value.trim()); dessineGrille(); });
+    $("acQ").addEventListener("keydown",e=>{
+      if(e.key!=="Enter") return;
+      const p=$("acGrille").querySelector(".acCarte");
+      if(p) p.click();
     });
-    let start="himmelsdorf"; try{ const s=localStorage.getItem("cp_map3d"); if(s&&list.some(m=>m.key===s)) start=s; }catch(_){}
-    if(!list.some(m=>m.key===start)) start=list[0]&&list[0].key;
-    sel.value=start;
-    sel.addEventListener("change",()=>loadMap(sel.value));
-    loadMap(start);
-    requestAnimationFrame(frame);
+
+    function dessineGrille(){
+      const g=$("acGrille"); g.innerHTML="";
+      const vus=cartes.filter(k=>{
+        const m=MAPS3D[k]||{};
+        if(filtreQ&&!plat(pretty(k)).includes(filtreQ)) return false;
+        if(filtreT==="s") return (stratParCarte[k]||0)>0;
+        if(filtreT&&tailleDe(m.world||1000)!==filtreT) return false;
+        return true;
+      });
+      $("acCompte").textContent=vus.length+" / "+cartes.length;
+      if(!vus.length){
+        g.innerHTML='<div class="acRien"><h3>'+t("No map matches")+'</h3><p>'+
+          t("Try another name, or clear the filters.")+'</p></div>';
+        return;
+      }
+      for(const k of vus){
+        const m=MAPS3D[k]||{};
+        const b=document.createElement("button");
+        b.className="acCarte"; b.type="button";
+        const n=stratParCarte[k]||0;
+        const img=(m.mini||m.carte||k);
+        b.innerHTML=
+          '<div class="acVign"><div class="acVide">'+t("No minimap")+'</div>'+
+            '<img loading="lazy" alt="" src="maps/top/'+img+'.jpg" onload="this.previousElementSibling.style.display=\'none\'" onerror="this.remove()">'+
+            (n?'<span class="acStrat"><b>'+n+'</b>'+t("plans")+'</span>':'')+
+            '<span class="acNom"></span></div>'+
+          '<div class="acPied"><span class="m">'+(m.world||"?")+' m</span>'+
+            '<span class="acModes">'+((m.modes||[]).slice(0,3).map(x=>'<span class="acMode">'+t(x)+'</span>').join(''))+'</span></div>';
+        b.querySelector(".acNom").textContent=pretty(k);
+        b.addEventListener("click",()=>ouvrirCarte(k));
+        g.appendChild(b);
+      }
+    }
+
+    let demarree=0;
+    function ouvrirCarte(k){
+      $("accueil").classList.add("parti");
+      $("wrap").classList.add("on");
+      loadMap(k);
+      if(!demarree){ demarree=1; requestAnimationFrame(frame); }
+      requestAnimationFrame(()=>resize());
+    }
+    /* Revenir aux cartes ne referme pas la stratégie ouverte par
+       mégarde : on la ferme explicitement, sinon on la retrouverait
+       posée sur une autre carte. */
+    $("btnCartes").addEventListener("click",()=>{
+      if(ST.ouvert) $("stratBtn").click();
+      $("wrap").classList.remove("on");
+      $("accueil").classList.remove("parti");
+      $("acQ").focus();
+    });
+
+    dessineGrille();
+    $("acQ").focus();
+    /* Le compte des stratégies arrive après coup : l'accueil ne doit pas
+       attendre le serveur pour s'afficher, et sans session il n'y a rien
+       à demander. */
+    if(stSession()) stApi({action:"list"}).then(r=>{
+      if(!r.ok||!r.j||!r.j.strategies) return;
+      for(const s of r.j.strategies) if(s.map) stratParCarte[s.map]=(stratParCarte[s.map]||0)+1;
+      dessineGrille();
+    }).catch(()=>{});
   }).catch(()=>{ document.getElementById("err").style.display="flex"; document.getElementById("err").textContent=t("Couldn't load the map list (maps3d/index.json)."); loadEl.classList.remove("on"); });
 })();
 </script>
