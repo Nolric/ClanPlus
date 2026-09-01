@@ -578,7 +578,9 @@
       </div>
       <div class="stRow" style="padding:0 0 8px">
         <button class="btn" id="stCroix">Who sees whom</button>
+        <button class="btn" id="stAveugle">Blind spots</button>
       </div>
+      <div class="stPos" id="avStat" style="padding:0 0 8px"></div>
       <div class="inspCorps" id="elListe"></div>
     </div>
     <div class="inspSec" id="secAff" style="display:none">
@@ -1716,7 +1718,12 @@ function pretty(k){ const L=LABELS[k];
        le geste ; on le refait au moment où on lâche. */
     if(stDrag) return;
     champN=0; champNTir=0; champStat="";
-    if(!montreChamp||!curHeights||ST.sel<0||!ST.els[ST.sel]) return;
+    if(!montreChamp||!curHeights) return;
+    /* Les angles morts sont une lecture du PLAN, pas d’un char : ils ne
+       demandent aucune sélection, et l’exiger empêcherait de les lire
+       après un clic dans le vide. */
+    if(modeChamp==="aveugle"){ buildAveugle(); return; }
+    if(ST.sel<0||!ST.els[ST.sel]) return;
     if(ST.els[ST.sel].type!=="tank") return;   /* une flèche ne voit rien */
     carteOcclusion();
     const el=ST.els[ST.sel], O=oeilDe(el);
@@ -2465,6 +2472,95 @@ function pretty(k){ const L=LABELS[k];
        bout du trajet. C’est le moment où l’on veut regarder autour de
        soi, et la barre reprend donc ses commandes de visée. */
     if(u>=1){ voyage=null; majOeil(); }
+  }
+
+  /* ══ LES ANGLES MORTS DU DISPOSITIF ════════════════════════════════
+     « Par où peut-on nous contourner sans être vus ? »
+
+     Un dispositif se juge à ses TROUS, pas à ce qu'il voit. L'analyse
+     existante se fait char par char, ce qui ne dit rien de l'ensemble :
+     cinq champs de vision superposés dans la tête ne forment pas une
+     carte.
+
+     ── Une propriété qui simplifie tout ─────────────────────────────
+     La visibilité est réciproque : si un char posté en C est vu depuis
+     A, alors A est vu depuis C. Le sol que personne ne couvre est donc
+     AUSSI le sol depuis lequel personne ne nous voit. Une seule carte
+     répond aux deux questions, et il n'y a pas de « trou dangereux »
+     distinct d'un « trou tranquille ».
+
+     ── Pourquoi le balayage et pas une grille de rayons ─────────────
+     Tester chaque case par un vrai rayon serait exact, mais
+     `bloqueBati` parcourt TOUS les objets de la carte : huit mille
+     boîtes par rayon, cinq mille cases, cinq alliés — deux cents
+     millions d'itérations. Le balayage, lui, lit une carte
+     d'occultation rastérisée en temps constant, et c'est pour cela
+     qu'il coûte cent millisecondes au lieu d'une minute.
+
+     ── La finesse de la grille n'est pas choisie ────────────────────
+     Cent vingt-huit cases donnent 10,9 m de côté sur une carte de
+     1 400 m. À 445 m, deux azimuts voisins sont écartés de 7,8 m :
+     c'est MOINS qu'une case, donc le balayage ne saute aucune case et
+     la carte n'a pas de faux trous. À 192 cases l'écart passerait à
+     7,3 m contre 7,8 — et des trous apparaîtraient au loin, là où
+     justement on regarde. */
+  const G_AVEUGLE=128;
+  function buildAveugle(){
+    carteOcclusion();
+    const amis=ST.els.filter(e=>e.type==="tank"&&e.camp!=="ennemi");
+    if(!amis.length){ champStat=t("No allied tank placed."); return; }
+    const HE=hauteurEnnemie(), G=G_AVEUGLE;
+    const cx=WORLD/G, cz=WORLDZ/G;
+    const vu=new Uint8Array(G*G), portee=new Uint8Array(G*G);
+    for(const el of amis){
+      const O=oeilDe(el);
+      /* le disque de portée : ce dont on parle. Au-delà, tout est
+         aveugle par construction et le dire n'apprend rien. */
+      for(let j=0;j<G;j++) for(let i=0;i<G;i++){
+        const x=ORIG[0]+(i+0.5)*cx, z=ORIG[1]+(j+0.5)*cz;
+        if(Math.hypot(x-O[0],z-O[2])<=PORTEE_VUE) portee[j*G+i]=1;
+      }
+      const enfoui=hauteurOcc(O[0],O[2])>O[1];
+      for(let a=0;a<AZIMUTS;a++){
+        const ang=(a+0.5)/AZIMUTS*Math.PI*2, cm=Math.cos(ang), sm=Math.sin(ang);
+        let horizon=-1e30, sorti=!enfoui;
+        for(let r=PAS_RAYON;r<=PORTEE_VUE;r+=PAS_RAYON){
+          const x=O[0]+cm*r, z=O[2]+sm*r;
+          const i=Math.floor((x-ORIG[0])/cx), j=Math.floor((z-ORIG[1])/cz);
+          if(i<0||i>=G||j<0||j>=G) break;
+          const sol=solY(x,z), occ=hauteurOcc(x,z);
+          if(!sorti){ if(occ<=O[1]) sorti=1; else continue; }
+          const aC=(sol+HE-O[1])/r, aO=(occ-O[1])/r;
+          if(aC>=horizon&&occ<=sol+0.01) vu[j*G+i]=1;
+          if(aO>horizon) horizon=aO;
+        }
+      }
+    }
+    const P=[]; let nP=0, nAv=0;
+    for(let j=0;j<G;j++) for(let i=0;i<G;i++){
+      if(!portee[j*G+i]) continue;
+      nP++;
+      if(vu[j*G+i]) continue;
+      nAv++;
+      const x0=ORIG[0]+i*cx, x1=x0+cx, z0=ORIG[1]+j*cz, z1=z0+cz;
+      const v=[[x0,z0],[x1,z0],[x1,z1],[x0,z1]]
+        .map(([qx,qz])=>[qx,0.4,-qz,terrainNorm(qx,qz)]);
+      for(const k of [0,1,2,0,2,3]) P.push(v[k][0],v[k][1],v[k][2],v[k][3]);
+    }
+    /* LE POURCENTAGE SEUL NE DIT RIEN, et c’est la mesure qui l’a
+       montré : un char donne 67 %, trois donnent 69 %, six donnent 67 %.
+       Le dénominateur grandit avec l’effectif — chaque char ajouté
+       apporte surtout du sol à portée qu’il est seul à pouvoir couvrir.
+       On annonce donc AUSSI la surface couverte, en hectares : celle-là
+       bouge quand le dispositif s’améliore, et c’est ce qu’on achète en
+       posant un char de plus. */
+    const ha=cx*cz/10000;
+    champStat=nP?(Math.round(nAv/nP*100)+"% "+t("of the ground in range that nobody covers")
+      +" · "+((nP-nAv)*ha).toFixed(1)+" ha "+t("covered out of")+" "+(nP*ha).toFixed(1)):"";
+    if(!P.length) return;
+    gl.bindBuffer(gl.ARRAY_BUFFER,champB);
+    gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(P),gl.DYNAMIC_DRAW);
+    champNTir=champN=P.length/4;
   }
 
   /* Poser un point de mesure. Le premier clic ouvre, le second ferme,
@@ -3235,6 +3331,8 @@ function pretty(k){ const L=LABELS[k];
     $("stVue").classList.toggle("on",!!montreVue);
     $("stChamp").classList.toggle("on",!!montreChamp&&modeChamp==="vision");
     $("stDanger").classList.toggle("on",!!montreChamp&&modeChamp==="danger");
+    $("stAveugle").classList.toggle("on",!!montreChamp&&modeChamp==="aveugle");
+    $("avStat").textContent=(montreChamp&&modeChamp==="aveugle")?champStat:"";
     $("stChampV").textContent=montreChamp?champStat:"";
     /* La vue subjective ne survit pas à son sujet : le char peut avoir
        été supprimé, ou la stratégie fermée sous nos pieds. Sans ce
@@ -3709,6 +3807,7 @@ function pretty(k){ const L=LABELS[k];
       stMaj();
     };
     $("stChamp").addEventListener("click",()=>bascule("vision"));
+    $("stAveugle").addEventListener("click",()=>bascule("aveugle"));
     $("stCroix").addEventListener("click",()=>{
       const c=$("croix"); c.classList.toggle("on");
       $("stCroix").classList.toggle("on",c.classList.contains("on"));
@@ -4060,7 +4159,12 @@ function pretty(k){ const L=LABELS[k];
              coup : c’est là qu’on meurt sans comprendre. */
           const danger=(modeChamp==="danger");
           if(champNTir){
-            if(danger) gl.uniform4f(luCoul,0.95,0.66,0.24,0.30);
+            /* Violet pour les angles morts : ni le cyan de ce qu’on voit,
+               ni l’ambre ou le rouge du danger, ni le vert et le rouge
+               des lignes de vue. Une couleur libre, pour une lecture
+               qui n’est ni l’une ni l’autre. */
+            if(modeChamp==="aveugle") gl.uniform4f(luCoul,0.58,0.44,0.88,0.38);
+            else if(danger) gl.uniform4f(luCoul,0.95,0.66,0.24,0.30);
             else       gl.uniform4f(luCoul,0.30,0.82,0.95,0.34);
             gl.drawArrays(gl.TRIANGLES,0,champNTir);
           }

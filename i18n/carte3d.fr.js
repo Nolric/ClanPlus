@@ -54,6 +54,11 @@ window.CP_FR = Object.assign(window.CP_FR || {}, {
   "Over the ground": "En épousant le sol",
   "Height change": "Dénivelé",
   "Clear": "Effacer",
+  /* ── les angles morts ── */
+  "Blind spots": "Angles morts",
+  "No allied tank placed.": "Aucun char allié posé.",
+  "of the ground in range that nobody covers": "du sol à portée que personne ne couvre",
+  "covered out of": "couverts sur",
   "Drag to look around · Scroll to zoom in · Esc to leave": "Glisser pour regarder autour · molette pour resserrer · Échap pour sortir",
   "Line of sight": "Ligne de vue",
   "Field of view": "Champ de vision",
