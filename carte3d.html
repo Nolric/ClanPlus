@@ -600,6 +600,24 @@
   <div id="err" class="glass">Your browser couldn't start 3D (WebGL required).</div>
 </div>
 <script>
+/* ── LIRE UNE DONNÉE DE CARTE ─────────────────────────────────────────
+   GitHub Pages sert ces fichiers avec « Cache-Control: max-age=600 ».
+   Pendant dix minutes après une mise en ligne, un navigateur qui les a
+   déjà lus ressert donc SA copie sans rien demander au serveur. C'est
+   ainsi que Robert a cherché sur Falaise un phare qui y était : le
+   fichier était en ligne, sa copie ne l'était pas — et j'ai perdu un
+   aller-retour à chercher un défaut qui n'existait pas.
+
+   « no-cache » ne veut pas dire « ne pas mettre en cache » : le
+   navigateur garde sa copie mais REDEMANDE au serveur si elle est
+   toujours bonne. Inchangée, le serveur répond 304 sans renvoyer les
+   octets — le coût est un aller-retour, pas les quatre mégaoctets.
+   Changée, on reçoit la nouvelle tout de suite.
+
+   Réservé aux données de carte, qui changent à chaque extraction. La
+   page et ses scripts, eux, portent déjà leur empreinte dans l'URL. */
+const litData = (url, opts) => fetch(url, Object.assign({ cache: "no-cache" }, opts));
+
 const NAMES = {
   airfield: "Aérodrome",
   asiagreatwall: "Frontière de l'Empire",
@@ -1311,8 +1329,8 @@ function pretty(k){ const L=LABELS[k];
     charsEtat=1;
     try{
       const [j,ab]=await Promise.all([
-        fetch("chars/chars.json").then(r=>{ if(!r.ok) throw new Error(r.status); return r.json(); }),
-        fetch("chars/chars.bin").then(r=>{ if(!r.ok) throw new Error(r.status); return r.arrayBuffer(); })]);
+        litData("chars/chars.json").then(r=>{ if(!r.ok) throw new Error(r.status); return r.json(); }),
+        litData("chars/chars.bin").then(r=>{ if(!r.ok) throw new Error(r.status); return r.arrayBuffer(); })]);
       lisCPF4(ab,charsJeu);
       CHARS=j; charsEtat=2;
       majBoutonChar(); pickRemplit(); buildChars();
@@ -1967,7 +1985,7 @@ function pretty(k){ const L=LABELS[k];
       aLire.push(j);
     }
     const brut=await Promise.all(aLire.map(j=>
-      fetch("maps3d/"+((curMeta&&curMeta.dossier)||key)+"/"+j.fichier+".bin")
+      litData("maps3d/"+((curMeta&&curMeta.dossier)||key)+"/"+j.fichier+".bin")
         .then(r=>r.ok?r.arrayBuffer():null)
         .catch(e=>{ console.error("carte3d : "+j.fichier+".bin illisible —", e); return null; })));
     for(let k=0;k<aLire.length;k++){
@@ -2443,7 +2461,7 @@ function pretty(k){ const L=LABELS[k];
     /* Un mode peut n'avoir PAS de relief propre : Himmelsdorf ne change
        que ses objets. On retombe alors sur le relief de base — écrire
        « m ? m.relief : … » demandait un fichier nommé undefined. */
-    const ab=await fetch("maps3d/"+dossier()+"/"+((m&&m.relief)||"height.u16")).then(r=>r.arrayBuffer());
+    const ab=await litData("maps3d/"+dossier()+"/"+((m&&m.relief)||"height.u16")).then(r=>r.arrayBuffer());
     const heights=new Uint16Array(ab);
     /* zmin/zmax sont les altitudes RÉELLES du relief, en mètres. Les
        cartes pas encore réextraites n'ont que l'ancien couple hmin/hmax
@@ -2489,7 +2507,7 @@ function pretty(k){ const L=LABELS[k];
       buildStrat(); buildChars(); buildVue(); buildChamp();
     }
     try{
-      const meta=await fetch("maps3d/"+key+"/meta.json").then(r=>r.json());
+      const meta=await litData("maps3d/"+key+"/meta.json").then(r=>r.json());
       curMeta=meta; curKey=key;
       WORLD=meta.world||1100;
       majModes(meta);
@@ -3473,7 +3491,7 @@ function pretty(k){ const L=LABELS[k];
   /* On garde l'index sous la main : c'est lui qui dit quelles cartes
      possèdent une géométrie, et donc ce qu'il est inutile de demander. */
   let MAPS3D={};
-  fetch("maps3d/index.json").then(r=>r.json()).then(list=>{
+  litData("maps3d/index.json").then(r=>r.json()).then(list=>{
     list.forEach(function(m){ MAPS3D[m.key]=m; if(m.carte&&m.mode) LABELS[m.key]={carte:m.carte,mode:m.mode}; });
     /* ══ L'ACCUEIL : QUARANTE-HUIT CARTES, CHOISIES À LA VUE ═════════
        Une liste déroulante demande de connaître le nom pour trouver la
