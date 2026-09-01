@@ -142,6 +142,12 @@
     background:linear-gradient(to top,rgba(10,11,12,.92) 0%,rgba(10,11,12,.34) 34%,transparent 62%)}
   .acVide{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
     color:var(--muted2);font-size:11px}
+  /* Le repli ne se montre QUE si la vignette a échoué. Il s'affichait
+     jusque-là pendant le chargement, et comme les vignettes sont
+     paresseuses, toute carte pas encore atteinte annonçait « Pas de
+     minimap » — j'ai moi-même pris ce clignotement pour deux cartes
+     sans image. En attendant, la tuile reste au fond sombre. */
+  .acVide[hidden]{display:none}
   .acNom{position:absolute;left:11px;right:11px;bottom:9px;z-index:1;
     font-family:var(--d-cond);font-weight:700;font-size:16px;line-height:1.15;
     text-wrap:balance;text-shadow:0 1px 6px rgba(0,0,0,.9)}
@@ -3539,8 +3545,8 @@ function pretty(k){ const L=LABELS[k];
         const n=stratParCarte[k]||0;
         const img=(m.mini||m.carte||k);
         b.innerHTML=
-          '<div class="acVign"><div class="acVide">'+t("No minimap")+'</div>'+
-            '<img loading="lazy" alt="" src="maps/top/'+img+'.jpg" onload="this.previousElementSibling.style.display=\'none\'" onerror="this.remove()">'+
+          '<div class="acVign"><div class="acVide" hidden>'+t("No minimap")+'</div>'+
+            '<img loading="lazy" alt="" src="maps/top/'+img+'.jpg" onerror="this.previousElementSibling.hidden=false;this.remove()">'+
             (n?'<span class="acStrat"><b>'+n+'</b>'+t("plans")+'</span>':'')+
             '<span class="acNom"></span></div>'+
           '<div class="acPied"><span class="m">'+(m.world||"?")+' m</span>'+
