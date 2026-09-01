@@ -1613,7 +1613,10 @@ function pretty(k){ const L=LABELS[k];
      Himmelsdorf : on ne pouvait pas descendre dans une rue. Le pivot
      suivant désormais le sol, on peut s'approcher sans passer sous le
      relief. */
-  const RMIN=()=>Math.max(12,WORLD*0.018);
+  /* On peut désormais s'approcher pour de bon : la limite tenait au plan
+     de coupe, pas à la scène. Six mètres, de quoi tourner autour d'un
+     char et regarder sa tourelle. */
+  const RMIN=()=>6;
   /* Le cadrage suit la plus grande dimension : sur une carte non carrée,
      se caler sur la largeur seule couperait la longueur. */
   function frameCam(){ const D=Math.max(WORLD,WORLDZ);
@@ -2449,6 +2452,11 @@ function pretty(k){ const L=LABELS[k];
       vue:v=>{ montreVue=v?1:0; }, champ:v=>{ montreChamp=v?1:0; },
       champInfo:()=>({n:champN,tir:champNTir,taux:champStat}), solY,
       hullDown,interpole,yawRelatif,solSousCurseur,hautEtiquette,poignee:()=>stPoignee,
+      /* cadrer la caméra sur un point : le banc d'essai en a besoin pour
+         regarder un char de près sans piloter la souris à l'aveugle */
+      cadre:(x,z,r,polDeg,azDeg)=>{ tgt=[x, terrainNorm(x,z)*curMaxH*exag, -z]; pan.x=0; pan.z=0;
+        rad=r; pol=polDeg*Math.PI/180; if(azDeg!==undefined) az=azDeg*Math.PI/180;
+        cible={az,pol,rad,px:0,pz:0}; },
       etatChars:()=>charsEtat,lots:()=>charsLots,solLots:()=>stLots,
       vueLots:()=>vueLots,biblio:()=>CHARS,jeux:()=>JEUX,boites:prepareBoites};
     document.addEventListener("keydown",e=>{
@@ -2467,7 +2475,14 @@ function pretty(k){ const L=LABELS[k];
     if(montreVue&&vueLots.length&&Math.abs(rad-vueRad)>vueRad*0.15) buildVue();
     gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
     if(idxLen){
-      const P=persp(0.86,cv.width/cv.height,WORLD*0.02,WORLD*7);
+      /* LE PLAN DE COUPE RAPPROCHÉ valait WORLD*0.02 — vingt-huit mètres
+         sur Prokhorovka, alors que la caméra peut s'approcher à
+         vingt-cinq. Tout ce qui était proche se faisait donc trancher, y
+         compris le char qu'on regardait : la coupe entaille le modèle en
+         plein milieu et ce qui reste ressemble à des morceaux épars.
+         Un mètre suffit : le rapport au plan lointain reste de l'ordre
+         de 10⁴, ce que la profondeur sur 24 bits encaisse sans broncher. */
+      const P=persp(0.86,cv.width/cv.height,1.0,WORLD*7);
       const e=eye(),V=look(e,[tgt[0]+pan.x,tgt[1],tgt[2]+pan.z],[0,1,0]);
       const M=[1,0,0,0,0,exag,0,0,0,0,1,0,0,0,0,1];
       const MVP=new Float32Array(mul(mul(P,V),M));
