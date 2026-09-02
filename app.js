@@ -1535,7 +1535,7 @@ function renderReplay(host, rep, mkey, demo){
           <span class="rp-time">0:00 / ${durFR(rep.duration)}</span>
         </div>
         ${demo?`<div class="rp-note">Démo — positions simulées (le mod enverra bientôt les vraies).</div>`
-              :`<div class="rp-note"><button class="rp-launch" type="button" onclick="event.stopPropagation();stOpenReplay('${rep.battleId||""}',this)">✎ Débriefer dans l'éditeur</button></div>`}
+              :`<div class="rp-note"><button class="rp-launch" type="button" onclick="event.stopPropagation();stOpenReplay('${rep.battleId||""}',this)">✎ Débriefer dans l'éditeur</button><button class="rp-launch" type="button" onclick="event.stopPropagation();stOpen3D('${rep.battleId||""}')" title="Rejouer la bataille sur le relief réel, en 3D">⛰ Débriefer en 3D</button></div>`}
       </div>
       ${hasSide?`<div class="rp-side">
         <div class="rp-card rp-jcard">
@@ -8694,6 +8694,18 @@ async function stRpLoad(battleId, mapK, label){
           bases:rep.bases||[],
           t:0, playing:false, speed:2, raf:null, last:0 };
   return true;
+}
+/* ── DÉBRIEFER SUR LE RELIEF ──────────────────────────────────────
+   La carte 3D est une page à part : plutôt que d'y recopier la liste des
+   batailles, on lui passe l'identifiant dans l'adresse. Le lien devient
+   du même coup PARTAGEABLE — il rouvre la même bataille sur la même
+   carte chez n'importe qui du clan. */
+function stOpen3D(battleId){
+  const g=BL_BY_ID[battleId]; if(!g) return;
+  const k=mapKey(g.mapName);
+  const u="carte3d.html?battle="+encodeURIComponent(g.id)+"&carte="+encodeURIComponent(k)+
+          "&nom="+encodeURIComponent(pretty2(g.mapName));
+  window.open(u,"_blank","noopener");
 }
 async function stOpenReplay(battleId, btn){
   const g=BL_BY_ID[battleId]; if(!g) return;

@@ -55,6 +55,10 @@ window.CP_FR = Object.assign(window.CP_FR || {}, {
   "Area": "Zone",
   "Shape label": "Nom de la forme",
   /* ── les groupes et la composition ── */
+  /* ── le débriefing de replay ── */
+  "Loading the replay…": "Chargement du replay…",
+  "No replay saved for this battle.": "Aucun replay enregistré pour cette bataille.",
+  "Debrief": "Débrief",
   /* ── les étapes et la présentation ── */
   "Steps": "Étapes",
   "What happens at this step": "Ce qui se passe à cette étape",

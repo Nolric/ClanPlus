@@ -305,6 +305,16 @@
   /* En présentation, il ne reste que la carte, la note et de quoi
      avancer : un panneau devant les yeux ruine ce qu'on est venu
      montrer. La minimap reste — c'est le repère commun de la salle. */
+  /* La frise du replay : au-dessus de la barre du bas, et masquée en
+     présentation comme à l'œil du char — on y regarde, on n'y règle pas. */
+  #rpBar{display:none}
+  body.replay #rpBar{position:absolute;left:50%;bottom:62px;transform:translateX(-50%);
+    display:flex;gap:9px;align-items:center;padding:8px 12px;z-index:11;
+    max-width:min(94vw,820px);flex-wrap:wrap;justify-content:center}
+  body.vueOeil #rpBar,body.presente #rpBar{display:none!important}
+  #rpSeek{width:min(38vw,300px)}
+  #rpBar .btn{padding:5px 9px;font-size:11.5px}
+  #rpNom{max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   #presBar{display:none}
   body.presente #presBar{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);
     display:flex;gap:12px;align-items:center;padding:10px 14px;z-index:14;
@@ -783,6 +793,17 @@
     <button class="btn" id="presSuiv">▶</button>
     <span id="presNote"></span>
     <button class="btn" id="presX">Leave</button>
+  </div>
+  <!-- LA FRISE DU REPLAY : dérouler la vraie bataille sur le vrai relief. -->
+  <div id="rpBar" class="glass">
+    <button class="btn" id="rpPlay">▶</button>
+    <button class="btn" id="rpM5">−5 s</button>
+    <button class="btn" id="rpP5">+5 s</button>
+    <input type="range" id="rpSeek" min="0" max="1000" value="0">
+    <span class="obV" id="rpT">0:00</span>
+    <button class="btn" id="rpVit">×2</button>
+    <span class="obEt" id="rpNom"></span>
+    <button class="btn" id="rpX">Leave</button>
   </div>
   <div id="stLbl"></div>
   <div id="stMsg" class="glass"></div>
@@ -1614,8 +1635,9 @@ function pretty(k){ const L=LABELS[k];
         if(k>0||e.type==="zone"||e.encours) rond(pts[k],larg*1.25,coul,a);
       }
     }
-    for(let i=0;i<ST.els.length;i++){
-      const e=ST.els[i], sel=(i===ST.sel), mod=charDe(e.char);
+    const tousSol=RP?ST.els.concat(rpEls()):ST.els;
+    for(let i=0;i<tousSol.length;i++){
+      const e=tousSol[i], sel=(i===ST.sel), mod=charDe(e.char);
       if(e.masque||e.type==="fleche"||e.type==="trajet"||e.type==="zone") continue;
       if(e.type==="texte"||e.type==="stamp"){
         /* une note n'a qu'un point d'ancrage : un petit disque, pour
@@ -1706,9 +1728,15 @@ function pretty(k){ const L=LABELS[k];
 
   /* Les exemplaires : un lot par pièce, pour qu'un même modèle posé
      plusieurs fois ne coûte qu'un appel de dessin. */
+  /* Le plan ET le replay : deux listes, un seul dessin. Les éléments du
+     replay viennent APRÈS ceux du plan, si bien que les indices de
+     sélection restent ceux du plan et qu'on ne peut pas attraper un char
+     de la bataille par mégarde. */
+  const elsDessines=()=>RP?ST.els.concat(rpEls()):ST.els;
   function buildChars(){
     charsLots=[];
-    if(charsEtat!==2||!curHeights||!ST.els.length) return;
+    const tous=elsDessines();
+    if(charsEtat!==2||!curHeights||!tous.length) return;
     const par=new Map();
     const pousse=(im,M,base,teinte)=>{
       if(im===undefined||im===null||im<0) return;
@@ -1722,8 +1750,8 @@ function pretty(k){ const L=LABELS[k];
         M[r*4]*c[0]+M[r*4+1]*c[1]+M[r*4+2]*c[2]+M[r*4+3]);
       a.push(base, teinte[0], teinte[1], teinte[2]);
     };
-    for(let i=0;i<ST.els.length;i++){
-      const el=ST.els[i], mod=charDe(el.char);
+    for(let i=0;i<tous.length;i++){
+      const el=tous[i], mod=charDe(el.char);
       if(!mod||el.masque) continue;
       /* Le char dans lequel on est ne se dessine pas. L'œil est posé sur
          le toit de sa tourelle : rendu, il remplissait la moitié basse
@@ -2974,6 +3002,39 @@ function pretty(k){ const L=LABELS[k];
     ["danger","Danger zone"],["objective","Objective"],["push","Push forward"],
     ["fallback","Fall back"],["stop","No entry"],["rally","Rally point"]];
 
+  /* ── LA FRISE DU REPLAY ─────────────────────────────────────────── */
+  const rpTemps=(s)=>{ s=Math.max(0,Math.floor(s)); return Math.floor(s/60)+":"+String(s%60).padStart(2,"0"); };
+  function rpMaj(){
+    if(!RP) return;
+    $("rpPlay").textContent=RP.joue?"❚❚":"▶";
+    $("rpT").textContent=rpTemps(RP.t)+" / "+rpTemps(RP.duree);
+    $("rpVit").textContent="×"+RP.vitesse;
+    $("rpNom").textContent=RP.nom||"";
+    const sk=$("rpSeek");
+    if(document.activeElement!==sk) sk.value=String(Math.round(RP.t/Math.max(1,RP.duree)*1000));
+  }
+  function rpVaA(t){
+    if(!RP) return;
+    RP.t=Math.max(0,Math.min(RP.duree,t));
+    buildChars(); buildStrat(); buildVue(); buildChamp(); stLabels(); rpMaj();
+  }
+  /* Appelée par la boucle de rendu. Le temps AVANCE avec l'horloge, pas
+     avec les images : sur un écran à 144 Hz, compter les images ferait
+     défiler la bataille deux fois et demie trop vite. */
+  function rpAvance(ms){
+    if(!RP||!RP.joue) return;
+    if(!RP.last){ RP.last=ms; return; }
+    const dt=Math.min(0.25,(ms-RP.last)/1000); RP.last=ms;
+    RP.t+=dt*RP.vitesse;
+    if(RP.t>=RP.duree){ RP.t=RP.duree; RP.joue=0; }
+    buildChars(); buildStrat(); stLabels(); rpMaj();
+  }
+  function rpFerme(){
+    RP=null;
+    document.body.classList.remove("replay");
+    buildChars(); buildStrat(); buildVue(); buildChamp(); stMaj(); stLabels();
+  }
+
   /* ══ LE MODE PRÉSENTATION ══════════════════════════════════════════
      « Expliquer le plan à quinze personnes en trois minutes. »
 
@@ -3890,6 +3951,93 @@ function pretty(k){ const L=LABELS[k];
     const j=await r.json().catch(()=>({error:"réponse invalide"}));
     return {ok:r.ok,status:r.status,j};
   }
+  /* ══ LE DÉBRIEFING D'UN REPLAY, SUR LE VRAI RELIEF ═════════════════
+     « Voilà où tu es mort, et voilà pourquoi. »
+
+     ── Ce qui rend la chose possible sans rien convertir ────────────
+     Les positions d'un replay sont en MÈTRES DU MONDE, dans le repère
+     de l'arène — exactement celui de cette carte. L'éditeur 2D, lui,
+     doit les ramener dans un carré de mille pixels. Ici il n'y a rien à
+     faire : un char à (−320, 180) dans le replay est à (−320, 180) sur
+     le relief. C'est la seule vraie simplification du 3D sur le 2D, et
+     elle tombe bien, parce que tout le reste y est plus dur.
+
+     ── Ce que la couche replay N'EST PAS ────────────────────────────
+     Elle est en LECTURE SEULE et vit à part du plan. Les chars qu'on y
+     voit ne sont pas des marqueurs : on ne les déplace pas, on ne les
+     supprime pas, et rien de ce qu'ils font n'entre dans ce qui
+     s'enregistre. La vérité de la bataille ne se retouche pas ; on
+     annote À CÔTÉ. */
+  let RP=null;
+  async function fnAppel(nom,body){
+    const r=await fetch(SB_URL+"/functions/v1/"+nom,{method:"POST",
+      headers:{"content-type":"application/json",apikey:SB_ANON,Authorization:"Bearer "+SB_ANON},
+      body:JSON.stringify(Object.assign({session:stSession()},body))});
+    const j=await r.json().catch(()=>({error:"réponse invalide"}));
+    return {ok:r.ok,status:r.status,j};
+  }
+  /* Le brut du mod, réduit à ce que la carte sait montrer. On ne garde
+     ni les tirs ni les dégâts : ils appartiennent au tableau de bord,
+     pas au relief. */
+  function litReplay(brut,carte,nom){
+    const v=(brut&&brut.vehicles)||[];
+    if(!v.length) return null;
+    const mien=brut.myTeam;
+    return {
+      battleId:String(brut.battleId||""), nom:nom||"", carte:carte||"",
+      duree:Number(brut.duration)||0,
+      chars:v.map(x=>({
+        ami:x.team===mien, nom:x.name||"", tank:x.tank||"", cls:x.cls||"",
+        mort:(x.death!=null?Number(x.death):null),
+        piste:(x.track||[]).map(p=>[Number(p[0])||0,Number(p[1])||0,Number(p[2])||0]),
+      })).filter(x=>x.piste.length),
+      t:0, joue:0, vitesse:2, last:0,
+    };
+  }
+  /* Où est ce char à l'instant t : on interpole entre deux relevés. */
+  function rpPos(c,t){
+    const p=c.piste;
+    if(!p.length) return null;
+    let lo=p[0];
+    for(let i=0;i<p.length;i++){
+      if(p[i][0]<=t) lo=p[i];
+      else { const hi=p[i], f=(t-lo[0])/((hi[0]-lo[0])||1);
+             return [lo[1]+(hi[1]-lo[1])*f, lo[2]+(hi[2]-lo[2])*f,
+                     Math.atan2(hi[2]-lo[2],hi[1]-lo[1])]; }
+    }
+    return [lo[1],lo[2],0];
+  }
+  /* La bibliothèque ne contient QUE le rang X. Les batailles de clan s'y
+     jouent, donc la plupart des chars d'un replay de Bastion y sont ;
+     les autres retombent sur un marqueur, ce qui reste juste. */
+  const rpModele=(nomChar)=>{
+    if(!CHARS||!CHARS.chars||!nomChar) return "";
+    const n=platC(nomChar);
+    const c=CHARS.chars.find(x=>platC(x.nom)===n);
+    return c?c.cle:"";
+  };
+  /* Les chars du replay, sous la forme que le dessin sait déjà poser.
+     Le drapeau `rp` les tient hors de la sélection et de l'enregistrement. */
+  function rpEls(){
+    if(!RP) return [];
+    const out=[];
+    for(const c of RP.chars){
+      if(c.mort!=null&&RP.t>c.mort) continue;      // détruit : il n'est plus là
+      const p=rpPos(c,RP.t); if(!p) continue;
+      /* p vaut [x, z, cap] : la deuxième valeur est la COORDONNÉE, la
+         troisième l'angle. Je les avais confondues, et tous les chars du
+         replay se rangeaient sur la ligne z ≈ 0 — une bataille à la
+         queue leu leu, ce qu'aucun contrôle de position n'aurait laissé
+         passer mais qu'un simple coup d'œil aurait pu manquer. */
+      out.push({rp:1, type:"tank", cls:c.cls||"medium", x:p[0], y:p[1],
+        name:c.tank||c.nom, camp:c.ami?"ami":"ennemi", size:0.78,
+        char:c.cleModele!==undefined?c.cleModele:(c.cleModele=rpModele(c.tank)),
+        /* Le cap : le char regarde vers (sin cap, cos cap) et la piste
+           donne l'angle de sa marche depuis l'axe des x. */
+        cap:((Math.PI/2-p[2])*180/Math.PI+360)%360, tour:0});
+    }
+    return out;
+  }
   const $=id=>document.getElementById(id);
   /* Un mot bref au milieu de la carte, qui s'efface seul : c'est là que
      l'œil est quand on vient de cliquer, pas dans le panneau. */
@@ -4071,11 +4219,12 @@ function pretty(k){ const L=LABELS[k];
   }
   function stLabels(){
     const c=$("stLbl");
-    if(!ST.ouvert||!ST.els.length){ if(c.childElementCount) c.innerHTML=""; return; }
-    while(c.childElementCount<ST.els.length) c.appendChild(Object.assign(document.createElement("div"),{className:"e"}));
-    while(c.childElementCount>ST.els.length) c.removeChild(c.lastChild);
-    for(let i=0;i<ST.els.length;i++){
-      const e=ST.els[i], d=c.children[i];
+    const tousL=RP?ST.els.concat(rpEls()):ST.els;
+    if(!ST.ouvert||!tousL.length){ if(c.childElementCount) c.innerHTML=""; return; }
+    while(c.childElementCount<tousL.length) c.appendChild(Object.assign(document.createElement("div"),{className:"e"}));
+    while(c.childElementCount>tousL.length) c.removeChild(c.lastChild);
+    for(let i=0;i<tousL.length;i++){
+      const e=tousL[i], d=c.children[i];
       /* une flèche parle depuis son MILIEU, pas depuis sa queue */
       const ax=e.type==="fleche"?(e.x+e.x2)/2:e.x, az=e.type==="fleche"?(e.y+e.y2)/2:e.y;
       const p=versEcran(ax,az,hautEtiquette(e));
@@ -4535,6 +4684,18 @@ function pretty(k){ const L=LABELS[k];
       histoPose(); majEtapes(); stDit(t("This step will open on the current view.")); });
     $("etJoue").addEventListener("click",()=>presente(0));
     $("presX").addEventListener("click",sortPresente);
+    $("rpPlay").addEventListener("click",()=>{ if(!RP) return; RP.joue^=1; RP.last=0; rpMaj(); });
+    $("rpM5").addEventListener("click",()=>rpVaA(RP?RP.t-5:0));
+    $("rpP5").addEventListener("click",()=>rpVaA(RP?RP.t+5:0));
+    /* ⚠ On LIT la valeur du curseur AVANT toute autre chose : la remettre
+       à jour d'abord la ramènerait sur l'instant courant, et le
+       déplacement rendrait toujours zéro. Le piège a déjà coûté un
+       après-midi côté 2D. */
+    $("rpSeek").addEventListener("input",e=>{ const v=Number(e.target.value)||0;
+      if(RP) rpVaA(v/1000*RP.duree); });
+    $("rpVit").addEventListener("click",()=>{ if(!RP) return;
+      RP.vitesse=({1:2,2:4,4:8,8:1})[RP.vitesse]||2; rpMaj(); });
+    $("rpX").addEventListener("click",rpFerme);
     $("presPrec").addEventListener("click",()=>presVa(-1));
     $("presSuiv").addEventListener("click",()=>presVa(1));
     $("croixX").addEventListener("click",()=>{
@@ -4651,7 +4812,10 @@ function pretty(k){ const L=LABELS[k];
       vueLots:()=>vueLots,biblio:()=>CHARS,jeux:()=>JEUX,boites:prepareBoites,
       /* la vue subjective, exposée pour pouvoir la mesurer du dehors */
       expo:expositionDepuis,oeilEntre:entreOeil,oeilSort:sortOeil,oeilEtat:()=>oeil,
-      secteurs:()=>secLots,buildSecteurs};
+      secteurs:()=>secLots,buildSecteurs,
+      /* le replay, exposé pour pouvoir l'exercer sans session de clan */
+      rpPose:(r)=>{ RP=r; document.body.classList.toggle("replay",!!r); },
+      rpEtat:()=>RP, rpLit:litReplay, rpVa:rpVaA, rpEls};
     /* ── LES VUES ────────────────────────────────────────────────────
        Trois angles nommés, plutôt que de chercher le bon à la souris.
        Le dessus lit une ligne de vue, le côté lit un dénivelé, le
@@ -4758,7 +4922,7 @@ function pretty(k){ const L=LABELS[k];
   })();
   function frame(t){
     const dt=Math.min(0.1,(t-tPrec)/1000)||0.016; tPrec=t;
-    clavier(dt); avanceVoyage(t); suivre(dt);
+    clavier(dt); avanceVoyage(t); rpAvance(t); suivre(dt);
     if(ST.ouvert) stLabels();   /* les étiquettes suivent la caméra */
     /* la ligne de vue se retaille quand le zoom a nettement changé —
        pas à chaque image : elle coûte un balayage du bâti */
@@ -5102,6 +5266,34 @@ function pretty(k){ const L=LABELS[k];
       if(!demarree){ demarree=1; requestAnimationFrame(frame); }
       requestAnimationFrame(()=>resize());
     }
+    /* ── ARRIVER AVEC UNE BATAILLE ────────────────────────────────
+       Le site liste les batailles ailleurs ; on n'en refait pas la liste
+       ici. Le bouton « Débriefer en 3D » ouvre simplement cette page
+       avec l'identifiant de la bataille dans l'adresse — ce qui rend le
+       débrief PARTAGEABLE : le lien rouvre la même bataille sur la même
+       carte, chez n'importe qui du clan. */
+    (function(){
+      const p=new URLSearchParams(location.search);
+      const bat=p.get("battle"), ck=p.get("carte");
+      if(!bat||!ck||!MAPS3D[ck]) return;
+      ouvrirCarte(ck);
+      stDit(t("Loading the replay…"));
+      fnAppel("replay",{battle_id:bat}).then(async(r)=>{
+        const brut=r.ok&&r.j&&r.j.replay;
+        const rep=brut?litReplay(Object.assign({battleId:bat},brut),ck,p.get("nom")||""):null;
+        if(!rep){ stDit(t("No replay saved for this battle.")); return; }
+        RP=rep;
+        document.body.classList.add("replay");
+        ST.ouvert=1; ST.edition=1;
+        ST.steps=[{els:[],note:"",vue:null}]; ST.step=0; poseEls([]);
+        $("stTitreIn").value=t("Debrief")+" — "+(rep.nom||"");
+        ST.nom=$("stTitreIn").value;
+        modeEditeur(1);
+        $("stListe").style.display="none"; $("stEdit").style.display="";
+        await chargeChars();
+        histoRaz(); rpVaA(0); stMaj();
+      }).catch(()=>stDit(t("No replay saved for this battle.")));
+    })();
     /* Revenir aux cartes ne referme pas la stratégie ouverte par
        mégarde : on la ferme explicitement, sinon on la retrouverait
        posée sur une autre carte. */
