@@ -54,6 +54,13 @@ window.CP_FR = Object.assign(window.CP_FR || {}, {
   "Area · Z": "Zone · Z",
   "Area": "Zone",
   "Shape label": "Nom de la forme",
+  /* ── les groupes et la composition ── */
+  "Watch sector": "Secteur",
+  "Group": "Grouper",
+  "Ungroup": "Dégrouper",
+  "Select this group": "Choisir ce groupe",
+  "Name for this group": "Nom de ce groupe",
+  "not a 7v7 or 15v15 line-up": "ce n’est ni un 7 contre 7 ni un 15 contre 15",
   "Flat": "À plat",
   "Over the ground": "En épousant le sol",
   "Height change": "Dénivelé",

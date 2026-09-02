@@ -253,8 +253,13 @@
   .inspSec.plie .inspTete .chev{transform:rotate(-90deg)}
   .inspTete:hover .chev{stroke:var(--ink)}
   .inspCorps{padding:2px 13px 13px;overflow-y:auto}
-  #secElems{flex:1 1 auto;min-height:96px}
-  #secElems .inspCorps{padding:2px 7px 7px}
+  /* La section des éléments donne TOUT ce qui reste à sa liste. Sans
+     `flex` sur le corps, les commandes ajoutées au-dessus — les deux
+     analyses de plan, le bilan, la barre des groupes — lui laissaient
+     neuf pixels de haut : elle existait encore mais ne se lisait plus. */
+  #secElems{flex:1 1 auto;min-height:176px}
+  #secElems .inspCorps{padding:2px 7px 7px;flex:1 1 auto;min-height:60px}
+  #secElems .stRow,#secElems .stPos{flex:0 0 auto}
   #secAff,#secProps{flex:0 1 auto}
   .inspSec.plie{flex:0 0 auto;min-height:0}
   .inspSec.plie .inspCorps{display:none}
@@ -390,6 +395,9 @@
   .stHull:empty{display:none}
   .stHull.hulldown{color:#8fd8a3} .stHull.decouvert{color:#e8a99f} .stHull.masque{color:#c9b98a}
   .stRow{display:flex;flex-wrap:wrap;gap:5px}
+  .elGrp{font-size:9.5px;font-family:var(--d-mono);color:var(--gold);
+    border:1px solid rgba(229,185,92,.4);border-radius:2px;padding:1px 4px;
+    margin-right:5px;white-space:nowrap;max-width:78px;overflow:hidden;text-overflow:ellipsis}
   .stRow .btn{padding:5px 9px;font-size:11.5px}
   .stItem{display:block;width:100%;text-align:left;padding:8px 10px;margin:0 0 5px;cursor:pointer;
     background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:5px;
@@ -583,6 +591,8 @@
         <button class="btn" id="stAveugle">Blind spots</button>
       </div>
       <div class="stPos" id="avStat" style="padding:0 0 8px"></div>
+      <div class="stRow" id="grpBar" style="padding:0 0 8px"></div>
+
       <div class="inspCorps" id="elListe"></div>
     </div>
     <div class="inspSec" id="secAff" style="display:none">
@@ -599,6 +609,8 @@
             <button class="choixChar" id="btnChar" type="button"><span id="btnCharNom">Marker only</span><svg viewBox="0 0 12 12"><path d="M2 4l4 4 4-4"/></svg></button></div>
           <div class="champ" id="chCap"><label for="stElCap" id="stCapL">Hull</label>
             <div class="cadran"><input type="range" id="stElCap" min="0" max="355" step="5" value="0"><span class="v" id="stCapV">0°</span></div></div>
+          <div class="champ" id="chSect"><label for="stElSect" id="stSectL">Watch sector</label>
+            <div class="cadran"><input type="range" id="stElSect" min="0" max="90" step="5" value="0"><span class="v" id="stSectV">0°</span></div></div>
           <div class="champ" id="chTour"><label for="stElTour" id="stTourL">Turret</label>
             <div class="cadran"><input type="range" id="stElTour" min="-180" max="180" step="5" value="0"><span class="v" id="stTourV">0°</span></div></div>
           <div class="champ"><div class="stPos" id="stElPos"></div>
@@ -2852,6 +2864,154 @@ function pretty(k){ const L=LABELS[k];
     return vMed;
   }
 
+  /* ══ LES SECTEURS DE SURVEILLANCE ══════════════════════════════════
+     « Toi, tu regardes par là. »
+
+     Un cône attaché à un char, dans l'axe de sa TOURELLE — c'est elle qui
+     dit où il regarde, le châssis dit d'où il vient.
+
+     Ce qui le distingue de son équivalent en 2D : il est DÉCOUPÉ PAR LE
+     RELIEF. Un secteur qui bute sur une colline n'est pas un secteur, et
+     une consigne de surveillance qui couvre un versant qu'on ne voit pas
+     est une consigne qui ment. On reprend donc le balayage du champ de
+     vision, restreint à l'ouverture demandée : cinquante fois moins de
+     travail que le champ entier, pour la même vérité.
+
+     Il vit dans son PROPRE tampon, refait quand le plan change et non
+     quand la caméra bouge : les rubans du plan, eux, se rebâtissent à
+     chaque mouvement, et y mêler un balayage coûterait cent seize
+     millisecondes par image. */
+  const secB=gl.createBuffer(); let secLots=[];
+  function buildSecteurs(){
+    secLots=[];
+    if(!curHeights||!ST.els.length) return;
+    const avec=ST.els.filter(e=>e.type==="tank"&&!e.masque&&Number(e.secteur)>0);
+    if(!avec.length) return;
+    carteOcclusion();
+    const P=[];
+    for(const el of avec){
+      const O=oeilDe(el), s=Math.min(90,Number(el.secteur));
+      /* le cap de la TOURELLE, ramené dans le repère du balayage */
+      const dir=Math.PI/2-(((Number(el.cap)||0)+(Number(el.tour)||0))*Math.PI/180);
+      const n=Math.max(6,Math.round(s*2/360*AZIMUTS));
+      /* PAS la couleur du camp telle quelle : un vert à vingt pour cent
+         sur de l'herbe verte ne se voit pas — c'est la mise en garde que
+         porte déjà le champ de vision, et je l'ai refaite. On garde le
+         camp, mais éclairci, et l'on pousse l'opacité de moitié. */
+      const coul=(el.camp==="ennemi")?[1.0,0.42,0.30]:[0.34,1.0,0.50];
+      const d0=P.length/4;
+      const enfoui=hauteurOcc(O[0],O[2])>O[1];
+      for(let a=0;a<n;a++){
+        const a0=dir-s*Math.PI/180+(2*s*Math.PI/180)*a/n;
+        const a1=dir-s*Math.PI/180+(2*s*Math.PI/180)*(a+1)/n;
+        const c0=Math.cos(a0), s0=Math.sin(a0), c1=Math.cos(a1), s1=Math.sin(a1);
+        const cm=Math.cos((a0+a1)/2), sm=Math.sin((a0+a1)/2);
+        let horizon=-1e30, sorti=!enfoui;
+        for(let r=PAS_RAYON;r<=PORTEE_VUE;r+=PAS_RAYON){
+          const x=O[0]+cm*r, z=O[2]+sm*r;
+          if(x<ORIG[0]||x>ORIG[0]+WORLD||z<ORIG[1]||z>ORIG[1]+WORLDZ) break;
+          const sol=solY(x,z), occ=hauteurOcc(x,z);
+          if(!sorti){ if(occ<=O[1]) sorti=1; else continue; }
+          const aSol=(sol-O[1])/r, aOcc=(occ-O[1])/r;
+          const vu=(aSol>=horizon)&&(occ<=sol+0.01);
+          if(aOcc>horizon) horizon=aOcc;
+          if(!vu) continue;
+          const r0=r-PAS_RAYON;
+          const q=[[O[0]+c0*r0,O[2]+s0*r0],[O[0]+c1*r0,O[2]+s1*r0],
+                   [O[0]+c1*r,O[2]+s1*r],[O[0]+c0*r,O[2]+s0*r]]
+            .map(([qx,qz])=>[qx,0.35,-qz,terrainNorm(qx,qz)]);
+          for(const k of [0,1,2,0,2,3]) P.push(q[k][0],q[k][1],q[k][2],q[k][3]);
+        }
+      }
+      if(P.length/4>d0) secLots.push({d:d0,n:P.length/4-d0,coul,alpha:0.38});
+    }
+    if(!P.length) return;
+    gl.bindBuffer(gl.ARRAY_BUFFER,secB);
+    gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(P),gl.DYNAMIC_DRAW);
+  }
+
+  /* ══ LES GROUPES ═══════════════════════════════════════════════════
+     « Déplacer tout le flanc gauche d'un coup. »
+
+     Sur un plan de quinze chars, c'est ce qui sépare un document qu'on
+     retouche d'un document qu'on refait. Un groupe n'est rien de plus
+     qu'un NOM porté par chaque élément : pas de structure à part, donc
+     rien à réparer quand on en supprime un, et l'enregistrement n'a
+     qu'un champ de plus à connaître. */
+  function groupes(){
+    const m=new Map();
+    for(let i=0;i<ST.els.length;i++){ const g=ST.els[i].grp;
+      if(g) (m.get(g)||m.set(g,[]).get(g)).push(i); }
+    return m;
+  }
+  function majGroupes(){
+    const bar=document.getElementById("grpBar"); if(!bar) return;
+    bar.innerHTML="";
+    const sel=ST.multi.length?ST.multi:(ST.sel>=0?[ST.sel]:[]);
+    const g=groupes();
+    for(const [nom,idx] of g){
+      const b=document.createElement("button");
+      b.className="btn"+(sel.length&&idx.every(i=>sel.indexOf(i)>=0)?" on":"");
+      b.textContent=nom+" ("+idx.length+")";
+      b.title=t("Select this group");
+      b.addEventListener("click",()=>{ ST.multi=idx.slice(); ST.sel=idx[0]; stMaj(); stLabels(); });
+      bar.appendChild(b);
+    }
+    if(sel.length>1&&ST.canEdit){
+      const b=document.createElement("button");
+      b.className="btn primaire"; b.textContent=t("Group");
+      b.addEventListener("click",()=>{
+        const n=(prompt(t("Name for this group"),"")||"").trim().slice(0,24);
+        if(!n) return;
+        for(const i of sel) if(ST.els[i]) ST.els[i].grp=n;
+        histoPose(); stMaj();
+      });
+      bar.appendChild(b);
+    }
+    if(sel.length&&sel.some(i=>ST.els[i]&&ST.els[i].grp)&&ST.canEdit){
+      const b=document.createElement("button");
+      b.className="btn"; b.textContent=t("Ungroup");
+      b.addEventListener("click",()=>{
+        for(const i of sel) if(ST.els[i]) delete ST.els[i].grp;
+        histoPose(); stMaj();
+      });
+      bar.appendChild(b);
+    }
+  }
+
+  /* ══ LA COMPOSITION ════════════════════════════════════════════════
+     Le plan devient un ordre de bataille et plus seulement un dessin.
+     On compte ce qui est posé et l'on signale ce qui ne colle pas aux
+     formats joués — sept contre sept, quinze contre quinze. On ne
+     corrige rien : on dit ce qu'on voit. */
+  const FORMATS=[7,15];
+  function majCompo(){
+    const liste=document.getElementById("elListe"); if(!liste) return;
+    let el=document.getElementById("compo");
+    const chars=ST.els.filter(e=>e.type==="tank");
+    if(!chars.length){ if(el) el.remove(); return; }
+    /* Elle vit DANS la liste, pas au-dessus : l'entête de la section n'a
+       qu'une centaine de pixels, et trois lignes de composition y
+       passaient par-dessus les sections suivantes. */
+    if(!el){ el=document.createElement("div"); el.className="stPos"; el.id="compo";
+      el.style.padding="10px 2px 2px"; }
+    liste.appendChild(el);
+    const cote=(c)=>{
+      const l=chars.filter(e=>(e.camp==="ennemi")===(c==="ennemi"));
+      if(!l.length) return null;
+      const par=ST_CLS.map(([k,lb])=>[lb,l.filter(e=>e.cls===k).length]).filter(x=>x[1]);
+      /* « lourd ×2 » plutôt que « 2 lourd » : le pluriel dépend de la
+         langue, la multiplication non. */
+      return l.length+" — "+par.map(([lb,n])=>t(lb).toLowerCase()+" ×"+n).join(", ");
+    };
+    const a=cote("ami"), b=cote("ennemi");
+    const n=chars.filter(e=>e.camp!=="ennemi").length;
+    const hors=n&&!FORMATS.includes(n);
+    el.innerHTML=(a?"<b>"+t("Allies")+"</b> "+echapHtml(a):"")+
+      (b?"<br><b>"+t("Enemies")+"</b> "+echapHtml(b):"")+
+      (hors?'<br><span style="color:var(--gold)">'+t("not a 7v7 or 15v15 line-up")+"</span>":"");
+  }
+
   /* ── QUI VOIT QUI ─────────────────────────────────────────────────
      La ligne de vue existe depuis longtemps, mais elle se lit UN CHAR À
      LA FOIS : sur un quinze contre quinze, il faut quinze sélections et
@@ -3605,7 +3765,8 @@ function pretty(k){ const L=LABELS[k];
        plus à personne, sans aucun moyen d'en sortir. */
     if(oeil&&!voyage&&ST.els.indexOf(oeil.el)<0) sortOeil();
     if(oeil&&oeil.vers&&ST.els.indexOf(oeil.vers)<0) oeil.vers=null;
-    majOeil(); majCroix(); majMesure();
+    buildSecteurs();
+    majOeil(); majCroix(); majMesure(); majGroupes();
     const box=$("stSelBox"), e=ST.els[ST.sel];
     box.style.display=e?"":"none";
     if(e){ $("stElNom").value=e.name||"";
@@ -3622,6 +3783,9 @@ function pretty(k){ const L=LABELS[k];
          qu'il existe des éléments qui ne sont pas des chars. */
       $("chCap").style.display=estChar?"":"none";
       $("chTour").style.display=estChar?"":"none";
+      $("chSect").style.display=estChar?"":"none";
+      if(estChar){ $("stElSect").value=Number(e.secteur)||0;
+        $("stSectV").textContent=(Number(e.secteur)||0)+"°"; }
       $("stElNom").placeholder=e.type==="texte"?t("Note text")
         :e.type==="fleche"?t("Arrow label")
         :(e.type==="trajet"||e.type==="zone")?t("Shape label"):t("Tank name");
@@ -3859,6 +4023,8 @@ function pretty(k){ const L=LABELS[k];
     const els=ST.els.map(e=>{
       const base={type:e.type||"tank", x:Math.round(e.x), y:Math.round(e.y),
         name:e.name||"", color:(e.camp==="ennemi")?"#e5544b":"#4ea36a"};
+      if(e.grp) base.grp=e.grp;
+      if(e.secteur) base.secteur=Number(e.secteur)||0;
       if(e.type==="fleche") return Object.assign(base,{x2:Math.round(e.x2),y2:Math.round(e.y2)});
       if(e.type==="trajet"||e.type==="zone")
         return Object.assign(base,{pts:(e.pts||[]).map(p=>[Math.round(p[0]),Math.round(p[1])])});
@@ -3986,6 +4152,7 @@ function pretty(k){ const L=LABELS[k];
     $("elCompte").textContent=ST.els.length?ST.els.length:"";
     if(!ST.els.length){
       l.innerHTML='<div class="elVide">'+t("Nothing placed yet. Pick a tool on the left and click the ground.")+'</div>';
+      majCompo();
       return;
     }
     l.innerHTML="";
@@ -3994,16 +4161,18 @@ function pretty(k){ const L=LABELS[k];
       const b=document.createElement("button");
       b.className="elRow"+(ST.multi.indexOf(i)>=0||i===ST.sel?" sel":"")+(e.masque?" off":"");
       const cls=(ST_CLS.find(x=>x[0]===e.cls)||ST_CLS[1])[1];
+      const grp=e.grp?'<span class="elGrp"></span>':"";
       const nom=e.name|| (e.type==="fleche"?t("Arrow"):e.type==="texte"?t("Note")
         :e.type==="trajet"?t("Driving route"):e.type==="zone"?t("Area"):t(cls));
       b.innerHTML='<span class="ic">'+(ICONES[e.type]||ICONES.tank)+'</span>'+
-        '<span class="nm"></span>'+
+        '<span class="nm"></span>'+grp+
         '<span class="camp '+(e.camp==="ennemi"?"e":"a")+'">'+(e.camp==="ennemi"?"E":"A")+'</span>'+
         '<span class="oeil" role="button" tabindex="-1"><svg viewBox="0 0 20 20">'+
         (e.masque?'<path d="M4 4l12 12"/><path d="M2 10s3-5 8-5 8 5 8 5-3 5-8 5-8-5-8-5z"/>'
                  :'<path d="M2 10s3-5 8-5 8 5 8 5-3 5-8 5-8-5-8-5z"/><circle cx="10" cy="10" r="2"/>')+
         '</svg></span>';
       b.querySelector(".nm").textContent=nom;
+      if(e.grp) b.querySelector(".elGrp").textContent=e.grp;
       b.addEventListener("click",ev=>{
         if(ev.target.closest(".oeil")){
           e.masque=!e.masque;
@@ -4017,6 +4186,9 @@ function pretty(k){ const L=LABELS[k];
       });
       l.appendChild(b);
     }
+    /* La composition ferme la liste : majListe la VIDE à chaque appel,
+       donc elle doit être écrite ici et pas avant. */
+    majCompo();
   }
   /* le camp courant, sur un seul bouton : deux boutons pour deux états
      exclusifs occupaient le double de place pour la même information */
@@ -4141,11 +4313,21 @@ function pretty(k){ const L=LABELS[k];
     });
     /* La tourelle tourne À PART du châssis : c'est elle qui dit où le
        char REGARDE, quand le châssis dit d'où il vient. */
+    /* Le secteur se recalcule à la relâche du curseur ET pendant qu'on
+       le tire : un balayage restreint coûte quelques millisecondes, on
+       peut se le permettre en direct. */
+    $("stElSect").addEventListener("input",e=>{
+      const el=ST.els[ST.sel]; if(!el) return;
+      el.secteur=Number(e.target.value)||0;
+      $("stSectV").textContent=el.secteur+"°";
+      buildSecteurs();
+    });
+    $("stElSect").addEventListener("change",()=>{ histoPose(); majHistoBoutons(); });
     $("stElTour").addEventListener("input",e=>{
       const el=ST.els[ST.sel]; if(!el) return;
       el.tour=Number(e.target.value)||0;
       $("stTourV").textContent=el.tour+"°";
-      buildChars();
+      buildChars(); buildSecteurs();
     });
     $("stSave").addEventListener("click",stEnregistre);
     $("stDel").addEventListener("click",stSupprime);
@@ -4189,7 +4371,8 @@ function pretty(k){ const L=LABELS[k];
       etatChars:()=>charsEtat,lots:()=>charsLots,solLots:()=>stLots,
       vueLots:()=>vueLots,biblio:()=>CHARS,jeux:()=>JEUX,boites:prepareBoites,
       /* la vue subjective, exposée pour pouvoir la mesurer du dehors */
-      expo:expositionDepuis,oeilEntre:entreOeil,oeilSort:sortOeil,oeilEtat:()=>oeil};
+      expo:expositionDepuis,oeilEntre:entreOeil,oeilSort:sortOeil,oeilEtat:()=>oeil,
+      secteurs:()=>secLots,buildSecteurs};
     /* ── LES VUES ────────────────────────────────────────────────────
        Trois angles nommés, plutôt que de chercher le bon à la souris.
        Le dessus lit une ligne de vue, le côté lit un dénivelé, le
@@ -4389,7 +4572,7 @@ function pretty(k){ const L=LABELS[k];
       /* stLots et vueLots manquaient à cette liste : sur une carte sans
          limite, sans eau ni objectif affichés, les marqueurs de la
          stratégie n'auraient pas été dessinés du tout. */
-      if((showLim&&limN)||(showEau&&eauN)||objLots.length||stLots.length||vueLots.length||champN){
+      if((showLim&&limN)||(showEau&&eauN)||objLots.length||stLots.length||vueLots.length||champN||secLots.length){
         gl.useProgram(lprog);
         gl.uniformMatrix4fv(luPV,false,new Float32Array(mul(P,V)));
         gl.uniform1f(luHS,curMaxH); gl.uniform1f(luExag,exag); gl.uniform1f(luHaut,LIM_HAUT);
@@ -4428,6 +4611,19 @@ function pretty(k){ const L=LABELS[k];
         /* La nappe du champ de vision, tout en dessous : c'est un fond,
            pas un objet. Elle n'écrit pas la profondeur, comme le reste
            de cette passe. */
+        /* Les secteurs de surveillance, SOUS les analyses : ce sont des
+           consignes, pas des mesures — si l'on regarde une carte du
+           danger, c'est elle qui doit se lire. */
+        if(secLots.length){
+          gl.bindBuffer(gl.ARRAY_BUFFER,secB);
+          gl.vertexAttribPointer(lPos,3,gl.FLOAT,false,16,0);
+          gl.vertexAttribPointer(lBase,1,gl.FLOAT,false,16,12);
+          gl.uniform1f(luVoile,0.0); gl.uniform1f(luHaut,1.0);
+          for(const L of secLots){
+            gl.uniform4f(luCoul,L.coul[0],L.coul[1],L.coul[2],L.alpha);
+            gl.drawArrays(gl.TRIANGLES,L.d,L.n);
+          }
+        }
         if(champN){
           gl.bindBuffer(gl.ARRAY_BUFFER,champB);
           gl.vertexAttribPointer(lPos,3,gl.FLOAT,false,16,0);
