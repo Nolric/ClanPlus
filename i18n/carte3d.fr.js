@@ -259,6 +259,7 @@ window.CP_FR = Object.assign(window.CP_FR || {}, {
   "Desert (Epic)": "Désert (Épique)",
   "Explore World of Tanks maps in 3D: real elevation pulled from the game, original textures and buildings. Rotate, zoom and scout the key positions before your clan battles.": "Explore les cartes de World of Tanks en 3D : relief réel extrait du jeu, textures d'origine et bâtiments. Tourne, zoome et repère les positions clés avant tes batailles de clan.",
   "Grid": "Grille",
+  "Mesh": "Maillage",
   "Loading error": "Erreur de chargement",
   "Loading…": "Chargement…",
   "Normandy": "Normandie",

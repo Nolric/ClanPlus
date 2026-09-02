@@ -422,6 +422,10 @@
   /* La vignette d'un symbole : elle FAIT FACE, toujours, et reste nette
      à toute distance — un glyphe peint sur le sol se déforme dès qu'on
      tourne la caméra. */
+  #grLbl{position:absolute;inset:0;pointer-events:none;z-index:3}
+  #grLbl .g{position:absolute;transform:translate(-50%,-50%);font-family:var(--d-mono);
+    font-size:12px;font-weight:600;color:rgba(255,255,255,.62);
+    text-shadow:0 0 3px #000,0 0 6px #000;white-space:nowrap}
   #stLbl .e.symb{display:flex;align-items:center;gap:5px;padding:3px 6px;
     background:rgba(13,14,17,.72);border:1px solid rgba(255,255,255,.14);border-radius:4px}
   #stLbl .e.symb svg{width:19px;height:19px;flex:0 0 19px;fill:none;
@@ -713,7 +717,8 @@
     </div>
     <div class="sep"></div>
     <button class="btn on" id="texBtn">Texture</button>
-    <button class="btn" id="wireBtn">Grid</button>
+    <button class="btn" id="wireBtn">Mesh</button>
+    <button class="btn" id="grilleBtn">Grid</button>
     <button class="btn" id="bldBtn" style="display:none">Buildings</button>
     <button class="btn on" id="limBtn" style="display:none">Boundary</button>
     <button class="btn on" id="eauBtn" style="display:none">Water</button>
@@ -809,6 +814,7 @@
     <span class="obEt" id="rpNom"></span>
     <button class="btn" id="rpX">Leave</button>
   </div>
+  <div id="grLbl"></div>
   <div id="stLbl"></div>
   <div id="stMsg" class="glass"></div>
   <div id="mini" class="glass"><div class="lg" id="miniT">Minimap</div><img id="miniImg" alt=""><div class="n">N ↑</div></div>
@@ -3098,6 +3104,78 @@ function pretty(k){ const L=LABELS[k];
     oeil.pos=[p[0],solY(p[0],p[1])+(oeil.hRp||2.0),p[1]];
   }
 
+  /* ══ LA GRILLE DU JEU ══════════════════════════════════════════════
+     « Rendez-vous en H4. »
+
+     C'est le vocabulaire commun de tous les joueurs. Sans lui, on peut
+     préparer un plan magnifique sur cette carte et être incapable de le
+     dire à son équipe pendant la bataille — c'était le manque le plus
+     embarrassant de l'éditeur.
+
+     ── Le repère ────────────────────────────────────────────────────
+     Dix colonnes de lettres A à K (le I est sauté, il se confond avec le
+     chiffre 1) et dix rangées de chiffres 1 à 9 puis 0 pour la dixième.
+     Le monde du jeu a le +x vers l'EST et le +z vers le NORD — on le lit
+     dans la conversion de l'éditeur de minimap, qui pose y_écran à
+     (zMax − z). La lettre court donc vers l'est, le chiffre vers le sud.
+
+     ⚠ L'éditeur de minimap place les CHIFFRES en colonnes et les LETTRES
+     en rangées, c'est-à-dire l'inverse. L'un des deux se trompe. J'ai
+     suivi le jeu tel que je le comprends — lettre puis chiffre, « H4 » —
+     parce que c'est le jeu qui arbitre, pas notre outil ; à vérifier
+     d'un coup d'œil en bataille, et je corrige celui qui a tort.
+
+     La grille vit dans SON tampon, refait au chargement d'une carte et
+     quand la caméra s'est nettement éloignée : elle ne dépend pas du
+     plan, et la rebâtir avec lui serait la payer pour rien. */
+  const grilleB=gl.createBuffer(); let grilleLots=[], grilleRad=0, montreGrille=0;
+  const G_LETTRES="ABCDEFGHJK", G_CHIFFRES="1234567890";
+  function buildGrille(){
+    grilleLots=[];
+    if(!montreGrille||!curHeights) return;
+    grilleRad=rad;
+    const P=[], l=Math.max(0.8, 3.2*rad/Math.max(200,cv.clientHeight));
+    const pas=WORLD/10, pasZ=WORLDZ/10;
+    const trait=(a,b)=>{
+      const dx=b[0]-a[0], dz=b[1]-a[1], L=Math.hypot(dx,dz)||1;
+      const ux=dx/L, uz=dz/L, nx=-uz, nz=ux;
+      const n=Math.max(2,Math.ceil(L/6)), d0=P.length/4;
+      for(let k=0;k<=n;k++){
+        const s2=L*k/n, cx=a[0]+ux*s2, cz=a[1]+uz*s2;
+        const px=cx-nx*l, pz=cz-nz*l, qx=cx+nx*l, qz=cz+nz*l;
+        P.push(px,0.3,-pz,terrainNorm(px,pz), qx,0.3,-qz,terrainNorm(qx,qz));
+      }
+      grilleLots.push({d:d0,n:P.length/4-d0});
+    };
+    for(let i=1;i<10;i++){
+      trait([ORIG[0]+i*pas,ORIG[1]],[ORIG[0]+i*pas,ORIG[1]+WORLDZ]);
+      trait([ORIG[0],ORIG[1]+i*pasZ],[ORIG[0]+WORLD,ORIG[1]+i*pasZ]);
+    }
+    if(!P.length) return;
+    gl.bindBuffer(gl.ARRAY_BUFFER,grilleB);
+    gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(P),gl.DYNAMIC_DRAW);
+  }
+  /* Les noms de cases, en vignettes : cent divs posés au centre de leur
+     carré, et ceux qui tombent hors de l'écran ne sont pas dessinés. */
+  function majGrilleNoms(){
+    const c=$("grLbl"); if(!c) return;
+    if(!montreGrille||!curHeights||!curMVP){ if(c.childElementCount) c.innerHTML=""; return; }
+    while(c.childElementCount<100) c.appendChild(Object.assign(document.createElement("div"),{className:"g"}));
+    const pas=WORLD/10, pasZ=WORLDZ/10;
+    for(let r=0;r<10;r++) for(let col=0;col<10;col++){
+      const d=c.children[r*10+col];
+      const x=ORIG[0]+(col+0.5)*pas;
+      /* la rangée 1 est au NORD, donc au z le plus grand */
+      const z=ORIG[1]+WORLDZ-(r+0.5)*pasZ;
+      const p=versEcran(x,z,2);
+      if(!p||p[0]<-40||p[1]<-20||p[0]>cv.clientWidth+40||p[1]>cv.clientHeight+20){
+        d.style.display="none"; continue;
+      }
+      d.style.display=""; d.style.left=p[0]+"px"; d.style.top=p[1]+"px";
+      d.textContent=G_LETTRES[col]+G_CHIFFRES[r];
+    }
+  }
+
   /* ══ LES POSITIONS PROPOSÉES ═══════════════════════════════════════
      « Tu étais là ; il fallait être là. »
 
@@ -3895,6 +3973,10 @@ function pretty(k){ const L=LABELS[k];
   cv.addEventListener("touchend",()=>{ if(!pince) return; pince=null; });
   document.getElementById("texBtn").addEventListener("click",e=>{useTex^=1;e.currentTarget.classList.toggle("on",useTex);});
   document.getElementById("wireBtn").addEventListener("click",e=>{wire^=1;e.currentTarget.classList.toggle("on",wire);});
+  document.getElementById("grilleBtn").addEventListener("click",e=>{
+    montreGrille^=1; e.currentTarget.classList.toggle("on",montreGrille);
+    buildGrille(); majGrilleNoms();
+  });
   document.getElementById("limBtn").addEventListener("click",e=>{showLim^=1;e.currentTarget.classList.toggle("on",showLim);});
   document.getElementById("eauBtn").addEventListener("click",e=>{showEau^=1;e.currentTarget.classList.toggle("on",showEau);});
   let showMini=1;
@@ -5090,6 +5172,10 @@ function pretty(k){ const L=LABELS[k];
     const dt=Math.min(0.1,(t-tPrec)/1000)||0.016; tPrec=t;
     clavier(dt); avanceVoyage(t); rpAvance(t); suivre(dt);
     if(ST.ouvert) stLabels();   /* les étiquettes suivent la caméra */
+    if(montreGrille){
+      if(grilleRad&&Math.abs(rad-grilleRad)>grilleRad*0.2) buildGrille();
+      majGrilleNoms();
+    }
     /* la ligne de vue se retaille quand le zoom a nettement changé —
        pas à chaque image : elle coûte un balayage du bâti */
     if(montreVue&&vueLots.length&&Math.abs(rad-vueRad)>vueRad*0.15) buildVue();
@@ -5190,7 +5276,7 @@ function pretty(k){ const L=LABELS[k];
       /* stLots et vueLots manquaient à cette liste : sur une carte sans
          limite, sans eau ni objectif affichés, les marqueurs de la
          stratégie n'auraient pas été dessinés du tout. */
-      if((showLim&&limN)||(showEau&&eauN)||objLots.length||stLots.length||vueLots.length||champN||secLots.length){
+      if((showLim&&limN)||(showEau&&eauN)||objLots.length||stLots.length||vueLots.length||champN||secLots.length||(montreGrille&&grilleLots.length)){
         gl.useProgram(lprog);
         gl.uniformMatrix4fv(luPV,false,new Float32Array(mul(P,V)));
         gl.uniform1f(luHS,curMaxH); gl.uniform1f(luExag,exag); gl.uniform1f(luHaut,LIM_HAUT);
@@ -5232,6 +5318,14 @@ function pretty(k){ const L=LABELS[k];
         /* Les secteurs de surveillance, SOUS les analyses : ce sont des
            consignes, pas des mesures — si l'on regarde une carte du
            danger, c'est elle qui doit se lire. */
+        if(montreGrille&&grilleLots.length){
+          gl.bindBuffer(gl.ARRAY_BUFFER,grilleB);
+          gl.vertexAttribPointer(lPos,3,gl.FLOAT,false,16,0);
+          gl.vertexAttribPointer(lBase,1,gl.FLOAT,false,16,12);
+          gl.uniform1f(luVoile,0.0); gl.uniform1f(luHaut,1.0);
+          gl.uniform4f(luCoul,1,1,1,0.30);
+          for(const L of grilleLots) gl.drawArrays(gl.TRIANGLE_STRIP,L.d,L.n);
+        }
         if(secLots.length){
           gl.bindBuffer(gl.ARRAY_BUFFER,secB);
           gl.vertexAttribPointer(lPos,3,gl.FLOAT,false,16,0);
