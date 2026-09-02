@@ -5551,7 +5551,7 @@ function pretty(k){ const L=LABELS[k];
       /* la vraie séquence d'une image de lecture, pour la chronométrer */
       rpImage:(t)=>{ RP.t=t; rpSuitEtapes(); oeilSuitReplay();
         buildChars(); buildStrat(); stLabels(); rpMaj(); buildTirs(); },
-      rpMaj, buildTirs};
+      rpMaj, buildTirs, perf:(v)=>{ perfOn=v?1:0; }};
     /* ── LES VUES ────────────────────────────────────────────────────
        Trois angles nommés, plutôt que de chercher le bon à la souris.
        Le dessus lit une ligne de vue, le côté lit un dénivelé, le
@@ -5666,6 +5666,64 @@ function pretty(k){ const L=LABELS[k];
         ST.sel=-1; ST.multi=[]; histoPose(); stMaj(); stLabels(); }
     });
   })();
+  /* ── LE COMPTEUR D'IMAGES ─────────────────────────────────────
+     Ouvert avec « perf » dans l'adresse. Il dit trois choses qu'on ne
+     peut pas deviner à distance : combien d'images par seconde la
+     machine sort vraiment, à quelle résolution elle les sort, et QUEL
+     MOTEUR les dessine — car un navigateur qui a perdu son accélération
+     matérielle rend tout en logiciel, et la même page passe de soixante
+     images par seconde à cinq sans qu'une ligne de code ait changé.
+     Il ne coûte qu'une écriture de texte par seconde. */
+  let perfOn=/[?&]perf(=|&|$)/.test(location.search);
+  let perfEl=null, perfN=0, perfT=0, perfPire=0, perfPrec=0, perfM=null;
+  function perfMoteur(){
+    if(perfM) return perfM;
+    try{ const e=gl.getExtension("WEBGL_debug_renderer_info");
+      perfM=e?String(gl.getParameter(e.UNMASKED_RENDERER_WEBGL)):"moteur inconnu"; }
+    catch(x){ perfM="moteur inconnu"; }
+    return perfM;
+  }
+  /* Les sommets du bâti : ils ne changent qu'au changement de carte,
+     on ne les recompte donc pas soixante fois par seconde. */
+  let perfS=-1, perfSLots=-1;
+  function perfSommets(){
+    if(perfSLots===objLots.length) return perfS;
+    perfSLots=objLots.length; perfS=0;
+    for(const L of objLots) perfS+=L.n;
+    return perfS;
+  }
+  function perfMaj(t){
+    if(!perfOn){ if(perfEl){ perfEl.remove(); perfEl=null; } return; }
+    if(!perfEl){
+      perfEl=document.createElement("div");
+      perfEl.style.cssText="position:fixed;left:10px;bottom:10px;z-index:99;padding:9px 12px;"+
+        "font:11.5px/1.6 ui-monospace,Consolas,monospace;color:#e8e8ea;white-space:pre;"+
+        "background:rgba(10,11,14,.88);border:1px solid rgba(255,255,255,.18);"+
+        "border-radius:6px;pointer-events:none;max-width:60vw;overflow:hidden";
+      /* un mot tout de suite : une boîte vide pendant une seconde a
+         l'air d'un défaut, pas d'une mesure en cours */
+      perfEl.textContent="mesure en cours…";
+      document.body.appendChild(perfEl);
+    }
+    if(perfPrec){ const d=(t-perfPrec)/1000;
+      if(d>0&&d<2){ perfN++; perfT+=d; if(d>perfPire) perfPire=d; } }
+    perfPrec=t;
+    if(perfT<1||!perfN) return;
+    const dpr=Math.min(2,window.devicePixelRatio||1);
+    /* une ligne par information, jointes : plus lisible, et sans
+       échappement de retour à la ligne à rater — celui que j'ai raté */
+    perfEl.textContent=[
+      Math.round(perfN/perfT)+" images/s · "+(perfT*1000/perfN).toFixed(1)+
+        " ms par image · pire "+(perfPire*1000).toFixed(0)+" ms",
+      "canevas "+cv.width+"×"+cv.height+" (écran ×"+dpr.toFixed(2)+")",
+      "terrain "+Math.round(idxLen/3)+" triangles",
+      "bâti "+objLots.length+" lots, "+perfSommets()+" sommets · flore "+floreN,
+      "chars "+charsLots.length+" lots · marqueurs "+(ST.ouvert?ST.els.length:0)+
+        (RP?" · replay "+RP.chars.length+" chars":""),
+      perfMoteur()
+    ].join(String.fromCharCode(10));
+    perfN=0; perfT=0; perfPire=0;
+  }
   function frame(t){
     const dt=Math.min(0.1,(t-tPrec)/1000)||0.016; tPrec=t;
     /* AVANT toute écriture de style : la mise en page est encore propre,
@@ -5944,6 +6002,7 @@ function pretty(k){ const L=LABELS[k];
        servie à la fin du rendu, jamais depuis un gestionnaire. */
     if(demandeCapture){ const f=demandeCapture; demandeCapture=null;
       try{ f(cv.toDataURL("image/jpeg",0.88)); }catch(e){ f(null); } }
+    perfMaj(t);
     requestAnimationFrame(frame);
   }
 
