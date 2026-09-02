@@ -54,6 +54,8 @@ window.CP_FR = Object.assign(window.CP_FR || {}, {
   "Over the ground": "En épousant le sol",
   "Height change": "Dénivelé",
   "Clear": "Effacer",
+  "Time": "Au mieux",
+  "median tank": "char médian",
   /* ── les angles morts ── */
   "Blind spots": "Angles morts",
   "No allied tank placed.": "Aucun char allié posé.",

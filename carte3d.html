@@ -715,6 +715,7 @@
     <div class="obBloc"><span class="obEt" id="mesPlatEt">Flat</span><span class="obV" id="mesPlat">—</span></div>
     <div class="obBloc"><span class="obEt" id="mesSolEt">Over the ground</span><span class="obV" id="mesSol">—</span></div>
     <div class="obBloc"><span class="obEt" id="mesDenEt">Height change</span><span class="obV" id="mesDen">—</span></div>
+    <div class="obBloc"><span class="obEt" id="mesTpsEt">Time</span><span class="obV" id="mesTps">—</span></div>
     <button class="btn" id="mesX">Clear</button>
   </div>
   <div id="stLbl"></div>
@@ -2434,7 +2435,11 @@ function pretty(k){ const L=LABELS[k];
      La vitesse n'est pas décorative : à douze mètres par seconde —
      l'allure de croisière d'un moyen — la durée du trajet est celle
      qu'il prendra vraiment, et l'on voit ce qu'on verra quand. */
-  const VITESSE_VOYAGE=12;
+  /* L'allure du voyage : celle du char MÉDIAN de la bibliothèque, lue
+     dans le jeu. J'y avais mis douze mètres par seconde de ma tête ;
+     depuis que les vitesses sont extraites, il n'y a plus de raison
+     d'inventer. La barre annonce laquelle est employée. */
+  const VITESSE_VOYAGE=()=>vitesseMediane()/3.6;
   let voyage=null;
   function lanceVoyage(el){
     if(!el||el.type!=="fleche") return;
@@ -2445,7 +2450,7 @@ function pretty(k){ const L=LABELS[k];
     const s=ST.els[ST.sel], mod=s&&s.type==="tank"?charDe(s.char):null;
     const h=mod?(mod.bbClic[1][1]-mod.bbCaisse[0][1]):2.0;
     entreOeil(el);
-    voyage={a:[el.x,el.y], b:[el.x2,el.y2], h, L, duree:L/VITESSE_VOYAGE*1000, t0:null};
+    voyage={a:[el.x,el.y], b:[el.x2,el.y2], h, L, duree:L/VITESSE_VOYAGE()*1000, t0:null};
     /* On repart du sol : `entreOeil` a placé l’œil à la hauteur d’une
        tourelle de char, or on suit ici un trajet, pas un marqueur. */
     oeil.pos=[el.x, solY(el.x,el.y)+h, el.y];
@@ -2689,6 +2694,42 @@ function pretty(k){ const L=LABELS[k];
     document.getElementById("mesPlat").textContent=Math.round(plat)+" m";
     document.getElementById("mesSol").textContent=Math.round(sol)+" m";
     document.getElementById("mesDen").textContent=(den>=0?"+":"−")+Math.abs(den).toFixed(1)+" m";
+    /* ── LE TEMPS DE TRAJET ────────────────────────────────────────
+       « Qui arrive le premier sur la colline ? » C'est la question qui
+       décide de la moitié des plans, et elle se répondait au doigt
+       mouillé faute de vitesse dans l'index. Elle y est désormais :
+       `speedLimits` du jeu, en kilomètres par heure.
+
+       On prend la vitesse de POINTE, pas une moyenne : celle-là
+       dépendrait de l'accélération, du sol et du pilote, et l'inventer
+       donnerait un chiffre faux qu'on retiendrait. Le temps affiché est
+       donc un PLANCHER — le signe « ≥ » le dit — et c'est déjà ce qu'il
+       faut pour comparer deux trajets ou deux chars.
+
+       La distance employée est celle qui ÉPOUSE LE SOL, pas celle à
+       plat : c'est le chemin que les chenilles font vraiment. */
+    const el=ST.els[ST.sel], mod=el&&el.type==="tank"?charDe(el.char):null;
+    const v=(mod&&mod.vitesse&&mod.vitesse.avant)||vitesseMediane();
+    const secs=sol/(v/3.6);
+    document.getElementById("mesTps").textContent="≥ "+(secs<60
+      ? Math.round(secs)+" s"
+      : Math.floor(secs/60)+" min "+String(Math.round(secs%60)).padStart(2,"0"));
+    document.getElementById("mesTpsEt").textContent=
+      (mod?mod.nom:t("median tank"))+" · "+v+" km/h";
+  }
+  /* Le char médian de la bibliothèque, quand aucun n'est choisi : un
+     chiffre mesuré plutôt qu'une allure inventée. */
+  let vMed=null;
+  function vitesseMediane(){
+    if(vMed!==null) return vMed;
+    const l=(CHARS&&CHARS.chars||[]).map(c=>c.vitesse&&c.vitesse.avant)
+      .filter(v=>v>0).sort((a,b)=>a-b);
+    /* On ne met en cache QUE si la bibliothèque est là : appelée avant
+       son chargement, la valeur de repli se figerait pour la session et
+       la mesure mentirait jusqu'au prochain rechargement. */
+    if(!l.length) return 45;
+    vMed=l[l.length>>1];
+    return vMed;
   }
 
   /* ── QUI VOIT QUI ─────────────────────────────────────────────────
