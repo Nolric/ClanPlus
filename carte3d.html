@@ -525,14 +525,22 @@
      Le nom, la jauge de points de vie sous lui, et le dégât encaissé à
      l'instant même. Trois choses qu'on lit d'un coup d'œil sans quitter
      le char des yeux — c'est tout l'intérêt de les mettre là plutôt que
-     dans un panneau. */
-  #stLbl .e.rpE{display:flex;flex-direction:column;align-items:center;gap:2px;padding:2px 7px 3px}
-  #stLbl .e.rpE .nom{display:flex;align-items:center;gap:5px}
-  #stLbl .e.rpE .pv{display:block;width:52px;height:3px;border-radius:2px;
-    background:rgba(255,255,255,.16);overflow:hidden}
-  #stLbl .e.rpE .pv b{display:block;height:100%;border-radius:2px;transition:width .12s linear}
-  #stLbl .e.rpE .deg{font-family:var(--d-mono);font-size:10.5px;font-weight:700;color:#ff8b6e}
-  #stLbl .e.rpE .deg:empty{display:none}
+     dans un panneau.
+
+     LA JAUGE EST UN FOND, PAS UNE BOÎTE. Ma première version empilait
+     un conteneur flex, un second flex pour le nom, un bloc pour la
+     gouttière et un autre pour le remplissage : cinq boîtes par
+     étiquette au lieu d'une. Les chars bougent à chaque image, donc
+     chaque étiquette se replace à chaque image, et le navigateur
+     remesurait cent cinquante boîtes soixante fois par seconde —
+     mesuré, 7,2 ms par image contre 1,4. Un dégradé sur le fond du même
+     et unique bloc ne coûte RIEN à la mise en page : il ne se repeint
+     pas, il ne se remesure pas. */
+  #stLbl .e.rpE{padding:2px 7px 6px;background-repeat:no-repeat;
+    background-position:0 100%;background-size:100% 3px}
+  /* touché à l'instant même : toute l'étiquette s'allume, plus lisible
+     qu'un petit nombre orange et sans une boîte de plus */
+  #stLbl .e.rpE.hit{color:#ff8b6e !important;border-color:rgba(255,139,110,.5)}
   /* non repéré : présent mais éteint, exactement comme son modèle */
   #stLbl .e.rpE.paleE{opacity:.42}
   #stLbl .e.rpE.mortE{opacity:.72;color:#9aa0aa !important;border-color:rgba(255,255,255,.08)}
@@ -934,6 +942,23 @@ function pretty(k){ const L=LABELS[k];
 
 (function(){
   const cv=document.getElementById("c");
+  let cvH=1;
+  /* ── LA POSITION DU CANEVAS À L'ÉCRAN ──────────────────────────
+     Relevée UNE FOIS par image, jamais dans une boucle.
+
+     C'était le vrai gouffre de la lecture d'un replay. Placer une
+     étiquette demande de projeter un point du monde vers l'écran, et
+     cette projection appelait getBoundingClientRect sur le canevas —
+     une mesure qui oblige le navigateur à recalculer la mise en page
+     de toute la page, sur-le-champ. Or on place les étiquettes en
+     boucle : écrire la position de l'une salit la mise en page, mesurer
+     pour la suivante force à la refaire. Trente étiquettes, trente
+     recalculs complets, soixante fois par seconde. Mesuré sur une
+     bataille à trente chars : 12,8 ms par image rien que pour cela.
+     Le rectangle ne bouge qu'au redimensionnement de la fenêtre. */
+  let cvRect={left:0,top:0,width:1,height:1};
+  function majCvRect(){ cvRect=cv.getBoundingClientRect(); }
+
   const gl=cv.getContext("webgl",{antialias:true,alpha:false})||cv.getContext("experimental-webgl");
   if(!gl){ document.getElementById("err").style.display="flex"; document.getElementById("load").classList.remove("on"); return; }
   const uintExt=gl.getExtension("OES_element_index_uint");
@@ -1944,7 +1969,7 @@ function pretty(k){ const L=LABELS[k];
     const coups=rpCoups();
     if(!coups.length) return;
     const P=[];
-    const larg=Math.max(0.30, 4.5*0.9*rad/Math.max(200,cv.clientHeight));
+    const larg=Math.max(0.30, 4.5*0.9*rad/Math.max(200,cvH));
     for(const c of coups){
       const A=[c.ax, solY(c.ax,c.az)+H_CANON, c.az];
       const B=[c.bx, solY(c.bx,c.bz)+(c.touche?H_FLANC:H_CANON), c.bz];
@@ -2391,7 +2416,7 @@ function pretty(k){ const L=LABELS[k];
     if(cw<=0.0001) return null;
     const cx=(x*m[0]+y*m[4]+(-z)*m[8]+m[12])/cw;
     const cy=(x*m[1]+y*m[5]+(-z)*m[9]+m[13])/cw;
-    const r=cv.getBoundingClientRect();
+    const r=cvRect;
     return [r.left+(cx*0.5+0.5)*r.width, r.top+(1-(cy*0.5+0.5))*r.height];
   }
   function buildLimite(jeu){
@@ -3421,31 +3446,49 @@ function pretty(k){ const L=LABELS[k];
 
   /* ── LA FRISE DU REPLAY ─────────────────────────────────────────── */
   const rpTemps=(s)=>{ s=Math.max(0,Math.floor(s)); return Math.floor(s/60)+":"+String(s%60).padStart(2,"0"); };
+  /* Ce que valaient les deux listes la dernière fois qu'on les a
+     bâties. Rien d'autre ne les fait changer que la mort d'un char. */
+  let rpListe="";
   function rpMaj(){
     if(!RP) return;
-    $("rpPlay").textContent=RP.joue?"❚❚":"▶";
+    const play=RP.joue?"❚❚":"▶";
+    if($("rpPlay").textContent!==play) $("rpPlay").textContent=play;
     $("rpT").textContent=rpTemps(RP.t)+" / "+rpTemps(RP.duree);
-    $("rpVit").textContent="×"+RP.vitesse;
-    $("rpNom").textContent=RP.nom||"";
+    const vit="×"+RP.vitesse;
+    if($("rpVit").textContent!==vit) $("rpVit").textContent=vit;
+    if($("rpNom").textContent!==(RP.nom||"")) $("rpNom").textContent=RP.nom||"";
     const sk=$("rpSeek");
     if(document.activeElement!==sk) sk.value=String(Math.round(RP.t/Math.max(1,RP.duree)*1000));
     /* Les chars ENCORE EN VIE à cet instant : proposer l'œil d'un mort
-       n'aurait pas de sens, et la liste doit suivre la bataille. */
+       n'aurait pas de sens, et la liste doit suivre la bataille.
+
+       Mais cette fonction tourne à CHAQUE IMAGE de la lecture, et j'y
+       reconstruisais les deux menus à coups de innerHTML : soixante
+       balises « option » détruites et recréées soixante fois par
+       seconde, pour une liste qui ne change que lorsqu'un char meurt.
+       Mesuré : 6 ms par image sur les 6,5 que coûtait une image de
+       lecture — l'essentiel du temps de la bataille passait à refaire
+       deux listes déroulantes identiques à elles-mêmes.
+       On ne les refait donc que quand leur contenu change vraiment. */
+    const vivants=RP.chars.map((c,k)=>({c,k}))
+      .filter(o=>o.c.mort==null||RP.t<=o.c.mort);
+    /* L'identifiant de la bataille entre dans la signature : sans lui,
+       ouvrir un AUTRE replay du même nombre de chars aurait donné la
+       même signature, et les listes seraient restées celles d'avant. */
+    let sig=RP.battleId+"|"; for(const o of vivants) sig+=o.k+",";
+    if(sig===rpListe) return;
     const sel=$("rpOeil");
-    if(document.activeElement!==sel){
-      const vivants=RP.chars.map((c,k)=>({c,k}))
-        .filter(o=>o.c.mort==null||RP.t<=o.c.mort);
-      sel.innerHTML='<option value="-1">'+echapHtml(t("Eye of…"))+"</option>"+
-        vivants.map(o=>'<option value="'+o.k+'">'+(o.c.ami?"○ ":"● ")+
-          echapHtml(o.c.tank||o.c.nom)+"</option>").join("");
-      sel.value="-1";
-      const pr=$("rpProp");
-      if(pr&&document.activeElement!==pr){
-        pr.innerHTML='<option value="-1">'+echapHtml(t("Propose for…"))+"</option>"+
-          vivants.map(o=>'<option value="'+o.k+'">'+(o.c.ami?"○ ":"● ")+
-            echapHtml(o.c.tank||o.c.nom)+"</option>").join("");
-        pr.value="-1";
-      }
+    if(document.activeElement===sel) return;
+    rpListe=sig;
+    const options=(tete)=>'<option value="-1">'+echapHtml(tete)+"</option>"+
+      vivants.map(o=>'<option value="'+o.k+'">'+(o.c.ami?"○ ":"● ")+
+        echapHtml(o.c.tank||o.c.nom)+"</option>").join("");
+    sel.innerHTML=options(t("Eye of…"));
+    sel.value="-1";
+    const pr=$("rpProp");
+    if(pr&&document.activeElement!==pr){
+      pr.innerHTML=options(t("Propose for…"));
+      pr.value="-1";
     }
   }
   function rpVaA(t){
@@ -3875,7 +3918,7 @@ function pretty(k){ const L=LABELS[k];
      { o: l'œil, d: la direction }. Il servait déjà à trouver le sol ; il
      sert maintenant aussi à savoir quel char on vise. */
   function rayonCurseur(ex,ey){
-    const r=cv.getBoundingClientRect();
+    const r=cvRect;
     const nx=((ex-r.left)/r.width)*2-1, ny=1-((ey-r.top)/r.height)*2;
     const e=eye(), c=[tgt[0]+pan.x,tgt[1],tgt[2]+pan.z];
     /* on reconstruit le rayon dans le repère de la caméra */
@@ -4370,7 +4413,12 @@ function pretty(k){ const L=LABELS[k];
   }
 
   // ---- rendu ----
-  function resize(){const dpr=Math.min(2,window.devicePixelRatio||1);cv.width=cv.clientWidth*dpr;cv.height=cv.clientHeight*dpr;gl.viewport(0,0,cv.width,cv.height);}
+  /* La hauteur du canevas en pixels de page, retenue. La LIRE sur
+     l'élément force le navigateur à recalculer la mise en page sur-le-
+     champ ; fait dans la boucle d'image, juste après avoir déplacé les
+     étiquettes, cela coûtait 0,28 ms par image pour une valeur qui ne
+     change qu'au redimensionnement. */
+  function resize(){const dpr=Math.min(2,window.devicePixelRatio||1);cv.width=cv.clientWidth*dpr;cv.height=cv.clientHeight*dpr;cvH=cv.clientHeight;majCvRect();gl.viewport(0,0,cv.width,cv.height);}
   window.addEventListener("resize",resize); resize();
   gl.enable(gl.DEPTH_TEST); gl.clearColor(0.047,0.051,0.059,1);
   function bind(loc,b,sz){gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.enableVertexAttribArray(loc);gl.vertexAttribPointer(loc,sz,gl.FLOAT,false,0,0);}
@@ -4822,69 +4870,87 @@ function pretty(k){ const L=LABELS[k];
       /* une flèche parle depuis son MILIEU, pas depuis sa queue */
       const ax=e.type==="fleche"?(e.x+e.x2)/2:e.x, az=e.type==="fleche"?(e.y+e.y2)/2:e.y;
       const p=versEcran(ax,az,hautEtiquette(e));
-      if(!p){ d.style.display="none"; continue; }
+      if(!p){ if(!d.__off){ d.style.display="none"; d.__off=1; } continue; }
       /* Un symbole se montre TOUJOURS : c'est lui le message, pas son
          nom. Les autres formes n'apparaissent que si on les a nommées. */
-      if(e.type!=="tank"&&e.type!=="stamp"&&!e.name){ d.style.display="none"; continue; }
+      if(e.type!=="tank"&&e.type!=="stamp"&&!e.name){ if(!d.__off){ d.style.display="none"; d.__off=1; } continue; }
       const cls=(ST_CLS.find(x=>x[0]===e.cls)||ST_CLS[1])[1];
-      d.style.display=""; d.style.left=p[0]+"px"; d.style.top=p[1]+"px";
-      d.style.color=(e.camp==="ennemi")?"#f0a49b":"#a9e0b4";
-      d.className="e"+(e.type==="texte"?" note":"");
+      /* Au pixel près, et seulement si ça a bougé : réécrire la même
+         valeur invalide quand même la mise en page du bloc. */
+      const px=Math.round(p[0]), py=Math.round(p[1]);
+      if(d.__cx!==px){ d.style.left=px+"px"; d.__cx=px; }
+      if(d.__cy!==py){ d.style.top=py+"px"; d.__cy=py; }
+      if(d.__off){ d.style.display=""; d.__off=0; }
+      const coul=(e.camp==="ennemi")?"#f0a49b":"#a9e0b4";
+      if(d.__coul!==coul){ d.style.color=coul; d.__coul=coul; }
+      /* La classe s'écrivait ici PUIS une seconde fois plus bas pour un
+         char de replay : deux recalculs de style par étiquette et par
+         image, dont un pour rien. On la laisse aux branches qui la
+         connaissent vraiment. */
+      if(!e.rp){
+        const cl0="e"+(e.type==="texte"?" note":"");
+        if(d.className!==cl0) d.className=cl0;
+      }
+      /* ── LE MÉMO D'UN NŒUD ──────────────────────────────────────
+         Une SEULE clé par étiquette, qui décrit tout ce que contient le
+         nœud, genre compris. J'en avais d'abord tenu trois — une par
+         sorte de contenu — et un même nœud passant du replay au plan
+         gardait le nom du char : chaque mémo croyait, chacun de son
+         côté, que rien n'avait changé. Une clé unique ne peut pas se
+         contredire elle-même. */
+      const fond0=d.__bg||"none";
       if(e.type==="stamp"){
-        d.className="e symb"+(i===ST.sel?" sel":"");
-        d.innerHTML='<svg viewBox="-18 -18 36 36">'+(ST_STAMPS[e.kind]||ST_STAMPS.focus)+"</svg>"+
-          (e.name?'<span>'+e.name.replace(/[&<>]/g,"")+"</span>":"");
+        const k="s|"+e.kind+"|"+(e.name||"")+"|"+(i===ST.sel?1:0);
+        if(d.__k!==k){
+          d.className="e symb"+(i===ST.sel?" sel":"");
+          d.innerHTML='<svg viewBox="-18 -18 36 36">'+(ST_STAMPS[e.kind]||ST_STAMPS.focus)+"</svg>"+
+            (e.name?'<span>'+e.name.replace(/[&<>]/g,"")+"</span>":"");
+          d.__k=k;
+        }
+        if(fond0!=="none"){ d.style.backgroundImage="none"; d.__bg="none"; }
         continue;
       }
-      /* Un char de replay porte sa jauge et ses dégâts : il faut du
-         balisage, pas une simple ligne de texte.
+      /* Un char de replay porte sa jauge et son dégât du moment, et ce
+         bloc tourne pour CHAQUE char à CHAQUE image.
 
-         Ce bloc tourne pour CHAQUE char à CHAQUE image. Ma première
-         version y refaisait le HTML à coups de innerHTML : mesuré,
-         9,85 ms par image avec trente chars — le navigateur reparsait
-         quatre-vingt-dix balises soixante fois par seconde pour, le plus
-         souvent, réécrire exactement la même chose. On bâtit donc les
-         nœuds une fois, et on ne touche ensuite que ce qui a changé. */
+         Deux versions s'y sont cassé les dents. La première refaisait le
+         HTML à coups de innerHTML : 9,85 ms par image à trente chars. La
+         seconde bâtissait les nœuds une fois — un flex, un flex imbriqué
+         pour le nom, une gouttière, un remplissage — et coûtait encore
+         7,2 ms dès que les chars bougeaient : cinq boîtes à REMESURER
+         par étiquette, et elles se replacent toutes à chaque image.
+         Celle-ci n'a qu'une boîte, du texte, et un dégradé de fond qui
+         ne participe pas à la mise en page. On n'écrit que ce qui a
+         changé, parce qu'écrire la même valeur invalide quand même. */
       if(e.rp){
-        const cl2="e rpE"+(e.mortRp?" mortE":"")+(e.pale?" paleE":"");
+        const cl2="e rpE"+(e.mortRp?" mortE":"")+(e.pale?" paleE":"")+(e.recu?" hit":"");
         if(d.className!==cl2) d.className=cl2;
-        if(!d.__rp){
-          d.textContent="";
-          const n1=document.createElement("span"); n1.className="nom";
-          const t1=document.createTextNode(""); n1.appendChild(t1);
-          const g1=document.createElement("b"); g1.className="deg"; n1.appendChild(g1);
-          const j1=document.createElement("i"); j1.className="pv";
-          const r1=document.createElement("b"); j1.appendChild(r1);
-          d.appendChild(n1); d.appendChild(j1);
-          d.__rp={txt:t1, deg:g1, jauge:j1, rem:r1, v:{}};
-        }
-        const m=d.__rp, v=m.v;
-        const nom=(e.mortRp?"✕ ":"")+(e.name||cls);
-        if(v.nom!==nom){ m.txt.nodeValue=nom; v.nom=nom; }
-        const deg=e.recu?"−"+e.recu:"";
-        if(v.deg!==deg){ m.deg.textContent=deg; v.deg=deg; }
+        const txt=(e.mortRp?"✕ ":"")+(e.name||cls)+(e.recu?"  −"+e.recu:"");
+        const k="r|"+txt;
+        if(d.__k!==k){ d.textContent=txt; d.__k=k; }
         /* Vert, puis ambre, puis rouge : la couleur dit l'état sans
-           qu'on ait à lire un chiffre. */
-        const montre=(e.pv!=null&&!e.mortRp);
-        if(v.montre!==montre){ m.jauge.style.display=montre?"":"none"; v.montre=montre; }
-        if(montre){
+           qu'on ait à lire un chiffre. Le dégradé s'arrête net à la
+           proportion restante — c'est la jauge, en un seul fond. */
+        let fond="none";
+        if(e.pv!=null&&!e.mortRp){
           const larg=Math.round(e.pv*100);
-          if(v.larg!==larg){ m.rem.style.width=larg+"%"; v.larg=larg; }
           const c2=e.pv>0.6?"#5fbe72":e.pv>0.3?"#e0a83e":"#e0503f";
-          if(v.c2!==c2){ m.rem.style.background=c2; v.c2=c2; }
+          fond="linear-gradient(90deg,"+c2+" "+larg+"%,rgba(255,255,255,.18) "+larg+"%)";
         }
+        if(fond0!==fond){ d.style.backgroundImage=fond; d.__bg=fond; }
         continue;
       }
       /* un marqueur ordinaire réoccupe peut-être le nœud d'un char de
-         replay : on rend la case propre avant d'y écrire du texte */
-      if(d.__rp){ d.__rp=null; d.textContent=""; }
+         replay : on efface la jauge avant d'y écrire du texte */
+      if(fond0!=="none"){ d.style.backgroundImage="none"; d.__bg="none"; }
       let txt=(e.name||cls)+(i===ST.sel?" ●":"");
       /* Le trait dit s'il y a vue ; l'étiquette dit de combien et par
          quoi c'est coupé. Un « 312 m · bâtiment » vaut mieux qu'un trait
          rouge dont il faut deviner la cause. */
       if(montreVue&&ST.sel>=0&&i!==ST.sel&&vueCache[i])
         txt+=" · "+vueCache[i];
-      d.textContent=txt;
+      const k="t|"+txt;
+      if(d.__k!==k){ d.textContent=txt; d.__k=k; }
     }
   }
   /* quel marqueur est sous ce point de l'écran ? */
@@ -5481,7 +5547,11 @@ function pretty(k){ const L=LABELS[k];
       /* le replay, exposé pour pouvoir l'exercer sans session de clan */
       rpPose:(r)=>{ RP=r; document.body.classList.toggle("replay",!!r); },
       rpEtat:()=>RP, rpLit:litReplay, rpVa:rpVaA, rpEls,
-      rpPos:(k,t)=>rpPos(RP.chars[k],t), rpCoups, tirLots:()=>tirLots};
+      rpPos:(k,t)=>rpPos(RP.chars[k],t), rpCoups, tirLots:()=>tirLots,
+      /* la vraie séquence d'une image de lecture, pour la chronométrer */
+      rpImage:(t)=>{ RP.t=t; rpSuitEtapes(); oeilSuitReplay();
+        buildChars(); buildStrat(); stLabels(); rpMaj(); buildTirs(); },
+      rpMaj, buildTirs};
     /* ── LES VUES ────────────────────────────────────────────────────
        Trois angles nommés, plutôt que de chercher le bon à la souris.
        Le dessus lit une ligne de vue, le côté lit un dénivelé, le
@@ -5598,6 +5668,9 @@ function pretty(k){ const L=LABELS[k];
   })();
   function frame(t){
     const dt=Math.min(0.1,(t-tPrec)/1000)||0.016; tPrec=t;
+    /* AVANT toute écriture de style : la mise en page est encore propre,
+       la mesure ne coûte rien. Après, elle coûterait un recalcul. */
+    majCvRect();
     clavier(dt); avanceVoyage(t); rpAvance(t); suivre(dt);
     if(ST.ouvert) stLabels();   /* les étiquettes suivent la caméra */
     if(montreGrille){
