@@ -314,7 +314,8 @@
   body.vueOeil #rpBar,body.presente #rpBar{display:none!important}
   #rpSeek{width:min(38vw,300px)}
   #rpBar .btn{padding:5px 9px;font-size:11.5px}
-  #rpNom{max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #rpNom{max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #rpOeil{font-size:11.5px;padding:4px 20px 4px 7px;max-width:150px}
   #presBar{display:none}
   body.presente #presBar{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);
     display:flex;gap:12px;align-items:center;padding:10px 14px;z-index:14;
@@ -802,6 +803,8 @@
     <input type="range" id="rpSeek" min="0" max="1000" value="0">
     <span class="obV" id="rpT">0:00</span>
     <button class="btn" id="rpVit">×2</button>
+    <button class="btn" id="rpPin">Pin a step here</button>
+    <select id="rpOeil"></select>
     <span class="obEt" id="rpNom"></span>
     <button class="btn" id="rpX">Leave</button>
   </div>
@@ -1635,7 +1638,7 @@ function pretty(k){ const L=LABELS[k];
         if(k>0||e.type==="zone"||e.encours) rond(pts[k],larg*1.25,coul,a);
       }
     }
-    const tousSol=RP?ST.els.concat(rpEls()):ST.els;
+    const tousSol=RP?(rpBlanc?[]:ST.els).concat(rpEls()):ST.els;
     for(let i=0;i<tousSol.length;i++){
       const e=tousSol[i], sel=(i===ST.sel), mod=charDe(e.char);
       if(e.masque||e.type==="fleche"||e.type==="trajet"||e.type==="zone") continue;
@@ -1732,7 +1735,11 @@ function pretty(k){ const L=LABELS[k];
      replay viennent APRÈS ceux du plan, si bien que les indices de
      sélection restent ceux du plan et qu'on ne peut pas attraper un char
      de la bataille par mégarde. */
-  const elsDessines=()=>RP?ST.els.concat(rpEls()):ST.els;
+  /* Avant la première étape épinglée, les annotations sont MASQUÉES et
+     non effacées : les données ne bougent pas, seul le dessin les
+     ignore. Un débriefing qui perdrait le travail du stratège en
+     rembobinant serait pire qu'inutile. */
+  const elsDessines=()=>RP?(rpBlanc?[]:ST.els).concat(rpEls()):ST.els;
   function buildChars(){
     charsLots=[];
     const tous=elsDessines();
@@ -1758,7 +1765,7 @@ function pretty(k){ const L=LABELS[k];
          de l'écran d'une masse verte, et l'on ne voyait plus le terrain
          qu'on était venu regarder. Un commandant ne voit pas son
          propre blindage depuis sa coupole. */
-      if(oeil&&el===oeil.el) continue;
+      if(oeil&&(el===oeil.el||(oeil.rp!=null&&el.rpK===oeil.rp))) continue;
       const base=terrainNorm(el.x,el.y);
       const cap=(Number(el.cap)||0)*Math.PI/180;
       const tour=cap+(Number(el.tour)||0)*Math.PI/180;
@@ -2584,10 +2591,14 @@ function pretty(k){ const L=LABELS[k];
     $o("obNom").textContent=nomMarqueur(oeil.el,ST.els.indexOf(oeil.el));
     /* Les autres chars, le camp OPPOSÉ en tête : c'est lui qu'on vient
        regarder neuf fois sur dix. */
-    const autres=ST.els.map((e,i)=>({e,i}))
-      .filter(o=>o.e!==oeil.el&&o.e.type==="tank");
+    /* En débriefing, ce qu'on veut regarder n'est pas un marqueur du
+       plan mais un char de la BATAILLE — celui qui vient de vous tuer,
+       par exemple. On propose donc les deux, la bataille d'abord. */
+    const autres=(RP?rpEls().map((e,i)=>({e,i:-1-i})):[])
+      .concat(ST.els.map((e,i)=>({e,i})))
+      .filter(o=>o.e!==oeil.el&&o.e.type==="tank"&&!(oeil.rp!=null&&o.e.rpK===oeil.rp));
     autres.sort((a,c)=>(a.e.camp===oeil.el.camp?1:0)-(c.e.camp===oeil.el.camp?1:0));
-    const cour=oeil.vers?ST.els.indexOf(oeil.vers):-1;
+    const cour=oeil.vers?(oeil.versI!=null?oeil.versI:ST.els.indexOf(oeil.vers)):-999;
     $o("obVers").innerHTML='<option value="-1">'+echapHtml(t("Free look"))+'</option>'+
       autres.map(o=>'<option value="'+o.i+'"'+(o.i===cour?' selected':'')+'>'+
         (o.e.camp===oeil.el.camp?"○ ":"● ")+echapHtml(nomMarqueur(o.e,o.i))+'</option>').join("");
@@ -3002,6 +3013,82 @@ function pretty(k){ const L=LABELS[k];
     ["danger","Danger zone"],["objective","Objective"],["push","Push forward"],
     ["fallback","Fall back"],["stop","No entry"],["rally","Rally point"]];
 
+  /* ══ PAUSE = TABLEAU BLANC ═════════════════════════════════════════
+     Le modèle de débriefing retenu avec Robert du côté 2D, et repris ici
+     tel quel : on met la bataille en pause, on annote l'image figée, et
+     CHAQUE PAUSE ANNOTÉE DEVIENT UNE ÉTAPE ÉPINGLÉE À SON INSTANT. En
+     lecture, les annotations d'une étape apparaissent quand on atteint
+     son instant, et disparaissent quand on remonte avant.
+
+     Avant la première étape épinglée, l'écran est vide d'annotations :
+     on regarde la bataille, pas le commentaire. C'est le « tableau
+     blanc », et c'est ce qui empêche de lire la fin avant le début. */
+  let rpBlanc=0;
+  function rpSuitEtapes(){
+    if(!RP) return;
+    const pin=ST.steps.map((p,i)=>({i,t:p.t})).filter(x=>x.t!=null);
+    if(!pin.length){ rpBlanc=0; return; }     // plan sans épingle : rien à suivre
+    let choix=-1;
+    for(const x of pin) if(x.t<=RP.t+1e-6) choix=x.i;
+    if(choix<0){ rpBlanc=1; return; }
+    rpBlanc=0;
+    if(choix!==ST.step) vaEtape(choix,false);
+  }
+  /* Épingler l'étape courante à l'instant affiché. Une étape VIERGE et
+     non épinglée prend l'instant ; sinon on en insère une nouvelle, et
+     l'on retrie par instant pour que la frise et les diapos racontent la
+     même histoire. */
+  function rpEpingle(){
+    if(!RP||!ST.canEdit) return;
+    RP.joue=0;
+    const p=etapeCourante();
+    if(p.t==null&&!p.els.length){ p.t=+RP.t.toFixed(1); }
+    else{
+      if(ST.steps.length>=ETAPES_MAX){ stDit(t("Twelve steps at most.")); return; }
+      ST.steps.splice(ST.step+1,0,{els:[],note:"",vue:vueActuelle(),t:+RP.t.toFixed(1)});
+      ST.step++;
+    }
+    const cour=ST.steps[ST.step];
+    ST.steps.sort((a,b)=>(a.t==null?-1:a.t)-(b.t==null?-1:b.t));
+    ST.step=ST.steps.indexOf(cour);
+    ST.els=ST.steps[ST.step].els; ST.sel=-1; ST.multi=[];
+    histoPose(); buildStrat(); buildChars(); stMaj(); stLabels(); rpMaj();
+    stDit(t("Step pinned at")+" "+rpTemps(RP.t));
+  }
+
+  /* ── L'ŒIL D'UN CHAR DE LA BATAILLE ────────────────────────────────
+     « Voilà ce qu'il voyait — et ce qu'il ne voyait pas. »
+
+     C'est le seul endroit où le débriefing en 3D dit quelque chose que
+     la version plate ne pourra jamais dire. Toute la vue subjective est
+     déjà écrite ; il n'y a qu'à lui donner un œil qui bouge avec la
+     bataille au lieu d'un marqueur posé. */
+  function oeilReplay(k){
+    if(!RP||!RP.chars[k]) return;
+    const c=RP.chars[k], p=rpPos(c,RP.t); if(!p) return;
+    const mod=charDe(c.cleModele||"");
+    const h=mod?(mod.bbClic[1][1]-mod.bbCaisse[0][1]):2.0;
+    entreOeil({type:"tank",x:p[0],y:p[1],cap:((Math.PI/2-p[2])*180/Math.PI+360)%360,
+               name:c.tank||c.nom,char:c.cleModele||""});
+    oeil.rp=k; oeil.hRp=h;
+    oeil.pos=[p[0],solY(p[0],p[1])+h,p[1]];
+    /* `entreOeil` a déjà rebâti la géométrie — mais AVANT que l'indice du
+       char ne soit posé, donc sans savoir lequel écarter. On refait, et
+       l'on n'habite plus sa propre carcasse. */
+    buildChars(); buildStrat();
+    majOeil();
+  }
+  /* L'œil suit son char au fil de la bataille. On ne tourne PAS avec la
+     caisse : le regard reste à l'utilisateur, sinon la vue pivote sans
+     prévenir et l'on ne peut plus rien examiner. */
+  function oeilSuitReplay(){
+    if(!RP||!oeil||oeil.rp==null) return;
+    const c=RP.chars[oeil.rp];
+    if(!c||(c.mort!=null&&RP.t>c.mort)) return;   // mort : on reste où il est tombé
+    const p=rpPos(c,RP.t); if(!p) return;
+    oeil.pos=[p[0],solY(p[0],p[1])+(oeil.hRp||2.0),p[1]];
+  }
+
   /* ── LA FRISE DU REPLAY ─────────────────────────────────────────── */
   const rpTemps=(s)=>{ s=Math.max(0,Math.floor(s)); return Math.floor(s/60)+":"+String(s%60).padStart(2,"0"); };
   function rpMaj(){
@@ -3012,10 +3099,22 @@ function pretty(k){ const L=LABELS[k];
     $("rpNom").textContent=RP.nom||"";
     const sk=$("rpSeek");
     if(document.activeElement!==sk) sk.value=String(Math.round(RP.t/Math.max(1,RP.duree)*1000));
+    /* Les chars ENCORE EN VIE à cet instant : proposer l'œil d'un mort
+       n'aurait pas de sens, et la liste doit suivre la bataille. */
+    const sel=$("rpOeil");
+    if(document.activeElement!==sel){
+      const vivants=RP.chars.map((c,k)=>({c,k}))
+        .filter(o=>o.c.mort==null||RP.t<=o.c.mort);
+      sel.innerHTML='<option value="-1">'+echapHtml(t("Eye of…"))+"</option>"+
+        vivants.map(o=>'<option value="'+o.k+'">'+(o.c.ami?"○ ":"● ")+
+          echapHtml(o.c.tank||o.c.nom)+"</option>").join("");
+      sel.value="-1";
+    }
   }
   function rpVaA(t){
     if(!RP) return;
     RP.t=Math.max(0,Math.min(RP.duree,t));
+    rpSuitEtapes(); oeilSuitReplay();
     buildChars(); buildStrat(); buildVue(); buildChamp(); stLabels(); rpMaj();
   }
   /* Appelée par la boucle de rendu. Le temps AVANCE avec l'horloge, pas
@@ -3027,10 +3126,12 @@ function pretty(k){ const L=LABELS[k];
     const dt=Math.min(0.25,(ms-RP.last)/1000); RP.last=ms;
     RP.t+=dt*RP.vitesse;
     if(RP.t>=RP.duree){ RP.t=RP.duree; RP.joue=0; }
+    rpSuitEtapes(); oeilSuitReplay();
     buildChars(); buildStrat(); stLabels(); rpMaj();
   }
   function rpFerme(){
-    RP=null;
+    if(oeil&&oeil.rp!=null) sortOeil();
+    RP=null; rpBlanc=0;
     document.body.classList.remove("replay");
     buildChars(); buildStrat(); buildVue(); buildChamp(); stMaj(); stLabels();
   }
@@ -3079,10 +3180,10 @@ function pretty(k){ const L=LABELS[k];
 
   /* ── LA BARRE DES ÉTAPES ────────────────────────────────────────── */
   const ETAPES_MAX=12;          // la limite que le serveur applique déjà
-  function vaEtape(i){
+  function vaEtape(i,bougeCamera){
     if(i<0||i>=ST.steps.length||i===ST.step) return;
     ST.step=i; ST.els=ST.steps[i].els; ST.sel=-1; ST.multi=[];
-    vaVersVue(ST.steps[i].vue);
+    if(bougeCamera!==false) vaVersVue(ST.steps[i].vue);
     buildStrat(); buildChars(); buildVue(); buildChamp(); stMaj(); stLabels();
   }
   function ajouteEtape(copie){
@@ -3111,7 +3212,7 @@ function pretty(k){ const L=LABELS[k];
     for(let i=0;i<ST.steps.length;i++){
       const b=document.createElement("button");
       b.className="btn"+(i===ST.step?" on":"");
-      b.textContent=String(i+1);
+      b.textContent=(ST.steps[i].t!=null)?rpTemps(ST.steps[i].t):String(i+1);
       b.title=ST.steps[i].note||(t("Step")+" "+(i+1));
       b.addEventListener("click",()=>vaEtape(i));
       tabs.appendChild(b);
@@ -4029,7 +4130,7 @@ function pretty(k){ const L=LABELS[k];
          replay se rangeaient sur la ligne z ≈ 0 — une bataille à la
          queue leu leu, ce qu'aucun contrôle de position n'aurait laissé
          passer mais qu'un simple coup d'œil aurait pu manquer. */
-      out.push({rp:1, type:"tank", cls:c.cls||"medium", x:p[0], y:p[1],
+      out.push({rp:1, rpK:RP.chars.indexOf(c), type:"tank", cls:c.cls||"medium", x:p[0], y:p[1],
         name:c.tank||c.nom, camp:c.ami?"ami":"ennemi", size:0.78,
         char:c.cleModele!==undefined?c.cleModele:(c.cleModele=rpModele(c.tank)),
         /* Le cap : le char regarde vers (sin cap, cos cap) et la piste
@@ -4141,7 +4242,7 @@ function pretty(k){ const L=LABELS[k];
        été supprimé, ou la stratégie fermée sous nos pieds. Sans ce
        garde-fou, la caméra restait épinglée à un point qui n'appartient
        plus à personne, sans aucun moyen d'en sortir. */
-    if(oeil&&!voyage&&ST.els.indexOf(oeil.el)<0) sortOeil();
+    if(oeil&&!voyage&&oeil.rp==null&&ST.els.indexOf(oeil.el)<0) sortOeil();
     if(oeil&&oeil.vers&&ST.els.indexOf(oeil.vers)<0) oeil.vers=null;
     buildSecteurs();
     majOeil(); majCroix(); majMesure(); majGroupes(); majEtapes();
@@ -4219,7 +4320,7 @@ function pretty(k){ const L=LABELS[k];
   }
   function stLabels(){
     const c=$("stLbl");
-    const tousL=RP?ST.els.concat(rpEls()):ST.els;
+    const tousL=RP?(rpBlanc?[]:ST.els).concat(rpEls()):ST.els;
     if(!ST.ouvert||!tousL.length){ if(c.childElementCount) c.innerHTML=""; return; }
     while(c.childElementCount<tousL.length) c.appendChild(Object.assign(document.createElement("div"),{className:"e"}));
     while(c.childElementCount>tousL.length) c.removeChild(c.lastChild);
@@ -4382,6 +4483,7 @@ function pretty(k){ const L=LABELS[k];
     ST.edition=1;
     ST.id=s?s.id:null;
     ST.nom=s?s.name:"";
+    ST.battleId=(s&&s.battle_id)?String(s.battle_id):null;
     /* ── RELIRE UN PLAN ────────────────────────────────────────────
        La liste des types acceptés ne se devine pas : tout ce qui n'y
        figure pas est jeté ICI aussi, en plus du filtre serveur. Elle
@@ -4405,7 +4507,8 @@ function pretty(k){ const L=LABELS[k];
               :[{els:(s&&s.elements)||[],note:"",vue:null}];
     ST.steps=brut.slice(0,12).map(p=>({els:litEls(p&&p.els),
       note:String((p&&p.note)||"").slice(0,140),
-      vue:(p&&p.vue&&isFinite(p.vue.rad))?p.vue:null}));
+      vue:(p&&p.vue&&isFinite(p.vue.rad))?p.vue:null,
+      t:(p&&p.t!=null&&isFinite(p.t))?Number(p.t):null}));
     if(!ST.steps.length) ST.steps=[{els:[],note:"",vue:null}];
     ST.step=0; ST.els=ST.steps[0].els;
     ST.sel=-1;
@@ -4442,10 +4545,15 @@ function pretty(k){ const L=LABELS[k];
     /* Toutes les étapes partent, avec leur note et leur cadrage.
        `elements` reçoit la première : c'est la compatibilité que la
        colonne d'origine demande, et l'éditeur 2D la lit encore. */
-    const steps=ST.steps.map(p=>({els:enEls(p.els),note:p.note||"",t:null,vue:p.vue||null}));
+    const steps=ST.steps.map(p=>({els:enEls(p.els),note:p.note||"",
+      t:(p.t!=null&&isFinite(p.t))?p.t:null, vue:p.vue||null}));
     const b=$("stSave"); b.disabled=true; b.textContent=t("Saving…");
     const r=await stApi({action:"save",strategy:{id:ST.id,name:nom,map:curKey,mode:curMode||"ctf",
-      steps,elements:steps[0].els,editors:[]}});
+      steps,elements:steps[0].els,editors:[],
+      /* La bataille d'origine : on ne stocke PAS le replay dans la
+         stratégie — cent à sept cents kilo-octets déjà en base — mais sa
+         référence, et on le recharge à l'ouverture. */
+      battle_id:ST.battleId||null}});
     b.disabled=false; b.textContent=t("Save");
     if(!r.ok){
       const e=r.j&&r.j.error;
@@ -4696,6 +4804,12 @@ function pretty(k){ const L=LABELS[k];
     $("rpVit").addEventListener("click",()=>{ if(!RP) return;
       RP.vitesse=({1:2,2:4,4:8,8:1})[RP.vitesse]||2; rpMaj(); });
     $("rpX").addEventListener("click",rpFerme);
+    $("rpPin").addEventListener("click",rpEpingle);
+    $("rpOeil").addEventListener("change",e=>{
+      const k=Number(e.target.value);
+      if(k>=0) oeilReplay(k); else if(oeil&&oeil.rp!=null) sortOeil();
+      e.target.value="-1";
+    });
     $("presPrec").addEventListener("click",()=>presVa(-1));
     $("presSuiv").addEventListener("click",()=>presVa(1));
     $("croixX").addEventListener("click",()=>{
@@ -4717,7 +4831,10 @@ function pretty(k){ const L=LABELS[k];
     $("obVers").addEventListener("change",e=>{
       if(!oeil) return;
       const i=Number(e.target.value);
-      oeil.vers = i>=0 ? ST.els[i] : null;
+      /* Les indices négatifs désignent la bataille, les positifs le plan :
+         un seul sélecteur, deux origines, et pas de confusion possible. */
+      oeil.versI=i;
+      oeil.vers = i>=0 ? ST.els[i] : (i<=-1 ? rpEls()[-1-i] : null);
       if(oeil.vers) viseVers(oeilDe(oeil.vers));
       majOeil();
     });
@@ -5283,6 +5400,7 @@ function pretty(k){ const L=LABELS[k];
         const rep=brut?litReplay(Object.assign({battleId:bat},brut),ck,p.get("nom")||""):null;
         if(!rep){ stDit(t("No replay saved for this battle.")); return; }
         RP=rep;
+        ST.battleId=String(bat);
         document.body.classList.add("replay");
         ST.ouvert=1; ST.edition=1;
         ST.steps=[{els:[],note:"",vue:null}]; ST.step=0; poseEls([]);

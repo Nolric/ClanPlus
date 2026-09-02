@@ -59,6 +59,10 @@ window.CP_FR = Object.assign(window.CP_FR || {}, {
   "Loading the replay…": "Chargement du replay…",
   "No replay saved for this battle.": "Aucun replay enregistré pour cette bataille.",
   "Debrief": "Débrief",
+  "Pin a step here": "Épingler une étape ici",
+  "Step pinned at": "Étape épinglée à",
+  "Twelve steps at most.": "Douze étapes au maximum.",
+  "Eye of…": "Œil de…",
   /* ── les étapes et la présentation ── */
   "Steps": "Étapes",
   "What happens at this step": "Ce qui se passe à cette étape",
