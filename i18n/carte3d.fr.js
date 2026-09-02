@@ -56,6 +56,18 @@ window.CP_FR = Object.assign(window.CP_FR || {}, {
   "Shape label": "Nom de la forme",
   /* ── les groupes et la composition ── */
   "Watch sector": "Secteur",
+  /* ── les symboles tactiques ── */
+  "Symbol · S": "Symbole · S",
+  "Symbol": "Symbole",
+  "Focus fire": "Focus",
+  "Spotting": "Vision",
+  "Hold this": "Tenir",
+  "Danger zone": "Danger",
+  "Objective": "Objectif",
+  "Push forward": "Pousser",
+  "Fall back": "Repli",
+  "No entry": "Interdit",
+  "Rally point": "Regroupement",
   "Group": "Grouper",
   "Ungroup": "Dégrouper",
   "Select this group": "Choisir ce groupe",

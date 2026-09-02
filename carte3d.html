@@ -395,6 +395,17 @@
   .stHull:empty{display:none}
   .stHull.hulldown{color:#8fd8a3} .stHull.decouvert{color:#e8a99f} .stHull.masque{color:#c9b98a}
   .stRow{display:flex;flex-wrap:wrap;gap:5px}
+  /* La vignette d'un symbole : elle FAIT FACE, toujours, et reste nette
+     à toute distance — un glyphe peint sur le sol se déforme dès qu'on
+     tourne la caméra. */
+  #stLbl .e.symb{display:flex;align-items:center;gap:5px;padding:3px 6px;
+    background:rgba(13,14,17,.72);border:1px solid rgba(255,255,255,.14);border-radius:4px}
+  #stLbl .e.symb svg{width:19px;height:19px;flex:0 0 19px;fill:none;
+    stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+  #stLbl .e.symb.sel{border-color:var(--gold)}
+  .symbChip{padding:4px 6px;line-height:0}
+  .symbChip svg{width:17px;height:17px;fill:none;stroke:currentColor;
+    stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;display:block}
   .elGrp{font-size:9.5px;font-family:var(--d-mono);color:var(--gold);
     border:1px solid rgba(229,185,92,.4);border-radius:2px;padding:1px 4px;
     margin-right:5px;white-space:nowrap;max-width:78px;overflow:hidden;text-overflow:ellipsis}
@@ -570,6 +581,7 @@
     <button class="outil" data-outil="char" data-bulle="Tank · T"><svg viewBox="0 0 20 20"><path d="M3 12h14v4H3z"/><path d="M5 12V9h8v3"/><path d="M9 9V7h9"/></svg><span class="cle">T</span></button>
     <div class="sepR"></div>
     <button class="outil" data-outil="fleche" data-bulle="Arrow · A"><svg viewBox="0 0 20 20"><path d="M3 16L16 4"/><path d="M9 4h7v7"/></svg><span class="cle">A</span></button>
+    <button class="outil" data-outil="symbole" data-bulle="Symbol · S"><svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="6.5"/><circle cx="10" cy="10" r="2.2"/><path d="M10 1.5v2M10 16.5v2M1.5 10h2M16.5 10h2"/></svg><span class="cle">S</span></button>
     <button class="outil" data-outil="trajet" data-bulle="Route · J"><svg viewBox="0 0 20 20"><path d="M3 16c4 0 3-6 7-6s3-5 7-5"/><circle cx="3" cy="16" r="1.6"/><circle cx="17" cy="5" r="1.6"/></svg><span class="cle">J</span></button>
     <button class="outil" data-outil="zone" data-bulle="Area · Z"><svg viewBox="0 0 20 20"><path d="M4 6l6-2 6 3-2 8-8 1z"/></svg><span class="cle">Z</span></button>
     <button class="outil" data-outil="texte" data-bulle="Note · N"><svg viewBox="0 0 20 20"><path d="M4 4h12v9l-4 4H4z"/><path d="M16 13h-4v4"/><path d="M7 8h6M7 11h4"/></svg><span class="cle">N</span></button>
@@ -609,6 +621,8 @@
             <button class="choixChar" id="btnChar" type="button"><span id="btnCharNom">Marker only</span><svg viewBox="0 0 12 12"><path d="M2 4l4 4 4-4"/></svg></button></div>
           <div class="champ" id="chCap"><label for="stElCap" id="stCapL">Hull</label>
             <div class="cadran"><input type="range" id="stElCap" min="0" max="355" step="5" value="0"><span class="v" id="stCapV">0°</span></div></div>
+          <div class="champ" id="chSymb"><label id="lbSymb">Symbol</label>
+            <div class="stRow" id="symbChips"></div></div>
           <div class="champ" id="chSect"><label for="stElSect" id="stSectL">Watch sector</label>
             <div class="cadran"><input type="range" id="stElSect" min="0" max="90" step="5" value="0"><span class="v" id="stSectV">0°</span></div></div>
           <div class="champ" id="chTour"><label for="stElTour" id="stTourL">Turret</label>
@@ -1539,7 +1553,7 @@ function pretty(k){ const L=LABELS[k];
     for(let i=0;i<ST.els.length;i++){
       const e=ST.els[i], sel=(i===ST.sel), mod=charDe(e.char);
       if(e.masque||e.type==="fleche"||e.type==="trajet"||e.type==="zone") continue;
-      if(e.type==="texte"){
+      if(e.type==="texte"||e.type==="stamp"){
         /* une note n'a qu'un point d'ancrage : un petit disque, pour
            qu'on sache d'où elle parle et qu'on puisse l'attraper */
         const coul=(e.camp==="ennemi")?ST_COUL.ennemi:ST_COUL.ami;
@@ -2864,6 +2878,56 @@ function pretty(k){ const L=LABELS[k];
     return vMed;
   }
 
+  /* ══ LES SYMBOLES TACTIQUES ════════════════════════════════════════
+     Neuf symboles, REPRIS TELS QUELS de l'éditeur de minimap. Ils y sont
+     éprouvés et le clan les connaît déjà : en redessiner d'autres ici
+     obligerait à apprendre deux langages pour dire la même chose.
+
+     Ils ne sont pas peints sur le sol mais posés EN VIGNETTE au-dessus
+     de leur point d'ancrage, comme les étiquettes. Un symbole peint au
+     sol se déforme dès qu'on tourne la caméra et devient illisible à
+     plat ; une vignette reste nette à toute distance et fait toujours
+     face. Seul l'ancrage — un petit disque — est dans le relief.
+
+     Le type « stamp » et ses neuf genres sont déjà acceptés par le
+     serveur, qui les connaît de l'éditeur 2D : rien à ajouter. */
+  const ST_STAMPS={
+  focus:'<circle r="13"/><circle r="5"/><path d="M0,-15 V-11 M0,15 V11 M-15,0 H-11 M15,0 H11"/>',
+  spot:'<path d="M-15,0 Q0,-10 15,0 Q0,10 -15,0 Z"/><circle r="4" fill="currentColor" stroke="none"/>',
+  defend:'<path d="M0,-15 L12,-9 V1 Q12,11 0,15 Q-12,11 -12,1 V-9 Z"/><path d="M-5,-1 L-1,4 L6,-6"/>',
+  danger:'<path d="M0,-14 L14,12 H-14 Z"/><path d="M0,-5 V4"/><circle cx="0" cy="8" r="1.5" fill="currentColor" stroke="none"/>',
+  objective:'<path d="M-8,-15 V15 M-8,-14 H11 L6,-8 L11,-2 H-8"/>',
+  push:'<path d="M-12,-11 L0,0 L-12,11 M1,-11 L13,0 L1,11"/>',
+  fallback:'<path d="M9,13 V0 A9,9 0 0 0 -9,0 V5"/><path d="M-9,5 L-13,1 M-9,5 L-5,1"/>',
+  stop:'<circle r="13"/><path d="M-8,0 H8"/>',
+  rally:'<path d="M-14,-14 L-6,-6 M-13,-14 H-6 V-13 M14,-14 L6,-6 M13,-14 H6 V-13 M-14,14 L-6,6 M-13,14 H-6 V13 M14,14 L6,6 M13,14 H6 V13"/><circle r="2.6" fill="currentColor" stroke="none"/>'
+};
+  /* Les libellés sont VOLONTAIREMENT longs. Le moteur de traduction
+     remplace tout nœud de texte qui correspond à une clé : « Push » ou
+     « Danger » seuls finiraient par renommer un marqueur que Robert
+     aurait appelé ainsi. On l'a déjà vu arriver avec « Route ». */
+  const ST_STAMP_LIST=[["focus","Focus fire"],["spot","Spotting"],["defend","Hold this"],
+    ["danger","Danger zone"],["objective","Objective"],["push","Push forward"],
+    ["fallback","Fall back"],["stop","No entry"],["rally","Rally point"]];
+
+  /* La palette des neuf genres, dans les propriétés du symbole choisi.
+     Le genre retenu devient aussi celui du PROCHAIN qu'on posera : on
+     enchaîne « danger, danger, danger » sans revenir le régler. */
+  function majSymboles(el){
+    const c=document.getElementById("symbChips"); if(!c) return;
+    c.innerHTML="";
+    for(const [k,lb] of ST_STAMP_LIST){
+      const b=document.createElement("button");
+      b.className="btn symbChip"+(el.kind===k?" on":"");
+      b.title=t(lb);
+      b.innerHTML='<svg viewBox="-18 -18 36 36">'+ST_STAMPS[k]+"</svg>";
+      b.addEventListener("click",()=>{
+        el.kind=k; ST.symbole=k; histoPose(); stMaj(); stLabels();
+      });
+      c.appendChild(b);
+    }
+  }
+
   /* ══ LES SECTEURS DE SURVEILLANCE ══════════════════════════════════
      « Toi, tu regardes par là. »
 
@@ -3309,6 +3373,9 @@ function pretty(k){ const L=LABELS[k];
             ST.els.push({type:"fleche",x:p[0]-Math.cos(az)*L/2,y:-(p[1]-Math.sin(az)*L/2),
               x2:p[0]+Math.cos(az)*L/2,y2:-(p[1]+Math.sin(az)*L/2),
               name:"",camp:ST.camp});
+          } else if(ST.outil==="symbole"){
+            ST.els.push({type:"stamp",kind:ST.symbole||"focus",
+              x:accroche(p[0]),y:accroche(-p[1]),name:"",camp:ST.camp});
           } else if(ST.outil==="texte"){
             ST.els.push({type:"texte",x:accroche(p[0]),y:accroche(-p[1]),name:t("Note"),camp:ST.camp});
           } else {
@@ -3784,11 +3851,13 @@ function pretty(k){ const L=LABELS[k];
       $("chCap").style.display=estChar?"":"none";
       $("chTour").style.display=estChar?"":"none";
       $("chSect").style.display=estChar?"":"none";
+      $("chSymb").style.display=(e.type==="stamp")?"":"none";
+      if(e.type==="stamp") majSymboles(e);
       if(estChar){ $("stElSect").value=Number(e.secteur)||0;
         $("stSectV").textContent=(Number(e.secteur)||0)+"°"; }
       $("stElNom").placeholder=e.type==="texte"?t("Note text")
         :e.type==="fleche"?t("Arrow label")
-        :(e.type==="trajet"||e.type==="zone")?t("Shape label"):t("Tank name");
+        :(e.type==="trajet"||e.type==="zone"||e.type==="stamp")?t("Shape label"):t("Tank name");
       if(!estChar){ $("stHull").textContent=""; $("stHull").className="stHull"; }
       if(estChar) majBoutonChar();
       $("stElCap").value=Number(e.cap)||0;
@@ -3848,11 +3917,19 @@ function pretty(k){ const L=LABELS[k];
       const ax=e.type==="fleche"?(e.x+e.x2)/2:e.x, az=e.type==="fleche"?(e.y+e.y2)/2:e.y;
       const p=versEcran(ax,az,hautEtiquette(e));
       if(!p){ d.style.display="none"; continue; }
-      if(e.type!=="tank"&&!e.name){ d.style.display="none"; continue; }
+      /* Un symbole se montre TOUJOURS : c'est lui le message, pas son
+         nom. Les autres formes n'apparaissent que si on les a nommées. */
+      if(e.type!=="tank"&&e.type!=="stamp"&&!e.name){ d.style.display="none"; continue; }
       const cls=(ST_CLS.find(x=>x[0]===e.cls)||ST_CLS[1])[1];
       d.style.display=""; d.style.left=p[0]+"px"; d.style.top=p[1]+"px";
       d.style.color=(e.camp==="ennemi")?"#f0a49b":"#a9e0b4";
       d.className="e"+(e.type==="texte"?" note":"");
+      if(e.type==="stamp"){
+        d.className="e symb"+(i===ST.sel?" sel":"");
+        d.innerHTML='<svg viewBox="-18 -18 36 36">'+(ST_STAMPS[e.kind]||ST_STAMPS.focus)+"</svg>"+
+          (e.name?'<span>'+e.name.replace(/[&<>]/g,"")+"</span>":"");
+        continue;
+      }
       let txt=(e.name||cls)+(i===ST.sel?" ●":"");
       /* Le trait dit s'il y a vue ; l'étiquette dit de combien et par
          quoi c'est coupé. Un « 312 m · bâtiment » vaut mieux qu'un trait
@@ -4026,6 +4103,7 @@ function pretty(k){ const L=LABELS[k];
       if(e.grp) base.grp=e.grp;
       if(e.secteur) base.secteur=Number(e.secteur)||0;
       if(e.type==="fleche") return Object.assign(base,{x2:Math.round(e.x2),y2:Math.round(e.y2)});
+      if(e.type==="stamp") return Object.assign(base,{kind:e.kind||"focus"});
       if(e.type==="trajet"||e.type==="zone")
         return Object.assign(base,{pts:(e.pts||[]).map(p=>[Math.round(p[0]),Math.round(p[1])])});
       if(e.type==="texte") return base;
@@ -4163,7 +4241,8 @@ function pretty(k){ const L=LABELS[k];
       const cls=(ST_CLS.find(x=>x[0]===e.cls)||ST_CLS[1])[1];
       const grp=e.grp?'<span class="elGrp"></span>':"";
       const nom=e.name|| (e.type==="fleche"?t("Arrow"):e.type==="texte"?t("Note")
-        :e.type==="trajet"?t("Driving route"):e.type==="zone"?t("Area"):t(cls));
+        :e.type==="trajet"?t("Driving route"):e.type==="zone"?t("Area")
+        :e.type==="stamp"?t((ST_STAMP_LIST.find(x=>x[0]===e.kind)||ST_STAMP_LIST[0])[1]):t(cls));
       b.innerHTML='<span class="ic">'+(ICONES[e.type]||ICONES.tank)+'</span>'+
         '<span class="nm"></span>'+grp+
         '<span class="camp '+(e.camp==="ennemi"?"e":"a")+'">'+(e.camp==="ennemi"?"E":"A")+'</span>'+
@@ -4424,7 +4503,7 @@ function pretty(k){ const L=LABELS[k];
        Un éditeur se tient d'une main sur le clavier. Les chiffres
        choisissent l'outil, comme dans tous les outils de dessin ; le
        reste suit les conventions que personne n'a besoin d'apprendre. */
-    const TOUCHE_OUTIL={v:"select",t:"char",a:"fleche",n:"texte",m:"mesure",j:"trajet",z:"zone"};
+    const TOUCHE_OUTIL={v:"select",t:"char",a:"fleche",n:"texte",m:"mesure",j:"trajet",z:"zone",s:"symbole"};
     document.addEventListener("keydown",e=>{
       if(!ST.ouvert||saisieEnCours()) return;
       const mod=e.ctrlKey||e.metaKey;
