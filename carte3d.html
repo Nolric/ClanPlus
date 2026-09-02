@@ -18,6 +18,11 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <script src="i18n/carte3d.fr.js?v=7c691513"></script>
 <script src="i18n.js?v=ed3f8a4f"></script>
+<!-- Le client Supabase, UNIQUEMENT pour le temps réel : les appels de
+     données passent par `fetch` et n'en ont pas besoin. Il est chargé en
+     `defer` et son absence n'empêche rien — sans lui, l'éditeur marche,
+     on est simplement seul dessus. -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" defer></script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
   /* ═══════════════════════════════════════════════════════════════
@@ -423,6 +428,16 @@
      à toute distance — un glyphe peint sur le sol se déforme dès qu'on
      tourne la caméra. */
   #grLbl{position:absolute;inset:0;pointer-events:none;z-index:3}
+  /* Les pointeurs des collaborateurs, et le sien. */
+  #ptrLbl{position:absolute;inset:0;pointer-events:none;z-index:9}
+  #ptrLbl .p{position:absolute;transform:translate(-50%,-50%);font-size:11px;
+    font-family:var(--d-mono);color:#0d0e11;background:var(--gold);
+    border-radius:9px;padding:2px 7px;white-space:nowrap;
+    box-shadow:0 0 0 3px rgba(229,185,92,.28)}
+  #presence{display:flex;gap:4px;align-items:center}
+  #presence .qui{font-size:10.5px;font-family:var(--d-mono);color:var(--muted2);
+    border:1px solid var(--line);border-radius:3px;padding:2px 6px;white-space:nowrap}
+  #presence .qui.edite{color:var(--gold);border-color:rgba(229,185,92,.45)}
   #grLbl .g{position:absolute;transform:translate(-50%,-50%);font-family:var(--d-mono);
     font-size:12px;font-weight:600;color:rgba(255,255,255,.62);
     text-shadow:0 0 3px #000,0 0 6px #000;white-space:nowrap}
@@ -585,6 +600,8 @@
         <span class="etat" id="stEtat"></span>
         <div class="sep"></div>
         <select id="stPas" title="Snap placement to a regular step"></select>
+        <span id="presence"></span>
+        <button class="icone" id="btnPtr" title="Pointer" aria-label="Pointer"><svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="3"/><circle cx="10" cy="10" r="7.5"/></svg></button>
         <button class="icone" id="btnMiroir" title="Mirror the plan to the opposite base" aria-label="Mirror"><svg viewBox="0 0 20 20"><path d="M10 3v14"/><path d="M7 6L3 10l4 4z"/><path d="M13 6l4 4-4 4z"/></svg></button>
         <div class="sep"></div>
         <button class="icone" id="btnUndo" title="Undo" aria-label="Undo" disabled>
@@ -815,6 +832,7 @@
     <button class="btn" id="rpX">Leave</button>
   </div>
   <div id="grLbl"></div>
+  <div id="ptrLbl"></div>
   <div id="stLbl"></div>
   <div id="stMsg" class="glass"></div>
   <div id="mini" class="glass"><div class="lg" id="miniT">Minimap</div><img id="miniImg" alt=""><div class="n">N ↑</div></div>
@@ -3104,6 +3122,144 @@ function pretty(k){ const L=LABELS[k];
     oeil.pos=[p[0],solY(p[0],p[1])+(oeil.hRp||2.0),p[1]];
   }
 
+  /* ══ TRAVAILLER À PLUSIEURS ════════════════════════════════════════
+     Une stratégie de clan se prépare rarement seul. Deux officiers
+     ouvrent le même plan, chacun chez lui, et voient les modifications
+     de l'autre.
+
+     Le mécanisme est celui de l'éditeur de minimap, transposé : un canal
+     Supabase par stratégie, la PRÉSENCE pour savoir qui est là, et une
+     DIFFUSION des étapes toutes les quatre cents millisecondes quand
+     elles ont changé. Rien à ajouter côté serveur — le temps réel se
+     passe entre les navigateurs.
+
+     ── Ce qui change du 2D, et ce n'est pas un détail ───────────────
+     Le POINTEUR. À plat, chacun voit la même image, et un point d'écran
+     désigne la même chose pour tout le monde. Ici chacun a SA caméra :
+     un point d'écran ne veut plus rien dire. On diffuse donc le point du
+     SOL sous le curseur, en mètres du monde, et chaque poste le projette
+     dans sa propre vue. « Regardez là » désigne alors le même rocher,
+     que l'autre regarde de face ou de dessus. */
+  let SB=null, SALON=null, bcDernier="", bcBoucle=0;
+  const POINTEURS=new Map();
+  let pointeurActif=0, ptrDernier=0;
+  const monNom=()=>{ try{ return localStorage.getItem("cp_nick")||t("A member"); }
+                     catch(_){ return t("A member"); } };
+  /* L'identifiant doit être STABLE. Écrit comme une expression, il
+     tirait un identifiant neuf à chaque appel quand la session n'en
+     fournissait pas : le pointeur laissait une traînée de badges, un par
+     mouvement de souris, tous nommés pareil. Vu à l'écran. */
+  let monIdCache=null;
+  const monId=()=>{
+    if(ST.moi!=null) return String(ST.moi);
+    if(!monIdCache) monIdCache="g"+Math.random().toString(36).slice(2);
+    return monIdCache;
+  };
+  function rtClient(){
+    if(SB) return SB;
+    if(!(window.supabase&&window.supabase.createClient)) return null;
+    try{ SB=window.supabase.createClient(SB_URL,SB_ANON,{realtime:{params:{eventsPerSecond:8}}}); }
+    catch(_){ SB=null; }
+    return SB;
+  }
+  function quitteSalon(){
+    if(bcBoucle){ clearInterval(bcBoucle); bcBoucle=0; }
+    if(SALON&&SB){ try{ SB.removeChannel(SALON); }catch(_){} }
+    SALON=null; POINTEURS.clear(); majPresence(); majPointeurs();
+  }
+  function rejointSalon(id,role){
+    quitteSalon();
+    const sb=rtClient(); if(!sb||!id) return;
+    const ch=sb.channel("strat3d-"+id,{config:{presence:{key:monId()}}});
+    const p=()=>majPresence();
+    ch.on("presence",{event:"sync"},p);
+    ch.on("presence",{event:"join"},p);
+    ch.on("presence",{event:"leave"},p);
+    ch.on("broadcast",{event:"steps"},({payload})=>appliqueDistant(payload));
+    ch.on("broadcast",{event:"ptr"},({payload})=>{
+      if(!payload||String(payload.by)===monId()) return;   // son propre écho
+      POINTEURS.set(String(payload.by),{x:payload.x,z:payload.z,nom:payload.nom||"",t:Date.now()});
+    });
+    ch.subscribe(async(st)=>{ if(st==="SUBSCRIBED"){
+      try{ await ch.track({id:monId(),nom:monNom(),role}); }catch(_){}
+    }});
+    SALON=ch;
+    if(role==="edit"){
+      bcDernier=JSON.stringify(ST.steps);
+      /* On ne diffuse PAS pendant qu'un geste est en cours : envoyer un
+         état à moitié posé le ferait apparaître de travers chez l'autre,
+         et il reviendrait de toute façon à la fin du geste. */
+      bcBoucle=setInterval(()=>{
+        if(!SALON||stDrag||trace) return;
+        let j; try{ j=JSON.stringify(ST.steps); }catch(_){ return; }
+        if(j===bcDernier) return;
+        bcDernier=j;
+        try{ SALON.send({type:"broadcast",event:"steps",payload:{by:monId(),steps:ST.steps}}); }catch(_){}
+      },400);
+    }
+  }
+  function appliqueDistant(p){
+    if(!p||String(p.by)===monId()||stDrag||trace) return;
+    if(!Array.isArray(p.steps)||!p.steps.length) return;
+    /* ⚠ On conserve note, instant ET cadrage. Ne reprendre que `els`
+       effacerait les notes et les épingles du débrief dès qu'un
+       collaborateur déplace un char — le piège relevé côté 2D. */
+    ST.steps=p.steps.map(s=>({els:Array.isArray(s.els)?s.els:[],
+      note:String((s&&s.note)||""),
+      t:(s&&s.t!=null&&isFinite(s.t))?Number(s.t):null,
+      vue:(s&&s.vue&&isFinite(s.vue.rad))?s.vue:null}));
+    if(ST.step>=ST.steps.length) ST.step=ST.steps.length-1;
+    ST.els=ST.steps[ST.step].els;
+    if(ST.sel>=ST.els.length){ ST.sel=-1; ST.multi=[]; }
+    bcDernier=JSON.stringify(ST.steps);
+    buildStrat(); buildChars(); buildVue(); buildChamp(); stMaj(); stLabels();
+  }
+  function presents(){
+    if(!SALON) return [];
+    let st={}; try{ st=SALON.presenceState(); }catch(_){ return []; }
+    const vus={}, out=[];
+    Object.values(st).forEach(a=>a.forEach(m=>{ const k=String(m.id); if(!vus[k]){ vus[k]=1; out.push(m); } }));
+    return out;
+  }
+  function majPresence(){
+    const b=document.getElementById("presence"); if(!b) return;
+    const l=presents();
+    b.innerHTML=l.length<2?"":l.map(u=>'<span class="qui'+(u.role==="edit"?" edite":"")+'">'+
+      echapHtml(String(u.nom||"?").slice(0,14))+(u.role==="edit"?" ✎":" 👁")+"</span>").join("");
+  }
+  /* Les pointeurs, projetés dans SA vue. Trois secondes de vie : un
+     pointeur qui reste après le départ de son propriétaire désigne un
+     endroit que plus personne ne regarde. */
+  function majPointeurs(){
+    const c=document.getElementById("ptrLbl"); if(!c) return;
+    const now=Date.now();
+    for(const [k,v] of POINTEURS) if(now-v.t>3000) POINTEURS.delete(k);
+    const l=[...POINTEURS.values()];
+    while(c.childElementCount<l.length) c.appendChild(Object.assign(document.createElement("div"),{className:"p"}));
+    while(c.childElementCount>l.length) c.removeChild(c.lastChild);
+    for(let i=0;i<l.length;i++){
+      const d=c.children[i], p=versEcran(l[i].x,l[i].z,1.2);
+      if(!p){ d.style.display="none"; continue; }
+      d.style.display=""; d.style.left=p[0]+"px"; d.style.top=p[1]+"px";
+      d.textContent=l[i].nom||"";
+    }
+  }
+  function envoiePointeur(ex,ey){
+    if(!pointeurActif) return;
+    const now=Date.now();
+    if(now-ptrDernier<60) return;          // vingt envois par seconde au plus
+    ptrDernier=now;
+    const p=solSousCurseur(ex,ey); if(!p) return;
+    const x=p[0], z=-p[1];
+    /* Le sien s'affiche TOUJOURS, salon ou pas : le pointeur sert aussi
+       à désigner pendant un partage d'écran, et ne rien voir quand on
+       est seul donne l'impression qu'il ne marche pas. Seule la
+       DIFFUSION demande un salon. */
+    POINTEURS.set(monId(),{x,z,nom:monNom(),t:now});
+    majPointeurs();
+    if(SALON){ try{ SALON.send({type:"broadcast",event:"ptr",payload:{by:monId(),x,z,nom:monNom()}}); }catch(_){} }
+  }
+
   /* ══ LA GRILLE DU JEU ══════════════════════════════════════════════
      « Rendez-vous en H4. »
 
@@ -3772,6 +3928,7 @@ function pretty(k){ const L=LABELS[k];
       stDrag.bouge=1; stMaj();
       return;
     }
+    if(pointeurActif) envoiePointeur(e.clientX,e.clientY);
     if(!drag)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;
     /* clic droit, molette enfoncée ou Maj : on déplace. Sinon on tourne. */
     if(drag.btn===2||drag.btn===1||drag.shift){
@@ -3801,7 +3958,8 @@ function pretty(k){ const L=LABELS[k];
       else {
         const p=solSousCurseur(e.clientX,e.clientY);
         if(p){
-          if(ST.outil==="select"){ /* l'outil de sélection ne pose rien */ }
+          if(pointeurActif){ /* on montre, on ne pose pas */ }
+          else if(ST.outil==="select"){ /* l'outil de sélection ne pose rien */ }
           else if(ST.outil==="trajet"||ST.outil==="zone"){
             /* Un point de plus. La forme n'entre dans le plan qu'une fois
                terminée — Entrée, ou un double-clic sur le dernier point. */
@@ -4643,8 +4801,13 @@ function pretty(k){ const L=LABELS[k];
     modeEditeur(1);
     $("stListe").style.display="none"; $("stEdit").style.display="";
     histoRaz(); stMaj();
+    /* Un salon par stratégie ENREGISTRÉE : un plan qui n'a pas encore
+       d'identifiant n'existe pour personne d'autre, il n'y a donc
+       personne avec qui le partager. */
+    if(ST.id) rejointSalon(ST.id, ST.canEdit?"edit":"vue");
   }
   function stFerme(){
+    quitteSalon();
     ST.edition=0;
     $("stListe").style.display=""; $("stEdit").style.display="none";
     modeEditeur(0);
@@ -5061,6 +5224,7 @@ function pretty(k){ const L=LABELS[k];
       /* la vue subjective, exposée pour pouvoir la mesurer du dehors */
       expo:expositionDepuis,oeilEntre:entreOeil,oeilSort:sortOeil,oeilEtat:()=>oeil,
       secteurs:()=>secLots,buildSecteurs,
+      salon:()=>SALON, pointeurs:()=>POINTEURS, ptr:(v)=>{ pointeurActif=v?1:0; },
       /* le replay, exposé pour pouvoir l'exercer sans session de clan */
       rpPose:(r)=>{ RP=r; document.body.classList.toggle("replay",!!r); },
       rpEtat:()=>RP, rpLit:litReplay, rpVa:rpVaA, rpEls};
@@ -5110,6 +5274,16 @@ function pretty(k){ const L=LABELS[k];
       stDit(t("Plan mirrored to the opposite base."));
     }
     $("btnMiroir").addEventListener("click",miroir);
+    /* Le pointeur MONTRE, il ne pose rien : tant qu'il est allumé, le
+       curseur ne crée aucun élément. Sans cette garde, désigner un
+       endroit y sèmerait un char. */
+    $("btnPtr").addEventListener("click",e=>{
+      pointeurActif^=1;
+      e.currentTarget.classList.toggle("on",!!pointeurActif);
+      if(!pointeurActif) POINTEURS.delete(monId());
+      majPointeurs();
+      stDit(pointeurActif?t("Pointer on — move the mouse to show."):t("Pointer off."));
+    });
 
     /* ── LES RACCOURCIS ──────────────────────────────────────────────
        Un éditeur se tient d'une main sur le clavier. Les chiffres
@@ -5176,6 +5350,7 @@ function pretty(k){ const L=LABELS[k];
       if(grilleRad&&Math.abs(rad-grilleRad)>grilleRad*0.2) buildGrille();
       majGrilleNoms();
     }
+    if(POINTEURS.size) majPointeurs();
     /* la ligne de vue se retaille quand le zoom a nettement changé —
        pas à chaque image : elle coûte un balayage du bâti */
     if(montreVue&&vueLots.length&&Math.abs(rad-vueRad)>vueRad*0.15) buildVue();

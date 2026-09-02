@@ -260,6 +260,11 @@ window.CP_FR = Object.assign(window.CP_FR || {}, {
   "Explore World of Tanks maps in 3D: real elevation pulled from the game, original textures and buildings. Rotate, zoom and scout the key positions before your clan battles.": "Explore les cartes de World of Tanks en 3D : relief réel extrait du jeu, textures d'origine et bâtiments. Tourne, zoome et repère les positions clés avant tes batailles de clan.",
   "Grid": "Grille",
   "Mesh": "Maillage",
+  /* ── le travail à plusieurs ── */
+  "Pointer": "Pointeur",
+  "Pointer on — move the mouse to show.": "Pointeur allumé — bouge la souris pour montrer.",
+  "Pointer off.": "Pointeur éteint.",
+  "A member": "Un membre",
   "Loading error": "Erreur de chargement",
   "Loading…": "Chargement…",
   "Normandy": "Normandie",
