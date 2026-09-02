@@ -5692,11 +5692,38 @@ function pretty(k){ const L=LABELS[k];
     for(const L of objLots) perfS+=L.n;
     return perfS;
   }
-  function perfMaj(t){
+  /* Les modèles instanciés — bâtiments et flore — avec leurs
+     exemplaires et le total de triangles qu'ils font traverser au
+     processeur graphique à chaque image. C'est le vrai poids de la
+     carte, et ce comptage ne change qu'au changement de carte. */
+  let perfMod="", perfModCle="";
+  function perfModeles(){
+    const cle=JEUX.map(j=>j.modeles.length).join(",");
+    if(cle===perfModCle) return perfMod;
+    perfModCle=cle;
+    let nm=0, nx=0, tri=0, fl=0;
+    for(const j of JEUX){
+      if(!j.modeles.length) continue;
+      if(j.flore) fl+=j.modeles.length;
+      for(const M of j.modeles){ nm++; nx+=M.nx; tri+=M.ni/3*M.nx; }
+    }
+    perfMod=nm+" modèles ("+fl+" de flore), "+nx+" exemplaires, "+
+      Math.round(tri/1000)+"k triangles";
+    return perfMod;
+  }
+  /* UN COMPTEUR NE DOIT JAMAIS POUVOIR TUER CE QU'IL MESURE.
+     Ma première version nommait une variable qui n'existait pas :
+     l'exception partait au bout d'une seconde, juste avant que la
+     boucle ne se réarme, et la page se figeait pour de bon en
+     affichant « mesure en cours… ». D'où l'armure, et d'où le
+     réarmement de la boucle DÈS L'ENTRÉE de l'image plus bas. */
+  function perfMaj(t){ try{ perfMaj_(t); }catch(e){
+    if(perfEl) perfEl.textContent="compteur en panne : "+e.message; } }
+  function perfMaj_(t){
     if(!perfOn){ if(perfEl){ perfEl.remove(); perfEl=null; } return; }
     if(!perfEl){
       perfEl=document.createElement("div");
-      perfEl.style.cssText="position:fixed;left:10px;bottom:10px;z-index:99;padding:9px 12px;"+
+      perfEl.style.cssText="position:fixed;left:10px;top:58px;z-index:99;padding:9px 12px;"+
         "font:11.5px/1.6 ui-monospace,Consolas,monospace;color:#e8e8ea;white-space:pre;"+
         "background:rgba(10,11,14,.88);border:1px solid rgba(255,255,255,.18);"+
         "border-radius:6px;pointer-events:none;max-width:60vw;overflow:hidden";
@@ -5706,7 +5733,10 @@ function pretty(k){ const L=LABELS[k];
       document.body.appendChild(perfEl);
     }
     if(perfPrec){ const d=(t-perfPrec)/1000;
-      if(d>0&&d<2){ perfN++; perfT+=d; if(d>perfPire) perfPire=d; } }
+      /* Jusqu'à dix secondes : c'est justement la machine LENTE qu'on
+         cherche à mesurer, l'écarter serait absurde. Au-delà, c'est un
+         onglet qui revient d'arrière-plan, pas une image. */
+      if(d>0&&d<10){ perfN++; perfT+=d; if(d>perfPire) perfPire=d; } }
     perfPrec=t;
     if(perfT<1||!perfN) return;
     const dpr=Math.min(2,window.devicePixelRatio||1);
@@ -5717,7 +5747,7 @@ function pretty(k){ const L=LABELS[k];
         " ms par image · pire "+(perfPire*1000).toFixed(0)+" ms",
       "canevas "+cv.width+"×"+cv.height+" (écran ×"+dpr.toFixed(2)+")",
       "terrain "+Math.round(idxLen/3)+" triangles",
-      "bâti "+objLots.length+" lots, "+perfSommets()+" sommets · flore "+floreN,
+      "bâti "+objLots.length+" lots, "+perfSommets()+" sommets · "+perfModeles(),
       "chars "+charsLots.length+" lots · marqueurs "+(ST.ouvert?ST.els.length:0)+
         (RP?" · replay "+RP.chars.length+" chars":""),
       perfMoteur()
@@ -5725,6 +5755,11 @@ function pretty(k){ const L=LABELS[k];
     perfN=0; perfT=0; perfPire=0;
   }
   function frame(t){
+    /* La PROCHAINE image est demandée avant de dessiner celle-ci. Une
+       exception, où que ce soit dans le rendu, ne fige alors plus la
+       page : elle se voit dans la console et l'on continue. Demandée
+       à la fin, la moindre erreur arrêtait tout pour de bon. */
+    requestAnimationFrame(frame);
     const dt=Math.min(0.1,(t-tPrec)/1000)||0.016; tPrec=t;
     /* AVANT toute écriture de style : la mise en page est encore propre,
        la mesure ne coûte rien. Après, elle coûterait un recalcul. */
@@ -6003,7 +6038,6 @@ function pretty(k){ const L=LABELS[k];
     if(demandeCapture){ const f=demandeCapture; demandeCapture=null;
       try{ f(cv.toDataURL("image/jpeg",0.88)); }catch(e){ f(null); } }
     perfMaj(t);
-    requestAnimationFrame(frame);
   }
 
   // ---- init : liste des cartes ----
