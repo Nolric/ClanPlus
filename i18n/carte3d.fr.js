@@ -55,6 +55,14 @@ window.CP_FR = Object.assign(window.CP_FR || {}, {
   "Area": "Zone",
   "Shape label": "Nom de la forme",
   /* ── les groupes et la composition ── */
+  /* ── les étapes et la présentation ── */
+  "Steps": "Étapes",
+  "What happens at this step": "Ce qui se passe à cette étape",
+  "Frame from here": "Cadrer d’ici",
+  "Present": "Présenter",
+  "Add a step, copied from this one": "Ajouter une étape, copiée de celle-ci",
+  "Delete this step": "Supprimer cette étape",
+  "This step will open on the current view.": "Cette étape s’ouvrira sur la vue actuelle.",
   "Watch sector": "Secteur",
   /* ── les symboles tactiques ── */
   "Symbol · S": "Symbole · S",

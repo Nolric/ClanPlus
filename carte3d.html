@@ -302,6 +302,19 @@
   #croix td.loin{color:#151007;background:rgba(229,185,92,.72);font-weight:600}
   #croix td.non{color:var(--muted2);background:rgba(255,255,255,.03)}
   .croixLeg{font-size:11px;color:var(--muted2);margin:10px 0 0;line-height:1.6}
+  /* En présentation, il ne reste que la carte, la note et de quoi
+     avancer : un panneau devant les yeux ruine ce qu'on est venu
+     montrer. La minimap reste — c'est le repère commun de la salle. */
+  #presBar{display:none}
+  body.presente #presBar{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);
+    display:flex;gap:12px;align-items:center;padding:10px 14px;z-index:14;
+    max-width:min(94vw,880px)}
+  body.presente #rail,body.presente #insp,body.presente #hud,body.presente #hint,
+  body.presente #barreEd,body.presente #strat,body.presente #croix,
+  body.presente #mesBar,body.presente #leg{display:none!important}
+  body.editeur.presente #vue{inset:0}
+  #presNote{font-size:14px;color:var(--ink);line-height:1.4;max-width:520px}
+  #presBar .btn{padding:7px 12px}
   #mesBar{display:none}
   #mesBar.on{position:absolute;left:50%;bottom:64px;transform:translateX(-50%);display:flex;
     gap:16px;align-items:center;padding:8px 12px;z-index:9;flex-wrap:wrap;justify-content:center}
@@ -403,6 +416,8 @@
   #stLbl .e.symb svg{width:19px;height:19px;flex:0 0 19px;fill:none;
     stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
   #stLbl .e.symb.sel{border-color:var(--gold)}
+  #etNote{width:100%;margin-top:6px}
+  #etTabs .btn{min-width:26px;padding:5px 7px}
   .symbChip{padding:4px 6px;line-height:0}
   .symbChip svg{width:17px;height:17px;fill:none;stroke:currentColor;
     stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;display:block}
@@ -593,6 +608,20 @@
 
   <!-- l'inspecteur -->
   <div id="insp">
+    <div class="inspSec" id="secEtapes">
+      <div class="inspTete">
+        <span class="lg" id="lgEtapes">Steps</span>
+        <span class="acCompte" id="etCompte"></span>
+      </div>
+      <div class="inspCorps" id="etCorps">
+        <div class="stRow" id="etTabs"></div>
+        <input type="text" id="etNote" maxlength="140" placeholder="What happens at this step">
+        <div class="stRow" style="margin-top:6px">
+          <button class="btn" id="etCadre">Frame from here</button>
+          <button class="btn" id="etJoue">Present</button>
+        </div>
+      </div>
+    </div>
     <div class="inspSec" id="secElems">
       <div class="inspTete">
         <span class="lg" id="lgElems">Elements</span>
@@ -745,6 +774,15 @@
     <div class="obBloc"><span class="obEt" id="mesDenEt">Height change</span><span class="obV" id="mesDen">—</span></div>
     <div class="obBloc"><span class="obEt" id="mesTpsEt">Time</span><span class="obV" id="mesTps">—</span></div>
     <button class="btn" id="mesX">Clear</button>
+  </div>
+  <!-- LA BARRE DE PRÉSENTATION : le strict nécessaire pour dérouler
+       un plan devant le clan. -->
+  <div id="presBar" class="glass">
+    <button class="btn" id="presPrec">◀</button>
+    <span class="obV" id="presNum">1 / 1</span>
+    <button class="btn" id="presSuiv">▶</button>
+    <span id="presNote"></span>
+    <button class="btn" id="presX">Leave</button>
   </div>
   <div id="stLbl"></div>
   <div id="stMsg" class="glass"></div>
@@ -1383,8 +1421,34 @@ function pretty(k){ const L=LABELS[k];
      ST.els qu'une fois terminée. */
   let trace=null;
   /* l'état de l'éditeur : la stratégie ouverte et ses marqueurs */
+  /* ══ LES ÉTAPES ════════════════════════════════════════════════════
+     « À zéro on fait ça, à une minute trente on fait ça. »
+
+     Un plan figé décrit un placement ; une bataille se déroule. Les
+     étapes sont ce qui permet de dire une MANŒUVRE.
+
+     La base de données les attendait depuis toujours — colonne `steps`,
+     douze au plus, avec une note par étape — et l'éditeur 3D en écrivait
+     UNE SEULE sans le savoir. Le format d'enregistrement est donc déjà
+     le bon ; il n'y avait qu'à s'en servir.
+
+     `ST.els` reste le tableau courant : c'est une RÉFÉRENCE vers
+     `ST.steps[ST.step].els`, jamais une copie. Toute réaffectation passe
+     par `poseEls`, sinon le lien se rompt en silence et l'on édite une
+     étape qui n'est plus enregistrée. */
   let ST={ouvert:0, edition:0, id:null, nom:"", els:[], sel:-1, multi:[], outil:"char", camp:"ami",
-          canEdit:0, liste:[], moi:null, refus:""};
+          canEdit:0, liste:[], moi:null, refus:"",
+          steps:[{els:[],note:"",vue:null}], step:0};
+  const poseEls=(arr)=>{ ST.steps[ST.step].els=arr; ST.els=arr; };
+  const etapeCourante=()=>ST.steps[ST.step]||ST.steps[0];
+  /* Le cadrage d'une étape : de quoi y ramener la caméra en présentation. */
+  const vueActuelle=()=>({x:+(tgt[0]+cible.px).toFixed(1), z:+(-(tgt[2]+cible.pz)).toFixed(1),
+                          rad:+cible.rad.toFixed(1), az:+cible.az.toFixed(3), pol:+cible.pol.toFixed(3)});
+  function vaVersVue(v){
+    if(!v) return;
+    tgt=[v.x, terrainNorm(v.x,v.z)*curMaxH*exag, -v.z];
+    cible.px=0; cible.pz=0; cible.rad=v.rad; cible.az=v.az; cible.pol=v.pol;
+  }
 
   /* Ce qu'on pose au SOL sous un marqueur.
 
@@ -2910,6 +2974,105 @@ function pretty(k){ const L=LABELS[k];
     ["danger","Danger zone"],["objective","Objective"],["push","Push forward"],
     ["fallback","Fall back"],["stop","No entry"],["rally","Rally point"]];
 
+  /* ══ LE MODE PRÉSENTATION ══════════════════════════════════════════
+     « Expliquer le plan à quinze personnes en trois minutes. »
+
+     C'est ce qui fait la différence entre un outil qu'un officier ouvre
+     pour préparer, et un outil qu'il ouvre DEVANT SON CLAN — le second
+     est utilisé dix fois plus.
+
+     Tout l'appareillage d'édition disparaît, il ne reste que la carte,
+     la note de l'étape et de quoi avancer. Et la caméra VOYAGE d'un
+     cadrage à l'autre au lieu d'y sauter : c'est l'amortissement déjà
+     en place qui s'en charge, on ne fait que lui donner la cible. Le
+     mouvement dit d'où l'on vient, ce qu'une coupure ne dit pas. */
+  let presente_=0;
+  function presente(i){
+    if(!ST.steps.length) return;
+    presente_=1;
+    document.body.classList.add("presente");
+    requestAnimationFrame(resize);
+    vaEtape(Math.max(0,Math.min(ST.steps.length-1,i)));
+    majPres();
+  }
+  function sortPresente(){
+    if(!presente_) return;
+    presente_=0;
+    document.body.classList.remove("presente");
+    requestAnimationFrame(resize);
+    stMaj();
+  }
+  function presVa(d){
+    const j=ST.step+d;
+    if(j<0||j>=ST.steps.length) return;
+    vaEtape(j); majPres();
+  }
+  function majPres(){
+    if(!presente_) return;
+    const p=etapeCourante();
+    document.getElementById("presNum").textContent=(ST.step+1)+" / "+ST.steps.length;
+    document.getElementById("presNote").textContent=p.note||"";
+    document.getElementById("presPrec").disabled=ST.step<=0;
+    document.getElementById("presSuiv").disabled=ST.step>=ST.steps.length-1;
+  }
+
+  /* ── LA BARRE DES ÉTAPES ────────────────────────────────────────── */
+  const ETAPES_MAX=12;          // la limite que le serveur applique déjà
+  function vaEtape(i){
+    if(i<0||i>=ST.steps.length||i===ST.step) return;
+    ST.step=i; ST.els=ST.steps[i].els; ST.sel=-1; ST.multi=[];
+    vaVersVue(ST.steps[i].vue);
+    buildStrat(); buildChars(); buildVue(); buildChamp(); stMaj(); stLabels();
+  }
+  function ajouteEtape(copie){
+    if(ST.steps.length>=ETAPES_MAX||!ST.canEdit) return;
+    /* Une étape naît COPIE de la précédente. Repartir d'une page blanche
+       obligerait à reposer quinze chars pour dire qu'un seul a bougé —
+       et une manœuvre, c'est justement ce qui change entre deux états. */
+    const src=etapeCourante();
+    ST.steps.splice(ST.step+1,0,{
+      els: copie===false?[]:src.els.map(e=>Object.assign({},e)),
+      note:"", vue: vueActuelle()});
+    ST.step++; ST.els=ST.steps[ST.step].els; ST.sel=-1; ST.multi=[];
+    histoPose(); buildStrat(); buildChars(); buildVue(); buildChamp(); stMaj(); stLabels();
+  }
+  function supprimeEtape(){
+    if(ST.steps.length<2||!ST.canEdit) return;
+    ST.steps.splice(ST.step,1);
+    if(ST.step>=ST.steps.length) ST.step=ST.steps.length-1;
+    ST.els=ST.steps[ST.step].els; ST.sel=-1; ST.multi=[];
+    histoPose(); buildStrat(); buildChars(); buildVue(); buildChamp(); stMaj(); stLabels();
+  }
+  function majEtapes(){
+    const tabs=document.getElementById("etTabs"); if(!tabs) return;
+    document.getElementById("etCompte").textContent=ST.steps.length>1?ST.steps.length:"";
+    tabs.innerHTML="";
+    for(let i=0;i<ST.steps.length;i++){
+      const b=document.createElement("button");
+      b.className="btn"+(i===ST.step?" on":"");
+      b.textContent=String(i+1);
+      b.title=ST.steps[i].note||(t("Step")+" "+(i+1));
+      b.addEventListener("click",()=>vaEtape(i));
+      tabs.appendChild(b);
+    }
+    if(ST.canEdit&&ST.steps.length<ETAPES_MAX){
+      const p=document.createElement("button");
+      p.className="btn"; p.textContent="+"; p.title=t("Add a step, copied from this one");
+      p.addEventListener("click",()=>ajouteEtape(true));
+      tabs.appendChild(p);
+    }
+    if(ST.canEdit&&ST.steps.length>1){
+      const x=document.createElement("button");
+      x.className="btn"; x.textContent="×"; x.title=t("Delete this step");
+      x.addEventListener("click",supprimeEtape);
+      tabs.appendChild(x);
+    }
+    const n=document.getElementById("etNote");
+    if(n&&document.activeElement!==n) n.value=etapeCourante().note||"";
+    const c=document.getElementById("etCadre");
+    if(c) c.classList.toggle("on",!!etapeCourante().vue);
+  }
+
   /* La palette des neuf genres, dans les propriétés du symbole choisi.
      Le genre retenu devient aussi celui du PROCHAIN qu'on posera : on
      enchaîne « danger, danger, danger » sans revenir le régler. */
@@ -3662,7 +3825,7 @@ function pretty(k){ const L=LABELS[k];
        qui n'était pas le leur — invisible tant qu'ils n'étaient que des
        fûts, criant depuis qu'ils sont des chars. */
     if(typeof ST!=="undefined"&&ST.els.length){
-      ST.els=[]; ST.sel=-1; ST.edition=0; ST.id=null;
+      ST.steps=[{els:[],note:"",vue:null}]; ST.step=0; poseEls([]); ST.sel=-1; ST.edition=0; ST.id=null;
       const e1=document.getElementById("stEdit"), l1=document.getElementById("stListe");
       if(e1){ e1.style.display="none"; } if(l1){ l1.style.display=""; }
       document.getElementById("stLbl").innerHTML="";
@@ -3833,7 +3996,7 @@ function pretty(k){ const L=LABELS[k];
     if(oeil&&!voyage&&ST.els.indexOf(oeil.el)<0) sortOeil();
     if(oeil&&oeil.vers&&ST.els.indexOf(oeil.vers)<0) oeil.vers=null;
     buildSecteurs();
-    majOeil(); majCroix(); majMesure(); majGroupes();
+    majOeil(); majCroix(); majMesure(); majGroupes(); majEtapes();
     const box=$("stSelBox"), e=ST.els[ST.sel];
     box.style.display=e?"":"none";
     if(e){ $("stElNom").value=e.name||"";
@@ -4070,18 +4233,32 @@ function pretty(k){ const L=LABELS[k];
     ST.edition=1;
     ST.id=s?s.id:null;
     ST.nom=s?s.name:"";
-    const els=s?((s.steps&&s.steps[0]&&s.steps[0].els)||s.elements||[]):[];
-    /* on ne garde que les chars : c'est tout ce que cette première
-       version pose, et accepter le reste afficherait des objets qu'on ne
-       sait pas dessiner */
-    ST.els=els.filter(e=>e&&(e.type==="tank"||e.type==="fleche"||e.type==="texte")).map(e=>{
+    /* ── RELIRE UN PLAN ────────────────────────────────────────────
+       La liste des types acceptés ne se devine pas : tout ce qui n'y
+       figure pas est jeté ICI aussi, en plus du filtre serveur. Elle
+       s'arrêtait à char / flèche / note, si bien qu'un trajet, une zone
+       ou un symbole enregistrés ne revenaient jamais. */
+    const TYPES=["tank","fleche","texte","trajet","zone","stamp"];
+    const litEls=(l)=>(Array.isArray(l)?l:[]).filter(e=>e&&TYPES.includes(e.type)).map(e=>{
       const base={type:e.type, x:Number(e.x)||0, y:Number(e.y)||0, name:e.name||"",
         camp:(e.color==="#e5544b")?"ennemi":"ami", color:e.color||"#4ea36a"};
+      if(e.grp) base.grp=String(e.grp);
       if(e.type==="fleche") return Object.assign(base,{x2:Number(e.x2)||0, y2:Number(e.y2)||0});
       if(e.type==="texte") return base;
+      if(e.type==="stamp") return Object.assign(base,{kind:e.kind||"focus"});
+      if(e.type==="trajet"||e.type==="zone")
+        return Object.assign(base,{pts:(Array.isArray(e.pts)?e.pts:[]).map(p=>[Number(p[0])||0,Number(p[1])||0])});
       return Object.assign(base,{cls:e.cls||"medium", size:e.size||0.78,
-        char:typeof e.char==="string"?e.char:"", cap:Number(e.cap)||0, tour:Number(e.tour)||0});
+        char:typeof e.char==="string"?e.char:"", cap:Number(e.cap)||0, tour:Number(e.tour)||0,
+        secteur:Number(e.secteur)||0});
     });
+    const brut=(s&&Array.isArray(s.steps)&&s.steps.length)?s.steps
+              :[{els:(s&&s.elements)||[],note:"",vue:null}];
+    ST.steps=brut.slice(0,12).map(p=>({els:litEls(p&&p.els),
+      note:String((p&&p.note)||"").slice(0,140),
+      vue:(p&&p.vue&&isFinite(p.vue.rad))?p.vue:null}));
+    if(!ST.steps.length) ST.steps=[{els:[],note:"",vue:null}];
+    ST.step=0; ST.els=ST.steps[0].els;
     ST.sel=-1;
     $("stTitreIn").value=ST.nom;
     modeEditeur(1);
@@ -4092,12 +4269,13 @@ function pretty(k){ const L=LABELS[k];
     ST.edition=0;
     $("stListe").style.display=""; $("stEdit").style.display="none";
     modeEditeur(0);
-    ST.id=null; ST.els=[]; ST.sel=-1; buildStrat(); buildChars(); buildVue(); buildChamp(); stCharge();
+    ST.id=null; ST.steps=[{els:[],note:"",vue:null}]; ST.step=0; poseEls([]); ST.sel=-1;
+    buildStrat(); buildChars(); buildVue(); buildChamp(); stCharge();
   }
   async function stEnregistre(){
     if(!ST.canEdit) return;
     const nom=($("stTitreIn").value||"").trim()||t("Strategy");
-    const els=ST.els.map(e=>{
+    const enEls=(l)=>l.map(e=>{
       const base={type:e.type||"tank", x:Math.round(e.x), y:Math.round(e.y),
         name:e.name||"", color:(e.camp==="ennemi")?"#e5544b":"#4ea36a"};
       if(e.grp) base.grp=e.grp;
@@ -4112,9 +4290,13 @@ function pretty(k){ const L=LABELS[k];
       return Object.assign(base,{cls:e.cls, size:e.size||0.78,
         char:e.char||"", cap:Number(e.cap)||0, tour:Number(e.tour)||0});
     });
+    /* Toutes les étapes partent, avec leur note et leur cadrage.
+       `elements` reçoit la première : c'est la compatibilité que la
+       colonne d'origine demande, et l'éditeur 2D la lit encore. */
+    const steps=ST.steps.map(p=>({els:enEls(p.els),note:p.note||"",t:null,vue:p.vue||null}));
     const b=$("stSave"); b.disabled=true; b.textContent=t("Saving…");
     const r=await stApi({action:"save",strategy:{id:ST.id,name:nom,map:curKey,mode:curMode||"ctf",
-      steps:[{els,note:"",t:null}],elements:els,editors:[]}});
+      steps,elements:steps[0].els,editors:[]}});
     b.disabled=false; b.textContent=t("Save");
     if(!r.ok){
       const e=r.j&&r.j.error;
@@ -4189,10 +4371,15 @@ function pretty(k){ const L=LABELS[k];
      oublier. On ose essayer quand on peut revenir en arrière. */
   const HISTO_MAX=60;
   let histo=[], histoI=-1, histoSale=0;
-  const copieEls=()=>ST.els.map(e=>Object.assign({},e));
+  /* La photographie porte sur TOUTES les étapes, pas sur la seule
+     courante : ajouter ou supprimer une étape doit s'annuler comme le
+     reste, et une pile qui ne verrait qu'une étape rendrait le plan
+     incohérent au premier retour en arrière. */
+  const copieEls=()=>({step:ST.step,
+    steps:ST.steps.map(p=>({els:p.els.map(e=>Object.assign({},e)),note:p.note||"",vue:p.vue||null}))});
   function histoRaz(){ histo=[copieEls()]; histoI=0; histoSale=0; majHistoBoutons(); }
   function histoPose(){
-    if(histoI>=0&&JSON.stringify(histo[histoI])===JSON.stringify(ST.els)) return;
+    if(histoI>=0&&JSON.stringify(histo[histoI].steps)===JSON.stringify(ST.steps)) return;
     histo=histo.slice(0,histoI+1);
     histo.push(copieEls());
     if(histo.length>HISTO_MAX) histo.shift();
@@ -4203,7 +4390,10 @@ function pretty(k){ const L=LABELS[k];
     const j=histoI+d;
     if(j<0||j>=histo.length) return;
     histoI=j; histoSale=1;
-    ST.els=histo[j].map(e=>Object.assign({},e));
+    const p=histo[j];
+    ST.steps=p.steps.map(q=>({els:q.els.map(e=>Object.assign({},e)),note:q.note||"",vue:q.vue||null}));
+    ST.step=Math.min(p.step,ST.steps.length-1);
+    ST.els=ST.steps[ST.step].els;
     if(ST.sel>=ST.els.length) ST.sel=-1;
     buildStrat(); buildChars(); buildVue(); buildChamp(); stMaj(); stLabels();
   }
@@ -4339,6 +4529,14 @@ function pretty(k){ const L=LABELS[k];
       majCroix();
     });
     $("mesX").addEventListener("click",effaceMesure);
+    $("etNote").addEventListener("input",e=>{ etapeCourante().note=e.target.value.slice(0,140);
+      histoSale=1; majHistoBoutons(); majEtapes(); });
+    $("etCadre").addEventListener("click",()=>{ etapeCourante().vue=vueActuelle();
+      histoPose(); majEtapes(); stDit(t("This step will open on the current view.")); });
+    $("etJoue").addEventListener("click",()=>presente(0));
+    $("presX").addEventListener("click",sortPresente);
+    $("presPrec").addEventListener("click",()=>presVa(-1));
+    $("presSuiv").addEventListener("click",()=>presVa(1));
     $("croixX").addEventListener("click",()=>{
       $("croix").classList.remove("on"); $("stCroix").classList.remove("on"); });
     $("stDanger").addEventListener("click",()=>bascule("danger"));
@@ -4412,7 +4610,8 @@ function pretty(k){ const L=LABELS[k];
     $("stDel").addEventListener("click",stSupprime);
     $("stQuit").addEventListener("click",stFerme);
     $("stClose").addEventListener("click",()=>{ ST.ouvert=0; $("strat").style.display="none";
-      $("stLbl").innerHTML=""; ST.els=[]; ST.sel=-1; buildStrat(); buildChars(); buildVue(); buildChamp(); });
+      $("stLbl").innerHTML=""; ST.steps=[{els:[],note:"",vue:null}]; ST.step=0; poseEls([]); ST.sel=-1;
+      buildStrat(); buildChars(); buildVue(); buildChamp(); });
     $("stratBtn").addEventListener("click",()=>{
       ST.ouvert^=1;
       $("strat").style.display=(ST.ouvert&&!document.body.classList.contains("editeur"))?"block":"none";
@@ -4421,7 +4620,8 @@ function pretty(k){ const L=LABELS[k];
          12,7 Mo qu'il serait absurde de payer pour qui regarde une carte
          sans rien y poser. */
       if(ST.ouvert){ chargeChars(); stCharge(); }
-      else { $("stLbl").innerHTML=""; ST.els=[]; ST.sel=-1; ST.edition=0; buildStrat(); buildChars(); buildVue(); buildChamp(); }
+      else { $("stLbl").innerHTML=""; ST.steps=[{els:[],note:"",vue:null}]; ST.step=0; poseEls([]); ST.sel=-1; ST.edition=0;
+        buildStrat(); buildChars(); buildVue(); buildChamp(); }
     });
     /* Le bouton n'apparaît que si l'on est connecté : sans session, le
        serveur refuserait, et proposer une action qui échoue à coup sûr
@@ -4524,6 +4724,15 @@ function pretty(k){ const L=LABELS[k];
       if(mod) return;
       /* Échap sort d'abord de la vue subjective : tant qu'on y est,
          c'est de là qu'on veut sortir, pas de sa sélection. */
+      /* En présentation, le clavier sert à DÉROULER : les flèches
+         changent d'étape au lieu de piloter la caméra, et l'espace
+         avance comme dans toute présentation. */
+      if(presente_){
+        if(e.key==="Escape"){ sortPresente(); return; }
+        if(e.key==="ArrowRight"||e.key===" "||e.key==="PageDown"){ e.preventDefault(); presVa(1); return; }
+        if(e.key==="ArrowLeft"||e.key==="PageUp"){ e.preventDefault(); presVa(-1); return; }
+        return;
+      }
       if(e.key==="Escape"&&oeil){ sortOeil(); return; }
       /* Une forme en cours passe avant tout : Entrée la termine, Échap
          l'abandonne. Sans quoi Échap effacerait la sélection en laissant
