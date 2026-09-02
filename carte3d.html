@@ -315,7 +315,7 @@
   #rpSeek{width:min(38vw,300px)}
   #rpBar .btn{padding:5px 9px;font-size:11.5px}
   #rpNom{max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  #rpOeil{font-size:11.5px;padding:4px 20px 4px 7px;max-width:150px}
+  #rpOeil,#rpProp{font-size:11.5px;padding:4px 20px 4px 7px;max-width:140px}
   #presBar{display:none}
   body.presente #presBar{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);
     display:flex;gap:12px;align-items:center;padding:10px 14px;z-index:14;
@@ -805,6 +805,7 @@
     <button class="btn" id="rpVit">×2</button>
     <button class="btn" id="rpPin">Pin a step here</button>
     <select id="rpOeil"></select>
+    <select id="rpProp"></select>
     <span class="obEt" id="rpNom"></span>
     <button class="btn" id="rpX">Leave</button>
   </div>
@@ -1609,6 +1610,14 @@ function pretty(k){ const L=LABELS[k];
       }
       if(P.length/4>d0) stLots.push({d:d0,n:P.length/4-d0,coul,mode:gl.TRIANGLES,voile:0,haut:1,alpha,sansProf:1});
     };
+    /* Le FANTÔME et sa vraie place : un trait d'or, plus fin qu'une
+       flèche, qui dit « il était là, on le voulait ici ». Il part du
+       point réel et n'en bouge jamais — c'est tout l'intérêt. */
+    for(const e of ST.els){
+      if(e.type!=="ghost"||e.masque||e.x0==null) continue;
+      ruban([e.x0,e.y0],[e.x,e.y],larg*0.55,ST_COUL.mesure,0.8);
+      rond([e.x0,e.y0],larg*1.1,ST_COUL.mesure,0.85);
+    }
     /* les formes posées, plus celle qu'on est en train de tracer */
     const formes=ST.els.map((e,i)=>({e,i}))
       .filter(o=>o.e.type==="trajet"||o.e.type==="zone").filter(o=>!o.e.masque);
@@ -3089,6 +3098,32 @@ function pretty(k){ const L=LABELS[k];
     oeil.pos=[p[0],solY(p[0],p[1])+(oeil.hRp||2.0),p[1]];
   }
 
+  /* ══ LES POSITIONS PROPOSÉES ═══════════════════════════════════════
+     « Tu étais là ; il fallait être là. »
+
+     Le principe, arrêté avec Robert du côté 2D : la vérité de la
+     bataille ne s'écrase JAMAIS. Déplacer un char du replay ne le
+     déplace pas — cela crée un FANTÔME, élément d'annotation à part
+     entière, relié à sa position réelle par un trait. On remet en
+     lecture, le char reprend son vrai trajet, et la proposition reste
+     accrochée à son étape.
+
+     Le fantôme porte donc DEUX positions : x0,y0 la vraie, x,y celle
+     qu'on propose. Seule la seconde bouge quand on le tire. */
+  function proposePour(k){
+    if(!RP||!RP.chars[k]||!ST.canEdit) return;
+    const c=RP.chars[k], p=rpPos(c,RP.t); if(!p) return;
+    /* décalé de trente mètres, sinon il naît exactement sous le vrai et
+       l'on croit qu'il ne s'est rien passé */
+    ST.els.push({type:"ghost", x0:+p[0].toFixed(1), y0:+p[1].toFixed(1),
+      x:+(p[0]+30).toFixed(1), y:+p[1].toFixed(1),
+      cls:c.cls||"medium", name:c.tank||c.nom, char:c.cleModele||"",
+      camp:c.ami?"ami":"ennemi", cap:((Math.PI/2-p[2])*180/Math.PI+360)%360, tour:0});
+    ST.sel=ST.els.length-1; ST.multi=[ST.sel];
+    histoPose(); buildStrat(); buildChars(); stMaj(); stLabels();
+    stDit(t("Drag the ghost where it should have been."));
+  }
+
   /* ── LA FRISE DU REPLAY ─────────────────────────────────────────── */
   const rpTemps=(s)=>{ s=Math.max(0,Math.floor(s)); return Math.floor(s/60)+":"+String(s%60).padStart(2,"0"); };
   function rpMaj(){
@@ -3109,6 +3144,13 @@ function pretty(k){ const L=LABELS[k];
         vivants.map(o=>'<option value="'+o.k+'">'+(o.c.ami?"○ ":"● ")+
           echapHtml(o.c.tank||o.c.nom)+"</option>").join("");
       sel.value="-1";
+      const pr=$("rpProp");
+      if(pr&&document.activeElement!==pr){
+        pr.innerHTML='<option value="-1">'+echapHtml(t("Propose for…"))+"</option>"+
+          vivants.map(o=>'<option value="'+o.k+'">'+(o.c.ami?"○ ":"● ")+
+            echapHtml(o.c.tank||o.c.nom)+"</option>").join("");
+        pr.value="-1";
+      }
     }
   }
   function rpVaA(t){
@@ -4489,7 +4531,7 @@ function pretty(k){ const L=LABELS[k];
        figure pas est jeté ICI aussi, en plus du filtre serveur. Elle
        s'arrêtait à char / flèche / note, si bien qu'un trajet, une zone
        ou un symbole enregistrés ne revenaient jamais. */
-    const TYPES=["tank","fleche","texte","trajet","zone","stamp"];
+    const TYPES=["tank","fleche","texte","trajet","zone","stamp","ghost"];
     const litEls=(l)=>(Array.isArray(l)?l:[]).filter(e=>e&&TYPES.includes(e.type)).map(e=>{
       const base={type:e.type, x:Number(e.x)||0, y:Number(e.y)||0, name:e.name||"",
         camp:(e.color==="#e5544b")?"ennemi":"ami", color:e.color||"#4ea36a"};
@@ -4497,6 +4539,9 @@ function pretty(k){ const L=LABELS[k];
       if(e.type==="fleche") return Object.assign(base,{x2:Number(e.x2)||0, y2:Number(e.y2)||0});
       if(e.type==="texte") return base;
       if(e.type==="stamp") return Object.assign(base,{kind:e.kind||"focus"});
+      if(e.type==="ghost") return Object.assign(base,{x0:Number(e.x0)||0, y0:Number(e.y0)||0,
+        cls:e.cls||"medium", size:e.size||0.72, char:typeof e.char==="string"?e.char:"",
+        cap:Number(e.cap)||0, tour:0});
       if(e.type==="trajet"||e.type==="zone")
         return Object.assign(base,{pts:(Array.isArray(e.pts)?e.pts:[]).map(p=>[Number(p[0])||0,Number(p[1])||0])});
       return Object.assign(base,{cls:e.cls||"medium", size:e.size||0.78,
@@ -4534,6 +4579,8 @@ function pretty(k){ const L=LABELS[k];
       if(e.secteur) base.secteur=Number(e.secteur)||0;
       if(e.type==="fleche") return Object.assign(base,{x2:Math.round(e.x2),y2:Math.round(e.y2)});
       if(e.type==="stamp") return Object.assign(base,{kind:e.kind||"focus"});
+      if(e.type==="ghost") return Object.assign(base,{x0:Math.round(e.x0),y0:Math.round(e.y0),
+        cls:e.cls, size:e.size||0.72, char:e.char||"", cap:Number(e.cap)||0});
       if(e.type==="trajet"||e.type==="zone")
         return Object.assign(base,{pts:(e.pts||[]).map(p=>[Math.round(p[0]),Math.round(p[1])])});
       if(e.type==="texte") return base;
@@ -4805,6 +4852,8 @@ function pretty(k){ const L=LABELS[k];
       RP.vitesse=({1:2,2:4,4:8,8:1})[RP.vitesse]||2; rpMaj(); });
     $("rpX").addEventListener("click",rpFerme);
     $("rpPin").addEventListener("click",rpEpingle);
+    $("rpProp").addEventListener("change",e=>{
+      const k=Number(e.target.value); if(k>=0) proposePour(k); e.target.value="-1"; });
     $("rpOeil").addEventListener("change",e=>{
       const k=Number(e.target.value);
       if(k>=0) oeilReplay(k); else if(oeil&&oeil.rp!=null) sortOeil();

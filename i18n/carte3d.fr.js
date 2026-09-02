@@ -63,6 +63,8 @@ window.CP_FR = Object.assign(window.CP_FR || {}, {
   "Step pinned at": "Étape épinglée à",
   "Twelve steps at most.": "Douze étapes au maximum.",
   "Eye of…": "Œil de…",
+  "Propose for…": "Proposer pour…",
+  "Drag the ghost where it should have been.": "Glisse le fantôme là où il aurait fallu être.",
   /* ── les étapes et la présentation ── */
   "Steps": "Étapes",
   "What happens at this step": "Ce qui se passe à cette étape",
