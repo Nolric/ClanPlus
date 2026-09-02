@@ -4566,22 +4566,79 @@ function pretty(k){ const L=LABELS[k];
       return {x:q[1], z:q[2], cap:0, vise:vis(q), repere:1, mort:1};
     }
     if(t<p[0][0]) return null;
-    let lo=null, hi=null;
-    for(const e of p){ if(e[0]<=t) lo=e; else { hi=e; break; } }
-    if(!lo) return null;
-    if(hi&&(hi[0]-lo[0])<=trou){
-      const f=(t-lo[0])/((hi[0]-lo[0])||1);
-      const dx=hi[1]-lo[1], dz=hi[2]-lo[2];
-      /* Le cap de la MARCHE. À l'arrêt il n'a pas de sens : un écart de
-         quelques centimètres ferait pivoter la caisse au hasard. On
-         retombe alors sur la direction visée, ou sur rien. */
-      const bouge=Math.hypot(dx,dz)>0.6;
-      return {x:lo[1]+dx*f, z:lo[2]+dz*f,
-              cap:bouge?((Math.atan2(dx,dz)*180/Math.PI+360)%360):null,
-              vise:vis(lo), repere:1, mort:0};
-    }
-    return {x:lo[1], z:lo[2], cap:null, vise:vis(lo),
-            repere:(t-lo[0])<=trou?1:0, mort:0};
+    const i=rpIdx(c,t);
+    const lo=p[i], hi=(i+1<p.length)?p[i+1]:null;
+    /* dernier relevé connu, ou trou : il reste où on l'a vu */
+    if(!hi||(hi[0]-lo[0])>trou)
+      return {x:lo[1], z:lo[2], cap:null, vise:vis(lo),
+              repere:(t-lo[0])<=trou?1:0, mort:0};
+    const f=(t-lo[0])/((hi[0]-lo[0])||1);
+    const P1=[lo[1],lo[2]], P2=[hi[1],hi[2]];
+    const seg=Math.hypot(P2[0]-P1[0],P2[1]-P1[1]);
+    /* Le cap de la MARCHE. À l'arrêt il n'a pas de sens : un écart de
+       quelques centimètres ferait pivoter la caisse au hasard. On
+       retombe alors sur la direction visée, ou sur rien. */
+    if(seg<0.05)
+      return {x:P1[0], z:P1[1], cap:null, vise:rpVise(lo,hi,f,vis), repere:1, mort:0};
+    /* Les voisins nourrissent la courbe. Au bord d'un relevé — début de
+       piste, ou trou de repérage — on reflète le point pour que la
+       tangente reste celle du segment au lieu de partir n'importe où. */
+    const av=p[i-1], ap=p[i+2];
+    const P0=(av&&(lo[0]-av[0])<=trou)?[av[1],av[2]]:[2*P1[0]-P2[0],2*P1[1]-P2[1]];
+    const P3=(ap&&(ap[0]-hi[0])<=trou)?[ap[1],ap[2]]:[2*P2[0]-P1[0],2*P2[1]-P1[1]];
+    const q=crom(P0,P1,P2,P3,f);
+    /* Le cap suit la TANGENTE de la courbe, pas la corde : la caisse
+       tourne progressivement dans le virage au lieu de pivoter d'un coup
+       au passage de chaque relevé. */
+    const e2=0.06;
+    const qa=crom(P0,P1,P2,P3,Math.max(0,f-e2)), qb=crom(P0,P1,P2,P3,Math.min(1,f+e2));
+    const dx=qb[0]-qa[0], dz=qb[1]-qa[1];
+    const cap=(seg>0.6&&Math.hypot(dx,dz)>1e-4)
+      ?((Math.atan2(dx,dz)*180/Math.PI+360)%360):null;
+    return {x:q[0], z:q[1], cap, vise:rpVise(lo,hi,f,vis), repere:1, mort:0};
+  }
+  /* La direction visée entre deux relevés, par le plus court chemin
+     angulaire. Elle SAUTAIT : on gardait celle du relevé précédent
+     jusqu'au suivant, et la tourelle se déplaçait d'un bloc toutes les
+     deux secondes. Elle balaie maintenant. Et de 350° à 10° on passe par
+     zéro, pas par le tour complet. */
+  function rpVise(lo,hi,f,vis){
+    const a=vis(lo), b=vis(hi);
+    if(a==null) return b==null?null:b;
+    if(b==null) return a;
+    return (a+((((b-a+540)%360)-180)*f)+360)%360;
+  }
+  /* Où en est-on dans la piste ? Un curseur par char, qui avance ou
+     recule d'un cran : la lecture est continue, on ne repart pas du
+     début à chaque image. */
+  function rpIdx(c,t){
+    const p=c.piste;
+    let i=c._i|0;
+    if(i>=p.length) i=p.length-1;
+    while(i>0&&p[i][0]>t) i--;
+    while(i+1<p.length&&p[i+1][0]<=t) i++;
+    c._i=i;
+    return i;
+  }
+  /* ── LA COURBE QUI PASSE PAR LES RELEVÉS ────────────────────────
+     Catmull-Rom CENTRIPÈTE. Le mod relève une position toutes les deux
+     secondes, arrondie au mètre ; un char en fait jusqu'à trente dans
+     cet intervalle. En reliant les relevés à la règle, on lui faisait
+     parcourir une ligne brisée : il filait droit puis pivotait d'un
+     coup sur place, quatre fois par virage. Aucun char ne roule ainsi.
+     La courbe passe exactement par chaque relevé — on n'invente aucune
+     position — mais arrive et repart dans l'axe du mouvement.
+     Centripète (exposant un demi) et non uniforme : c'est la variante
+     qui ne fait ni boucle ni dépassement quand deux relevés sont très
+     proches et le suivant très loin, ce qui arrive à chaque arrêt. */
+  function crom(P0,P1,P2,P3,u){
+    const d=(a,b)=>Math.sqrt(Math.hypot(b[0]-a[0],b[1]-a[1]))||1e-4;
+    const t0=0, t1=t0+d(P0,P1), t2=t1+d(P1,P2), t3=t2+d(P2,P3);
+    const tt=t1+(t2-t1)*u;
+    const mix=(a,b,ta,tb)=>{ const w=(tb-tt)/((tb-ta)||1e-6);
+      return [a[0]*w+b[0]*(1-w), a[1]*w+b[1]*(1-w)]; };
+    const A1=mix(P0,P1,t0,t1), A2=mix(P1,P2,t1,t2), A3=mix(P2,P3,t2,t3);
+    return mix(mix(A1,A2,t0,t2), mix(A2,A3,t1,t3), t1,t2);
   }
   /* La bibliothèque ne contient QUE le rang X. Les batailles de clan s'y
      jouent, donc la plupart des chars d'un replay de Bastion y sont ;
@@ -4598,12 +4655,61 @@ function pretty(k){ const L=LABELS[k];
      redemandait. Aucun char de replay n'a jamais eu son modèle.
      Mes propres essais chargeaient la bibliothèque en premier, ce qui
      est précisément l'ordre inverse du vrai. */
+  /* ── RETROUVER LE MODÈLE D'UN CHAR DE REPLAY ────────────────────
+
+     Notre bibliothèque range les chars sous leur nom ANGLAIS. Le mod,
+     lui, relève le nom court tel que le JEU l'affiche chez le joueur —
+     donc traduit — et le tronque à vingt-quatre signes. Deux façons de
+     ne pas se reconnaître, et les deux arrivent :
+
+       « Objet 260 »               contre « Object 260 »
+       « Carro da Combattimento 4 » contre « Carro da Combattimento 45 t »
+
+     Quatorze chars de rang X commencent par « Object » : cela suffit à
+     expliquer qu'une partie des chars ait son modèle et l'autre non.
+
+     On compare donc par étapes de plus en plus tolérantes, et on
+     n'accepte QUE lorsqu'un seul candidat répond. Deux candidats, on
+     renonce : un marqueur vaut mieux qu'un char qui n'est pas le bon. */
+  const platA=(s)=>platC(s).replace(/[^a-z0-9]/g,"");     // tout collé
+  const platL=(s)=>platA(s).replace(/[0-9]/g,"");         // les lettres
+  const platN=(s)=>platA(s).replace(/[^0-9]/g,"");        // les chiffres
+  /* distance d'édition, plafonnée : les noms sont courts */
+  function dEdit(a,b){
+    const m=a.length, n=b.length;
+    if(!m) return n; if(!n) return m;
+    let prec=new Array(n+1), cour=new Array(n+1);
+    for(let j=0;j<=n;j++) prec[j]=j;
+    for(let i=1;i<=m;i++){
+      cour[0]=i;
+      for(let j=1;j<=n;j++)
+        cour[j]=Math.min(prec[j]+1, cour[j-1]+1, prec[j-1]+(a[i-1]===b[j-1]?0:1));
+      const t2=prec; prec=cour; cour=t2;
+    }
+    return prec[n];
+  }
+  let rpTable=null;
   const rpModele=(nomChar)=>{
     if(!CHARS||!CHARS.chars) return null;      // pas encore : on redemandera
     if(!nomChar) return "";
-    const n=platC(nomChar);
-    const c=CHARS.chars.find(x=>platC(x.nom)===n);
-    return c?c.cle:"";
+    if(!rpTable||rpTable.n!==CHARS.chars.length)
+      rpTable={n:CHARS.chars.length, l:CHARS.chars.map(x=>({
+        cle:x.cle, a:platA(x.nom), lt:platL(x.nom), ch:platN(x.nom)}))};
+    const L=rpTable.l, a=platA(nomChar), lt=platL(nomChar), ch=platN(nomChar);
+    const seul=(v)=>v.length===1?v[0].cle:"";
+    /* 1 · le même nom, aux accents et à la ponctuation près */
+    let v=L.filter(x=>x.a===a); if(v.length) return seul(v);
+    /* 2 · tronqué à vingt-quatre signes : notre nom commence par le sien */
+    if(a.length>=8){ v=L.filter(x=>x.a.startsWith(a)||a.startsWith(x.a));
+      if(v.length) return seul(v); }
+    /* 3 · traduit : mêmes chiffres, lettres très proches */
+    if(ch){ v=L.filter(x=>x.ch===ch&&(x.lt===lt||
+        (lt&&x.lt&&(x.lt.startsWith(lt)||lt.startsWith(x.lt)))||
+        dEdit(x.lt,lt)<=3));
+      if(v.length) return seul(v); }
+    /* 4 · les chiffres seuls, s'ils ne désignent qu'un char */
+    if(ch){ v=L.filter(x=>x.ch===ch); if(v.length===1) return v[0].cle; }
+    return "";
   };
   /* Les chars du replay, sous la forme que le dessin sait déjà poser.
      Le drapeau `rp` les tient hors de la sélection et de l'enregistrement. */
@@ -5566,7 +5672,7 @@ function pretty(k){ const L=LABELS[k];
       /* la vraie séquence d'une image de lecture, pour la chronométrer */
       rpImage:(t)=>{ RP.t=t; rpSuitEtapes(); oeilSuitReplay();
         buildChars(); buildStrat(); stLabels(); rpMaj(); buildTirs(); },
-      rpMaj, buildTirs, perf:(v)=>{ perfOn=v?1:0; }};
+      rpMaj, buildTirs, perf:(v)=>{ perfOn=v?1:0; }, rpModele};
     /* ── LES VUES ────────────────────────────────────────────────────
        Trois angles nommés, plutôt que de chercher le bon à la souris.
        Le dessus lit une ligne de vue, le côté lit un dénivelé, le
