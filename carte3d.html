@@ -4586,8 +4586,21 @@ function pretty(k){ const L=LABELS[k];
   /* La bibliothèque ne contient QUE le rang X. Les batailles de clan s'y
      jouent, donc la plupart des chars d'un replay de Bastion y sont ;
      les autres retombent sur un marqueur, ce qui reste juste. */
+  /* Rend la clé du modèle, "" si ce char n'est pas dans la
+     bibliothèque, et NULL si la bibliothèque n'est pas encore arrivée.
+
+     La distinction fait tout. Un replay s'ouvre ainsi : on installe la
+     bataille, PUIS on attend la bibliothèque des chars. Entre les deux,
+     la boucle d'images tourne — elle ne s'arrête jamais — et va
+     chercher le modèle de chaque char. Ma version rendait "" dans ce
+     cas, et l'appelant retenait ce "" DÉFINITIVEMENT : les modèles
+     arrivaient une demi-seconde plus tard et personne ne les
+     redemandait. Aucun char de replay n'a jamais eu son modèle.
+     Mes propres essais chargeaient la bibliothèque en premier, ce qui
+     est précisément l'ordre inverse du vrai. */
   const rpModele=(nomChar)=>{
-    if(!CHARS||!CHARS.chars||!nomChar) return "";
+    if(!CHARS||!CHARS.chars) return null;      // pas encore : on redemandera
+    if(!nomChar) return "";
     const n=platC(nomChar);
     const c=CHARS.chars.find(x=>platC(x.nom)===n);
     return c?c.cle:"";
@@ -4629,7 +4642,9 @@ function pretty(k){ const L=LABELS[k];
         /* p vaut { x, z, … } : j'avais un jour lu la coordonnée z dans la
            case de l'angle, et toute la bataille se rangeait sur la ligne
            z ≈ 0 — en file indienne. */
-        char:(c.cleModele!==undefined?c.cleModele:(c.cleModele=rpModele(c.tank))),
+        /* on ne retient QUE les réponses sûres : tant que la
+           bibliothèque n'est pas là, on redemande à l'image suivante */
+        char:(c.cleModele!=null?c.cleModele:(c.cleModele=rpModele(c.tank))||""),
         cap, tour,
         /* détruit : la carcasse reste, grise, à l'endroit exact où il est
            tombé — c'est ce qu'on vient revoir, et un simple ✕ flottant ne
@@ -5717,6 +5732,20 @@ function pretty(k){ const L=LABELS[k];
      boucle ne se réarme, et la page se figeait pour de bon en
      affichant « mesure en cours… ». D'où l'armure, et d'où le
      réarmement de la boucle DÈS L'ENTRÉE de l'image plus bas. */
+  /* Combien de chars du replay ont trouvé leur modèle 3D, et le nom du
+     premier qui ne l'a pas trouvé. Sans cela, un modèle manquant se
+     confond avec un char d'un autre rang — alors que ce peut être un
+     nom que la bibliothèque écrit autrement. */
+  function perfReplay(){
+    if(!RP) return "pas de replay";
+    let ok=0, rate="";
+    for(const c of RP.chars){
+      if(c.cleModele) ok++;
+      else if(!rate&&c.cleModele==="") rate=c.tank||"(sans nom)";
+    }
+    return "replay "+RP.chars.length+" chars · modèles "+ok+"/"+RP.chars.length+
+      (rate?" · sans modèle : "+rate:"");
+  }
   function perfMaj(t){ try{ perfMaj_(t); }catch(e){
     if(perfEl) perfEl.textContent="compteur en panne : "+e.message; } }
   function perfMaj_(t){
@@ -5748,8 +5777,8 @@ function pretty(k){ const L=LABELS[k];
       "canevas "+cv.width+"×"+cv.height+" (écran ×"+dpr.toFixed(2)+")",
       "terrain "+Math.round(idxLen/3)+" triangles",
       "bâti "+objLots.length+" lots, "+perfSommets()+" sommets · "+perfModeles(),
-      "chars "+charsLots.length+" lots · marqueurs "+(ST.ouvert?ST.els.length:0)+
-        (RP?" · replay "+RP.chars.length+" chars":""),
+      "chars "+charsLots.length+" lots · marqueurs "+(ST.ouvert?ST.els.length:0),
+      perfReplay(),
       perfMoteur()
     ].join(String.fromCharCode(10));
     perfN=0; perfT=0; perfPire=0;
