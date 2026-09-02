@@ -50,6 +50,10 @@ window.CP_FR = Object.assign(window.CP_FR || {}, {
   "pairs in contact": "couples en contact",
   /* ── la mesure ── */
   "Measure · M": "Mesure · M",
+  "Route · J": "Trajet · J",
+  "Area · Z": "Zone · Z",
+  "Area": "Zone",
+  "Shape label": "Nom de la forme",
   "Flat": "À plat",
   "Over the ground": "En épousant le sol",
   "Height change": "Dénivelé",

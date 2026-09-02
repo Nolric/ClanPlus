@@ -562,6 +562,8 @@
     <button class="outil" data-outil="char" data-bulle="Tank · T"><svg viewBox="0 0 20 20"><path d="M3 12h14v4H3z"/><path d="M5 12V9h8v3"/><path d="M9 9V7h9"/></svg><span class="cle">T</span></button>
     <div class="sepR"></div>
     <button class="outil" data-outil="fleche" data-bulle="Arrow · A"><svg viewBox="0 0 20 20"><path d="M3 16L16 4"/><path d="M9 4h7v7"/></svg><span class="cle">A</span></button>
+    <button class="outil" data-outil="trajet" data-bulle="Route · J"><svg viewBox="0 0 20 20"><path d="M3 16c4 0 3-6 7-6s3-5 7-5"/><circle cx="3" cy="16" r="1.6"/><circle cx="17" cy="5" r="1.6"/></svg><span class="cle">J</span></button>
+    <button class="outil" data-outil="zone" data-bulle="Area · Z"><svg viewBox="0 0 20 20"><path d="M4 6l6-2 6 3-2 8-8 1z"/></svg><span class="cle">Z</span></button>
     <button class="outil" data-outil="texte" data-bulle="Note · N"><svg viewBox="0 0 20 20"><path d="M4 4h12v9l-4 4H4z"/><path d="M16 13h-4v4"/><path d="M7 8h6M7 11h4"/></svg><span class="cle">N</span></button>
     <div class="sepR"></div>
     <button class="outil" data-outil="mesure" id="stMesure" data-bulle="Measure · M"><svg viewBox="0 0 20 20"><path d="M3 13l10-10 4 4-10 10z"/><path d="M6 10l1.6 1.6M9 7l1.6 1.6M12 4l1.6 1.6"/></svg><span class="cle">M</span></button>
@@ -1321,7 +1323,7 @@ function pretty(k){ const L=LABELS[k];
      MONDE du jeu, ceux-là mêmes que la carte 3D emploie. C'est
      exactement pourquoi les deux vues ne doivent pas se mélanger. */
   let curMVP=null;
-  const stB=gl.createBuffer(); let stLots=[];
+  const stB=gl.createBuffer(); let stLots=[], stRad=0;
   const ST_CLS=[["light","Light",[0.55,0.85,0.45]],["medium","Medium",[0.45,0.75,0.95]],
                 ["heavy","Heavy",[0.95,0.72,0.30]],["td","TD",[0.85,0.45,0.90]],
                 ["spg","SPG",[0.95,0.45,0.42]]];
@@ -1336,6 +1338,24 @@ function pretty(k){ const L=LABELS[k];
      qui épouse le sol, et le dénivelé. C'est l'écart entre les deux
      premiers qui renseigne. */
   let mesure=null;
+  /* ══ LE TRAJET ET LA ZONE ══════════════════════════════════════════
+     Une flèche dit un départ et une arrivée. Elle ne dit pas PAR OÙ, et
+     c'est justement ce qui distingue une manœuvre d'une intention.
+
+     Deux formes à plusieurs points, l'une ouverte l'autre fermée :
+       trajet — « il passe par le bois, puis derrière l'église »
+       zone   — « tenir ici », « ne pas dépasser cette ligne »
+
+     Toutes deux sont POSÉES SUR LE RELIEF, découpées tous les quelques
+     mètres. Une forme dessinée à plat sur une carte en perspective
+     flotterait au-dessus des creux et s'enfoncerait dans les bosses :
+     drapée, elle se lit comme une peinture sur le sol, sous n'importe
+     quel angle de caméra. C'est la seule façon honnête de tracer sur un
+     terrain, et c'est ce qui la distingue de son équivalent en 2D.
+
+     `trace` porte la forme EN COURS de construction ; elle n'entre dans
+     ST.els qu'une fois terminée. */
+  let trace=null;
   /* l'état de l'éditeur : la stratégie ouverte et ses marqueurs */
   let ST={ouvert:0, edition:0, id:null, nom:"", els:[], sel:-1, multi:[], outil:"char", camp:"ami",
           canEdit:0, liste:[], moi:null, refus:""};
@@ -1374,6 +1394,13 @@ function pretty(k){ const L=LABELS[k];
        La largeur suit l'éloignement de la caméra, comme les lignes de
        vue — en mètres, un trait devient invisible dès qu'on recule. */
     const larg=Math.max(0.6, 6*0.9*rad/Math.max(200,cv.clientHeight));
+    /* On retient à quelle distance la largeur a été calculée : la boucle
+       de rendu rebâtit quand la caméra a nettement bougé. Sans cela, un
+       ruban bâti de loin restait à sa largeur d'alors et devenait une
+       bande de cent mètres dès qu'on descendait le voir de près. Les
+       flèches avaient déjà ce défaut ; un trajet de quatre points le
+       rend impossible à ignorer. */
+    stRad=rad;
     /* La mesure se DESSINE comme une flèche mais n’appartient pas au
        plan : elle n’entre jamais dans ST.els, donc jamais dans ce qui
        s’enregistre. Un ruban d’or, pour ne la confondre avec aucun camp. */
@@ -1410,7 +1437,7 @@ function pretty(k){ const L=LABELS[k];
              e.x2,0.6,-e.y2,terrainNorm(e.x2,e.y2));
       stLots.push({d:d1,n:3,coul,mode:gl.TRIANGLES,voile:0,haut:1,alpha:sel?0.95:0.75,sansProf:1});
       /* les deux bouts, quand elle est choisie : ce sont les poignées */
-      if(sel) for(const [hx,hz] of [[e.x,e.y],[e.x2,e.y2]]){
+      if(sel&&!e.mesure) for(const [hx,hz] of [[e.x,e.y],[e.x2,e.y2]]){
         const d2=P.length/4, m=24, r0=larg*1.6, r1=larg*2.2;
         for(let k=0;k<=m;k++){ const a=k/m*Math.PI*2;
           const p0=[hx+Math.cos(a)*r0, hz+Math.sin(a)*r0], p1=[hx+Math.cos(a)*r1, hz+Math.sin(a)*r1];
@@ -1418,9 +1445,88 @@ function pretty(k){ const L=LABELS[k];
         stLots.push({d:d2,n:P.length/4-d2,coul:[1,1,1],mode:gl.TRIANGLE_STRIP,voile:0,haut:1,alpha:0.85,sansProf:1});
       }
     }
+    /* ── LES TRAJETS ET LES ZONES, POSÉS SUR LE RELIEF ──────────────
+       Un ruban par segment, plus un rond à chaque coude : c'est ce rond
+       qui masque l'encoche que deux rubans d'orientations différentes
+       laissent forcément à leur jointure. Plus simple et plus sûr que de
+       calculer une mitre, qui dégénère dès que l'angle se referme. */
+    const ruban=(a,b,l,coul,alpha)=>{
+      const dx=b[0]-a[0], dz=b[1]-a[1], L=Math.hypot(dx,dz);
+      if(L<0.01) return;
+      const ux=dx/L, uz=dz/L, nx=-uz, nz=ux;
+      const n=Math.max(2,Math.ceil(L/4)), d0=P.length/4;
+      for(let k=0;k<=n;k++){
+        const s=L*k/n, cx=a[0]+ux*s, cz=a[1]+uz*s;
+        const px=cx-nx*l, pz=cz-nz*l, qx=cx+nx*l, qz=cz+nz*l;
+        P.push(px,0.6,-pz,terrainNorm(px,pz), qx,0.6,-qz,terrainNorm(qx,qz));
+      }
+      stLots.push({d:d0,n:P.length/4-d0,coul,mode:gl.TRIANGLE_STRIP,voile:0,haut:1,alpha,sansProf:1});
+    };
+    const rond=(c,r,coul,alpha)=>{
+      const n=20, d0=P.length/4;
+      P.push(c[0],0.65,-c[1],terrainNorm(c[0],c[1]));
+      for(let k=0;k<=n;k++){ const a=k/n*Math.PI*2, px=c[0]+Math.cos(a)*r, pz=c[1]+Math.sin(a)*r;
+        P.push(px,0.65,-pz,terrainNorm(px,pz)); }
+      stLots.push({d:d0,n:P.length/4-d0,coul,mode:gl.TRIANGLE_FAN,voile:0,haut:1,alpha,sansProf:1});
+    };
+    /* Le remplissage d'une zone : on la RASTÉRISE en petits carrés plutôt
+       que de la découper en triangles. Une triangulation par oreilles
+       serait exacte mais un grand triangle traverserait les bosses au
+       lieu de les suivre, et il faudrait le subdiviser de toute façon.
+       Des carrés de quelques mètres épousent le relief sans code
+       supplémentaire, et le contour dessiné par-dessus rend le bord net. */
+    const dedansPoly=(pts,x,z)=>{
+      let d=false;
+      for(let i=0,j=pts.length-1;i<pts.length;j=i++){
+        const a=pts[i], b=pts[j];
+        if((a[1]>z)!==(b[1]>z) && x < (b[0]-a[0])*(z-a[1])/(b[1]-a[1])+a[0]) d=!d;
+      }
+      return d;
+    };
+    const remplitZone=(pts,coul,alpha)=>{
+      let x0=1e30,x1=-1e30,z0=1e30,z1=-1e30;
+      for(const [x,z] of pts){ if(x<x0)x0=x; if(x>x1)x1=x; if(z<z0)z0=z; if(z>z1)z1=z; }
+      const pas=Math.max(3,WORLD/300), d0=P.length/4;
+      for(let z=z0;z<z1;z+=pas) for(let x=x0;x<x1;x+=pas){
+        if(!dedansPoly(pts,x+pas/2,z+pas/2)) continue;
+        const q=[[x,z],[x+pas,z],[x+pas,z+pas],[x,z+pas]]
+          .map(([qx,qz])=>[qx,0.45,-qz,terrainNorm(qx,qz)]);
+        for(const k of [0,1,2,0,2,3]) P.push(q[k][0],q[k][1],q[k][2],q[k][3]);
+      }
+      if(P.length/4>d0) stLots.push({d:d0,n:P.length/4-d0,coul,mode:gl.TRIANGLES,voile:0,haut:1,alpha,sansProf:1});
+    };
+    /* les formes posées, plus celle qu'on est en train de tracer */
+    const formes=ST.els.map((e,i)=>({e,i}))
+      .filter(o=>o.e.type==="trajet"||o.e.type==="zone").filter(o=>!o.e.masque);
+    if(trace&&trace.pts.length) formes.push({e:{type:trace.type,pts:trace.pts,camp:ST.camp,encours:1},i:-1});
+    for(const {e,i} of formes){
+      const sel=(i===ST.sel)||e.encours;
+      const coul=e.encours?ST_COUL.mesure:(e.camp==="ennemi")?ST_COUL.ennemi:ST_COUL.ami;
+      const a=sel?0.9:0.7, pts=e.pts;
+      if(e.type==="zone"&&pts.length>2) remplitZone(pts,coul,e.encours?0.16:0.22);
+      const boucle=(e.type==="zone"&&pts.length>2);
+      for(let k=0;k+1<pts.length;k++) ruban(pts[k],pts[k+1],larg,coul,a);
+      if(boucle) ruban(pts[pts.length-1],pts[0],larg,coul,a);
+      for(let k=0;k<pts.length;k++){
+        const dernier=(k===pts.length-1);
+        /* le bout d'un trajet porte une pointe, comme une flèche */
+        if(e.type==="trajet"&&dernier&&pts.length>1){
+          const p0=pts[k-1], p1=pts[k];
+          const dx=p1[0]-p0[0], dz=p1[1]-p0[1], L=Math.hypot(dx,dz)||1;
+          const ux=dx/L, uz=dz/L, nx=-uz, nz=ux, l=larg*2.6;
+          const bx=p1[0]-ux*l*1.3, bz=p1[1]-uz*l*1.3, d1=P.length/4;
+          P.push(bx-nx*l,0.6,-(bz-nz*l),terrainNorm(bx-nx*l,bz-nz*l),
+                 bx+nx*l,0.6,-(bz+nz*l),terrainNorm(bx+nx*l,bz+nz*l),
+                 p1[0],0.6,-p1[1],terrainNorm(p1[0],p1[1]));
+          stLots.push({d:d1,n:3,coul,mode:gl.TRIANGLES,voile:0,haut:1,alpha:a,sansProf:1});
+          continue;
+        }
+        if(k>0||e.type==="zone"||e.encours) rond(pts[k],larg*1.25,coul,a);
+      }
+    }
     for(let i=0;i<ST.els.length;i++){
       const e=ST.els[i], sel=(i===ST.sel), mod=charDe(e.char);
-      if(e.masque||e.type==="fleche") continue;
+      if(e.masque||e.type==="fleche"||e.type==="trajet"||e.type==="zone") continue;
       if(e.type==="texte"){
         /* une note n'a qu'un point d'ancrage : un petit disque, pour
            qu'on sache d'où elle parle et qu'on puisse l'attraper */
@@ -2671,6 +2777,20 @@ function pretty(k){ const L=LABELS[k];
     buildStrat(); majMesure();
   }
   function effaceMesure(){ mesure=null; buildStrat(); majMesure(); }
+
+  /* Terminer une forme en cours. Un trajet demande deux points, une zone
+     trois — moins, ce n'est pas une forme, et l'enregistrer donnerait un
+     élément qu'on ne saurait ni voir ni attraper. */
+  function termineTrace(){
+    if(!trace) return;
+    const mini=(trace.type==="zone")?3:2;
+    if(trace.pts.length<mini){ trace=null; buildStrat(); stMaj(); return; }
+    ST.els.push({type:trace.type, pts:trace.pts, camp:ST.camp,
+      name:"", x:trace.pts[0][0], y:trace.pts[0][1]});
+    trace=null;
+    ST.sel=ST.els.length-1; ST.multi=[ST.sel];
+    histoPose(); buildStrat(); stMaj(); stLabels();
+  }
   function majMesure(){
     const bar=document.getElementById("mesBar");
     const b=document.getElementById("stMesure");
@@ -3013,6 +3133,14 @@ function pretty(k){ const L=LABELS[k];
         const p=solSousCurseur(e.clientX,e.clientY);
         if(p){
           if(ST.outil==="select"){ /* l'outil de sélection ne pose rien */ }
+          else if(ST.outil==="trajet"||ST.outil==="zone"){
+            /* Un point de plus. La forme n'entre dans le plan qu'une fois
+               terminée — Entrée, ou un double-clic sur le dernier point. */
+            if(!trace||trace.type!==ST.outil) trace={type:ST.outil,pts:[]};
+            trace.pts.push([accroche(p[0]),accroche(-p[1])]);
+            buildStrat(); stMaj();
+            return;
+          }
           else if(ST.outil==="fleche"){
             /* Une flèche naît COUCHÉE DANS L'AXE DE LA CAMÉRA : c'est le
                sens dans lequel on regarde la carte, donc celui qu'on a en
@@ -3044,6 +3172,7 @@ function pretty(k){ const L=LABELS[k];
      rendre quelque part — on désigne, la caméra s'y rend en glissant,
      au lieu de tourner puis déplacer puis zoomer. */
   cv.addEventListener("dblclick",e=>{
+    if(trace){ termineTrace(); return; }
     if(oeil) return;                 /* l'œil du char ne se déplace pas */
     const p=solSousCurseur(e.clientX,e.clientY); if(!p) return;
     cible.px=p[0]-tgt[0]; cible.pz=p[1]-tgt[2];
@@ -3487,10 +3616,15 @@ function pretty(k){ const L=LABELS[k];
          posture : montrer ces commandes désactivées serait du bruit. */
       const estChar=e.type==="tank";
       $("chChar").style.display=estChar?"":"none";
-      $("stElCap").parentNode.style.display=estChar?"":"none";
-      $("stElTour").parentNode.style.display=estChar?"":"none";
+      /* Le champ ENTIER, pas seulement le cadran : l'étiquette en est un
+         frère, et la masquer à part la laissait seule à l'écran — on
+         lisait « Châssis » et « Tourelle » sous une zone. Visible depuis
+         qu'il existe des éléments qui ne sont pas des chars. */
+      $("chCap").style.display=estChar?"":"none";
+      $("chTour").style.display=estChar?"":"none";
       $("stElNom").placeholder=e.type==="texte"?t("Note text")
-        :e.type==="fleche"?t("Arrow label"):t("Tank name");
+        :e.type==="fleche"?t("Arrow label")
+        :(e.type==="trajet"||e.type==="zone")?t("Shape label"):t("Tank name");
       if(!estChar){ $("stHull").textContent=""; $("stHull").className="stHull"; }
       if(estChar) majBoutonChar();
       $("stElCap").value=Number(e.cap)||0;
@@ -3726,6 +3860,8 @@ function pretty(k){ const L=LABELS[k];
       const base={type:e.type||"tank", x:Math.round(e.x), y:Math.round(e.y),
         name:e.name||"", color:(e.camp==="ennemi")?"#e5544b":"#4ea36a"};
       if(e.type==="fleche") return Object.assign(base,{x2:Math.round(e.x2),y2:Math.round(e.y2)});
+      if(e.type==="trajet"||e.type==="zone")
+        return Object.assign(base,{pts:(e.pts||[]).map(p=>[Math.round(p[0]),Math.round(p[1])])});
       if(e.type==="texte") return base;
       /* le modèle, son cap et sa tourelle : la stratégie ne dit pas
          seulement OÙ, elle dit quel char, d'où il vient et où il regarde */
@@ -3858,7 +3994,8 @@ function pretty(k){ const L=LABELS[k];
       const b=document.createElement("button");
       b.className="elRow"+(ST.multi.indexOf(i)>=0||i===ST.sel?" sel":"")+(e.masque?" off":"");
       const cls=(ST_CLS.find(x=>x[0]===e.cls)||ST_CLS[1])[1];
-      const nom=e.name|| (e.type==="fleche"?t("Arrow"):e.type==="texte"?t("Note"):t(cls));
+      const nom=e.name|| (e.type==="fleche"?t("Arrow"):e.type==="texte"?t("Note")
+        :e.type==="trajet"?t("Driving route"):e.type==="zone"?t("Area"):t(cls));
       b.innerHTML='<span class="ic">'+(ICONES[e.type]||ICONES.tank)+'</span>'+
         '<span class="nm"></span>'+
         '<span class="camp '+(e.camp==="ennemi"?"e":"a")+'">'+(e.camp==="ennemi"?"E":"A")+'</span>'+
@@ -4104,7 +4241,7 @@ function pretty(k){ const L=LABELS[k];
        Un éditeur se tient d'une main sur le clavier. Les chiffres
        choisissent l'outil, comme dans tous les outils de dessin ; le
        reste suit les conventions que personne n'a besoin d'apprendre. */
-    const TOUCHE_OUTIL={v:"select",t:"char",a:"fleche",n:"texte",m:"mesure"};
+    const TOUCHE_OUTIL={v:"select",t:"char",a:"fleche",n:"texte",m:"mesure",j:"trajet",z:"zone"};
     document.addEventListener("keydown",e=>{
       if(!ST.ouvert||saisieEnCours()) return;
       const mod=e.ctrlKey||e.metaKey;
@@ -4126,6 +4263,15 @@ function pretty(k){ const L=LABELS[k];
       /* Échap sort d'abord de la vue subjective : tant qu'on y est,
          c'est de là qu'on veut sortir, pas de sa sélection. */
       if(e.key==="Escape"&&oeil){ sortOeil(); return; }
+      /* Une forme en cours passe avant tout : Entrée la termine, Échap
+         l'abandonne. Sans quoi Échap effacerait la sélection en laissant
+         un tracé fantôme à l'écran. */
+      if(trace){
+        if(e.key==="Enter"){ e.preventDefault(); termineTrace(); return; }
+        if(e.key==="Escape"){ trace=null; buildStrat(); stMaj(); return; }
+        if(e.key==="Backspace"){ e.preventDefault(); trace.pts.pop();
+          if(!trace.pts.length) trace=null; buildStrat(); stMaj(); return; }
+      }
       if(e.key==="Escape"){ ST.sel=-1; ST.multi=[]; stMaj(); stLabels(); return; }
       if(e.key==="f"||e.key==="F"){ cadreSel(); return; }
       if(e.key==="Home"){ e.preventDefault(); cadreTout(); return; }
@@ -4146,6 +4292,9 @@ function pretty(k){ const L=LABELS[k];
     /* la ligne de vue se retaille quand le zoom a nettement changé —
        pas à chaque image : elle coûte un balayage du bâti */
     if(montreVue&&vueLots.length&&Math.abs(rad-vueRad)>vueRad*0.15) buildVue();
+    /* même règle pour les rubans du plan : leur largeur est en pixels,
+       donc elle dépend de la distance à laquelle ils ont été bâtis */
+    if(ST.ouvert&&stLots.length&&stRad&&Math.abs(rad-stRad)>stRad*0.2) buildStrat();
     gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
     if(idxLen){
       /* LE PLAN DE COUPE RAPPROCHÉ valait WORLD*0.02 — vingt-huit mètres
