@@ -521,6 +521,21 @@
     font-size:11.5px;font-weight:600;padding:2px 7px;border-radius:3px;
     background:rgba(12,13,16,.78);border:1px solid rgba(255,255,255,.14);
     text-shadow:0 1px 2px rgba(0,0,0,.8)}
+  /* ── L'ÉTIQUETTE D'UN CHAR DE REPLAY ────────────────────────────
+     Le nom, la jauge de points de vie sous lui, et le dégât encaissé à
+     l'instant même. Trois choses qu'on lit d'un coup d'œil sans quitter
+     le char des yeux — c'est tout l'intérêt de les mettre là plutôt que
+     dans un panneau. */
+  #stLbl .e.rpE{display:flex;flex-direction:column;align-items:center;gap:2px;padding:2px 7px 3px}
+  #stLbl .e.rpE .nom{display:flex;align-items:center;gap:5px}
+  #stLbl .e.rpE .pv{display:block;width:52px;height:3px;border-radius:2px;
+    background:rgba(255,255,255,.16);overflow:hidden}
+  #stLbl .e.rpE .pv b{display:block;height:100%;border-radius:2px;transition:width .12s linear}
+  #stLbl .e.rpE .deg{font-family:var(--d-mono);font-size:10.5px;font-weight:700;color:#ff8b6e}
+  #stLbl .e.rpE .deg:empty{display:none}
+  /* non repéré : présent mais éteint, exactement comme son modèle */
+  #stLbl .e.rpE.paleE{opacity:.42}
+  #stLbl .e.rpE.mortE{opacity:.72;color:#9aa0aa !important;border-color:rgba(255,255,255,.08)}
   #stLbl .e.note{font-size:13px;font-weight:500;padding:6px 10px;white-space:normal;
     max-width:230px;line-height:1.4;border-color:rgba(229,185,92,.45);background:rgba(12,13,16,.88)}
   #stMsg{position:absolute;left:50%;top:calc(var(--bar) + 18px);transform:translateX(-50%);display:none;
@@ -1807,8 +1822,15 @@ function pretty(k){ const L=LABELS[k];
          n'étant pas au niveau des chenilles. */
       const sol=-mod.bbCaisse[0][1];
       const Mc=rotY(cap, el.x, sol, el.y);
-      const cl=el.camp==="ennemi"?ST_COUL.ennemi:ST_COUL.ami;
-      const vif=(i===ST.sel)?1.35:1;
+      /* La carcasse d'un char détruit perd sa couleur d'équipe : elle
+         n'est plus un camp, c'est une épave. Grise, on la reconnaît
+         d'un coup d'œil au milieu des vivants. */
+      const cl=el.mortRp?[0.30,0.28,0.27]:(el.camp==="ennemi"?ST_COUL.ennemi:ST_COUL.ami);
+      /* Éteint : le char n'était PAS repéré à cet instant. On le montre
+         — savoir où il était vraiment vaut quelque chose — mais assombri,
+         pour qu'un coup d'œil suffise à séparer ce que l'équipe voyait
+         de ce qu'elle ignorait. */
+      const vif=(i===ST.sel)?1.35:(el.pale?0.34:(el.mortRp?0.9:1));
       const teinte=k=>[Math.min(1,cl[0]*k*vif),Math.min(1,cl[1]*k*vif),Math.min(1,cl[2]*k*vif)];
       pousse(mod.caisse, Mc, base, teinte(1));
       if(mod.tourelle>=0){
@@ -1903,6 +1925,45 @@ function pretty(k){ const L=LABELS[k];
     }
     if(!P.length){ vueLots=[]; return; }
     gl.bindBuffer(gl.ARRAY_BUFFER,vueB);
+    gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(P),gl.DYNAMIC_DRAW);
+  }
+
+  /* ── LE TRAIT DES COUPS ──────────────────────────────────────────
+     Même construction que les lignes de vue — deux rubans croisés, car
+     un trait plat disparaît vu par la tranche — mais rebâtie à chaque
+     image : un obus ne dure qu'une seconde et demie, et il n'y en a
+     qu'une poignée à l'écran à la fois.
+     Le trait part du canon, à hauteur de tourelle, et arrive au flanc de
+     la victime. Il pâlit en vieillissant, ce qui donne le sens de
+     lecture sans avoir à afficher l'heure. */
+  const tirB=gl.createBuffer(); let tirLots=[];
+  const H_CANON=2.2, H_FLANC=1.4;
+  function buildTirs(){
+    tirLots=[];
+    if(!RP||!curHeights) return;
+    const coups=rpCoups();
+    if(!coups.length) return;
+    const P=[];
+    const larg=Math.max(0.30, 4.5*0.9*rad/Math.max(200,cv.clientHeight));
+    for(const c of coups){
+      const A=[c.ax, solY(c.ax,c.az)+H_CANON, c.az];
+      const B=[c.bx, solY(c.bx,c.bz)+(c.touche?H_FLANC:H_CANON), c.bz];
+      const d=[B[0]-A[0],B[1]-A[1],B[2]-A[2]];
+      const L=Math.hypot(d[0],d[2])||1e-6, w=larg*(c.touche?1.25:0.8);
+      const h=[-d[2]/L*w, 0, d[0]/L*w];
+      /* un coup au but est chaud et net ; un coup parti sans cible connue
+         reste pâle, pour ne pas raconter plus que ce qu'on sait */
+      const coul=c.touche?(c.ami?[1,0.80,0.32]:[1,0.44,0.30]):[0.92,0.88,0.62];
+      const alpha=(c.touche?0.95:0.55)*(1-c.age*0.75);
+      for(const p of [[h[0],0,h[2]],[0,w,0]]){
+        const k=P.length/4;
+        P.push(A[0]-p[0],A[1]-p[1],-(A[2]-p[2]),0, A[0]+p[0],A[1]+p[1],-(A[2]+p[2]),0,
+               B[0]-p[0],B[1]-p[1],-(B[2]-p[2]),0, B[0]+p[0],B[1]+p[1],-(B[2]+p[2]),0);
+        tirLots.push({d:k,n:4,coul,mode:gl.TRIANGLE_STRIP,voile:0,haut:1,alpha});
+      }
+    }
+    if(!P.length){ tirLots=[]; return; }
+    gl.bindBuffer(gl.ARRAY_BUFFER,tirB);
     gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(P),gl.DYNAMIC_DRAW);
   }
 
@@ -3101,10 +3162,10 @@ function pretty(k){ const L=LABELS[k];
     const c=RP.chars[k], p=rpPos(c,RP.t); if(!p) return;
     const mod=charDe(c.cleModele||"");
     const h=mod?(mod.bbClic[1][1]-mod.bbCaisse[0][1]):2.0;
-    entreOeil({type:"tank",x:p[0],y:p[1],cap:((Math.PI/2-p[2])*180/Math.PI+360)%360,
+    entreOeil({type:"tank",x:p.x,y:p.z,cap:(p.vise!=null?p.vise:(p.cap||0)),
                name:c.tank||c.nom,char:c.cleModele||""});
     oeil.rp=k; oeil.hRp=h;
-    oeil.pos=[p[0],solY(p[0],p[1])+h,p[1]];
+    oeil.pos=[p.x,solY(p.x,p.z)+h,p.z];
     /* `entreOeil` a déjà rebâti la géométrie — mais AVANT que l'indice du
        char ne soit posé, donc sans savoir lequel écarter. On refait, et
        l'on n'habite plus sa propre carcasse. */
@@ -3119,7 +3180,7 @@ function pretty(k){ const L=LABELS[k];
     const c=RP.chars[oeil.rp];
     if(!c||(c.mort!=null&&RP.t>c.mort)) return;   // mort : on reste où il est tombé
     const p=rpPos(c,RP.t); if(!p) return;
-    oeil.pos=[p[0],solY(p[0],p[1])+(oeil.hRp||2.0),p[1]];
+    oeil.pos=[p.x,solY(p.x,p.z)+(oeil.hRp||2.0),p.z];
   }
 
   /* ══ TRAVAILLER À PLUSIEURS ════════════════════════════════════════
@@ -3349,10 +3410,10 @@ function pretty(k){ const L=LABELS[k];
     const c=RP.chars[k], p=rpPos(c,RP.t); if(!p) return;
     /* décalé de trente mètres, sinon il naît exactement sous le vrai et
        l'on croit qu'il ne s'est rien passé */
-    ST.els.push({type:"ghost", x0:+p[0].toFixed(1), y0:+p[1].toFixed(1),
-      x:+(p[0]+30).toFixed(1), y:+p[1].toFixed(1),
+    ST.els.push({type:"ghost", x0:+p.x.toFixed(1), y0:+p.z.toFixed(1),
+      x:+(p.x+30).toFixed(1), y:+p.z.toFixed(1),
       cls:c.cls||"medium", name:c.tank||c.nom, char:c.cleModele||"",
-      camp:c.ami?"ami":"ennemi", cap:((Math.PI/2-p[2])*180/Math.PI+360)%360, tour:0});
+      camp:c.ami?"ami":"ennemi", cap:(p.cap!=null?p.cap:(p.vise||0)), tour:0});
     ST.sel=ST.els.length-1; ST.multi=[ST.sel];
     histoPose(); buildStrat(); buildChars(); stMaj(); stLabels();
     stDit(t("Drag the ghost where it should have been."));
@@ -4366,29 +4427,113 @@ function pretty(k){ const L=LABELS[k];
     const v=(brut&&brut.vehicles)||[];
     if(!v.length) return null;
     const mien=brut.myTeam;
+    const chars=v.map(x=>({
+      id:(x.id!=null?Number(x.id):null),
+      ami:x.team===mien, nom:x.name||"", tank:x.tank||"", cls:x.cls||"",
+      pvMax:Number(x.hp)||0,
+      mort:(x.death!=null?Number(x.death):null),
+      coups:[],                       // [instant, dégâts] — rempli plus bas
+      /* Le quatrième nombre d'un relevé, quand il existe, est la
+         DIRECTION VISÉE : orientation de caisse plus angle de tourelle,
+         en degrés, zéro vers le nord et sens horaire — exactement la
+         convention du cap de nos marqueurs. Le mod ne l'a que pour les
+         chars présents côté client, d'où l'optionnel. */
+      piste:(x.track||[]).map(p=>p.length>3
+        ? [Number(p[0])||0,Number(p[1])||0,Number(p[2])||0,Number(p[3])]
+        : [Number(p[0])||0,Number(p[1])||0,Number(p[2])||0]),
+    })).filter(x=>x.piste.length);
+    const parId={};
+    for(const c of chars) if(c.id!=null) parId[c.id]=c;
+    /* Les événements du mod : tirs, morts, dégâts. On garde les deux
+       premiers pour les montrer, le troisième pour les points de vie ET
+       pour tracer le trait du tireur à sa victime — c'est le seul
+       endroit du replay qui dit QUI a touché QUI. */
+    const tirs=[], degats=[];
+    for(const e of (brut.events||[])){
+      if(!e||!e.length) continue;
+      const k=e[0], t2=Number(e[1])||0;
+      if(k==="s"){
+        tirs.push({t:t2, id:Number(e[2]),
+          x:(e[3]!=null?Number(e[3]):null), z:(e[4]!=null?Number(e[4]):null)});
+      }else if(k==="d"){
+        const d=Number(e[4])||0;
+        degats.push({t:t2, victime:Number(e[2]), tireur:Number(e[3])||0, d});
+        const vic=parId[Number(e[2])];
+        if(vic) vic.coups.push([t2,d]);
+      }else if(k==="k"){
+        const vic=parId[Number(e[2])];
+        if(vic&&(vic.mort==null||t2<vic.mort)) vic.mort=t2;
+      }
+    }
+    for(const c of chars) c.coups.sort((a2,b2)=>a2[0]-b2[0]);
+    tirs.sort((a2,b2)=>a2.t-b2.t); degats.sort((a2,b2)=>a2.t-b2.t);
+    /* Un tir suivi d'un dégât du MÊME tireur est déjà raconté par le
+       trait qui va à la victime : on le marque ici, une fois pour
+       toutes. Le faire au moment du dessin revenait à croiser cinq cents
+       tirs avec mille dégâts SOIXANTE FOIS PAR SECONDE — un demi-million
+       de comparaisons par image sur une bataille à quinze contre quinze,
+       pour un résultat qui ne change jamais. */
+    for(const s3 of tirs)
+      s3.pair=degats.some(d=>d.tireur===s3.id&&Math.abs(d.t-s3.t)<=2.2);
     return {
       battleId:String(brut.battleId||""), nom:nom||"", carte:carte||"",
       duree:Number(brut.duration)||0,
-      chars:v.map(x=>({
-        ami:x.team===mien, nom:x.name||"", tank:x.tank||"", cls:x.cls||"",
-        mort:(x.death!=null?Number(x.death):null),
-        piste:(x.track||[]).map(p=>[Number(p[0])||0,Number(p[1])||0,Number(p[2])||0]),
-      })).filter(x=>x.piste.length),
+      /* le pas d'échantillonnage : au-delà, le char n'était plus repéré */
+      pas:Math.max(2,Number(brut.interval)||2),
+      chars, tirs, degats, parId,
       t:0, joue:0, vitesse:2, last:0,
     };
   }
+  /* Les points de vie à l'instant t : le maximum, moins tout ce qu'il a
+     encaissé jusque-là. Zéro barre pour un char dont on ignore le
+     maximum — mieux vaut rien qu'une jauge inventée. */
+  function rpPv(c,t){
+    if(!c.pvMax) return null;
+    let d=0;
+    for(const [ti,dd] of c.coups){ if(ti>t) break; d+=dd; }
+    return Math.max(0,Math.min(1,(c.pvMax-d)/c.pvMax));
+  }
   /* Où est ce char à l'instant t : on interpole entre deux relevés. */
+  /* Où est ce char à l'instant t — et dans quel état.
+
+     ── Le « repéré », que j'avais laissé de côté ────────────────────
+     Le mod ne relève que les chars VISIBLES par l'équipe. Un trou dans
+     la piste ne veut donc pas dire « il n'a pas bougé » mais « on ne le
+     voyait plus ». Interpoler par-dessus, comme je le faisais, montrait
+     l'ennemi en permanence : le débriefing devenait une vue omnisciente
+     et ne disait plus ce que l'équipe SAVAIT. On les garde à l'écran —
+     savoir où il était vraiment a de la valeur — mais estompés.
+
+     Rend { x, z, cap, vise, repere, mort }. `vise` est la direction
+     visée quand le mod l'a relevée, `cap` celle de la marche. */
   function rpPos(c,t){
     const p=c.piste;
     if(!p.length) return null;
-    let lo=p[0];
-    for(let i=0;i<p.length;i++){
-      if(p[i][0]<=t) lo=p[i];
-      else { const hi=p[i], f=(t-lo[0])/((hi[0]-lo[0])||1);
-             return [lo[1]+(hi[1]-lo[1])*f, lo[2]+(hi[2]-lo[2])*f,
-                     Math.atan2(hi[2]-lo[2],hi[1]-lo[1])]; }
+    const trou=(RP?RP.pas:2)*1.6;
+    const vis=(e)=>e.length>3&&isFinite(e[3])?e[3]:null;
+    /* mort : on le laisse là où il est tombé */
+    if(c.mort!=null&&t>=c.mort){
+      let q=p[0];
+      for(const e of p){ if(e[0]<=c.mort) q=e; else break; }
+      return {x:q[1], z:q[2], cap:0, vise:vis(q), repere:1, mort:1};
     }
-    return [lo[1],lo[2],0];
+    if(t<p[0][0]) return null;
+    let lo=null, hi=null;
+    for(const e of p){ if(e[0]<=t) lo=e; else { hi=e; break; } }
+    if(!lo) return null;
+    if(hi&&(hi[0]-lo[0])<=trou){
+      const f=(t-lo[0])/((hi[0]-lo[0])||1);
+      const dx=hi[1]-lo[1], dz=hi[2]-lo[2];
+      /* Le cap de la MARCHE. À l'arrêt il n'a pas de sens : un écart de
+         quelques centimètres ferait pivoter la caisse au hasard. On
+         retombe alors sur la direction visée, ou sur rien. */
+      const bouge=Math.hypot(dx,dz)>0.6;
+      return {x:lo[1]+dx*f, z:lo[2]+dz*f,
+              cap:bouge?((Math.atan2(dx,dz)*180/Math.PI+360)%360):null,
+              vise:vis(lo), repere:1, mort:0};
+    }
+    return {x:lo[1], z:lo[2], cap:null, vise:vis(lo),
+            repere:(t-lo[0])<=trou?1:0, mort:0};
   }
   /* La bibliothèque ne contient QUE le rang X. Les batailles de clan s'y
      jouent, donc la plupart des chars d'un replay de Bastion y sont ;
@@ -4401,23 +4546,89 @@ function pretty(k){ const L=LABELS[k];
   };
   /* Les chars du replay, sous la forme que le dessin sait déjà poser.
      Le drapeau `rp` les tient hors de la sélection et de l'enregistrement. */
+  /* La fenêtre pendant laquelle un coup reste affiché, en secondes de
+     bataille. Un tir est instantané : sans cela on ne verrait jamais
+     rien, quelle que soit la vitesse de lecture. */
+  const RP_ECLAIR=1.5;
   function rpEls(){
     if(!RP) return [];
     const out=[];
-    for(const c of RP.chars){
-      if(c.mort!=null&&RP.t>c.mort) continue;      // détruit : il n'est plus là
-      const p=rpPos(c,RP.t); if(!p) continue;
-      /* p vaut [x, z, cap] : la deuxième valeur est la COORDONNÉE, la
-         troisième l'angle. Je les avais confondues, et tous les chars du
-         replay se rangeaient sur la ligne z ≈ 0 — une bataille à la
-         queue leu leu, ce qu'aucun contrôle de position n'aurait laissé
-         passer mais qu'un simple coup d'œil aurait pu manquer. */
-      out.push({rp:1, rpK:RP.chars.indexOf(c), type:"tank", cls:c.cls||"medium", x:p[0], y:p[1],
+    const t=RP.t;
+    for(let k=0;k<RP.chars.length;k++){
+      const c=RP.chars[k];
+      const p=rpPos(c,t); if(!p) continue;
+      /* Le cap de la caisse et l'angle de tourelle.
+
+         La piste donne la direction de MARCHE ; le mod relève en plus,
+         quand le char est visible côté client, la direction VISÉE —
+         caisse plus tourelle. Les deux réunies disent la chose qui
+         compte dans un débriefing : il roulait par là et il regardait
+         ailleurs. La tourelle prend donc l'écart entre les deux.
+         À l'arrêt la marche ne veut rien dire : la caisse s'aligne
+         alors sur la visée et la tourelle reste droite. */
+      let cap=p.cap, tour=0;
+      if(p.vise!=null){
+        if(cap==null) cap=p.vise;
+        else{ tour=((p.vise-cap+540)%360)-180; }
+      }else if(cap==null) cap=c.dernierCap||0;
+      c.dernierCap=cap;
+      const pv=rpPv(c,t);
+      /* les dégâts encaissés à l'instant même : le nombre qui s'affiche */
+      let recu=0;
+      for(const [ti,dd] of c.coups) if(ti<=t&&t-ti<=RP_ECLAIR) recu+=dd;
+      out.push({rp:1, rpK:k, type:"tank", cls:c.cls||"medium", x:p.x, y:p.z,
         name:c.tank||c.nom, camp:c.ami?"ami":"ennemi", size:0.78,
-        char:c.cleModele!==undefined?c.cleModele:(c.cleModele=rpModele(c.tank)),
-        /* Le cap : le char regarde vers (sin cap, cos cap) et la piste
-           donne l'angle de sa marche depuis l'axe des x. */
-        cap:((Math.PI/2-p[2])*180/Math.PI+360)%360, tour:0});
+        /* p vaut { x, z, … } : j'avais un jour lu la coordonnée z dans la
+           case de l'angle, et toute la bataille se rangeait sur la ligne
+           z ≈ 0 — en file indienne. */
+        char:(c.cleModele!==undefined?c.cleModele:(c.cleModele=rpModele(c.tank))),
+        cap, tour,
+        /* détruit : la carcasse reste, grise, à l'endroit exact où il est
+           tombé — c'est ce qu'on vient revoir, et un simple ✕ flottant ne
+           montre rien au sol.
+           non repéré : on le montre quand même, mais éteint. L'équipe ne
+           le voyait pas, la carte ne doit pas prétendre le contraire. */
+        mortRp:p.mort?1:0, pale:(!p.mort&&!p.repere)?1:0, pv, recu});
+    }
+    return out;
+  }
+  /* ── LES COUPS ───────────────────────────────────────────────────
+     Deux sources, et elles ne disent pas la même chose.
+     Un événement de DÉGÂT nomme le tireur ET la victime : on tire le
+     trait de l'un à l'autre, c'est le seul endroit du replay qui dit qui
+     a touché qui. Un événement de TIR ne nomme que le tireur : sans
+     cible connue, on ne trace qu'une amorce dans l'axe de visée — un
+     coup parti, sans prétendre savoir où il est allé. */
+  /* Le premier indice dont l'instant atteint `t`, par dichotomie : les
+     deux listes sont triées, on ne parcourt que la fenêtre. */
+  function rpDepuis(arr,t){
+    let a=0,b=arr.length;
+    while(a<b){ const m=(a+b)>>1; if(arr[m].t<t) a=m+1; else b=m; }
+    return a;
+  }
+  function rpCoups(){
+    if(!RP) return [];
+    const t=RP.t, out=[];
+    for(let i=rpDepuis(RP.degats,t-RP_ECLAIR);i<RP.degats.length;i++){
+      const d=RP.degats[i];
+      if(d.t>t) break;
+      const A=RP.parId[d.tireur], B=RP.parId[d.victime];
+      if(!A||!B) continue;
+      const pa=rpPos(A,d.t), pb=rpPos(B,d.t);
+      if(!pa||!pb) continue;
+      out.push({touche:1, ax:pa.x, az:pa.z, bx:pb.x, bz:pb.z,
+        age:(t-d.t)/RP_ECLAIR, ami:A.ami});
+    }
+    for(let i=rpDepuis(RP.tirs,t-RP_ECLAIR);i<RP.tirs.length;i++){
+      const s2=RP.tirs[i];
+      if(s2.t>t) break;
+      const A=RP.parId[s2.id]; if(!A) continue;
+      if(s2.pair) continue;          // déjà raconté par le trait du dégât
+      const pa=rpPos(A,s2.t); if(!pa) continue;
+      const ax=(s2.x!=null?s2.x:pa.x), az=(s2.z!=null?s2.z:pa.z);
+      const a2=(pa.vise!=null?pa.vise:(pa.cap||0))*Math.PI/180;
+      out.push({touche:0, ax, az, bx:ax+Math.sin(a2)*22, bz:az+Math.cos(a2)*22,
+        age:(t-s2.t)/RP_ECLAIR, ami:A.ami});
     }
     return out;
   }
@@ -4625,6 +4836,48 @@ function pretty(k){ const L=LABELS[k];
           (e.name?'<span>'+e.name.replace(/[&<>]/g,"")+"</span>":"");
         continue;
       }
+      /* Un char de replay porte sa jauge et ses dégâts : il faut du
+         balisage, pas une simple ligne de texte.
+
+         Ce bloc tourne pour CHAQUE char à CHAQUE image. Ma première
+         version y refaisait le HTML à coups de innerHTML : mesuré,
+         9,85 ms par image avec trente chars — le navigateur reparsait
+         quatre-vingt-dix balises soixante fois par seconde pour, le plus
+         souvent, réécrire exactement la même chose. On bâtit donc les
+         nœuds une fois, et on ne touche ensuite que ce qui a changé. */
+      if(e.rp){
+        const cl2="e rpE"+(e.mortRp?" mortE":"")+(e.pale?" paleE":"");
+        if(d.className!==cl2) d.className=cl2;
+        if(!d.__rp){
+          d.textContent="";
+          const n1=document.createElement("span"); n1.className="nom";
+          const t1=document.createTextNode(""); n1.appendChild(t1);
+          const g1=document.createElement("b"); g1.className="deg"; n1.appendChild(g1);
+          const j1=document.createElement("i"); j1.className="pv";
+          const r1=document.createElement("b"); j1.appendChild(r1);
+          d.appendChild(n1); d.appendChild(j1);
+          d.__rp={txt:t1, deg:g1, jauge:j1, rem:r1, v:{}};
+        }
+        const m=d.__rp, v=m.v;
+        const nom=(e.mortRp?"✕ ":"")+(e.name||cls);
+        if(v.nom!==nom){ m.txt.nodeValue=nom; v.nom=nom; }
+        const deg=e.recu?"−"+e.recu:"";
+        if(v.deg!==deg){ m.deg.textContent=deg; v.deg=deg; }
+        /* Vert, puis ambre, puis rouge : la couleur dit l'état sans
+           qu'on ait à lire un chiffre. */
+        const montre=(e.pv!=null&&!e.mortRp);
+        if(v.montre!==montre){ m.jauge.style.display=montre?"":"none"; v.montre=montre; }
+        if(montre){
+          const larg=Math.round(e.pv*100);
+          if(v.larg!==larg){ m.rem.style.width=larg+"%"; v.larg=larg; }
+          const c2=e.pv>0.6?"#5fbe72":e.pv>0.3?"#e0a83e":"#e0503f";
+          if(v.c2!==c2){ m.rem.style.background=c2; v.c2=c2; }
+        }
+        continue;
+      }
+      /* un marqueur ordinaire réoccupe peut-être le nœud d'un char de
+         replay : on rend la case propre avant d'y écrire du texte */
+      if(d.__rp){ d.__rp=null; d.textContent=""; }
       let txt=(e.name||cls)+(i===ST.sel?" ●":"");
       /* Le trait dit s'il y a vue ; l'étiquette dit de combien et par
          quoi c'est coupé. Un « 312 m · bâtiment » vaut mieux qu'un trait
@@ -5227,7 +5480,8 @@ function pretty(k){ const L=LABELS[k];
       salon:()=>SALON, pointeurs:()=>POINTEURS, ptr:(v)=>{ pointeurActif=v?1:0; },
       /* le replay, exposé pour pouvoir l'exercer sans session de clan */
       rpPose:(r)=>{ RP=r; document.body.classList.toggle("replay",!!r); },
-      rpEtat:()=>RP, rpLit:litReplay, rpVa:rpVaA, rpEls};
+      rpEtat:()=>RP, rpLit:litReplay, rpVa:rpVaA, rpEls,
+      rpPos:(k,t)=>rpPos(RP.chars[k],t), rpCoups, tirLots:()=>tirLots};
     /* ── LES VUES ────────────────────────────────────────────────────
        Trois angles nommés, plutôt que de chercher le bon à la souris.
        Le dessus lit une ligne de vue, le côté lit un dénivelé, le
@@ -5354,6 +5608,9 @@ function pretty(k){ const L=LABELS[k];
     /* la ligne de vue se retaille quand le zoom a nettement changé —
        pas à chaque image : elle coûte un balayage du bâti */
     if(montreVue&&vueLots.length&&Math.abs(rad-vueRad)>vueRad*0.15) buildVue();
+    /* Les coups se refont à chaque image : ils ne durent qu'une seconde
+       et demie, et il n'y en a qu'une poignée en vol à la fois. */
+    if(RP) buildTirs(); else if(tirLots.length) tirLots=[];
     /* même règle pour les rubans du plan : leur largeur est en pixels,
        donc elle dépend de la distance à laquelle ils ont été bâtis */
     if(ST.ouvert&&stLots.length&&stRad&&Math.abs(rad-stRad)>stRad*0.2) buildStrat();
@@ -5451,7 +5708,7 @@ function pretty(k){ const L=LABELS[k];
       /* stLots et vueLots manquaient à cette liste : sur une carte sans
          limite, sans eau ni objectif affichés, les marqueurs de la
          stratégie n'auraient pas été dessinés du tout. */
-      if((showLim&&limN)||(showEau&&eauN)||objLots.length||stLots.length||vueLots.length||champN||secLots.length||(montreGrille&&grilleLots.length)){
+      if((showLim&&limN)||(showEau&&eauN)||objLots.length||stLots.length||vueLots.length||tirLots.length||champN||secLots.length||(montreGrille&&grilleLots.length)){
         gl.useProgram(lprog);
         gl.uniformMatrix4fv(luPV,false,new Float32Array(mul(P,V)));
         gl.uniform1f(luHS,curMaxH); gl.uniform1f(luExag,exag); gl.uniform1f(luHaut,LIM_HAUT);
@@ -5558,6 +5815,19 @@ function pretty(k){ const L=LABELS[k];
           gl.vertexAttribPointer(lPos,3,gl.FLOAT,false,16,0);
           gl.vertexAttribPointer(lBase,1,gl.FLOAT,false,16,12);
           for(const L of vueLots){
+            gl.uniform1f(luVoile,L.voile); gl.uniform1f(luHaut,L.haut);
+            gl.uniform4f(luCoul,L.coul[0],L.coul[1],L.coul[2],L.alpha);
+            gl.drawArrays(L.mode,L.d,L.n);
+          }
+          gl.uniform1f(luHaut,LIM_HAUT);
+        }
+        /* Les coups, au-dessus des lignes de vue : c'est l'événement, il
+           passe devant le décor de l'analyse. */
+        if(tirLots.length){
+          gl.bindBuffer(gl.ARRAY_BUFFER,tirB);
+          gl.vertexAttribPointer(lPos,3,gl.FLOAT,false,16,0);
+          gl.vertexAttribPointer(lBase,1,gl.FLOAT,false,16,12);
+          for(const L of tirLots){
             gl.uniform1f(luVoile,L.voile); gl.uniform1f(luHaut,L.haut);
             gl.uniform4f(luCoul,L.coul[0],L.coul[1],L.coul[2],L.alpha);
             gl.drawArrays(L.mode,L.d,L.n);
