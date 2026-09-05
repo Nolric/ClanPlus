@@ -282,5 +282,11 @@ window.CP_FR = Object.assign(window.CP_FR || {}, {
   "World of Tanks 3D maps — real terrain elevation | Clan Plus": "Cartes 3D World of Tanks — relief réel des maps | Clan Plus",
   "World of Tanks · 3D map": "World of Tanks · Carte 3D",
   "Your browser couldn't start 3D (WebGL required).": "Ton navigateur n'a pas pu démarrer la 3D (WebGL requis).",
+  "Copy a link to this view": "Copier un lien vers cette vue",
+  "Link copied.": "Lien copié.",
+  "Copy the link below.": "Copie le lien ci-dessous.",
+  "That plan is no longer there.": "Ce plan n'existe plus.",
+  "Lasso · L": "Lasso · L",
+  "Nothing inside the lasso.": "Rien dans le lasso.",
   "← Back to the site": "← Retour au site",
 });

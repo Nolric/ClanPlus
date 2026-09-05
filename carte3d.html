@@ -517,6 +517,19 @@
   @media(max-width:1000px){ #leg{display:none!important} }
 
   #stLbl{position:fixed;inset:0;pointer-events:none;z-index:5}
+  /* Le lasso : au-dessus des étiquettes, car c'est lui qu'on est en
+     train de faire. Trait doré plein pour qu'il se lise sur l'herbe
+     comme sur la pierre, remplissage à peine posé pour montrer ce que
+     la boucle contient sans cacher les chars qu'on vise. */
+  /* width et height EXPLICITES : un <svg> est un élément remplacé, et
+     « inset:0 » ne l'étire pas — il garde sa taille propre. Sans ces
+     deux lignes le calque mesurait zéro par zéro : le tracé était juste,
+     et parfaitement invisible. */
+  #stLasso{position:fixed;inset:0;width:100%;height:100%;
+    pointer-events:none;z-index:6;display:none}
+  #stLasso path{fill:rgba(229,185,92,.13);stroke:var(--gold,#e5b95c);
+    stroke-width:1.6;stroke-linejoin:round;stroke-linecap:round;
+    stroke-dasharray:6 4}
   #stLbl .e{position:absolute;transform:translate(-50%,-100%);white-space:nowrap;
     font-size:11.5px;font-weight:600;padding:2px 7px;border-radius:3px;
     background:rgba(12,13,16,.78);border:1px solid rgba(255,255,255,.14);
@@ -612,6 +625,9 @@
     </div>
     <div class="sep"></div>
     <div class="grp" id="modeGrp" style="display:none"><select id="modeSel"></select></div>
+    <button class="icone" id="btnLien" title="Copy a link to this view" aria-label="Copy a link to this view">
+      <svg viewBox="0 0 20 20"><path d="M8 12a3.5 3.5 0 0 0 5 0l3-3a3.5 3.5 0 0 0-5-5l-1 1"/><path d="M12 8a3.5 3.5 0 0 0-5 0l-3 3a3.5 3.5 0 0 0 5 5l1-1"/></svg>
+    </button>
     </div>
 
     <div class="pousse"></div>
@@ -648,6 +664,7 @@
   <div id="rail">
     <button class="outil on" data-outil="select" data-bulle="Select · V"><svg viewBox="0 0 20 20"><path d="M4 3l6 14 2-6 6-2z"/></svg><span class="cle">V</span></button>
     <div class="sepR"></div>
+    <button class="outil" data-outil="lasso" data-bulle="Lasso · L"><svg viewBox="0 0 20 20"><path d="M10 3c4 0 7 2.2 7 5s-3 5-7 5-7-2.2-7-5c0-1.5.9-2.9 2.3-3.8"/><path d="M7 13c0 2 .6 3 .6 4"/></svg><span class="cle">L</span></button>
     <button class="outil" data-outil="char" data-bulle="Tank · T"><svg viewBox="0 0 20 20"><path d="M3 12h14v4H3z"/><path d="M5 12V9h8v3"/><path d="M9 9V7h9"/></svg><span class="cle">T</span></button>
     <div class="sepR"></div>
     <button class="outil" data-outil="fleche" data-bulle="Arrow · A"><svg viewBox="0 0 20 20"><path d="M3 16L16 4"/><path d="M9 4h7v7"/></svg><span class="cle">A</span></button>
@@ -857,6 +874,7 @@
   <div id="grLbl"></div>
   <div id="ptrLbl"></div>
   <div id="stLbl"></div>
+  <svg id="stLasso" aria-hidden="true"><path></path></svg>
   <div id="stMsg" class="glass"></div>
   <div id="mini" class="glass"><div class="lg" id="miniT">Minimap</div><img id="miniImg" alt=""><div class="n">N ↑</div></div>
   <div id="leg" class="glass"><div class="lg" id="legT">Legend</div><div id="legL"></div><p class="no" id="legN"></p></div>
@@ -1533,6 +1551,43 @@ function pretty(k){ const L=LABELS[k];
   /* Le cadrage d'une étape : de quoi y ramener la caméra en présentation. */
   const vueActuelle=()=>({x:+(tgt[0]+cible.px).toFixed(1), z:+(-(tgt[2]+cible.pz)).toFixed(1),
                           rad:+cible.rad.toFixed(1), az:+cible.az.toFixed(3), pol:+cible.pol.toFixed(3)});
+  /* ── UNE VUE DANS L'ADRESSE ─────────────────────────────────────
+     Cinq nombres — le point visé, la distance, l'azimut, l'inclinaison
+     — suffisent à rouvrir la caméra exactement où elle était. C'est ce
+     qui permet de dire « regarde ça » dans le salon du clan au lieu de
+     décrire un endroit avec des mots.
+     Arrondis courts : une adresse se colle dans un message, elle doit
+     tenir sur une ligne. Le décimètre et le millième de radian — un
+     dixième de degré — sont bien au-delà de ce qu'un œil distingue. */
+  function vueVersTexte(v){
+    return [v.x.toFixed(0), v.z.toFixed(0), v.rad.toFixed(0),
+            v.az.toFixed(3), v.pol.toFixed(3)].join(",");
+  }
+  function texteVersVue(s2){
+    if(!s2) return null;
+    const v=String(s2).split(",").map(Number);
+    if(v.length!==5||v.some(x=>!isFinite(x))) return null;
+    return {x:v[0], z:v[1], rad:v[2], az:v[3], pol:v[4]};
+  }
+  /* Arriver PAR un lien, ce n'est pas se déplacer : on ne veut pas voir
+     la caméra glisser depuis la vue par défaut. On pose tout d'un coup,
+     la cible amortie comprise, sinon l'amortissement rejouerait le
+     trajet à la première image. */
+  function poseVue(v){
+    if(!v||!curHeights) return;
+    tgt=[v.x, terrainNorm(v.x,v.z)*curMaxH*exag, -v.z];
+    pan.x=0; pan.z=0;
+    rad=v.rad; az=v.az; pol=v.pol;
+    cible={az:v.az, pol:v.pol, rad:v.rad, px:0, pz:0};
+  }
+  /* Le relief arrive après la page : tant qu'il n'est pas là,
+     terrainNorm rend zéro et la vue viserait le fond de la carte. */
+  function poseVueQuandPret(v,n){
+    if(!v) return;
+    if(curHeights){ poseVue(v); return; }
+    if((n||0)>400) return;                       // vingt secondes, puis on renonce
+    setTimeout(()=>poseVueQuandPret(v,(n||0)+1),50);
+  }
   function vaVersVue(v){
     if(!v) return;
     tgt=[v.x, terrainNorm(v.x,v.z)*curMaxH*exag, -v.z];
@@ -4016,6 +4071,68 @@ function pretty(k){ const L=LABELS[k];
     }
     return null;
   }
+  /* ── LA SÉLECTION AU LASSO ──────────────────────────────────────
+     « Prendre les cinq chars de ce flanc. » Jusqu'ici il fallait les
+     cliquer un par un, et l'extension par Maj ne pouvait pas
+     fonctionner : Maj appartient à la caméra, et la branche qui
+     l'écoutait était placée sous une condition qui l'excluait — du
+     code mort depuis toujours.
+
+     Le lasso a donc son propre outil (L), et Ctrl fait office
+     d'accélérateur depuis n'importe quel autre outil. On ne touche pas
+     à la caméra, qui garde le clic droit, Maj et le glisser sur le vide.
+
+     On teste la POSITION À L'ÉCRAN de chaque marqueur, pas sa position
+     au sol : le lasso se trace sur ce qu'on voit, il doit prendre ce
+     qu'on a entouré des yeux. Un char caché derrière une colline mais
+     entouré à l'écran est pris — c'est voulu : on entoure une zone de
+     la carte, pas un champ de vision. */
+  let lasso=null;
+  const lassoActif=(e)=>ST.ouvert&&ST.canEdit&&e.button===0&&!e.shiftKey&&
+                        (ST.outil==="lasso"||e.ctrlKey||e.metaKey);
+  function lassoTrace(){
+    const el=$("stLasso"), q=el.firstElementChild;
+    /* « block », pas la chaîne vide : vider le style en ligne rend la
+       main à la règle de base, qui est display:none. Le calque restait
+       donc caché, à zéro par zéro pixel, avec un tracé parfaitement
+       juste dedans. */
+    if(!lasso||lasso.pts.length<2){ el.style.display="none"; return; }
+    let d="M"+lasso.pts[0][0]+" "+lasso.pts[0][1];
+    for(let i=1;i<lasso.pts.length;i++) d+="L"+lasso.pts[i][0]+" "+lasso.pts[i][1];
+    q.setAttribute("d",d+"Z");
+    el.style.display="block";
+  }
+  /* Un point est-il dans la boucle ? Lancer de rayon vers la droite et
+     compter les traversées : la règle pair-impair, qui vaut pour
+     n'importe quelle forme, y compris celles qui se recoupent. */
+  function dedansLasso(pts,x,y){
+    let d=false;
+    for(let i=0,j=pts.length-1;i<pts.length;j=i++){
+      const xi=pts[i][0], yi=pts[i][1], xj=pts[j][0], yj=pts[j][1];
+      if((yi>y)!==(yj>y) && x < (xj-xi)*(y-yi)/((yj-yi)||1e-9)+xi) d=!d;
+    }
+    return d;
+  }
+  function lassoTermine(){
+    const pts=lasso?lasso.pts:null;
+    lasso=null; lassoTrace();
+    if(!pts||pts.length<3) return;
+    /* une boucle minuscule est un clic qui a tremblé, pas une sélection */
+    let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;
+    for(const [x,y] of pts){ if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y; }
+    if(x1-x0<8&&y1-y0<8) return;
+    const pris=[];
+    for(let i=0;i<ST.els.length;i++){
+      const e=ST.els[i];
+      /* une flèche répond par son MILIEU, comme son étiquette */
+      const ax=e.type==="fleche"?(e.x+e.x2)/2:e.x, az=e.type==="fleche"?(e.y+e.y2)/2:e.y;
+      const q=versEcran(ax,az,hautEtiquette(e));
+      if(q&&dedansLasso(pts,q[0],q[1])) pris.push(i);
+    }
+    if(!pris.length){ stDit(t("Nothing inside the lasso.")); return; }
+    ST.multi=pris; ST.sel=pris[pris.length-1];
+    stMaj(); stLabels();
+  }
   let drag=null;
   /* Quand l'éditeur est ouvert, le clic gauche sert d'abord aux
      marqueurs : saisir celui qui est sous le curseur, sinon en poser un.
@@ -4028,16 +4145,20 @@ function pretty(k){ const L=LABELS[k];
        emportait tout le reste du gestionnaire : ni sélection, ni pose.
        Elle est un confort, pas une condition. */
     try{ cv.setPointerCapture(e.pointerId); }catch(_){ }
+    /* Le lasso passe AVANT tout le reste : avant la saisie d'un
+       marqueur, avant la pose, avant la caméra. Sinon commencer la
+       boucle sur un char l'aurait déplacé. */
+    if(lassoActif(e)){ lasso={pts:[[e.clientX,e.clientY]]}; lassoTrace(); return; }
     if(ST.ouvert&&e.button===0&&!e.shiftKey){
       const i=stSous(e.clientX,e.clientY);
       if(i>=0){
-        /* Maj ÉTEND la sélection, comme partout ailleurs. Sans elle on
-           ne peut déplacer un flanc entier qu'un char à la fois. */
-        if(e.shiftKey){
-          const k=ST.multi.indexOf(i);
-          if(k>=0&&ST.multi.length>1){ ST.multi.splice(k,1); ST.sel=ST.multi[ST.multi.length-1]; }
-          else if(k<0){ ST.multi.push(i); ST.sel=i; }
-        } else if(ST.multi.indexOf(i)<0||ST.multi.length<2){ ST.sel=i; ST.multi=[i]; }
+        /* Il y avait ici une branche « Maj étend la sélection ». Elle
+           n'a jamais pu s'exécuter : la condition d'entrée de ce bloc
+           exige !e.shiftKey, parce que Maj appartient à la caméra. Du
+           code mort qui promettait ce qu'il ne faisait pas. Le lasso —
+           touche L, ou Ctrl depuis n'importe quel outil — fait
+           désormais ce travail. */
+        if(ST.multi.indexOf(i)<0||ST.multi.length<2){ ST.sel=i; ST.multi=[i]; }
         else ST.sel=i;
         stDrag={i,bouge:0,p:stPoignee,depart:ST.multi.map(k=>({k,x:ST.els[k].x,y:ST.els[k].y,
           x2:ST.els[k].x2,y2:ST.els[k].y2}))};
@@ -4048,6 +4169,15 @@ function pretty(k){ const L=LABELS[k];
     drag={x:e.clientX,y:e.clientY,az:cible.az,pol:cible.pol,px:cible.px,pz:cible.pz,
           btn:e.button,shift:e.shiftKey};});
   cv.addEventListener("pointermove",e=>{
+    if(lasso){
+      /* un point tous les trois pixels : assez pour épouser le geste,
+         assez peu pour que le test pair-impair reste immédiat */
+      const d=lasso.pts[lasso.pts.length-1];
+      if(Math.hypot(e.clientX-d[0],e.clientY-d[1])>3){
+        lasso.pts.push([e.clientX,e.clientY]); lassoTrace();
+      }
+      return;
+    }
     if(stDrag){
       if(!ST.canEdit) return;
       const p=solSousCurseur(e.clientX,e.clientY); if(!p) return;
@@ -4089,6 +4219,7 @@ function pretty(k){ const L=LABELS[k];
       cible.px=drag.px+(-dx*rx+dy*fx)*s; cible.pz=drag.pz+(-dx*rz+dy*fz)*s;}
     else{cible.az=drag.az-dx*0.008;cible.pol=clamp(drag.pol-dy*0.008,POL_MIN(),POL_MAX());}});
   cv.addEventListener("pointerup",e=>{
+    if(lasso){ lassoTermine(); drag=null; return; }
     /* Un clic gauche qui n'a NI saisi un marqueur NI tourné la caméra :
        c'est une demande de poser un char là. On distingue le clic du
        glisser par la distance parcourue — sans quoi toute rotation de
@@ -4150,7 +4281,7 @@ function pretty(k){ const L=LABELS[k];
     /* le char est posé : le champ de vision peut enfin se recalculer */
     if(bougeait){ histoPose(); if(montreChamp){ buildChamp(); stMaj(); } }
   });
-  cv.addEventListener("pointercancel",()=>{stDrag=null;drag=null;});
+  cv.addEventListener("pointercancel",()=>{stDrag=null;drag=null;lasso=null;lassoTrace();});
   /* DOUBLE-CLIC : on va voir là. C'est le geste le plus simple pour se
      rendre quelque part — on désigne, la caméra s'y rend en glissant,
      au lieu de tourner puis déplacer puis zoomer. */
@@ -5783,7 +5914,7 @@ function pretty(k){ const L=LABELS[k];
        Un éditeur se tient d'une main sur le clavier. Les chiffres
        choisissent l'outil, comme dans tous les outils de dessin ; le
        reste suit les conventions que personne n'a besoin d'apprendre. */
-    const TOUCHE_OUTIL={v:"select",t:"char",a:"fleche",n:"texte",m:"mesure",j:"trajet",z:"zone",s:"symbole"};
+    const TOUCHE_OUTIL={v:"select",l:"lasso",t:"char",a:"fleche",n:"texte",m:"mesure",j:"trajet",z:"zone",s:"symbole"};
     document.addEventListener("keydown",e=>{
       if(!ST.ouvert||saisieEnCours()) return;
       const mod=e.ctrlKey||e.metaKey;
@@ -6330,8 +6461,17 @@ function pretty(k){ const L=LABELS[k];
     (function(){
       const p=new URLSearchParams(location.search);
       const bat=p.get("battle"), ck=p.get("carte");
-      if(!bat||!ck||!MAPS3D[ck]) return;
+      if(!ck||!MAPS3D[ck]) return;
       ouvrirCarte(ck);
+      /* La vue d'abord, avant même le replay : elle ne dépend que du
+         relief, et l'arrivée doit être immédiate. */
+      poseVueQuandPret(texteVersVue(p.get("vue")));
+      /* Une carte SEULE est une arrivée valable : c'est le lien de
+         reconnaissance, sans bataille ni plan. Elle n'ouvrait rien
+         jusqu'ici — on restait sur la galerie, l'adresse ignorée. */
+      const ident=p.get("strat");
+      if(ident) ST.ouvrirId=String(ident);
+      if(!bat) return;
       stDit(t("Loading the replay…"));
       fnAppel("replay",{battle_id:bat}).then(async(r)=>{
         const brut=r.ok&&r.j&&r.j.replay;
@@ -6347,12 +6487,47 @@ function pretty(k){ const L=LABELS[k];
         modeEditeur(1);
         $("stListe").style.display="none"; $("stEdit").style.display="";
         await chargeChars();
-        histoRaz(); rpVaA(0); stMaj();
+        /* Le lien peut désigner un INSTANT de la bataille : « regarde
+           ça » vaut surtout à la seconde où ça se passe. */
+        const inst=Number(p.get("t"));
+        histoRaz(); rpVaA(isFinite(inst)&&inst>0?inst:0); stMaj();
+        poseVueQuandPret(texteVersVue(p.get("vue")));
       }).catch(()=>stDit(t("No replay saved for this battle.")));
     })();
     /* Revenir aux cartes ne referme pas la stratégie ouverte par
        mégarde : on la ferme explicitement, sinon on la retrouverait
        posée sur une autre carte. */
+    /* ── « REGARDE ÇA » ──────────────────────────────────────────
+       Le lien porte tout ce qu'il faut pour retrouver EXACTEMENT ce
+       qu'on a sous les yeux : la carte, la vue, le plan ouvert s'il y
+       en a un, et pour un débriefing la bataille ET la seconde. Sans
+       la seconde, un lien de replay rouvre le début — c'est-à-dire
+       pas ce qu'on voulait montrer. */
+    function lienDeLaVue(){
+      const u=new URL(location.href);
+      u.search="";
+      const q=u.searchParams;
+      if(curKey) q.set("carte",curKey);
+      q.set("vue",vueVersTexte(vueActuelle()));
+      if(RP&&ST.battleId){ q.set("battle",ST.battleId); q.set("t",RP.t.toFixed(1)); }
+      else if(ST.id) q.set("strat",String(ST.id));
+      return u.toString();
+    }
+    if(DEV3D) window.__lien=lienDeLaVue;          // pour pouvoir l'éprouver
+    $("btnLien").addEventListener("click",async()=>{
+      const l=lienDeLaVue();
+      try{ await navigator.clipboard.writeText(l); stDit(t("Link copied.")); }
+      catch(_){
+        /* Le presse-papiers peut être refusé — page non sécurisée, ou
+           permission absente. On ne laisse pas l'utilisateur sans rien :
+           on sélectionne le texte, il n'a plus qu'à copier. */
+        const z=document.createElement("input");
+        z.value=l; z.style.cssText="position:fixed;left:8px;bottom:8px;z-index:99;width:min(520px,80vw)";
+        document.body.appendChild(z); z.select();
+        stDit(t("Copy the link below."));
+        z.addEventListener("blur",()=>z.remove());
+      }
+    });
     $("btnCartes").addEventListener("click",()=>{
       if(ST.ouvert) $("stratBtn").click();
       $("wrap").classList.remove("on");
@@ -6369,6 +6544,15 @@ function pretty(k){ const L=LABELS[k];
       if(!r.ok||!r.j||!r.j.strategies) return;
       for(const s of r.j.strategies) if(s.map) stratParCarte[s.map]=(stratParCarte[s.map]||0)+1;
       dessineGrille();
+      /* Le lien peut désigner un PLAN précis. On ne peut l'ouvrir
+         qu'ici : la page n'a pas de moyen d'en demander un seul, elle
+         reçoit la liste et y cherche. */
+      if(ST.ouvrirId){
+        const v=r.j.strategies.find(x=>String(x.id)===ST.ouvrirId);
+        ST.ouvrirId=null;
+        if(v){ stOuvre(v); modeEditeur(1); }
+        else stDit(t("That plan is no longer there."));
+      }
     }).catch(()=>{});
   }).catch(()=>{ document.getElementById("err").style.display="flex"; document.getElementById("err").textContent=t("Couldn't load the map list (maps3d/index.json)."); loadEl.classList.remove("on"); });
 })();
