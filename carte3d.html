@@ -625,6 +625,9 @@
     </div>
     <div class="sep"></div>
     <div class="grp" id="modeGrp" style="display:none"><select id="modeSel"></select></div>
+    <button class="icone" id="btnImage" title="Image of the plan" aria-label="Image of the plan">
+      <svg viewBox="0 0 20 20"><rect x="2.5" y="4" width="15" height="12" rx="1.5"/><path d="M2.5 13l4-4 3.5 3.5 2.5-2.5 5 5"/><circle cx="7" cy="7.5" r="1.2"/></svg>
+    </button>
     <button class="icone" id="btnLien" title="Copy a link to this view" aria-label="Copy a link to this view">
       <svg viewBox="0 0 20 20"><path d="M8 12a3.5 3.5 0 0 0 5 0l3-3a3.5 3.5 0 0 0-5-5l-1 1"/><path d="M12 8a3.5 3.5 0 0 0-5 0l-3 3a3.5 3.5 0 0 0 5 5l1-1"/></svg>
     </button>
@@ -2862,6 +2865,95 @@ function pretty(k){ const L=LABELS[k];
 
      Le figé n'est pas une approximation : c'est le rendu lui-même. */
   let demandeCapture=null, compare=null;
+
+  /* ── L'IMAGE DU PLAN ────────────────────────────────────────────
+     « L'épingler dans le salon du clan. »
+
+     Le canevas seul ne suffit pas : les noms des chars, les notes, les
+     jauges de points de vie sont des étiquettes HTML posées PAR-DESSUS
+     la 3D. Une capture brute rendrait un joli relief sans un mot — et
+     c'est le mot qui porte le plan.
+
+     On relit donc les étiquettes telles qu'elles sont à l'écran, avec
+     leur position et leur couleur, et on les repeint sur l'image. Les
+     relire plutôt que les recalculer garantit que l'image montre
+     EXACTEMENT ce qu'on avait sous les yeux.
+
+     Un bandeau nomme la carte et le plan : une image épinglée dans un
+     salon se retrouve six mois plus tard sans son contexte. */
+  function imageDuPlan(){
+    stDit(t("Making the image…"));
+    demandeCapture=(url)=>{
+      if(!url){ stDit(t("Couldn't capture the view.")); return; }
+      const img=new Image();
+      img.onload=()=>{ try{ composeImage(img); }catch(e2){ stDit(t("Couldn't capture the view.")+" "+e2.message); } };
+      img.onerror=()=>stDit(t("Couldn't capture the view."));
+      img.src=url;
+    };
+  }
+  function composeImage(img){
+    const W=img.width, H=img.height;
+    /* le canevas est en pixels physiques, les étiquettes en pixels de
+       page : c'est ce rapport qui les remet en face l'une de l'autre */
+    const k=W/Math.max(1,cvRect.width||cv.clientWidth||W);
+    const band=Math.round(46*k);
+    const o=document.createElement("canvas");
+    o.width=W; o.height=H+band;
+    const g=o.getContext("2d");
+    g.fillStyle="#0d0e11"; g.fillRect(0,0,W,band);
+    g.drawImage(img,0,band);
+    /* le bandeau */
+    const nomC=(curMeta&&curMeta.nom)||$("mapName").textContent||"";
+    const nomP=(ST.nom||"").trim();
+    g.textBaseline="middle";
+    g.font="700 "+Math.round(19*k)+"px system-ui,sans-serif";
+    g.fillStyle="#e5b95c";
+    g.fillText(nomC, Math.round(16*k), Math.round(band*0.5));
+    const l1=g.measureText(nomC).width;
+    if(nomP){
+      g.font=Math.round(15*k)+"px system-ui,sans-serif";
+      g.fillStyle="#c9c9cf";
+      g.fillText("· "+nomP, Math.round(16*k)+l1+Math.round(12*k), Math.round(band*0.5));
+    }
+    g.font=Math.round(12*k)+"px ui-monospace,Consolas,monospace";
+    g.fillStyle="#7d7d86"; g.textAlign="right";
+    g.fillText("clanplus.eu", W-Math.round(16*k), Math.round(band*0.5));
+    g.textAlign="left";
+    /* les étiquettes, relues à l'écran */
+    const boite=cvRect;
+    for(const d of document.querySelectorAll("#stLbl .e")){
+      if(getComputedStyle(d).display==="none") continue;
+      const txt=(d.textContent||"").trim();
+      if(!txt) continue;
+      const r=d.getBoundingClientRect();
+      const x=(r.left-boite.left)*k, y=(r.top-boite.top)*k+band;
+      const h=Math.max(1,r.height*k), w=Math.max(1,r.width*k);
+      g.fillStyle="rgba(12,13,16,.80)";
+      g.fillRect(x,y,w,h);
+      g.fillStyle=getComputedStyle(d).color||"#e8e8ea";
+      g.font="600 "+Math.round(11.5*k)+"px system-ui,sans-serif";
+      g.fillText(txt, x+Math.round(6*k), y+h/2);
+    }
+    const nom="clanplus-"+(curKey||"carte")+(ST.nom?"-"+ST.nom.replace(/[^w-]+/g,"_").slice(0,40):"")+".jpg";
+    o.toBlob((b)=>{
+      if(!b){ stDit(t("Couldn't capture the view.")); return; }
+      /* Le presse-papiers d'abord : coller dans Discord vaut mieux que
+         retrouver un fichier dans les téléchargements. S'il refuse —
+         permission, navigateur — on retombe sur le fichier. */
+      const tombe=()=>{
+        const a2=document.createElement("a");
+        a2.href=URL.createObjectURL(b); a2.download=nom;
+        document.body.appendChild(a2); a2.click(); a2.remove();
+        setTimeout(()=>URL.revokeObjectURL(a2.href),4000);
+        stDit(t("Image saved."));
+      };
+      if(window.ClipboardItem&&navigator.clipboard&&navigator.clipboard.write){
+        navigator.clipboard.write([new ClipboardItem({[b.type]:b})])
+          .then(()=>stDit(t("Image copied — paste it in Discord.")))
+          .catch(tombe);
+      } else tombe();
+    },"image/jpeg",0.9);
+  }
   function basculeCompare(){
     if(!oeil) return;
     if(compare){ compare=null; document.body.classList.remove("compare");
@@ -5932,6 +6024,55 @@ function pretty(k){ const L=LABELS[k];
         histoPose(); buildStrat(); buildChars(); buildVue(); buildChamp(); stMaj(); stLabels();
         return;
       }
+      /* ── COPIER, COLLER ─────────────────────────────────────────
+         « Le même dispositif, sur l'autre carte. » Le presse-papiers
+         vit donc dans le stockage local et non dans une variable : il
+         doit survivre au changement de carte, qui recharge la page.
+
+         Ce qui est collé se pose AU POINT REGARDÉ, en gardant la forme
+         du groupe. Reporter les coordonnées telles quelles n'aurait
+         aucun sens d'une carte à l'autre — un flanc d'Himmelsdorf n'est
+         pas un flanc de Prokhorovka — et sur la même carte, cela
+         reposerait tout exactement sous l'original. */
+      if(mod&&(e.key==="c"||e.key==="C")){
+        const l=(ST.multi.length?ST.multi:(ST.sel>=0?[ST.sel]:[]));
+        if(!l.length) return;
+        e.preventDefault();
+        try{ localStorage.setItem("cp3d",JSON.stringify(l.map(i=>ST.els[i]))); }catch(_){ }
+        stDit(l.length+" "+t("copied"));
+        return;
+      }
+      if(mod&&(e.key==="v"||e.key==="V")){
+        if(!ST.canEdit) return;
+        let l=null;
+        try{ l=JSON.parse(localStorage.getItem("cp3d")||"null"); }catch(_){ }
+        if(!Array.isArray(l)||!l.length){ stDit(t("Nothing to paste.")); return; }
+        e.preventDefault();
+        /* le centre du groupe copié, pour le reposer sous le regard */
+        let cx=0, cz=0;
+        for(const el of l){ cx+=Number(el.x)||0; cz+=Number(el.y)||0; }
+        cx/=l.length; cz/=l.length;
+        const vx=tgt[0]+cible.px, vz=-(tgt[2]+cible.pz);
+        const dx=vx-cx, dz=vz-cz;
+        const debut=ST.els.length;
+        for(const el of l){
+          const d=JSON.parse(JSON.stringify(el));
+          d.x=(Number(d.x)||0)+dx; d.y=(Number(d.y)||0)+dz;
+          if(d.x2!==undefined){ d.x2=(Number(d.x2)||0)+dx; d.y2=(Number(d.y2)||0)+dz; }
+          if(Array.isArray(d.pts)) d.pts=d.pts.map(q=>[q[0]+dx,q[1]+dz]);
+          /* un élément de replay collé deviendrait un marqueur fantôme
+             qui se croit encore dans la bataille : on le rend au plan */
+          delete d.rp; delete d.rpK; delete d.pv; delete d.recu;
+          delete d.pale; delete d.mortRp;
+          ST.els.push(d);
+        }
+        ST.multi=[]; for(let i=debut;i<ST.els.length;i++) ST.multi.push(i);
+        ST.sel=ST.els.length-1;
+        histoPose(); buildStrat(); buildChars(); buildVue(); buildChamp();
+        stMaj(); stLabels();
+        stDit(l.length+" "+t("pasted here"));
+        return;
+      }
       if(mod) return;
       /* Échap sort d'abord de la vue subjective : tant qu'on y est,
          c'est de là qu'on veut sortir, pas de sa sélection. */
@@ -6514,6 +6655,7 @@ function pretty(k){ const L=LABELS[k];
       return u.toString();
     }
     if(DEV3D) window.__lien=lienDeLaVue;          // pour pouvoir l'éprouver
+    $("btnImage").addEventListener("click",()=>imageDuPlan());
     $("btnLien").addEventListener("click",async()=>{
       const l=lienDeLaVue();
       try{ await navigator.clipboard.writeText(l); stDit(t("Link copied.")); }

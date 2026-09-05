@@ -288,5 +288,13 @@ window.CP_FR = Object.assign(window.CP_FR || {}, {
   "That plan is no longer there.": "Ce plan n'existe plus.",
   "Lasso · L": "Lasso · L",
   "Nothing inside the lasso.": "Rien dans le lasso.",
+  "copied": "copiés",
+  "Nothing to paste.": "Rien à coller.",
+  "pasted here": "collés ici",
+  "Image of the plan": "Image du plan",
+  "Making the image…": "Fabrication de l'image…",
+  "Couldn't capture the view.": "La vue n'a pas pu être capturée.",
+  "Image saved.": "Image enregistrée.",
+  "Image copied — paste it in Discord.": "Image copiée — colle-la dans Discord.",
   "← Back to the site": "← Retour au site",
 });
