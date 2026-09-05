@@ -1802,6 +1802,55 @@ function pretty(k){ const L=LABELS[k];
   const rotY=(a,tx,ty,tz)=>{ const c=Math.cos(a),s=Math.sin(a);
     return [c,0,s,tx, 0,1,0,ty, -s,0,c,tz]; };
 
+  /* ── LE CHAR ÉPOUSE LE TERRAIN ──────────────────────────────────
+     Un char posé à plat sur un flanc de colline se voit tout de suite :
+     la caisse traverse la pente d'un côté et flotte de l'autre. Il faut
+     l'incliner.
+
+     On relève le sol sous ses QUATRE APPUIS — avant, arrière et les deux
+     flancs, à la demi-longueur et à la demi-largeur du modèle — et non
+     sous son seul centre. C'est ce que fait une vraie caisse : elle
+     enjambe les petites bosses au lieu d'épouser chaque caillou. Un
+     char à cheval sur une ornière reste droit, comme il le doit.
+
+     Le repère se construit par produits vectoriels plutôt que par des
+     angles d'Euler : trois axes tirés de la pente, sans un seul signe à
+     deviner. Et il se réduit EXACTEMENT à rotY quand le sol est plat —
+     vérifié à 1e-15 près — donc rien ne change en terrain plat.
+
+     La pente est bridée à trente-cinq degrés. Au bord d'une carte le
+     relief peut être vertical ; sans cette limite un char s'y dresserait
+     debout, ce qu'aucun char ne fait. */
+  const PENTE_MAX=Math.tan(35*Math.PI/180);
+  function poseSurLeSol(x,z,cap,sol,mod,hC){
+    const ca=Math.cos(cap), sa=Math.sin(cap);
+    if(!curHeights) return rotY(cap,x,sol,z);
+    /* un peu en deçà des extrémités : les chenilles portent, pas le nez */
+    const T=mod.taille||[3,1.6,6];
+    const L2=Math.max(1.2,T[2]*0.42), W2=Math.max(0.8,T[0]*0.45);
+    /* l'axe X du char pointe vers (ca, -sa), l'axe Z vers (sa, ca) */
+    const hAv=solY(x+sa*L2, z+ca*L2), hAr=solY(x-sa*L2, z-ca*L2);
+    const hDr=solY(x+ca*W2, z-sa*W2), hGa=solY(x-ca*W2, z+sa*W2);
+    const bride=(v)=>v>PENTE_MAX?PENTE_MAX:(v<-PENTE_MAX?-PENTE_MAX:v);
+    const tg=bride((hAv-hAr)/(2*L2)), rl=bride((hDr-hGa)/(2*W2));
+    if(!tg&&!rl){ return rotY(cap,x,sol+((hAv+hAr+hDr+hGa)/4-hC),z); }
+    /* la marche et le travers, montés sur la pente */
+    const Fs=[sa,tg,ca], Rs=[ca,rl,-sa];
+    const cr=(a,b)=>[a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
+    const nz=(v)=>{ const l=Math.hypot(v[0],v[1],v[2])||1;
+      return [v[0]/l,v[1]/l,v[2]/l]; };
+    const N=nz(cr(Fs,Rs));          // la normale au sol : le haut du char
+    const X=nz(cr(N,Fs));           // le travers, redressé sur la pente
+    const F=cr(X,N);                // la marche, dans le plan de la pente
+    /* La caisse repose sur la MOYENNE des quatre appuis. Le relief du
+       centre arrive déjà par l'attribut de base : on n'ajoute que
+       l'écart, sans quoi le char serait posé deux fois. */
+    const ty=sol+((hAv+hAr+hDr+hGa)/4-hC);
+    return [X[0],N[0],F[0], x,
+            X[1],N[1],F[1], ty,
+            X[2],N[2],F[2], z];
+  }
+
   /* Les exemplaires : un lot par pièce, pour qu'un même modèle posé
      plusieurs fois ne coûte qu'un appel de dessin. */
   /* Le plan ET le replay : deux listes, un seul dessin. Les éléments du
@@ -1846,7 +1895,7 @@ function pretty(k){ const L=LABELS[k];
          ce décalage elle flotterait ou s'enfoncerait, l'origine du modèle
          n'étant pas au niveau des chenilles. */
       const sol=-mod.bbCaisse[0][1];
-      const Mc=rotY(cap, el.x, sol, el.y);
+      const Mc=poseSurLeSol(el.x, el.y, cap, sol, mod, base*curMaxH*exag);
       /* La carcasse d'un char détruit perd sa couleur d'équipe : elle
          n'est plus un camp, c'est une épave. Grise, on la reconnaît
          d'un coup d'œil au milieu des vivants. */
@@ -5672,7 +5721,7 @@ function pretty(k){ const L=LABELS[k];
       /* la vraie séquence d'une image de lecture, pour la chronométrer */
       rpImage:(t)=>{ RP.t=t; rpSuitEtapes(); oeilSuitReplay();
         buildChars(); buildStrat(); stLabels(); rpMaj(); buildTirs(); },
-      rpMaj, buildTirs, perf:(v)=>{ perfOn=v?1:0; }, rpModele};
+      rpMaj, buildTirs, perf:(v)=>{ perfOn=v?1:0; }, rpModele, poseSurLeSol, rotY};
     /* ── LES VUES ────────────────────────────────────────────────────
        Trois angles nommés, plutôt que de chercher le bon à la souris.
        Le dessus lit une ligne de vue, le côté lit un dénivelé, le
