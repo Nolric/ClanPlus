@@ -527,6 +527,21 @@
      et parfaitement invisible. */
   #stLasso{position:fixed;inset:0;width:100%;height:100%;
     pointer-events:none;z-index:6;display:none}
+  /* Le menu du clic droit. */
+  #stMenu{position:fixed;z-index:40;display:none;min-width:186px;padding:5px;
+    background:rgba(14,15,19,.97);border:1px solid rgba(255,255,255,.16);
+    border-radius:6px;box-shadow:0 14px 40px rgba(0,0,0,.55)}
+  #stMenu button{display:flex;align-items:center;justify-content:space-between;
+    gap:14px;width:100%;padding:7px 10px;background:none;border:0;border-radius:4px;
+    color:#e6e6ea;font:inherit;font-size:13px;text-align:left;cursor:pointer}
+  #stMenu button:hover:not(:disabled){background:rgba(255,255,255,.09)}
+  #stMenu button:disabled{color:#6c6c74;cursor:default}
+  #stMenu button.danger:hover:not(:disabled){background:rgba(226,104,95,.18);color:#ffb2ab}
+  #stMenu button:focus-visible{outline:2px solid var(--gold,#e5b95c);outline-offset:-2px}
+  #stMenu kbd{font-family:var(--d-mono,ui-monospace,monospace);font-size:10.5px;
+    color:#83838c;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+    border-radius:3px;padding:1px 5px}
+  #stMenu hr{border:0;border-top:1px solid rgba(255,255,255,.09);margin:4px 2px}
   #stLasso path{fill:rgba(229,185,92,.13);stroke:var(--gold,#e5b95c);
     stroke-width:1.6;stroke-linejoin:round;stroke-linecap:round;
     stroke-dasharray:6 4}
@@ -733,6 +748,12 @@
             <div class="cadran"><input type="range" id="stElTour" min="-180" max="180" step="5" value="0"><span class="v" id="stTourV">0°</span></div></div>
           <div class="champ"><div class="stPos" id="stElPos"></div>
             <div class="stHull" id="stHull"></div></div>
+          <div class="champ" id="chRange"><label id="lbRange">Arrange</label>
+            <div class="stRow">
+              <button class="btn" id="stVerrou">Lock</button>
+              <button class="btn" id="stAligne">Align</button>
+              <button class="btn" id="stRepart">Space out</button>
+            </div></div>
         </div>
         <div id="propVide" class="stVide"></div>
         <div class="champ" id="chParcours" style="display:none">
@@ -878,6 +899,7 @@
   <div id="ptrLbl"></div>
   <div id="stLbl"></div>
   <svg id="stLasso" aria-hidden="true"><path></path></svg>
+  <div id="stMenu" role="menu"></div>
   <div id="stMsg" class="glass"></div>
   <div id="mini" class="glass"><div class="lg" id="miniT">Minimap</div><img id="miniImg" alt=""><div class="n">N ↑</div></div>
   <div id="leg" class="glass"><div class="lg" id="legT">Legend</div><div id="legL"></div><p class="no" id="legN"></p></div>
@@ -4180,7 +4202,7 @@ function pretty(k){ const L=LABELS[k];
      entouré à l'écran est pris — c'est voulu : on entoure une zone de
      la carte, pas un champ de vision. */
   let lasso=null;
-  const lassoActif=(e)=>ST.ouvert&&ST.canEdit&&e.button===0&&!e.shiftKey&&
+  const lassoActif=(e)=>ST.ouvert&&ST.canEdit&&e.button===0&&!e.shiftKey&&!e.altKey&&
                         (ST.outil==="lasso"||e.ctrlKey||e.metaKey);
   function lassoTrace(){
     const el=$("stLasso"), q=el.firstElementChild;
@@ -4225,12 +4247,76 @@ function pretty(k){ const L=LABELS[k];
     ST.multi=pris; ST.sel=pris[pris.length-1];
     stMaj(); stLabels();
   }
+  /* ── LE MENU DU CLIC DROIT ──────────────────────────────────────
+     Le conflit à arbitrer était celui-ci : le clic droit sert déjà à
+     déplacer la caméra. On le tranche comme le clic gauche l'est déjà
+     pour poser un marqueur — PAR LA DISTANCE. Un clic droit qui n'a pas
+     bougé de plus de quatre pixels est un clic ; au-delà, c'est un
+     déplacement de caméra, et le menu ne s'ouvre pas.
+     La caméra ne perd donc rien, et le menu ne demande aucun geste
+     nouveau à apprendre. */
+  let menuPour=-1;
+  function fermeMenu(){ const m=$("stMenu"); if(m) m.style.display="none"; menuPour=-1; }
+  function ouvreMenu(x,y,i){
+    const m=$("stMenu"); if(!m) return;
+    const e=ST.els[i]; if(!e) return;
+    menuPour=i;
+    const nSel=ST.multi.length||1;
+    const lg=(txt,cle,actif,danger)=>
+      '<button type="button" data-a="'+cle+'"'+(actif?"":" disabled")+
+      (danger?' class="danger"':"")+">"+echapHtml(txt[0])+
+      (txt[1]?'<kbd>'+echapHtml(txt[1])+"</kbd>":"")+"</button>";
+    let h="";
+    h+=lg([t("Duplicate"),"Ctrl+D"],"dup",ST.canEdit&&!e.verrou);
+    h+=lg([e.verrou?t("Unlock"):t("Lock"),"Ctrl+L"],"verrou",ST.canEdit);
+    if(e.type==="tank"){
+      h+="<hr>";
+      h+=lg([t("Tank's eye"),""],"oeil",1);
+      h+=lg([t("Field of view"),""],"champ",1);
+    }
+    if(nSel>1){
+      h+="<hr>";
+      h+=lg([t("Align"),""],"aligne",ST.canEdit&&nSel>=2);
+      h+=lg([t("Space out"),""],"repart",ST.canEdit&&nSel>=3);
+    }
+    h+="<hr>";
+    h+=lg([t("Delete"),"Suppr"],"suppr",ST.canEdit&&!e.verrou,1);
+    m.innerHTML=h;
+    /* on le pose au curseur, sans jamais déborder de la fenêtre */
+    m.style.display="block";
+    const r=m.getBoundingClientRect();
+    m.style.left=Math.max(6,Math.min(window.innerWidth-r.width-6,x))+"px";
+    m.style.top=Math.max(6,Math.min(window.innerHeight-r.height-6,y))+"px";
+    const b0=m.querySelector("button:not(:disabled)"); if(b0) b0.focus();
+  }
+  function agitMenu(a){
+    const i=menuPour; fermeMenu();
+    const e=ST.els[i]; if(!e) return;
+    if(a==="dup"){ document.dispatchEvent(new KeyboardEvent("keydown",{key:"d",ctrlKey:true,bubbles:true})); return; }
+    if(a==="verrou"){ basculeVerrou(); return; }
+    if(a==="aligne"){ aligneSelection(0); return; }
+    if(a==="repart"){ aligneSelection(1); return; }
+    if(a==="oeil"){ const b=$("stOeil"); if(b) b.click(); return; }
+    if(a==="champ"){ const b=$("stChamp"); if(b) b.click(); return; }
+    if(a==="suppr"){
+      if(e.verrou){ stDit(t("Locked.")); return; }
+      document.dispatchEvent(new KeyboardEvent("keydown",{key:"Delete",bubbles:true}));
+    }
+  }
   let drag=null;
   /* Quand l'éditeur est ouvert, le clic gauche sert d'abord aux
      marqueurs : saisir celui qui est sous le curseur, sinon en poser un.
      La caméra garde le clic droit, Maj, et le glisser sur le vide — on
      ne lui retire rien. */
-  let stDrag=null;
+  let stDrag=null, stTourne=null;
+  /* L'angle du curseur vu depuis un char, dans la convention des caps :
+     zéro vers le nord, sens horaire. */
+  function angleVers(el,ex,ey){
+    const q=solSousCurseur(ex,ey); if(!q) return null;
+    const dx=q[0]-el.x, dz=(-q[1])-el.y;
+    if(Math.hypot(dx,dz)<1.5) return null;      // trop près : l'angle s'affole
+    return (Math.atan2(dx,dz)*180/Math.PI+360)%360;
+  }
   cv.addEventListener("pointerdown",e=>{
     /* La capture de pointeur peut LEVER — si le pointeur a déjà été
        relâché, le navigateur ne le connaît plus. Non protégée, elle
@@ -4241,6 +4327,29 @@ function pretty(k){ const L=LABELS[k];
        marqueur, avant la pose, avant la caméra. Sinon commencer la
        boucle sur un char l'aurait déplacé. */
     if(lassoActif(e)){ lasso={pts:[[e.clientX,e.clientY]]}; lassoTrace(); return; }
+    /* ── TOURNER À LA SOURIS ────────────────────────────────────────
+       « Orienter un char sans viser un curseur au pixel. » Alt, et le
+       char regarde le curseur. Le cadran du panneau va par pas de cinq
+       degrés et demande de viser une glissière de deux cents pixels ;
+       ici on montre la direction, ce qui est le geste naturel pour dire
+       « il regarde par là ».
+       Alt+Maj tourne la TOURELLE et laisse la caisse — la distinction
+       qui décide d'une position en hull-down.
+
+       Ce bloc est ICI, avant celui qui suit, et non dedans : celui-là
+       s'ouvre par « !e.shiftKey », parce que Maj appartient à la caméra.
+       J'y avais d'abord logé la rotation, et Alt+Maj ne faisait rien —
+       exactement le piège qui rendait morte, depuis toujours, la branche
+       « Maj étend la sélection » que je venais de retirer. */
+    if(ST.ouvert&&ST.canEdit&&e.button===0&&e.altKey){
+      const i=stSous(e.clientX,e.clientY);
+      if(i>=0&&ST.els[i]&&ST.els[i].type==="tank"){
+        if(ST.els[i].verrou){ stDit(t("Locked.")); return; }
+        if(ST.multi.indexOf(i)<0){ ST.sel=i; ST.multi=[i]; }
+        stTourne={i, tourelle:e.shiftKey};
+        stMaj(); return;
+      }
+    }
     if(ST.ouvert&&e.button===0&&!e.shiftKey){
       const i=stSous(e.clientX,e.clientY);
       if(i>=0){
@@ -4252,6 +4361,18 @@ function pretty(k){ const L=LABELS[k];
            désormais ce travail. */
         if(ST.multi.indexOf(i)<0||ST.multi.length<2){ ST.sel=i; ST.multi=[i]; }
         else ST.sel=i;
+        /* ── LE VERROU ────────────────────────────────────────────
+           Un élément verrouillé se sélectionne encore — il faut bien
+           pouvoir le déverrouiller, et lire ses propriétés — mais il ne
+           se SAISIT plus. C'est ce qu'on demande d'un verrou : « ne plus
+           déplacer celui-là par erreur », pas « ne plus y toucher ».
+           Le groupe entier est immobile dès qu'un seul de ses membres
+           l'est : déplacer les autres casserait le dispositif qu'on
+           voulait justement figer. */
+        if(ST.multi.some(k=>ST.els[k]&&ST.els[k].verrou)){
+          stMaj(); stDit(t("Locked.")); return;
+        }
+
         stDrag={i,bouge:0,p:stPoignee,depart:ST.multi.map(k=>({k,x:ST.els[k].x,y:ST.els[k].y,
           x2:ST.els[k].x2,y2:ST.els[k].y2}))};
         stMaj(); return;
@@ -4261,6 +4382,14 @@ function pretty(k){ const L=LABELS[k];
     drag={x:e.clientX,y:e.clientY,az:cible.az,pol:cible.pol,px:cible.px,pz:cible.pz,
           btn:e.button,shift:e.shiftKey};});
   cv.addEventListener("pointermove",e=>{
+    if(stTourne){
+      const el=ST.els[stTourne.i]; if(!el) return;
+      const a=angleVers(el,e.clientX,e.clientY); if(a==null) return;
+      if(stTourne.tourelle) el.tour=Math.round(((a-(Number(el.cap)||0)+540)%360)-180);
+      else el.cap=Math.round(a);
+      buildChars(); buildStrat(); stMaj();
+      return;
+    }
     if(lasso){
       /* un point tous les trois pixels : assez pour épouser le geste,
          assez peu pour que le test pair-impair reste immédiat */
@@ -4312,6 +4441,18 @@ function pretty(k){ const L=LABELS[k];
     else{cible.az=drag.az-dx*0.008;cible.pol=clamp(drag.pol-dy*0.008,POL_MIN(),POL_MAX());}});
   cv.addEventListener("pointerup",e=>{
     if(lasso){ lassoTermine(); drag=null; return; }
+    if(stTourne){ stTourne=null; drag=null; histoPose(); stMaj(); return; }
+    /* Clic DROIT immobile sur un marqueur : le menu. Au-delà de quatre
+       pixels, c'était un déplacement de caméra, on ne montre rien. */
+    if(ST.ouvert&&e.button===2&&drag&&drag.btn===2
+       && Math.hypot(e.clientX-drag.x,e.clientY-drag.y)<4){
+      const i=stSous(e.clientX,e.clientY);
+      if(i>=0){
+        if(ST.multi.indexOf(i)<0){ ST.sel=i; ST.multi=[i]; stMaj(); stLabels(); }
+        ouvreMenu(e.clientX,e.clientY,i);
+        drag=null; return;
+      }
+    }
     /* Un clic gauche qui n'a NI saisi un marqueur NI tourné la caméra :
        c'est une demande de poser un char là. On distingue le clic du
        glisser par la distance parcourue — sans quoi toute rotation de
@@ -4373,7 +4514,7 @@ function pretty(k){ const L=LABELS[k];
     /* le char est posé : le champ de vision peut enfin se recalculer */
     if(bougeait){ histoPose(); if(montreChamp){ buildChamp(); stMaj(); } }
   });
-  cv.addEventListener("pointercancel",()=>{stDrag=null;drag=null;lasso=null;lassoTrace();});
+  cv.addEventListener("pointercancel",()=>{stDrag=null;stTourne=null;drag=null;lasso=null;lassoTrace();});
   /* DOUBLE-CLIC : on va voir là. C'est le geste le plus simple pour se
      rendre quelque part — on désigne, la caméra s'y rend en glissant,
      au lieu de tourner puis déplacer puis zoomer. */
@@ -5198,6 +5339,17 @@ function pretty(k){ const L=LABELS[k];
       $("chTour").style.display=estChar?"":"none";
       $("chSect").style.display=estChar?"":"none";
       $("chSymb").style.display=(e.type==="stamp")?"":"none";
+      /* Verrou, aligner, répartir. Aligner demande deux éléments,
+         répartir en demande trois : à deux, il n'y a rien entre quoi
+         répartir. Les boutons se désactivent plutôt que de disparaître,
+         pour qu'on sache qu'ils existent et ce qu'ils attendent. */
+      const nSel=ST.multi.length||1;
+      $("stVerrou").textContent=e.verrou?t("Unlock"):t("Lock");
+      $("stVerrou").classList.toggle("on",!!e.verrou);
+      $("stAligne").disabled=nSel<2;
+      $("stRepart").disabled=nSel<3;
+      $("stAligne").title=nSel<2?t("Select at least two"):"";
+      $("stRepart").title=nSel<3?t("Select at least three"):"";
       if(e.type==="stamp") majSymboles(e);
       if(estChar){ $("stElSect").value=Number(e.secteur)||0;
         $("stSectV").textContent=(Number(e.secteur)||0)+"°"; }
@@ -5336,7 +5488,7 @@ function pretty(k){ const L=LABELS[k];
       /* un marqueur ordinaire réoccupe peut-être le nœud d'un char de
          replay : on efface la jauge avant d'y écrire du texte */
       if(fond0!=="none"){ d.style.backgroundImage="none"; d.__bg="none"; }
-      let txt=(e.name||cls)+(i===ST.sel?" ●":"");
+      let txt=(e.verrou?"🔒 ":"")+(e.name||cls)+(i===ST.sel?" ●":"");
       /* Le trait dit s'il y a vue ; l'étiquette dit de combien et par
          quoi c'est coupé. Un « 312 m · bâtiment » vaut mieux qu'un trait
          rouge dont il faut deviner la cause. */
@@ -5488,6 +5640,10 @@ function pretty(k){ const L=LABELS[k];
       const base={type:e.type, x:Number(e.x)||0, y:Number(e.y)||0, name:e.name||"",
         camp:(e.color==="#e5544b")?"ennemi":"ami", color:e.color||"#4ea36a"};
       if(e.grp) base.grp=String(e.grp);
+      /* Le verrou aussi : le filtre du serveur le laisse passer, celui-ci
+         doit en faire autant. Deux filtres, deux occasions de perdre un
+         champ en silence — c'est déjà arrivé aux trajets et aux zones. */
+      if(e.verrou) base.verrou=1;
       if(e.type==="fleche") return Object.assign(base,{x2:Number(e.x2)||0, y2:Number(e.y2)||0});
       if(e.type==="texte") return base;
       if(e.type==="stamp") return Object.assign(base,{kind:e.kind||"focus"});
@@ -5533,6 +5689,7 @@ function pretty(k){ const L=LABELS[k];
       const base={type:e.type||"tank", x:Math.round(e.x), y:Math.round(e.y),
         name:e.name||"", color:(e.camp==="ennemi")?"#e5544b":"#4ea36a"};
       if(e.grp) base.grp=e.grp;
+      if(e.verrou) base.verrou=1;
       if(e.secteur) base.secteur=Number(e.secteur)||0;
       if(e.type==="fleche") return Object.assign(base,{x2:Math.round(e.x2),y2:Math.round(e.y2)});
       if(e.type==="stamp") return Object.assign(base,{kind:e.kind||"focus"});
@@ -5617,7 +5774,9 @@ function pretty(k){ const L=LABELS[k];
       ? "<b>"+t("Tools")+"</b> <kbd>V</kbd><kbd>1</kbd>…<kbd>5</kbd><kbd>A</kbd><kbd>N</kbd> · <b>"+t("Side")+"</b> <kbd>C</kbd><br>"+
         "<kbd>Ctrl</kbd><kbd>Z</kbd> "+t("undo")+" · <kbd>Ctrl</kbd><kbd>D</kbd> "+t("duplicate")+
         " · <kbd>F</kbd> "+t("frame")+" · <kbd>Origine</kbd> "+t("frame all")+" · <kbd>Suppr</kbd> "+t("delete")+"<br>"+
-        "<kbd>Maj</kbd>+"+t("click to add to the selection")
+        "<kbd>L</kbd> "+t("lasso")+" · <kbd>Ctrl</kbd>+"+t("drag to lasso")+
+        " · <kbd>Alt</kbd>+"+t("drag to turn")+" · <kbd>Ctrl</kbd><kbd>C</kbd>/<kbd>V</kbd> "+t("copy/paste")+"<br>"+
+        "<kbd>Ctrl</kbd><kbd>L</kbd> "+t("lock")+" · "+t("right-click for the menu")
       : "<b>"+t("Drag")+"</b> "+t("to rotate")+" · <b>"+t("Scroll")+"</b> "+t("zooms where you point")+
         " · <b>"+t("Double-click")+"</b> "+t("to go there")+"<br>"+
         "<b>"+t("Right-click")+"</b> "+t("to pan")+" · <kbd>Z</kbd><kbd>Q</kbd><kbd>S</kbd><kbd>D</kbd> "+t("to move")+
@@ -5639,6 +5798,63 @@ function pretty(k){ const L=LABELS[k];
   const copieEls=()=>({step:ST.step,
     steps:ST.steps.map(p=>({els:p.els.map(e=>Object.assign({},e)),note:p.note||"",vue:p.vue||null}))});
   function histoRaz(){ histo=[copieEls()]; histoI=0; histoSale=0; majHistoBoutons(); }
+  /* ── ALIGNER ET RÉPARTIR ────────────────────────────────────────
+     « Une ligne de défense propre, pas cinq chars au hasard. »
+
+     Aligner sur X ou sur Z n'aurait servi à rien : sur une carte, une
+     ligne de défense suit une crête ou une rue, presque jamais un axe.
+     On calcule donc la DROITE QUI PASSE AU MIEUX par les éléments
+     choisis — celle qui minimise la somme des carrés des écarts, dans
+     les deux directions à la fois, pas seulement en hauteur — et on les
+     y projette. Chacun bouge du moins possible, et la ligne obtenue est
+     celle que le dispositif dessinait déjà.
+
+     La direction est le vecteur propre dominant de la matrice de
+     covariance ; pour deux dimensions cela tient en une ligne
+     d'arctangente, sans bibliothèque. */
+  function droiteDeSelection(l){
+    let cx=0, cz=0;
+    for(const i of l){ cx+=ST.els[i].x; cz+=ST.els[i].y; }
+    cx/=l.length; cz/=l.length;
+    let sxx=0, szz=0, sxz=0;
+    for(const i of l){ const dx=ST.els[i].x-cx, dz=ST.els[i].y-cz;
+      sxx+=dx*dx; szz+=dz*dz; sxz+=dx*dz; }
+    const th=0.5*Math.atan2(2*sxz, sxx-szz);
+    return {cx, cz, ux:Math.cos(th), uz:Math.sin(th)};
+  }
+  function aligneSelection(repartir){
+    if(!ST.canEdit) return;
+    const l=ST.multi.filter(i=>ST.els[i]&&!ST.els[i].verrou&&ST.els[i].type!=="fleche");
+    if(l.length<(repartir?3:2)){ stDit(t(repartir?"Select at least three":"Select at least two")); return; }
+    const d=droiteDeSelection(l);
+    /* la position de chacun LE LONG de la droite */
+    const t2=l.map(i=>({i, s:(ST.els[i].x-d.cx)*d.ux+(ST.els[i].y-d.cz)*d.uz}));
+    t2.sort((a,b)=>a.s-b.s);
+    if(repartir){
+      /* on garde les deux extrêmes en place et on égalise les écarts :
+         répartir ne doit pas déplacer les bornes du dispositif */
+      const s0=t2[0].s, s1=t2[t2.length-1].s;
+      for(let k=0;k<t2.length;k++) t2[k].s=s0+(s1-s0)*k/(t2.length-1);
+    }
+    for(const q of t2){
+      ST.els[q.i].x=+(d.cx+d.ux*q.s).toFixed(1);
+      ST.els[q.i].y=+(d.cz+d.uz*q.s).toFixed(1);
+    }
+    histoPose(); buildStrat(); buildChars(); buildVue(); buildChamp(); stMaj(); stLabels();
+    stDit(l.length+" "+t(repartir?"spaced out":"aligned"));
+  }
+  function basculeVerrou(){
+    if(!ST.canEdit) return;
+    const l=(ST.multi.length?ST.multi:(ST.sel>=0?[ST.sel]:[]));
+    if(!l.length) return;
+    /* si un seul est libre, on verrouille tout : le geste va dans le
+       sens de la protection, jamais dans celui du relâchement par
+       inadvertance */
+    const verrouille=l.some(i=>!ST.els[i].verrou);
+    for(const i of l){ if(verrouille) ST.els[i].verrou=1; else delete ST.els[i].verrou; }
+    histoPose(); stMaj(); stLabels();
+    stDit(t(verrouille?"Locked.":"Unlocked."));
+  }
   function histoPose(){
     if(histoI>=0&&JSON.stringify(histo[histoI].steps)===JSON.stringify(ST.steps)) return;
     histo=histo.slice(0,histoI+1);
@@ -5701,7 +5917,7 @@ function pretty(k){ const L=LABELS[k];
         (e.masque?'<path d="M4 4l12 12"/><path d="M2 10s3-5 8-5 8 5 8 5-3 5-8 5-8-5-8-5z"/>'
                  :'<path d="M2 10s3-5 8-5 8 5 8 5-3 5-8 5-8-5-8-5z"/><circle cx="10" cy="10" r="2"/>')+
         '</svg></span>';
-      b.querySelector(".nm").textContent=nom;
+      b.querySelector(".nm").textContent=(e.verrou?"🔒 ":"")+nom;
       if(e.grp) b.querySelector(".elGrp").textContent=e.grp;
       b.addEventListener("click",ev=>{
         if(ev.target.closest(".oeil")){
@@ -5892,6 +6108,24 @@ function pretty(k){ const L=LABELS[k];
     });
     $("stSave").addEventListener("click",stEnregistre);
     $("stDel").addEventListener("click",stSupprime);
+    $("stVerrou").addEventListener("click",basculeVerrou);
+    $("stMenu").addEventListener("click",ev=>{
+      const b=ev.target.closest("button[data-a]");
+      if(b&&!b.disabled) agitMenu(b.dataset.a);
+    });
+    /* Un menu contextuel se ferme au moindre ailleurs : un clic, un
+       Échap, la molette, un changement de fenêtre. Un menu qui reste
+       ouvert derrière ce qu'on fait est pire que pas de menu. */
+    document.addEventListener("pointerdown",ev=>{
+      if(menuPour>=0&&!$("stMenu").contains(ev.target)) fermeMenu();
+    },true);
+    window.addEventListener("wheel",()=>{ if(menuPour>=0) fermeMenu(); },{passive:true});
+    window.addEventListener("blur",fermeMenu);
+    /* Le navigateur ouvre SON menu sur clic droit : sans cela, le nôtre
+       s'afficherait dessous et l'on ne verrait que celui de Chrome. */
+    cv.addEventListener("contextmenu",ev=>ev.preventDefault());
+    $("stAligne").addEventListener("click",()=>aligneSelection(0));
+    $("stRepart").addEventListener("click",()=>aligneSelection(1));
     $("stQuit").addEventListener("click",stFerme);
     $("stClose").addEventListener("click",()=>{ ST.ouvert=0; $("strat").style.display="none";
       $("stLbl").innerHTML=""; ST.steps=[{els:[],note:"",vue:null}]; ST.step=0; poseEls([]); ST.sel=-1;
@@ -6034,6 +6268,7 @@ function pretty(k){ const L=LABELS[k];
          aucun sens d'une carte à l'autre — un flanc d'Himmelsdorf n'est
          pas un flanc de Prokhorovka — et sur la même carte, cela
          reposerait tout exactement sous l'original. */
+      if(mod&&(e.key==="l"||e.key==="L")){ e.preventDefault(); basculeVerrou(); return; }
       if(mod&&(e.key==="c"||e.key==="C")){
         const l=(ST.multi.length?ST.multi:(ST.sel>=0?[ST.sel]:[]));
         if(!l.length) return;
@@ -6095,6 +6330,7 @@ function pretty(k){ const L=LABELS[k];
         if(e.key==="Backspace"){ e.preventDefault(); trace.pts.pop();
           if(!trace.pts.length) trace=null; buildStrat(); stMaj(); return; }
       }
+      if(e.key==="Escape"&&menuPour>=0){ fermeMenu(); return; }
       if(e.key==="Escape"){ ST.sel=-1; ST.multi=[]; stMaj(); stLabels(); return; }
       if(e.key==="f"||e.key==="F"){ cadreSel(); return; }
       if(e.key==="Home"){ e.preventDefault(); cadreTout(); return; }
@@ -6103,7 +6339,9 @@ function pretty(k){ const L=LABELS[k];
       if(e.key==="c"||e.key==="C"){ ST.camp=ST.camp==="ennemi"?"ami":"ennemi"; stMaj(); return; }
       if(ST.sel<0) return;
       if(e.key==="Delete"||e.key==="Backspace"){ e.preventDefault();
-        const l=(ST.multi.length?ST.multi:[ST.sel]).slice().sort((a,b)=>b-a);
+        const l=(ST.multi.length?ST.multi:[ST.sel]).slice()
+          .filter(i=>ST.els[i]&&!ST.els[i].verrou).sort((a,b)=>b-a);
+        if(!l.length){ stDit(t("Locked.")); return; }
         for(const i of l) ST.els.splice(i,1);
         ST.sel=-1; ST.multi=[]; histoPose(); stMaj(); stLabels(); }
     });
