@@ -340,23 +340,25 @@
   #viewLineups .lu-new:hover{filter:brightness(1.06);transform:translateY(-1px);color:#19150b;border-color:var(--gold);background:linear-gradient(180deg,var(--gold-2),var(--gold))}
 
   /* ── Boutons et champs ── */
-  #viewLineups .lx-btn{appearance:none;display:inline-flex;align-items:center;justify-content:center;gap:7px;height:34px;padding:0 12px;
+  :is(#viewLineups,.lx-dlg) .lx-btn{appearance:none;display:inline-flex;align-items:center;justify-content:center;gap:7px;height:34px;padding:0 12px;
     border:1px solid var(--line);border-radius:9px;background:var(--panel-2);color:var(--ink-2);font:600 13px/1 system-ui,-apple-system,"Segoe UI",sans-serif;
     cursor:pointer;white-space:nowrap;transition:color .15s,border-color .15s,background-color .15s,filter .15s}
-  #viewLineups .lx-btn:hover{color:var(--ink);border-color:rgba(255,255,255,.18);background:var(--raised)}
-  #viewLineups .lx-btn:disabled{opacity:.4;cursor:not-allowed}
-  #viewLineups .lx-btn-quiet{background:transparent;border-color:transparent}
-  #viewLineups .lx-btn-quiet:hover{background:var(--raised);border-color:var(--line)}
-  #viewLineups .lx-btn-danger:hover{color:var(--bad);border-color:rgba(232,98,107,.35);background:rgba(232,98,107,.08)}
-  #viewLineups .lx-btn-gold{border-color:var(--gold);background:linear-gradient(180deg,var(--gold-2),var(--gold));color:#19150b;font-weight:800}
-  #viewLineups .lx-btn-gold:hover{color:#19150b;border-color:var(--gold);background:linear-gradient(180deg,var(--gold-2),var(--gold));filter:brightness(1.07)}
-  #viewLineups .lx-icon{width:34px;padding:0;font-size:15px}
-  #viewLineups .lx-link{appearance:none;border:0;background:none;padding:0;font:inherit;font-weight:600;color:var(--gold-2);cursor:pointer;text-decoration:underline;text-underline-offset:2px}
-  #viewLineups .lx-link:hover{color:var(--gold)}
-  #viewLineups .lx-input{width:100%;height:36px;padding:0 12px;border:1px solid var(--line);border-radius:9px;background:var(--panel-2);color:var(--ink);font:14px system-ui,-apple-system,"Segoe UI",sans-serif;transition:border-color .15s}
-  #viewLineups .lx-input::placeholder{color:var(--muted)}
-  #viewLineups .lx-input:focus{outline:0;border-color:var(--gold-line)}
-  #viewLineups button:focus-visible,#viewLineups [role="button"]:focus-visible,#viewLineups select:focus-visible,#viewLineups input:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  :is(#viewLineups,.lx-dlg) .lx-btn:hover{color:var(--ink);border-color:rgba(255,255,255,.18);background:var(--raised)}
+  :is(#viewLineups,.lx-dlg) .lx-btn:disabled{opacity:.4;cursor:not-allowed}
+  :is(#viewLineups,.lx-dlg) .lx-btn-quiet{background:transparent;border-color:transparent}
+  :is(#viewLineups,.lx-dlg) .lx-btn-quiet:hover{background:var(--raised);border-color:var(--line)}
+  :is(#viewLineups,.lx-dlg) .lx-btn-danger:hover{color:var(--bad);border-color:rgba(232,98,107,.35);background:rgba(232,98,107,.08)}
+  :is(#viewLineups,.lx-dlg) .lx-btn-gold{border-color:var(--gold);background:linear-gradient(180deg,var(--gold-2),var(--gold));color:#19150b;font-weight:800}
+  :is(#viewLineups,.lx-dlg) .lx-btn-gold:hover{color:#19150b;border-color:var(--gold);background:linear-gradient(180deg,var(--gold-2),var(--gold));filter:brightness(1.07)}
+  :is(#viewLineups,.lx-dlg) .lx-icon{width:34px;padding:0;font-size:15px}
+  :is(#viewLineups,.lx-dlg) .lx-link{appearance:none;border:0;background:none;padding:0;font:inherit;font-weight:600;color:var(--gold-2);cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+  :is(#viewLineups,.lx-dlg) .lx-link:hover{color:var(--gold)}
+  :is(#viewLineups,.lx-dlg) .lx-input{width:100%;height:36px;padding:0 12px;border:1px solid var(--line);border-radius:9px;background:var(--panel-2);color:var(--ink);font:14px system-ui,-apple-system,"Segoe UI",sans-serif;transition:border-color .15s}
+  :is(#viewLineups,.lx-dlg) .lx-input::placeholder{color:var(--muted)}
+  :is(#viewLineups,.lx-dlg) .lx-input:focus{outline:0;border-color:var(--gold-line)}
+  :is(#viewLineups,.lx-dlg) :is(button,[role="button"],select,input):focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  :is(#viewLineups,.lx-dlg) .lx-btn-bad{border-color:rgba(232,98,107,.55);background:rgba(232,98,107,.16);color:#ffb4b9;font-weight:700}
+  :is(#viewLineups,.lx-dlg) .lx-btn-bad:hover{color:#ffc9cd;border-color:var(--bad);background:rgba(232,98,107,.26)}
   #viewLineups .lx-me{font:700 9.5px/1.5 var(--fx);letter-spacing:.1em;text-transform:uppercase;font-style:normal;color:#17130b;background:var(--gold);border-radius:4px;padding:0 5px}
   #viewLineups .lx-tag{font-style:normal;font-size:11px;font-weight:600;color:var(--ink-2);border:1px solid var(--line);border-radius:5px;padding:1px 6px}
   #viewLineups .lx-warn{font-style:normal;font-size:11px;font-weight:600;color:var(--or)}
@@ -428,7 +430,8 @@
   #viewLineups .lx-empty .lx-btn{margin-top:6px;height:38px;padding:0 16px}
 
   /* ── Détail d'une line-up ── */
-  #viewLineups .lx-back{appearance:none;display:inline-flex;align-items:center;gap:4px;height:30px;margin:0 0 12px -8px;padding:0 10px 0 4px;border:0;border-radius:8px;
+  #viewLineups .lx-dtop{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:30px;margin-bottom:12px}
+  #viewLineups .lx-back{appearance:none;display:inline-flex;align-items:center;gap:4px;height:30px;margin:0 0 0 -8px;padding:0 10px 0 4px;border:0;border-radius:8px;
     background:transparent;color:var(--ink-2);font:600 13px system-ui,-apple-system,"Segoe UI",sans-serif;cursor:pointer;transition:color .15s,background-color .15s}
   #viewLineups .lx-back .ic{width:17px;height:17px;transition:transform .18s var(--lx-ease)}
   #viewLineups .lx-back:hover{color:var(--ink);background:var(--panel)}
@@ -437,6 +440,28 @@
   #viewLineups .lx-dtitle-txt{min-width:0}
   #viewLineups .lx-dtitle{margin:8px 0 0;font:700 27px/1.12 var(--fx);letter-spacing:.2px;color:var(--ink);text-wrap:balance;overflow-wrap:anywhere}
   #viewLineups .lx-dnotes{margin:9px 0 0;max-width:72ch;font-size:14.5px;line-height:1.55;color:var(--ink-2)}
+  /* Titre et note se modifient sur place : ils ressemblent à du texte, pas à un formulaire. */
+  #viewLineups .lx-dtitle-in{display:block;width:min(100%,28ch);padding:2px 0;border:0;border-bottom:1px dashed transparent;border-radius:0;background:transparent;transition:border-color .15s}
+  #viewLineups .lx-dtitle-in:hover{border-bottom-color:rgba(255,255,255,.2)}
+  #viewLineups .lx-dtitle-in:focus{outline:0;border-bottom-color:var(--gold)}
+  #viewLineups .lx-dtitle-in::placeholder{color:var(--muted)}
+  #viewLineups .lx-dnotes-in{display:block;width:min(100%,72ch);margin-top:8px;padding:3px 0;border:0;border-bottom:1px dashed transparent;border-radius:0;background:transparent;
+    color:var(--ink-2);font:14.5px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;transition:border-color .15s}
+  #viewLineups .lx-dnotes-in::placeholder{color:var(--muted)}
+  #viewLineups .lx-dnotes-in:hover{border-bottom-color:rgba(255,255,255,.2)}
+  #viewLineups .lx-dnotes-in:focus{outline:0;border-bottom-color:var(--gold);color:var(--ink)}
+  #viewLineups .lx-weekstep{display:inline-flex;align-items:center;gap:2px}
+  #viewLineups .lx-weekstep button{appearance:none;display:grid;place-items:center;width:24px;height:24px;padding:0;border:0;border-radius:6px;background:transparent;color:var(--muted);cursor:pointer;transition:color .15s,background-color .15s}
+  #viewLineups .lx-weekstep button:hover{color:var(--gold-2);background:var(--panel)}
+  #viewLineups .lx-weekstep .ic{width:14px;height:14px}
+  #viewLineups .lx-weekstep>span{font-variant-numeric:tabular-nums}
+  #viewLineups .lx-sync{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--muted);white-space:nowrap}
+  #viewLineups .lx-sync:empty{display:none}
+  #viewLineups .lx-sync .ic{width:14px;height:14px;stroke-width:2.4}
+  #viewLineups .lx-sync i{width:7px;height:7px;border-radius:50%;background:var(--gold);animation:lxPulse .6s ease-in-out infinite alternate}
+  #viewLineups .lx-sync[data-state="saved"]{color:var(--good);animation:lxFade .25s ease-out}
+  #viewLineups .lx-sync[data-state="error"]{color:var(--or)}
+  #viewLineups .lx-sync .lx-link{font-size:12.5px}
   #viewLineups .lx-dactions{display:flex;gap:6px;flex-wrap:wrap}
   #viewLineups .lx-seg{display:flex;gap:2px;margin:22px 0 18px;border-bottom:1px solid var(--line)}
   #viewLineups .lx-seg button{appearance:none;position:relative;display:inline-flex;align-items:center;gap:8px;padding:10px 12px 13px;border:0;background:transparent;
@@ -573,6 +598,7 @@
   #viewLineups .lx-as-name.is-me>span{color:var(--gold-2)}
   #viewLineups .lx-mx-as.is-none .lx-as-name{color:var(--muted);font-weight:500;font-style:italic}
   #viewLineups .lx-as-hint{font-size:11.5px;color:var(--muted);opacity:.8}
+  #viewLineups .lx-as-k{display:none}
   #viewLineups .lx-mx-empty{padding:26px 20px;border:1px dashed rgba(255,255,255,.12);border-radius:12px;color:var(--ink-2);font-size:14px;line-height:1.55;text-align:center}
 
   /* ── Modifier un poste (sous sa ligne) ── */
@@ -646,21 +672,51 @@
   #viewLineups .lx-src.warn{color:var(--or)}
   #viewLineups .lx-src b{color:var(--ink-2);font-weight:600}
 
-  /* ── Barre d'enregistrement (collante) ── */
-  #viewLineups .lx-savebar{position:sticky;bottom:16px;z-index:6;display:none;align-items:center;gap:6px;width:max-content;max-width:100%;margin:18px 0 0 auto;padding:7px 7px 7px 14px;
-    border:1px solid var(--gold-line);border-radius:12px;background:var(--raised);box-shadow:0 16px 34px -14px rgba(0,0,0,.9)}
-  #viewLineups .lx-savebar.on{display:flex;animation:lxIn .2s var(--lx-ease)}
-  #viewLineups .lx-sb-txt{display:inline-flex;align-items:center;gap:9px;margin-right:6px;font-size:13px;font-weight:600;color:var(--ink-2)}
-  #viewLineups .lx-sb-txt i{width:7px;height:7px;border-radius:50%;background:var(--gold);box-shadow:0 0 0 3px var(--gold-soft)}
-
-  /* ── Onglet Présences ── */
+  /* ── Onglet Joueurs : qui joue, quels jours ── */
   #viewLineups .lx-at{border:1px solid var(--line);border-radius:12px;background:var(--panel);overflow-x:auto;scrollbar-width:thin}
   #viewLineups .lx-at-row{display:grid;grid-template-columns:minmax(180px,1fr) repeat(7,minmax(48px,72px));align-items:center;min-width:540px;border-top:1px solid var(--line-2)}
   #viewLineups .lx-at-row.is-me{background:rgba(229,185,92,.05)}
   #viewLineups .lx-at-head{border-top:0;border-bottom:1px solid var(--line);background:var(--panel-2)}
   #viewLineups .lx-at-head .lx-at-name{align-self:end;font:700 10.5px var(--fx);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
   #viewLineups .lx-at-name{display:flex;align-items:center;gap:8px;min-width:0;padding:11px 14px;font-size:14px;font-weight:600}
-  #viewLineups .lx-at-name>span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #viewLineups .lx-at-name>.lx-at-nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #viewLineups .lx-at.can-edit .lx-at-row{grid-template-columns:minmax(210px,1fr) repeat(7,minmax(46px,68px)) 46px;min-width:580px}
+  #viewLineups .lx-at-row:not(.lx-at-head)>.lx-at-name{position:sticky;left:0;z-index:1;background:var(--panel)}
+  #viewLineups .lx-at-row.is-me:not(.lx-at-head)>.lx-at-name{background:#1d1c19}
+  #viewLineups .lx-at-row.just{animation:lxRowIn .9s ease-out}
+  @keyframes lxRowIn{from{background:rgba(229,185,92,.16)}to{background:transparent}}
+  #viewLineups .lx-strat{appearance:none;display:inline-flex;align-items:center;gap:5px;flex:none;height:24px;padding:0 7px;border:1px solid transparent;border-radius:999px;
+    background:transparent;color:rgba(255,255,255,.28);font:600 11.5px system-ui,-apple-system,"Segoe UI",sans-serif;cursor:pointer;transition:color .15s,border-color .15s,background-color .15s}
+  #viewLineups .lx-strat .ic{width:13px;height:13px}
+  #viewLineups .lx-strat span{display:none}
+  #viewLineups .lx-strat:hover{color:var(--gold-2);border-color:var(--line)}
+  #viewLineups .lx-strat:hover span{display:inline}
+  #viewLineups .lx-strat.on{color:var(--gold-2);border-color:var(--gold-line);background:var(--gold-soft)}
+  #viewLineups .lx-strat.on span{display:inline}
+  #viewLineups .lx-strat.on .ic{fill:currentColor}
+  #viewLineups .lx-tag .ic{width:11px;height:11px;margin-right:4px;vertical-align:-1px;fill:currentColor;color:var(--gold)}
+  #viewLineups .lx-at-rm{appearance:none;display:grid;place-items:center;width:30px;height:30px;padding:0;border:0;border-radius:8px;background:transparent;color:var(--muted);cursor:pointer;transition:color .15s,background-color .15s}
+  #viewLineups .lx-at-rm .ic{width:14px;height:14px}
+  #viewLineups .lx-at-rm:hover{color:var(--bad);background:rgba(232,98,107,.1)}
+  /* Ajouter des joueurs : les membres encore libres, un clic chacun */
+  #viewLineups .lx-ap{margin-top:16px;padding:16px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+  #viewLineups .lx-ap.is-first{margin-top:0;padding:22px 20px;border-color:var(--gold-line)}
+  #viewLineups .lx-ap-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+  #viewLineups .lx-ap-title{margin:0;font:700 16px var(--fx);color:var(--ink)}
+  #viewLineups .lx-ap.is-first .lx-ap-title{font-size:19px}
+  #viewLineups .lx-ap-count{font:600 13px var(--fx);color:var(--muted);font-variant-numeric:tabular-nums}
+  #viewLineups .lx-ap-lead{margin:6px 0 0;max-width:60ch;font-size:14px;line-height:1.55;color:var(--ink-2)}
+  #viewLineups .lx-ap-search{margin:12px 0 10px;max-width:360px}
+  #viewLineups .lx-ap-list{display:flex;flex-wrap:wrap;gap:6px}
+  #viewLineups .lx-ap-chip{appearance:none;display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 13px 0 10px;border:1px solid var(--line);border-radius:999px;
+    background:var(--panel-2);color:var(--ink);font:600 13px system-ui,-apple-system,"Segoe UI",sans-serif;cursor:pointer;transition:color .15s,border-color .15s,background-color .15s,transform .15s var(--lx-ease)}
+  #viewLineups .lx-ap-chip .ic{width:13px;height:13px;color:var(--gold)}
+  #viewLineups .lx-ap-chip:hover{border-color:var(--gold);background:var(--gold-soft);color:var(--gold-2)}
+  #viewLineups .lx-ap-chip:active{transform:scale(.96)}
+  #viewLineups .lx-ap .lx-src{margin-top:12px}
+  #viewLineups .lx-ap.is-full{padding:12px 16px}
+  #viewLineups .lx-ap-full{display:flex;align-items:center;gap:8px;margin:0;font-size:13.5px;color:var(--ink-2)}
+  #viewLineups .lx-ap-full .ic{width:15px;height:15px;color:var(--good)}
   #viewLineups .lx-at-day{display:grid;justify-items:center;gap:5px;padding:12px 0 10px}
   #viewLineups .lx-at-day b{font:700 12px var(--fx);color:var(--ink-2)}
   #viewLineups .lx-at-day i{position:relative;display:block;width:12px;height:30px;border-radius:3px;background:rgba(255,255,255,.05);overflow:hidden}
@@ -677,79 +733,6 @@
   #viewLineups .lx-at-foot{display:flex;justify-content:space-between;gap:8px 16px;flex-wrap:wrap;margin-top:12px;font-size:12.5px;color:var(--muted)}
   #viewLineups .lx-at-foot b{color:var(--gold-2);font-weight:600}
 
-  /* ── Éditeur : joueurs, semaine, présences ── */
-  #viewLineups .lu-editor-shell{display:grid;grid-template-columns:minmax(0,1fr) 230px;gap:12px;margin-bottom:14px}
-  #viewLineups .lu-editor{margin:0;padding:18px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
-  #viewLineups .lu-card-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
-  #viewLineups .lu-card-h h3{margin:0;font:700 20px var(--fx);letter-spacing:.2px;color:var(--ink)}
-  #viewLineups .lu-form{display:grid;grid-template-columns:minmax(180px,1fr) minmax(240px,1.3fr);gap:12px;margin-bottom:14px}
-  #viewLineups .lu-lab{display:grid;gap:6px;font:700 10.5px var(--fx);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
-  #viewLineups .lu-lab input,#viewLineups .lu-lab select{height:36px;padding:0 11px;border:1px solid var(--line);border-radius:9px;background:var(--panel-2);color:var(--ink);font:14px system-ui,-apple-system,"Segoe UI",sans-serif;letter-spacing:0;text-transform:none;outline:0}
-  #viewLineups .lu-lab input:focus,#viewLineups .lu-lab select:focus{border-color:var(--gold-line)}
-  #viewLineups .lu-weekbar{display:flex;align-items:center;justify-content:center;gap:10px;margin:4px 0 12px}
-  #viewLineups .lu-week-pick{appearance:none;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:320px;min-height:50px;padding:7px 14px;border:1px solid var(--line);border-radius:10px;background:var(--panel-2);cursor:pointer;font:inherit;transition:border-color .15s}
-  #viewLineups .lu-week-pick:hover{border-color:var(--gold-line)}
-  #viewLineups .lu-week-pick-k{font:700 10px var(--fx);letter-spacing:.12em;text-transform:uppercase;color:var(--gold)}
-  #viewLineups .lu-week-pick b{margin-top:3px;font:700 15px var(--fx);color:var(--ink)}
-  #viewLineups .lu-week-nav{appearance:none;width:36px;height:36px;border:1px solid var(--line);border-radius:9px;background:var(--panel-2);color:var(--ink-2);font-size:19px;cursor:pointer;transition:color .15s,border-color .15s}
-  #viewLineups .lu-week-nav:hover{color:var(--gold-2);border-color:var(--gold-line)}
-  #viewLineups .lu-month-picker{width:min(360px,100%);margin:-4px auto 12px;padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--panel-2);box-shadow:0 14px 30px -12px rgba(0,0,0,.8);animation:lxIn .18s var(--lx-ease)}
-  #viewLineups .lu-month-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
-  #viewLineups .lu-month-title{font:700 14px var(--fx);text-transform:capitalize;color:var(--ink)}
-  #viewLineups .lu-month-nav{appearance:none;width:30px;height:30px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink-2);font-size:16px;cursor:pointer}
-  #viewLineups .lu-month-nav:hover{color:var(--gold-2);border-color:var(--gold-line)}
-  #viewLineups .lu-month-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
-  #viewLineups .lu-month-wd{padding:3px 0;text-align:center;font:700 10px var(--fx);text-transform:uppercase;color:var(--muted)}
-  #viewLineups .lu-month-day{appearance:none;height:32px;border:1px solid transparent;border-radius:7px;background:transparent;color:var(--ink-2);font:600 12px var(--fx);cursor:pointer;font-variant-numeric:tabular-nums}
-  #viewLineups .lu-month-day:hover{border-color:var(--gold-line);color:var(--gold-2)}
-  #viewLineups .lu-month-day.in-week{background:var(--gold-soft);color:var(--gold-2)}
-  #viewLineups .lu-month-day.week-start{border-left-color:var(--gold);border-top-color:var(--gold);border-bottom-color:var(--gold)}
-  #viewLineups .lu-month-day.week-end{border-right-color:var(--gold);border-top-color:var(--gold);border-bottom-color:var(--gold)}
-  #viewLineups .lu-month-day.today{box-shadow:inset 0 0 0 1px var(--ink-2)}
-  #viewLineups .lu-month-blank{height:32px}
-  #viewLineups .lu-attendance{max-height:560px;overflow:auto;border:1px solid var(--line-2);border-radius:10px;scrollbar-width:thin}
-  #viewLineups .lu-att-row{display:grid;grid-template-columns:28px minmax(140px,1.2fr) repeat(7,46px) minmax(96px,.6fr) 32px;align-items:center;min-width:730px;min-height:40px;border-top:1px solid var(--line-2)}
-  #viewLineups .lu-att-row:first-child{border-top:0}
-  #viewLineups .lu-att-head{position:sticky;top:0;z-index:3;min-height:52px;background:var(--panel-2);color:var(--muted);font:700 10.5px var(--fx);letter-spacing:.1em;text-transform:uppercase}
-  #viewLineups .lu-att-head span{text-align:center}
-  #viewLineups .lu-att-head .lu-player-h,#viewLineups .lu-att-head .lu-pos-h{padding-left:6px;text-align:left}
-  #viewLineups .lu-day-head{display:flex;flex-direction:column;align-items:center;gap:4px;font:700 12px var(--fx);letter-spacing:0;text-transform:none;color:var(--ink-2)}
-  #viewLineups .lu-day-count{display:grid;place-items:center;min-width:26px;height:21px;padding:0 6px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink-2);font:700 12px var(--fx);font-variant-numeric:tabular-nums}
-  #viewLineups button.lu-day-count{appearance:none;cursor:pointer;transition:background-color .15s,color .15s,border-color .15s}
-  #viewLineups button.lu-day-count:hover,#viewLineups button.lu-day-count.on{border-color:var(--gold);background:var(--gold);color:#17130b}
-  #viewLineups .lu-idx{text-align:center;font:600 12px var(--fx);color:var(--muted)}
-  #viewLineups .lu-player,#viewLineups .lu-pos{width:calc(100% - 8px);min-width:0;height:30px;padding:0 8px;border:1px solid transparent;border-radius:7px;background:transparent;color:var(--ink);font:13.5px system-ui,-apple-system,"Segoe UI",sans-serif}
-  #viewLineups .lu-player:hover,#viewLineups .lu-pos:hover,#viewLineups .lu-player:focus,#viewLineups .lu-pos:focus{outline:0;border-color:var(--line);background:var(--panel-2)}
-  #viewLineups .lu-player option,#viewLineups .lu-pos option{background:#16171a;color:var(--ink)}
-  #viewLineups .lu-day{display:grid;place-items:center}
-  #viewLineups .lu-check{appearance:none;position:relative;width:18px;height:18px;min-width:18px;margin:0;padding:0;border:1.5px solid rgba(255,255,255,.22);border-radius:5px;background:transparent;cursor:pointer;transition:background-color .12s,border-color .12s}
-  #viewLineups .lu-check:hover{border-color:var(--gold)}
-  #viewLineups .lu-check:checked{border-color:var(--gold);background:var(--gold)}
-  #viewLineups .lu-check:checked::after{content:"";position:absolute;left:5px;top:1px;width:4px;height:9px;border:solid #17130b;border-width:0 2px 2px 0;transform:rotate(45deg)}
-  #viewLineups .lu-rm{width:28px;height:28px;border:0;border-radius:7px;background:transparent;color:var(--muted);font-size:12px}
-  #viewLineups .lu-rm:hover{color:var(--bad);background:rgba(232,98,107,.08)}
-  #viewLineups .lu-form-actions{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;padding-top:14px}
-  #viewLineups .lu-form-actions .lx-btn{height:38px;padding:0 14px}
-  #viewLineups .lu-summary{display:flex;flex-direction:column;align-items:center;padding:16px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
-  #viewLineups .lu-summary-em{width:88px;height:88px;margin:2px auto 14px;padding:8px;object-fit:contain;border:1px solid var(--gold-line);border-radius:14px;background:#0d0d0b}
-  #viewLineups .lu-summary-em-ph{display:grid;place-items:center;color:var(--gold);font:800 18px var(--fx)}
-  #viewLineups .lu-summary-grid{display:grid;gap:10px;width:100%}
-  #viewLineups .lu-summary-stat{padding-top:10px;border-top:1px solid var(--line)}
-  #viewLineups .lu-summary-stat:first-child{padding-top:0;border-top:0}
-  #viewLineups .lu-summary-l{font:700 10px var(--fx);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
-  #viewLineups .lu-summary-v{margin-top:3px;font:700 24px/1.1 var(--fx);color:var(--ink);font-variant-numeric:tabular-nums}
-  #viewLineups .lu-summary-v small{font-size:12px;color:var(--muted)}
-  #viewLineups .lu-summary-best{margin-top:4px;font-size:13px;font-weight:600;color:var(--gold-2)}
-  #viewLineups .lu-progress{height:5px;margin-top:8px;border-radius:6px;background:rgba(255,255,255,.06);overflow:hidden}
-  #viewLineups .lu-progress span{display:block;height:100%;border-radius:6px;background:var(--gold)}
-  #viewLineups .lu-day-detail{padding-top:10px;border-top:1px solid var(--line)}
-  #viewLineups .lu-day-detail-value{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;padding:9px 11px;border:1px solid var(--gold-line);border-radius:9px;background:var(--gold-soft)}
-  #viewLineups .lu-day-detail-day{padding-bottom:4px;font:700 11px var(--fx);letter-spacing:.1em;text-transform:uppercase;color:var(--gold)}
-  #viewLineups .lu-day-detail-number{font:700 30px/1 var(--fx);color:var(--gold-2);font-variant-numeric:tabular-nums}
-  #viewLineups .lu-day-detail-number small{margin-left:4px;font:600 10px var(--fx);text-transform:uppercase;color:var(--ink-2)}
-  #viewLineups .lu-day-names{margin-top:7px;font-size:12px;line-height:1.45;color:var(--ink-2)}
-  #viewLineups .lu-day-help{font-size:12px;line-height:1.45;color:var(--muted)}
-
   /* ── Largeurs moyennes et petites ── */
   @media(max-width:1060px){
     #viewLineups .lx-card{grid-template-columns:minmax(0,1fr) auto 16px;gap:16px 22px}
@@ -757,12 +740,6 @@
     #viewLineups .lx-card-go{grid-column:3;grid-row:1/3}
   }
   @media(max-width:920px){
-    #viewLineups .lu-editor-shell{grid-template-columns:1fr}
-    #viewLineups .lu-summary{display:grid;grid-template-columns:78px repeat(3,minmax(0,1fr));gap:12px;align-items:center}
-    #viewLineups .lu-summary-em{width:70px;height:70px;margin:0}
-    #viewLineups .lu-summary-grid{display:contents}
-    #viewLineups .lu-summary-stat{padding:0 0 0 12px;border-top:0;border-left:1px solid var(--line)}
-    #viewLineups .lu-day-detail{grid-column:1/-1}
     #viewLineups .lx-pe-grid{grid-template-columns:1fr;gap:18px}
   }
   @media(max-width:640px){
@@ -776,19 +753,19 @@
     #viewLineups .lx-dtitle{font-size:23px}
     #viewLineups .lx-dactions{width:100%}
     #viewLineups .lx-cstats{gap:18px}
-    #viewLineups .lu-form{grid-template-columns:1fr}
-    #viewLineups .lu-week-pick{flex:1;min-width:0}
-    #viewLineups .lu-summary{grid-template-columns:1fr 1fr}
-    #viewLineups .lu-summary-em{display:none}
-    #viewLineups .lu-summary-stat{border-left:0;padding-left:0}
-    #viewLineups .lx-savebar{left:0;right:0;width:auto;margin-left:0}
-    #viewLineups .lx-sb-txt{flex:1;min-width:0}
-    #viewLineups .lx-sb-txt>span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  }
-  @media(max-width:420px){
-    #viewLineups .lx-sb-txt>span{display:none}
-    #viewLineups .lx-savebar{justify-content:flex-end}
-    #viewLineups .lx-sb-txt{flex:1}
+    #viewLineups .lx-dtitle-in{width:100%}
+    #viewLineups .lx-ap-search{max-width:none}
+    #viewLineups .lx-ap.is-first{padding:18px 16px}
+    /* Joueurs : le nom sur une ligne, les sept jours dessous, sans défilement de côté */
+    #viewLineups .lx-at{overflow:visible}
+    #viewLineups .lx-at-row,#viewLineups .lx-at.can-edit .lx-at-row{grid-template-columns:repeat(7,minmax(0,1fr));column-gap:5px;min-width:0;padding:0 10px}
+    #viewLineups .lx-at.can-edit .lx-at-row{grid-template-columns:repeat(7,minmax(0,1fr)) 38px}
+    #viewLineups .lx-at-row>.lx-at-name,#viewLineups .lx-at-row:not(.lx-at-head)>.lx-at-name{position:static;grid-column:1/8;grid-row:1;padding:12px 2px 2px;background:none}
+    #viewLineups .lx-at-head>.lx-at-name{display:none}
+    #viewLineups .lx-at-head>.lx-at-day{grid-row:1;padding:10px 0 8px}
+    #viewLineups .lx-at-row>.lx-at-c{grid-row:2;padding:6px 0 12px}
+    #viewLineups .lx-at-row>.lx-at-c:has(.lx-at-rm){grid-column:8;grid-row:1;padding:6px 0 0}
+    #viewLineups .lx-at-cell{width:100%;max-width:38px;height:36px}
   }
   /* La matrice devient une pile de postes quand la place manque. */
   @container lxcomp (max-width:700px){
@@ -810,8 +787,7 @@
     #viewLineups .lx-cell small{display:none}
     #viewLineups .lx-cell-ok{position:static;order:-1}
     #viewLineups .lx-mx-as{grid-template-columns:auto 1fr;justify-content:start;align-items:center;gap:4px 10px;padding:10px 12px;border-left:0;border-top:1px solid var(--line-2)}
-    #viewLineups .lx-mx-as::before{content:"Désigné";font:700 10px var(--fx);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
-    #viewLineups .lx-mx-as.is-none::before{content:none}
+    #viewLineups .lx-as-k{display:block;font:700 10px var(--fx);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
     #viewLineups .lx-mx-as>.lx-st{grid-column:2}
     #viewLineups .lx-as-hint{grid-column:1/-1}
     /* en pile, les joueurs qui ont joué le char passent devant, le désigné en premier */
@@ -821,8 +797,36 @@
     #viewLineups .lx-pe-host{margin-top:-10px}
     #viewLineups .lx-tp-list{grid-template-columns:1fr}
   }
+  /* ── Fenêtre de confirmation (dialog natif, aux couleurs du site) ── */
+  .lx-dlg{width:min(440px,calc(100vw - 32px));max-width:none;margin:auto;padding:0;border:0;background:transparent;color:var(--ink);overflow:visible;
+    font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;color-scheme:dark}
+  .lx-dlg::backdrop{background:rgba(5,5,4,.72);animation:lxDlgFade .18s ease-out}
+  .lx-dlg-box{margin:0;padding:22px 22px 18px;border:1px solid var(--line);border-radius:14px;background:var(--panel);box-shadow:0 30px 70px -24px rgba(0,0,0,.95);animation:lxDlgIn .2s cubic-bezier(.2,.8,.2,1)}
+  .lx-dlg.is-closing .lx-dlg-box{animation:lxDlgOut .15s ease-in forwards}
+  .lx-dlg.is-closing::backdrop{animation:lxDlgFade .15s ease-in reverse forwards}
+  @keyframes lxDlgFade{from{opacity:0}to{opacity:1}}
+  @keyframes lxDlgIn{from{opacity:0;transform:translateY(10px) scale(.97)}to{opacity:1;transform:none}}
+  @keyframes lxDlgOut{to{opacity:0;transform:translateY(6px) scale(.98)}}
+  .lx-dlg-head{display:flex;align-items:center;gap:12px}
+  .lx-dlg-ic{display:grid;place-items:center;flex:none;width:40px;height:40px;border:1px solid var(--line);border-radius:12px;background:var(--gold-soft);color:var(--gold)}
+  .lx-dlg-ic .ic{width:19px;height:19px}
+  .lx-dlg.is-danger .lx-dlg-ic{background:rgba(232,98,107,.12);color:var(--bad)}
+  .lx-dlg h3{margin:0;font:700 19px/1.25 var(--fx);letter-spacing:.2px;color:var(--ink);text-wrap:balance}
+  .lx-dlg-text{margin:14px 0 0;font-size:14.5px;line-height:1.55;color:var(--ink-2);text-wrap:pretty}
+  .lx-dlg-text b{color:var(--ink);font-weight:600}
+  .lx-dlg-lab{display:block;margin:18px 0 7px;font:700 10.5px var(--fx);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .lx-dlg-hint{margin:14px 0 0;font-size:12.5px;line-height:1.5;color:var(--muted)}
+  .lx-weekpick{display:flex;align-items:center;gap:8px}
+  .lx-weekpick-v{flex:1;display:grid;justify-items:center;gap:5px;min-height:56px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--panel-2);text-align:center}
+  .lx-weekpick-v b{font:700 15px var(--fx);color:var(--ink);font-variant-numeric:tabular-nums}
+  .lx-weekpick-v .lx-when{font:700 10px/1 var(--fx);letter-spacing:.12em;text-transform:uppercase;padding:3px 7px;border-radius:5px;background:var(--gold-soft);color:var(--gold-2)}
+  .lx-weekpick-v .lx-when.next{background:rgba(255,255,255,.06);color:var(--ink-2)}
+  .lx-weekpick-v .lx-when.past{background:transparent;color:var(--muted)}
+  .lx-dlg .lx-icon .ic{width:16px;height:16px}
+  .lx-dlg-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:22px}
+  .lx-dlg-actions .lx-btn{height:38px;padding:0 16px}
   @media(prefers-reduced-motion:reduce){
-    #viewLineups *,#viewLineups *::before,#viewLineups *::after{animation:none !important;transition:none !important}
+    #viewLineups *,#viewLineups *::before,#viewLineups *::after,.lx-dlg,.lx-dlg *,.lx-dlg::backdrop{animation:none !important;transition:none !important}
   }
   .mini{width:100%;border-collapse:collapse}
   .mini th{font-size:11px;color:var(--muted);text-align:right;padding:6px 8px;font-weight:700;text-transform:uppercase;letter-spacing:.3px}

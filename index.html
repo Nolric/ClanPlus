@@ -18,12 +18,12 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <script src="i18n/index.fr.js?v=4d034ab3"></script>
-<script src="i18n/index.en.js?v=385ee7a0"></script>
+<script src="i18n/index.en.js?v=64cef0b0"></script>
 <script src="i18n.js?v=ed3f8a4f"></script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <!-- La charte vit dans app.css : progression.html la partage, et le
        navigateur la garde en cache d'une visite à l'autre. -->
-  <link rel="stylesheet" href="app.css?v=fa8ea634">
+  <link rel="stylesheet" href="app.css?v=188584e7">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" defer></script>
 </head>
 <body>
@@ -56,6 +56,7 @@
   <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></symbol>
   <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></symbol>
   <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
   <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
   <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 8v5M12 16.5v.5"/></symbol>
   <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></symbol>
@@ -404,7 +405,6 @@
       </div>
     </header>
     <div class="lu-notice hidden" id="luNotice" role="status" aria-live="polite"></div>
-    <div id="luEditor" class="hidden"></div>
     <div id="luList"></div>
     <div id="luDetail" class="hidden"></div>
   </div>
@@ -532,7 +532,7 @@
 <!-- Le code de l'application vit dans app.js : progression.html le
      partage, pour qu'il n'existe jamais deux versions des mêmes
      calculs. « defer » l'exécute après lecture complète de la page. -->
-  <script src="app.js?v=b526daac" defer></script>
+  <script src="app.js?v=8c7bc945" defer></script>
 <script src="app-fin.js?v=4e570ee3" defer></script>
 </body>
 </html>
