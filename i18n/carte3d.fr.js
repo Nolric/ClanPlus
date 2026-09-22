@@ -314,5 +314,6 @@ window.CP_FR = Object.assign(window.CP_FR || {}, {
   "copy/paste": "copier/coller",
   "lock": "verrouiller",
   "right-click for the menu": "clic droit pour le menu",
+  "Trees": "Arbres",
   "← Back to the site": "← Retour au site",
 });
