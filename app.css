@@ -212,6 +212,13 @@
   .lg-note{margin:14px 0 0;font-size:12.5px;line-height:1.55;color:var(--muted)}
   .pr-verified{margin:10px 0 0;font-size:12.5px;color:var(--muted)}
   .pr-verified b{color:var(--good)}
+  /* Composition du soir (mod 1.0.35) */
+  .lx-plan-tn{grid-column:1/-1;justify-self:start;margin-top:3px;padding:2px 6px;border-radius:6px;background:rgba(216,181,102,.14);color:var(--gold);
+    font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;line-height:1.4}
+  .lx-btn-tn.on{color:var(--gold-2);border-color:var(--gold-line);background:rgba(216,181,102,.10)}
+  .lx-tn-note{margin:10px 0 0;padding:9px 12px;border-left:3px solid var(--gold);border-radius:0 9px 9px 0;
+    background:rgba(216,181,102,.07);font-size:13px;line-height:1.5;color:var(--ink-2,#bdb9af)}
+  .lx-tn-note b{color:var(--gold)}
   .su-logout:hover{border-color:var(--bad,#e8626b);color:#e8626b;background:rgba(232,98,107,.10)}
   .sidebar.collapsed .su-who,.sidebar.collapsed .su-lbl{display:none}
   .sidebar.collapsed .su-logout{padding:9px 0}

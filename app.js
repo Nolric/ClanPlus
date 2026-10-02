@@ -7053,6 +7053,18 @@ function luCompsOf(lu){
   const e=luMetaEntry(lu);
   return (e&&Array.isArray(e.comps)?e.comps:[]).slice(0,LU_MAX_COMPS).map(luNormComp);
 }
+/* « Composition du soir » (mod Clan Plus 1.0.35). Un officier épingle UNE
+   composition de la line-up ; le mod montre alors à chaque joueur relié son
+   poste et son char, en tête de sa fenêtre. Rangée dans l'entrée meta
+   (tonight:{comp,until}), valable jusqu'au lendemain 6 h. Fonction serveur
+   qui la lit : backend/functions/mod, action « tonight ». */
+function luTonightOf(lu){ const e=luMetaEntry(lu), tn=e&&e.tonight; return tn&&tn.comp?{comp:String(tn.comp),until:String(tn.until||"")}:null; }
+function luTonightOn(w,c){ const tn=w&&w.tonight; return !!(tn&&c&&tn.comp===c.id&&new Date(tn.until).getTime()>Date.now()); }
+function luTonightUntil(){ const d=new Date(); if(d.getHours()>=6) d.setDate(d.getDate()+1); d.setHours(6,0,0,0); return d.toISOString(); }
+function luToggleTonight(){
+  const w=LU_W, c=luCurComp(); if(!w||!c) return;
+  luMut(()=>{ w.tonight=luTonightOn(w,c)?null:{comp:c.id,until:luTonightUntil()}; });
+}
 function luOpenLu(){ return LU_OPEN_ID==null?null:(LINEUPS.find(l=>String(l.id)===String(LU_OPEN_ID))||null); }
 function luCurComp(){ return LU_W?(LU_W.comps.find(c=>c.id===LU_COMP_ID)||null):null; }
 
@@ -7064,7 +7076,7 @@ function luWorkFrom(lu){
   const meta=luMeta(lu);
   return { id:lu.id, name:lu.name||"", notes:lu.notes||"", week_start:meta.week_start, format:meta.format,
     roster:luRoster(lu).map(s=>({account_id:Number(s.account_id),name:s.name,position:s.position,tank:s.tank||"",availability:s.availability.slice()})),
-    comps:luCompsOf(lu), touched:new Map() };
+    comps:luCompsOf(lu), tonight:luTonightOf(lu), touched:new Map() };
 }
 function luBuildSlots(w,fresh,touched){
   const srv=new Map(luCleanSlots(fresh||{}).filter(s=>s.account_id!=="").map(s=>[Number(s.account_id),s.availability]));
@@ -7074,7 +7086,9 @@ function luBuildSlots(w,fresh,touched){
     format:w.format,week_start:w.week_start}));
   const comps=w.comps.slice(0,LU_MAX_COMPS).map((c,i)=>{ const n=luNormComp(c,i);
     n.posts.forEach(p=>{ if(p.account_id&&!keep.has(p.account_id)){ p.account_id=null; p.tank_id=null; dropped++; } }); return n; });
-  return { slots:roster.concat([{_type:"meta",kind:"comps",v:2,week_start:w.week_start,format:w.format,comps}]), dropped };
+  // l'épingle ne survit qu'à une composition qui existe encore, et qu'avant sa fin de validité
+  const pin=w.tonight&&comps.some(c=>c.id===w.tonight.comp)&&new Date(w.tonight.until).getTime()>Date.now()?{tonight:w.tonight}:{};
+  return { slots:roster.concat([{_type:"meta",kind:"comps",v:2,week_start:w.week_start,format:w.format,comps,...pin}]), dropped };
 }
 
 /* ── Enregistrement automatique ────────────────────────────────────
@@ -7754,7 +7768,7 @@ function luRenderComps(){
     const stats=luCompStats(comp,roster);
     const plans=comps.map(c=>{ const s=luCompStats(c,roster), on=c.id===comp.id;
       return `<button type="button" role="tab" class="lx-plan${on?" on":""}" aria-selected="${on}" data-comp="${esc(c.id)}" data-fk="plan-${esc(c.id)}">
-        <span class="lx-plan-name" data-i18n-skip>${esc(c.name)}</span><span class="lx-plan-fill" title="Postes pourvus">${s.filled}/${s.total}</span>
+        <span class="lx-plan-name" data-i18n-skip>${esc(c.name)}</span>${luTonightOn(w,c)?'<span class="lx-plan-tn">Ce soir</span>':""}<span class="lx-plan-fill" title="Postes pourvus">${s.filled}/${s.total}</span>
         <span class="lx-plan-sub" aria-hidden="true">${c.posts.length?c.posts.slice(0,8).map(p=>luCatIco(p.cat)).join(""):"—"}</span></button>`; }).join("")
       +(LU_CANEDIT&&comps.length<LU_MAX_COMPS?`<button type="button" class="lx-plan-add" id="lxCompAdd" data-fk="plan-add">${luIco("i-plus")}<span>Composition</span></button>`:"");
     const idHtml=LU_CANEDIT
@@ -7765,13 +7779,17 @@ function luRenderComps(){
         <div class="lx-cstat" title="Postes dont au moins un joueur de la line-up a déjà joué un char de la catégorie">${stats.covered==null?`<b>—</b>`:`<b>${stats.covered}<small>/${stats.definable}</small></b>`}<span>postes couverts</span></div>
         ${stats.conflicts?`<div class="lx-cstat warn"><b>⚠ ${stats.conflicts}</b><span>${stats.conflicts>1?"joueurs sur plusieurs postes":"joueur sur plusieurs postes"}</span></div>`:""}
       </div>`;
-    const menu=LU_CANEDIT?`<div class="lx-cmenu">${comps.length<LU_MAX_COMPS?`<button type="button" class="lx-btn lx-btn-quiet" id="lxCDup" data-fk="cdup">${luIco("i-copy")}<span>Dupliquer</span></button>`:""}<button type="button" class="lx-btn lx-btn-quiet lx-btn-danger" id="lxCDel" data-fk="cdel">${luIco("i-trash")}<span>Supprimer</span></button></div>`:"";
+    const tnOn=luTonightOn(w,comp);
+    const tnBtn=`<button type="button" class="lx-btn lx-btn-quiet lx-btn-tn${tnOn?" on":""}" id="lxCTonight" data-fk="ctonight" aria-pressed="${tnOn}" title="${t("Épingler comme composition du soir : le mod Clan Plus montre à chaque joueur son poste et son char, jusqu'à demain 6 h")}">${luIco("i-star")}<span>${tnOn?t("Composition du soir"):t("Ce soir")}</span></button>`;
+    const tnNote=tnOn?`<p class="lx-tn-note"><b>★</b> <span>Composition du soir : chaque joueur dont le mod Clan Plus est relié voit son poste et son char en tête de sa fenêtre, jusqu'à</span> <b data-i18n-skip>${esc(new Date(w.tonight.until).toLocaleString(window.CP_LOC,{weekday:"long",hour:"2-digit",minute:"2-digit"}))}</b>.</p>`:"";
+    const menu=LU_CANEDIT?`<div class="lx-cmenu">${tnBtn}${comps.length<LU_MAX_COMPS?`<button type="button" class="lx-btn lx-btn-quiet" id="lxCDup" data-fk="cdup">${luIco("i-copy")}<span>Dupliquer</span></button>`:""}<button type="button" class="lx-btn lx-btn-quiet lx-btn-danger" id="lxCDel" data-fk="cdel">${luIco("i-trash")}<span>Supprimer</span></button></div>`:"";
     const note=LU_CANEDIT
       ? `<input class="lx-input lx-cnote" id="lxCNote" data-fk="cnote" maxlength="200" value="${esc(comp.note)}" placeholder="Consigne générale pour cette composition (facultatif)" aria-label="Consigne générale">`
       : (comp.note?`<p class="lx-cnote-ro" data-i18n-skip>${esc(comp.note)}</p>`:"");
     body.innerHTML=`<div class="lx-plans" role="tablist" aria-label="Compositions">${plans}</div>
       <div class="lx-comp${LU_ANIM_COMP?" lx-fade":""}" data-comp="${esc(comp.id)}">
         <div class="lx-chead"><div class="lx-chead-id">${idHtml}</div>${statsHtml}${menu}</div>
+        ${tnNote}
         ${note}
         ${luMineBar(comp)}
         ${luMatrixHtml(comp,roster,stats)}
@@ -7992,6 +8010,7 @@ function luWireBody(){
     if(b.id==="lxCompFirst"||b.id==="lxCompAdd") return luNewComp();
     if(b.id==="lxCDup") return luDupComp();
     if(b.id==="lxCDel") return luDelComp();
+    if(b.id==="lxCTonight") return luToggleTonight();
     if(b.dataset.assign) return luAssign(b.dataset.assign,Number(b.dataset.acc),0);
     if(b.dataset.pick){ const [pid,acc,tk]=b.dataset.pick.split("|"); return luAssign(pid,Number(acc),Number(tk)); }
     if(b.dataset.addCat) return luAddPost(b.dataset.addCat);

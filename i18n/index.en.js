@@ -1694,4 +1694,9 @@ window.CP_EN = Object.assign(window.CP_EN || {}, {
   ": pour eux, ce sont les chars qu'ils possèdent aujourd'hui, pas les chars déjà joués.": ": for them, these are the tanks they own today, not the tanks already played.",
   "D'après ton garage (mod relié)": "From your garage (mod linked)",
   "Cases cochées d'après ton garage réel, envoyé par le mod Clan Plus.": "Boxes ticked from your real garage, sent by the Clan Plus mod.",
+  /* ── Composition du soir (mod Clan Plus 1.0.35) ── */
+  "Ce soir": "Tonight",
+  "Composition du soir": "Tonight's composition",
+  "Épingler comme composition du soir : le mod Clan Plus montre à chaque joueur son poste et son char, jusqu'à demain 6 h": "Pin as tonight's composition: the Clan Plus mod shows each player their post and tank, until 6 am tomorrow",
+  "Composition du soir : chaque joueur dont le mod Clan Plus est relié voit son poste et son char en tête de sa fenêtre, jusqu'à": "Tonight's composition: every player whose Clan Plus mod is linked sees their post and tank at the top of the mod window, until",
 });
