@@ -6867,7 +6867,7 @@ function renderPlan(name,my,byClass,byMap,elist,prec,survrate,myDmg,clanDmg,obj)
 
    CATÉGORIES — liste commune à tous les clans : web/lineup-categories.json,
    produit par outils/categories-chars.cjs (chaque char de rang X y a une
-   ou deux catégories). Icônes : web/img/lineup/categories.svg.
+   ou deux catégories). Icônes : celles du jeu (web/img/lineup/roles/, voir luCatIco).
 
    STOCKAGE — dans le JSON « slots » existant : une ligne par joueur, plus
    une entrée {_type:"meta", kind:"comps"} qui porte le format et les
@@ -6919,7 +6919,16 @@ const LU_MAPS=[
   ["fishingbay","Baie du pêcheur"],["erlenberg","Erlenberg"],["elhallouf","El Halluf"],
   ["karelia","Carélie"],["mannerheimline","Ligne Mannerheim"],["westfeld","Westfield"],["airfield","Aérodrome"]
 ];
-const LU_ICONS="img/lineup/categories.svg";
+/* Icônes des postes : celles du JEU, telles qu'au garage — la silhouette de la
+   classe et, en médaillon, l'icône de rôle (assaut, percée, soutien, polyvalent,
+   sniper, éclaireur). Extraites de res/packages/gui-part*.pkg :
+   gui/maps/icons/vehicleTypes/large et gui/maps/icons/roleExp/roles/24x24,
+   copiées dans web/img/lineup/roles/. Chaque catégorie prend le rôle du jeu
+   qui lui ressemble le plus. */
+const LU_ROLE_IMG="img/lineup/roles/";
+const LU_CAT_ROLE={"lourd-hulldown":"universal","lourd-brawl":"assault","lourd-rapide":"break","lourd-soutien":"support",
+  "moyen-hulldown":"universal","moyen-brawl":"assault","moyen-rapide":"break","moyen-barillet":"support","moyen-sniper":"sniper",
+  "leger-passif":"scout","leger-actif":"break","leger-appui":"support","td-blinde":"assault","td-sniper":"sniper","td-soutien":"support"};
 let LINEUPS=[], LU_CANEDIT=false;
 let LU_OPEN_ID=null,   // line-up ouverte (null = la liste)
     LU_W=null,         // copie de travail de la line-up ouverte (voir luWorkFrom)
@@ -6942,7 +6951,13 @@ function luCurrentUserCanManage(){
 function luIsMe(acc){ return ME_ID!=null && acc!=null && acc!=="" && Number(acc)===Number(ME_ID); }
 function luIco(id,cls){ return `<svg class="ic${cls?" "+cls:""}" aria-hidden="true"><use href="#${id}"/></svg>`; }
 function luCat(k){ return LU_CATS.find(c=>c[0]===k)||LU_CATS[LU_CATS.length-1]; }
-function luCatIco(k,cls){ return `<svg class="ic lx-cat-ic${cls?" "+cls:""}" aria-hidden="true"><use href="${LU_ICONS}#cat-${luCat(k)[0]}"/></svg>`; }
+// cls « is-sm » : petite taille, le médaillon de rôle seul (la silhouette serait illisible).
+function luCatIco(k,cls){
+  const c=luCat(k), role=LU_CAT_ROLE[c[0]], kl=c[2];
+  return `<span class="lx-cat-ic lx-rico${cls?" "+cls:""}${kl?"":" is-free"}${role?"":" no-role"}" aria-hidden="true">`
+    +(kl?`<i class="lx-rico-s" style="--m:url(${LU_ROLE_IMG}cls-${kl}.png)"></i>`:'<i class="lx-rico-s"></i>')
+    +(role?`<i class="lx-rico-g" style="--m:url(${LU_ROLE_IMG}role-${role}.png)"></i>`:"")+"</span>";
+}
 function luUid(p){ return p+Math.random().toString(36).slice(2,9); }
 function luClone(x){ return JSON.parse(JSON.stringify(x)); }
 function luPlural(n,one,many){ return n+" "+(n>1?many:one); }
@@ -7399,7 +7414,7 @@ function luTonightHtml(lu){
   if(i<0&&!luRoster(lu).some(s=>luIsMe(s.account_id))) return "";
   const p=c.posts[i];
   const mine=i>=0
-    ? `<span class="lx-tn-me"><span>Ton poste :</span> <b>n° ${i+1}</b> ${luCatIco(p.cat)}<b>${esc(luCat(p.cat)[1])}</b>${p.tank_id?` <span>avec ton</span> <b data-i18n-skip>${esc(luTankName(p.tank_id))}</b>`:""}</span>`
+    ? `<span class="lx-tn-me"><span>Ton poste :</span> <b>n° ${i+1}</b> ${luCatIco(p.cat,"is-sm")}<b>${esc(luCat(p.cat)[1])}</b>${p.tank_id?` <span>avec ton</span> <b data-i18n-skip>${esc(luTankName(p.tank_id))}</b>`:""}</span>`
     : `<span class="lx-tn-me is-none">Pas de poste pour toi dans cette composition.</span>`;
   return `<div class="lx-tn">
     <span class="lx-tn-k">★ Ce soir</span>
@@ -7710,7 +7725,7 @@ function luSourceHtml(){
   return `${err}${cats}<p class="lx-src"><span>« Garage réel » : la liste envoyée par le mod Clan Plus du joueur, à jour.</span> <span>« Chars joués » : statistiques publiques Wargaming ; un char vendu y reste compté. Pour corriger, le joueur relie son jeu (« Relier mon jeu », dans le menu).</span>${at?` <span class="lx-src-t">Lu à ${at}.</span> <button type="button" class="lx-link" id="lxGarRefresh" data-fk="gar-refresh">Actualiser</button>`:""}</p>`;
 }
 function luTankChip(x,tier){
-  const cats=luHasCats(tier)?x.cats.map(k=>luCatIco(k)).join(""):"";
+  const cats=luHasCats(tier)?x.cats.map(k=>luCatIco(k,"is-sm")).join(""):"";
   const tip=luHasCats(tier)&&x.cats.length?x.cats.map(k=>t(luCat(k)[1])).join(" / "):"";
   return `<span class="lx-tank"${tip?` title="${esc(tip)}"`:""}>${cats}<span data-i18n-skip>${esc(x.nom)}</span><em>${fmt(x.n)}</em></span>`;
 }
@@ -7804,7 +7819,7 @@ const LU_CLS_LABEL={heavyTank:"Lourds",mediumTank:"Moyens",lightTank:"Légers","
 const LU_CLS_WORDS={heavyTank:["lourd","lourds"],mediumTank:["moyen","moyens"],lightTank:["léger","légers"],"AT-SPG":["chasseur","chasseurs"],SPG:["artillerie","artilleries"],"":["libre","libres"]};
 function luClsRank(cat){ const r=LU_CLS_ORDER.indexOf(luCat(cat)[2]); return r<0?LU_CLS_ORDER.length:r; }
 // Icône de classe du jeu (web/classes), teinte par le CSS ; « libre » prend l'icône de sa catégorie.
-function luClsIco(cls){ return cls?`<span class="lx-clsic" style="--cimg:url(classes/${cls}.png)" aria-hidden="true"></span>`:luCatIco("libre","lx-clsic-svg"); }
+function luClsIco(cls){ return cls?`<span class="lx-clsic" style="--cimg:url(${LU_ROLE_IMG}cls-${cls}.png)" aria-hidden="true"></span>`:luCatIco("libre","lx-clsic-svg"); }
 function luSortedByCls(c){ return c.posts.every((p,i)=>!i||luClsRank(c.posts[i-1].cat)<=luClsRank(p.cat)); }
 /* Ce qu'un officier ne doit pas manquer sur un poste (vide = rien à signaler). */
 function luPostIssues(p,i,comp,w,tier,tonight){
@@ -7892,7 +7907,7 @@ function luPostRowHtml(p,i,c,w,tier,on,cid){
     : !p.account_id&&LU_CANEDIT?luSugHtml(p,c,w,tier,key):"";
   return `<div class="lx-pr${me?" is-me":""}${p.account_id?"":" is-open"}${LU_JUST_POST===p.id?" just":""}" data-post="${esc(p.id)}">
     <span class="lx-pr-n">${i+1}</span>
-    <span class="lx-pr-cat"><span class="lx-pr-ic">${luCatIco(p.cat)}</span><span class="lx-pr-cl"><b>${k[1]}</b><small>${k[3]}</small></span></span>
+    <span class="lx-pr-cat">${luCatIco(p.cat,"lx-pr-ico")}<span class="lx-pr-cl"><b>${k[1]}</b><small>${k[3]}</small></span></span>
     <span class="lx-pr-p">${who}</span>
     <span class="lx-pr-t">${tank}</span>
     <span class="lx-pr-x">${LU_CANEDIT?`<button type="button" class="lx-rm" data-rmpost="${key}" data-fk="rp-${esc(p.id)}" aria-label="${t("Supprimer le poste")} ${i+1}" title="Supprimer ce poste">${luIco("i-x")}</button>`:""}</span>
