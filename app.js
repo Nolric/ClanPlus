@@ -6853,10 +6853,13 @@ function renderPlan(name,my,byClass,byMap,elist,prec,survrate,myDmg,clanDmg,obj)
    LINE-UPS — joueurs, présences, chars, compositions par catégorie
    Création et modification réservées aux officiers+.
 
-   PARCOURS — on crée une line-up avec un nom et une semaine, puis tout
-   se modifie sur place : ajouter un joueur d'un clic, cocher ses jours,
-   voir ses chars, préparer les compositions. Tout s'enregistre
-   automatiquement (voir luFlush), sans bouton « Enregistrer ».
+   PARCOURS (refonte du 02/10/2026) — une seule liste, toutes les
+   line-ups. On en crée une en une étape : nom, format, joueurs cochés.
+   Ouverte, elle a trois onglets : Joueurs et dispos (soirs fixes du
+   lundi au dimanche, sans notion de semaine), Chars (qui a quoi), et
+   Compositions (des postes par catégorie, joueur et char au choix).
+   Les joueurs restent jusqu'à ce qu'un officier les retire. Tout
+   s'enregistre automatiquement (voir luFlush).
 
    COMPOSITIONS — une composition (Plan A, Plan B…) aligne des postes.
    Un poste = une CATÉGORIE de char (Lourd hulldown, Moyen rapide…, ou
@@ -6867,8 +6870,9 @@ function renderPlan(name,my,byClass,byMap,elist,prec,survrate,myDmg,clanDmg,obj)
    ou deux catégories). Icônes : web/img/lineup/categories.svg.
 
    STOCKAGE — dans le JSON « slots » existant : une ligne par joueur, plus
-   une entrée {_type:"meta", kind:"comps"} qui porte la semaine, le format
-   et les compositions. Aucun changement Supabase. Les postes de l'ancienne
+   une entrée {_type:"meta", kind:"comps"} qui porte le format et les
+   compositions (et une semaine, week_start, gardée pour les anciennes
+   versions mais plus affichée). Aucun changement Supabase. Les postes de l'ancienne
    version (char précis / classe + rôle tactique) sont convertis à la lecture.
 
    « QUI A QUEL CHAR » — statistiques publiques Wargaming
@@ -6916,18 +6920,16 @@ const LU_MAPS=[
   ["karelia","Carélie"],["mannerheimline","Ligne Mannerheim"],["westfeld","Westfield"],["airfield","Aérodrome"]
 ];
 const LU_ICONS="img/lineup/categories.svg";
-let LINEUPS=[], LU_CANEDIT=false, LU_FORMAT="manoeuvres";
+let LINEUPS=[], LU_CANEDIT=false;
 let LU_OPEN_ID=null,   // line-up ouverte (null = la liste)
     LU_W=null,         // copie de travail de la line-up ouverte (voir luWorkFrom)
     LU_TAB="players",  // "players" | "chars" | "comps"
-    LU_COMP_ID=null,   // composition affichée
-    LU_POST=null,      // poste déplié dans la composition
+    LU_CV="player",    // onglet Chars : "player" (par joueur) | "cat" (par catégorie)
     LU_GARAGE=null,    // joueur déplié dans l'onglet Chars
-    LU_JUST=null,      // dernière affectation, pour ne jouer son animation qu'une fois
-    LU_JUST_ROW=null,  // dernier joueur ajouté, même principe
-    LU_APQ="",         // recherche dans « Ajouter des joueurs »
-    LU_FRESH=false,    // la vue vient d'apparaître : on joue son entrée
-    LU_ANIM_COMP=false;// on vient de changer de composition : fondu du contenu
+    LU_JUST_ROWS=new Set(), // joueurs qu'on vient d'ajouter : leur ligne s'éclaire une fois
+    LU_JUST_POST=null, // poste qu'on vient d'ajouter
+    LU_JUST_COMP=null, // composition qu'on vient de créer
+    LU_FRESH=false;    // la vue vient d'apparaître : on joue son entrée
 
 function luCurrentMember(){
   return (MEMBERS||[]).find(m=>Number(m.account_id)===Number(ME_ID))||null;
@@ -6953,17 +6955,6 @@ function luMonday(value){
   const safe=Number.isNaN(d.getTime())?new Date():d;
   safe.setHours(12,0,0,0); safe.setDate(safe.getDate()-((safe.getDay()+6)%7));
   return safe;
-}
-function luShiftWeek(week,days){ const d=luMonday(week); d.setDate(d.getDate()+days); return luDateISO(d); }
-function luWeekLabel(value){
-  const a=luMonday(value),b=new Date(a); b.setDate(a.getDate()+6);
-  const short=d=>d.toLocaleDateString(window.CP_LOC,{day:"numeric",month:"short"}).replace(".","");
-  return `Semaine du ${short(a)} au ${short(b)} ${b.getFullYear()}`;
-}
-function luWeekState(week){ const cur=luDateISO(luMonday(null)); return week===cur?"now":(week>cur?"next":"past"); }
-function luWhenHtml(week){
-  const st=luWeekState(week);
-  return st==="now"?'<span class="lx-when">Cette semaine</span>':st==="next"?'<span class="lx-when next">À venir</span>':'<span class="lx-when past">Passée</span>';
 }
 function luAvailability(slot){
   const src=Array.isArray(slot&&slot.availability)?slot.availability:(Array.isArray(slot&&slot.presence)?slot.presence:[]);
@@ -7061,12 +7052,7 @@ function luCompsOf(lu){
 function luTonightOf(lu){ const e=luMetaEntry(lu), tn=e&&e.tonight; return tn&&tn.comp?{comp:String(tn.comp),until:String(tn.until||"")}:null; }
 function luTonightOn(w,c){ const tn=w&&w.tonight; return !!(tn&&c&&tn.comp===c.id&&new Date(tn.until).getTime()>Date.now()); }
 function luTonightUntil(){ const d=new Date(); if(d.getHours()>=6) d.setDate(d.getDate()+1); d.setHours(6,0,0,0); return d.toISOString(); }
-function luToggleTonight(){
-  const w=LU_W, c=luCurComp(); if(!w||!c) return;
-  luMut(()=>{ w.tonight=luTonightOn(w,c)?null:{comp:c.id,until:luTonightUntil()}; });
-}
 function luOpenLu(){ return LU_OPEN_ID==null?null:(LINEUPS.find(l=>String(l.id)===String(LU_OPEN_ID))||null); }
-function luCurComp(){ return LU_W?(LU_W.comps.find(c=>c.id===LU_COMP_ID)||null):null; }
 
 /* ── Copie de travail ──────────────────────────────────────────────
    Tout ce qu'on modifie vit ici, puis part au serveur par luFlush.
@@ -7147,7 +7133,7 @@ function luSyncUI(){
 function luDialog(o){
   return new Promise(resolve=>{
     const back=document.activeElement, d=document.createElement("dialog");
-    d.className="dashx lx-dlg"+(o.danger?" is-danger":"");
+    d.className="dashx lx-dlg"+(o.danger?" is-danger":"")+(o.wide?" is-wide":"");
     d.setAttribute("aria-labelledby","lxDlgT");
     d.innerHTML=`<form method="dialog" class="lx-dlg-box" novalidate>
       <div class="lx-dlg-head"><span class="lx-dlg-ic">${luIco(o.icon||(o.danger?"i-trash":"i-plus"))}</span><h3 id="lxDlgT">${esc(o.title)}</h3></div>
@@ -7292,67 +7278,41 @@ async function luGarageLoad(ids,force){
   if(!j){ LU_GAR.state="error"; LU_GAR.err=err; return; }
   LU_GAR.state="ok"; LU_GAR.ts=now;
 }
-/* Les chars de rang X d'un joueur, rangés par catégorie : {cat:[{id,nom,n}]}.
-   undefined = pas encore lu ; null = rien de Wargaming (ou classement absent). */
-function luGarageByCat(acc){
+
+/* ── Les chars d'un joueur, au rang de la line-up ──────────────────
+   VEHMAP (données du clan) donne le rang et la classe de chaque char ;
+   le classement commun (LU_CATDATA, rang X seulement) donne les
+   catégories. Une line-up Bastion T8 lit donc les chars de rang VIII,
+   rangés par classe. */
+const LU_CLASSES=[["heavyTank","Lourds"],["mediumTank","Moyens"],["lightTank","Légers"],["AT-SPG","Chasseurs"],["SPG","Artillerie"]];
+function luTier(w){ return w&&w.format==="bastion8"?8:10; }
+function luHasCats(tier){ return tier===10&&!!LU_CATDATA; }
+function luTankName(id){ const c=luTankInfo(id), v=VEHMAP[Number(id)]; return (c&&c.nom)||(v&&v.name)||("#"+id); }
+/* [{id,nom,classe,cats,n}] du plus joué au moins joué.
+   undefined = pas encore lu ; null = rien de Wargaming pour ce compte. */
+function luTanksOf(acc,tier){
   const g=LU_GAR.data[Number(acc)];
   if(g===undefined) return undefined;
-  if(g===null||!LU_CATDATA) return null;
-  const by={}, ver=!!LU_GAR.ver[Number(acc)];
-  g.forEach((n,id)=>{ if(n>0||ver){ const tk=LU_CATDATA.get(id); if(tk) tk.cats.forEach(k=>(by[k]=by[k]||[]).push({id,nom:tk.nom,n})); } });
-  Object.values(by).forEach(l=>l.sort((a,b)=>b.n-a.n));
-  return by;
+  if(g===null) return null;
+  const ver=!!LU_GAR.ver[Number(acc)], out=[];
+  g.forEach((n,id)=>{
+    if(!(n>0||ver)) return;   // garage vérifié : un char jamais joué compte quand même
+    const v=VEHMAP[id], c=LU_CATDATA&&LU_CATDATA.get(id);
+    const tr=v&&Number(v.tier)?Number(v.tier):(c?10:0); if(tr!==tier) return;
+    out.push({id,nom:(c&&c.nom)||(v&&v.name)||("#"+id),classe:(v&&v.cls)||(c&&c.classe)||"",cats:c?c.cats:[],n});
+  });
+  return out.sort((a,b)=>b.n-a.n||a.nom.localeCompare(b.nom,"fr"));
 }
-/* Ce que dit la donnée pour un joueur face à un poste.
-   s : played (tanks = ses chars de la catégorie) | absent | unknown | wait | na */
-function luOwn(acc,post){
-  if(!post||post.cat==="libre") return {s:"na"};
-  const by=luGarageByCat(acc);
-  if(by===undefined) return {s:LU_GAR.state==="loading"||LU_GAR.state==="idle"?"wait":"unknown"};
-  if(by===null) return {s:"unknown"};
-  const tanks=by[post.cat]||[];
-  const v=!!LU_GAR.ver[Number(acc)];   // garage vérifié : « au garage », pas « déjà joué »
-  return tanks.length?{s:"played",n:tanks.length,tanks,v}:{s:"absent",v};
+/* Ceux qui conviennent à un poste : sa catégorie quand le classement la
+   connaît (rang X), sinon la classe de la catégorie. Libre : tous. */
+function luTanksFor(acc,cat,tier){
+  const l=luTanksOf(acc,tier); if(!l||cat==="libre") return l;
+  return luHasCats(tier)?l.filter(x=>x.cats.includes(cat)):l.filter(x=>x.classe===luCat(cat)[2]);
 }
-/* Le char qu'amène le joueur désigné : celui choisi par l'officier, sinon son plus joué de la catégorie. */
-function luPostTank(p){
-  if(!p.account_id) return null;
-  const o=luOwn(p.account_id,p); if(o.s!=="played") return null;
-  return o.tanks.find(x=>x.id===p.tank_id)||o.tanks[0];
-}
-function luCatCoverage(cat,roster){ return roster.filter(s=>luOwn(s.account_id,{cat}).s==="played").length; }
-function luGarKnown(roster){ return !!LU_CATDATA&&roster.some(s=>LU_GAR.data[Number(s.account_id)]); }
-function luCompStats(c,roster){
-  const ids=roster.map(s=>Number(s.account_id)), inRoster=new Set(ids);
-  const filled=c.posts.filter(p=>p.account_id&&inRoster.has(p.account_id)).length;
-  const def=c.posts.filter(p=>p.cat!=="libre");
-  const covered=def.filter(p=>ids.some(id=>luOwn(id,p).s==="played")).length;
-  const per={}; c.posts.forEach(p=>{ if(p.account_id) per[p.account_id]=(per[p.account_id]||0)+1; });
-  const conflicts=Object.keys(per).filter(k=>per[k]>1).length;
-  return {filled,total:c.posts.length,covered:luGarKnown(roster)?covered:null,definable:def.length,per,conflicts};
-}
-function luMyPosts(comps){
-  const out=[]; if(ME_ID==null) return out;
-  (comps||[]).forEach(c=>c.posts.forEach((p,i)=>{ if(luIsMe(p.account_id)) out.push({c,p,i}); }));
-  return out;
-}
+function luToday(){ return (new Date().getDay()+6)%7; }
 
 /* ── Chargement et navigation ─────────────────────────────────── */
-function luFormatUI(){
-  const tabs=document.querySelectorAll("#luFormatTabs [data-lu-format]");
-  tabs.forEach(b=>b.classList.toggle("on",b.dataset.luFormat===LU_FORMAT));
-  const box=document.getElementById("luFormatTabs"); if(box) box.classList.toggle("hidden",tabs.length<2);
-  const tier=document.getElementById("luTierLabel"),mode=document.getElementById("luModeLabel");
-  if(tier) tier.textContent=LU_FORMAT==="bastion8"?"VIII":"X";
-  if(mode) mode.textContent=LU_FORMAT==="manoeuvres"?"Manœuvres":"Bastion";
-}
-function wireLineupFormats(){
-  document.querySelectorAll("#luFormatTabs [data-lu-format]").forEach(b=>b.onclick=()=>{
-    if(LU_SAVE.timer) luFlush();
-    LU_FORMAT=b.dataset.luFormat; LU_OPEN_ID=null; LU_W=null; luFormatUI(); renderLineups();
-  });
-  luFormatUI();
-}
+const LU_FORMAT_ORDER={bastion10:0,bastion8:1,manoeuvres:2};
 let LU_WIRED=false;
 async function loadLineups(){
   const list=document.getElementById("luList");
@@ -7361,8 +7321,7 @@ async function loadLineups(){
     // Quitter la page pendant un enregistrement : le navigateur demande confirmation.
     window.addEventListener("beforeunload",e=>{ if(luSavePending()){ e.preventDefault(); e.returnValue=""; } });
   }
-  if(!LINEUPS.length&&LU_OPEN_ID==null) list.innerHTML='<div class="lx-list" aria-busy="true"><div class="lx-skel"></div><div class="lx-skel"></div></div>';
-  wireLineupFormats();
+  if(!LINEUPS.length&&LU_OPEN_ID==null) list.innerHTML='<div class="lx-rows" aria-busy="true"><div class="lx-skel"></div><div class="lx-skel"></div></div>';
   try{
     // Le classement des chars sert à lire les compositions (y compris les anciennes) : on l'attend.
     const [r]=await Promise.all([fnCall("lineups",{session:localStorage.getItem(LS_SESSION),action:"list"}),luLoadCats()]);
@@ -7372,9 +7331,6 @@ async function loadLineups(){
     // du membre connecté doit appartenir à la liste des officiers/commandants.
     LU_CANEDIT=(!!r.j.canEdit&&luCurrentUserCanManage())||DEV||isAppAdmin();
     document.getElementById("luNewBtn").classList.toggle("hidden",!LU_CANEDIT);
-    document.getElementById("luRole").textContent = LU_CANEDIT
-      ? "Ton grade permet de créer les line-ups et d'en préparer les compositions."
-      : "Accès membre : tu consultes les line-ups et leurs compositions, et tu coches tes propres présences.";
     // Une modification encore en route n'est pas écrasée par la version relue.
     if(!luSavePending()) LU_W=null;
     renderLineups();
@@ -7390,11 +7346,9 @@ function luOpen(id,tab){
   if(String(id)!==String(LU_OPEN_ID)){
     if(LU_SAVE.timer) luFlush();
     if(!LU_SAVE.busy&&!LU_SAVE.timer) LU_SAVE.state="idle";   // « Enregistré » concernait la line-up précédente
-    LU_W=null; LU_POST=null; LU_GARAGE=null; LU_COMP_ID=null; LU_APQ="";
+    LU_W=null; LU_GARAGE=null; LU_CV="player";
   }
-  LU_OPEN_ID=lu.id;
-  const comps=luCompsOf(lu), roster=luRoster(lu);
-  LU_TAB=tab||((!roster.length&&LU_CANEDIT)?"players":(comps.length?"comps":"players"));
+  LU_OPEN_ID=lu.id; LU_TAB=tab||"players";
   LU_FRESH=true; showLuNotice(""); renderLineups(); luScrollTop();
 }
 async function luClose(){
@@ -7404,100 +7358,181 @@ async function luClose(){
     if(!ok) return;
     LU_SAVE.state="idle";
   } else if(LU_SAVE.timer) luFlush();
-  LU_OPEN_ID=null; LU_W=null; LU_POST=null; LU_GARAGE=null; LU_FRESH=true; showLuNotice(""); renderLineups(); luScrollTop();
+  LU_OPEN_ID=null; LU_W=null; LU_GARAGE=null; LU_FRESH=true; showLuNotice(""); renderLineups(); luScrollTop();
 }
 function renderLineups(){
   const list=document.getElementById("luList"), det=document.getElementById("luDetail");
   if(!list||!det) return;
-  if(LU_OPEN_ID!=null&&!luOpenLu()){ LU_OPEN_ID=null; LU_W=null; LU_POST=null; }
+  if(LU_OPEN_ID!=null&&!luOpenLu()){ LU_OPEN_ID=null; LU_W=null; }
   list.classList.toggle("hidden",LU_OPEN_ID!=null);
   det.classList.toggle("hidden",LU_OPEN_ID==null);
   if(LU_OPEN_ID!=null) luRenderDetail(); else luRenderList();
   LU_FRESH=false;
 }
 
-/* ── La liste ─────────────────────────────────────────────────── */
+/* ── La liste : toutes les line-ups, sans filtre ─────────────────── */
+/* La composition épinglée pour ce soir, si elle est encore valable. */
+function luTonightComp(lu){
+  const tn=luTonightOf(lu); if(!tn||!(new Date(tn.until).getTime()>Date.now())) return null;
+  return luCompsOf(lu).find(c=>c.id===tn.comp)||null;
+}
 function luRenderList(){
   const el=document.getElementById("luList");
-  const all=LINEUPS.filter(lu=>luMeta(lu).format===LU_FORMAT);
-  if(!all.length){
-    el.innerHTML=`<div class="lx-empty${LU_FRESH?" lx-in":""}">${luIco("i-grid","lx-empty-ic")}<h4>Aucune line-up enregistrée</h4><p>${LU_CANEDIT
-      ?"Crée la première : un nom, une semaine, et tu ajoutes ensuite les joueurs et les compositions."
+  if(!LINEUPS.length){
+    el.innerHTML=`<div class="lx-empty${LU_FRESH?" lx-in":""}">${luIco("i-users","lx-empty-ic")}<h4>Aucune line-up pour l'instant</h4><p>${LU_CANEDIT
+      ?"Crée la première : un nom, un format et les joueurs, en une seule étape."
       :"Les officiers n'ont pas encore préparé de line-up."}</p>${LU_CANEDIT?'<button type="button" class="lx-btn lx-btn-gold" id="lxFirst">'+luIco("i-plus")+'<span>Nouvelle line-up</span></button>':""}</div>`;
     const f=document.getElementById("lxFirst"); if(f) f.onclick=()=>luCreate();
     return;
   }
-  const cur=luDateISO(luMonday(null)), wk=lu=>luMeta(lu).week_start;
-  const up=all.filter(l=>wk(l)>=cur).sort((a,b)=>wk(a).localeCompare(wk(b))||String(a.name).localeCompare(String(b.name),"fr"));
-  const past=all.filter(l=>wk(l)<cur).sort((a,b)=>wk(b).localeCompare(wk(a)));
-  const group=(title,arr)=>arr.length?`${title?`<h3 class="lx-group">${title}</h3>`:""}<div class="lx-list">${arr.map(luCardHtml).join("")}</div>`:"";
-  el.innerHTML=`<div class="${LU_FRESH?"lx-in":""}">${group(up.length&&past.length?"Cette semaine et à venir":"",up)}${group(up.length?"Semaines passées":"",past)}</div>`;
-  el.querySelectorAll("[data-open]").forEach(card=>{
-    card.onclick=()=>luOpen(card.dataset.open);
-    card.onkeydown=e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); luOpen(card.dataset.open); } };
-  });
+  const all=LINEUPS.slice().sort((a,b)=>(LU_FORMAT_ORDER[luMeta(a).format]??9)-(LU_FORMAT_ORDER[luMeta(b).format]??9)
+    ||String(a.name||"").localeCompare(String(b.name||""),"fr"));
+  el.innerHTML=`<div class="${LU_FRESH?"lx-in":""}">${all.map(luTonightHtml).join("")}<div class="lx-rows">${all.map(luRowHtml).join("")}</div></div>`;
+  el.querySelectorAll("[data-open]").forEach(b=>b.onclick=()=>luOpen(b.dataset.open,b.dataset.openTab||null));
 }
-function luCardHtml(lu){
-  const meta=luMeta(lu), roster=luRoster(lu), comps=luCompsOf(lu), st=luWeekState(meta.week_start);
-  const counts=LU_DAYS.map((_,i)=>roster.filter(s=>s.availability[i]).length), max=Math.max(1,roster.length);
-  const total=counts.reduce((a,b)=>a+b,0);
-  const days=counts.map((n,i)=>`<span class="lx-dbar${n?"":" zero"}"><b>${n}</b><i><s style="height:${Math.round(n/max*100)}%"></s></i><em>${LU_DAYS[i]}</em></span>`).join("");
-  const chips=comps.length
-    ? comps.map(c=>{ const f=c.posts.filter(p=>p.account_id).length;
-        return `<span class="lx-chip"><b data-i18n-skip>${esc(c.name)}</b><span class="lx-chip-cats" aria-hidden="true">${c.posts.slice(0,7).map(p=>luCatIco(p.cat)).join("")}</span><em title="Postes pourvus">${f}/${c.posts.length}</em></span>`; }).join("")
-    : `<span class="lx-chip lx-chip-none">Aucune composition</span>`;
-  const mine=luMyPosts(comps), m=mine[0];
-  const mineHtml=m?`<div class="lx-mine">${luCatIco(m.p.cat)}<span>Ton poste :</span><b>${esc(luCat(m.p.cat)[1])}</b><span class="lx-mine-plan" data-i18n-skip>${esc(m.c.name)}</span>${mine.length>1?`<span class="lx-mine-more">+${mine.length-1}</span>`:""}</div>`:"";
-  const when=st==="now"?'<span class="lx-when">Cette semaine</span>':st==="next"?'<span class="lx-when next">À venir</span>':"";
-  const name=lu.name||LU_FORMAT_LABELS[meta.format]||"Line-up";
-  return `<article class="lx-card${st==="past"?" is-past":""}" data-open="${esc(String(lu.id))}" tabindex="0" role="button" aria-label="Ouvrir la line-up ${esc(name)}">
-    <div class="lx-card-id">
-      <div class="lx-kick">${when}<span>${esc(luWeekLabel(meta.week_start))}</span></div>
-      <h3 class="lx-card-name" data-i18n-skip>${esc(name)}</h3>
-      <div class="lx-card-meta"><span>${luPlural(roster.length,"joueur","joueurs")}</span><span>${luPlural(total,"présence","présences")}</span><span>${luPlural(comps.length,"composition","compositions")}</span></div>
-    </div>
-    <div class="lx-days" aria-hidden="true">${days}</div>
-    <div class="lx-card-comps"><div class="lx-chips">${chips}</div>${mineHtml}</div>
-    <span class="lx-card-go" aria-hidden="true">${luIco("i-chev")}</span>
-  </article>`;
+/* « Ce soir » : ton poste dans la composition épinglée, en tête de page. */
+function luTonightHtml(lu){
+  if(ME_ID==null) return "";
+  const c=luTonightComp(lu); if(!c) return "";
+  const i=c.posts.findIndex(p=>luIsMe(p.account_id));
+  if(i<0&&!luRoster(lu).some(s=>luIsMe(s.account_id))) return "";
+  const p=c.posts[i];
+  const mine=i>=0
+    ? `<span class="lx-tn-me"><span>Ton poste :</span> <b>n° ${i+1}</b> ${luCatIco(p.cat)}<b>${esc(luCat(p.cat)[1])}</b>${p.tank_id?` <span>avec ton</span> <b data-i18n-skip>${esc(luTankName(p.tank_id))}</b>`:""}</span>`
+    : `<span class="lx-tn-me is-none">Pas de poste pour toi dans cette composition.</span>`;
+  return `<div class="lx-tn">
+    <span class="lx-tn-k">★ Ce soir</span>
+    <span class="lx-tn-what"><span data-i18n-skip>${esc(lu.name||"Line-up")}</span><i aria-hidden="true">·</i><span data-i18n-skip>${esc(c.name)}</span></span>
+    ${mine}
+    <button type="button" class="lx-btn" data-open="${esc(String(lu.id))}" data-open-tab="comps"><span>Voir la composition</span>${luIco("i-chev")}</button>
+  </div>`;
+}
+function luRowHtml(lu){
+  const meta=luMeta(lu), roster=luRoster(lu), comps=luCompsOf(lu), tc=luTonightComp(lu);
+  const meIn=ME_ID!=null&&roster.some(s=>luIsMe(s.account_id));
+  const side=(tc?`<span class="lx-row-tn">★ <span>Ce soir :</span> <b data-i18n-skip>${esc(tc.name)}</b></span>`:"")
+    +(ME_ID==null?"":meIn?`<span class="lx-row-me is-in">${luIco("i-check")}<span>Tu en fais partie</span></span>`:`<span class="lx-row-me">Tu n'en fais pas partie</span>`);
+  return `<button type="button" class="lx-row" data-open="${esc(String(lu.id))}">
+    <span class="lx-fmt">${esc(LU_FORMAT_LABELS[meta.format]||meta.format)}</span>
+    <span class="lx-row-id"><span class="lx-row-name" data-i18n-skip>${esc(lu.name||LU_FORMAT_LABELS[meta.format]||"Line-up")}</span>
+      <span class="lx-row-meta"><span>${luPlural(roster.length,"joueur","joueurs")}</span><span>${comps.length?luPlural(comps.length,"composition","compositions"):"aucune composition"}</span></span></span>
+    <span class="lx-row-side">${side}</span>
+    <span class="lx-row-go" aria-hidden="true">${luIco("i-chev")}</span>
+  </button>`;
 }
 
-/* ── Créer une line-up : un nom, une semaine ───────────────────── */
+/* ── Fenêtres : choix du format, liste de membres à cocher ─────────── */
+function luFmtPickHtml(id,cur){
+  return `<div class="lx-dlg-lab" id="${id}L">Format</div>
+    <div class="lx-fmtpick" role="radiogroup" aria-labelledby="${id}L">${Object.keys(LU_FORMAT_LABELS).map(k=>
+      `<button type="button" role="radio" data-fmt="${k}" aria-checked="${k===cur}" tabindex="${k===cur?0:-1}">${LU_FORMAT_LABELS[k]}</button>`).join("")}</div>`;
+}
+function luFmtPickWire(d,onPick){
+  const bs=[...d.querySelectorAll(".lx-fmtpick [data-fmt]")];
+  const pick=b=>{ bs.forEach(x=>{ x.setAttribute("aria-checked",String(x===b)); x.tabIndex=x===b?0:-1; }); onPick(b.dataset.fmt); };
+  bs.forEach((b,i)=>{
+    b.onclick=()=>pick(b);
+    b.onkeydown=e=>{ if(e.key!=="ArrowRight"&&e.key!=="ArrowLeft") return; e.preventDefault();
+      const n=bs[(i+(e.key==="ArrowRight"?1:bs.length-1))%bs.length]; pick(n); n.focus(); };
+  });
+}
+/* members : [{account_id, nickname, other}] — other = autre line-up du même format où il joue déjà. */
+function luPickHtml(members){
+  if(!members.length) return `<p class="lx-pick-empty">Tous les membres du clan sont déjà dans la line-up.</p>`;
+  return `<label class="lx-tp-search lx-pick-q">${luIco("i-search")}<input type="search" id="lxPickQ" placeholder="Chercher un membre du clan" aria-label="Chercher un membre du clan" autocomplete="off" spellcheck="false"></label>
+    <div class="lx-pick" id="lxPickList" role="group" aria-label="Membres du clan">${members.map(m=>`<label class="lx-pick-it" data-q="${esc(luFold(m.nickname))}">
+      <input type="checkbox" value="${Number(m.account_id)}"><span class="lx-pick-nm" data-i18n-skip>${esc(m.nickname)}</span>${luIsMe(m.account_id)?'<em class="lx-me">toi</em>':""}
+      ${m.other?`<span class="lx-pick-also"><span>déjà dans</span> <span data-i18n-skip>${esc(m.other)}</span></span>`:""}</label>`).join("")}</div>
+    <p class="lx-pick-n" id="lxPickN" aria-live="polite"></p>`;
+}
+/* Rend une fonction qui donne les comptes cochés. max = places restantes. */
+function luPickWire(d,max){
+  const list=d.querySelector("#lxPickList"); if(!list) return ()=>[];
+  const q=d.querySelector("#lxPickQ"), n=d.querySelector("#lxPickN"), boxes=[...list.querySelectorAll("input[type=checkbox]")];
+  const paint=()=>{
+    const k=boxes.filter(b=>b.checked).length;
+    boxes.forEach(b=>{ b.disabled=!b.checked&&k>=max; b.closest("label").classList.toggle("is-off",b.disabled); });
+    n.innerHTML=`<b>${k}</b> / ${max}${k>=max?` <span>— c'est le maximum</span>`:""}`;
+  };
+  q.oninput=()=>{ const f=luFold(q.value); list.querySelectorAll(".lx-pick-it").forEach(l=>{ l.hidden=!!f&&!l.dataset.q.includes(f); }); };
+  // Entrée dans la recherche coche le premier membre trouvé (et n'envoie pas le formulaire).
+  q.onkeydown=e=>{ if(e.key!=="Enter") return; e.preventDefault();
+    const it=[...list.querySelectorAll(".lx-pick-it")].find(l=>!l.hidden&&!l.querySelector("input").disabled);
+    if(it){ const b=it.querySelector("input"); b.checked=!b.checked; paint(); q.select(); } };
+  list.onchange=paint; paint();
+  return ()=>boxes.filter(b=>b.checked).map(b=>Number(b.value));
+}
+/* Membres qu'on peut ajouter à w (format, liste des joueurs déjà pris) : tous ceux
+   qui n'y sont pas encore. Ceux qui jouent dans une autre line-up du même format
+   restent proposés, avec son nom. */
+function luPickMembers(format,exclude){
+  const other=new Map();
+  LINEUPS.forEach(l=>{ if(luMeta(l).format!==format||(exclude&&String(l.id)===String(exclude.id))) return;
+    luRoster(l).forEach(s=>{ const a=Number(s.account_id); if(!other.has(a)) other.set(a,l.name||"Line-up"); }); });
+  const inThis=new Set(exclude?exclude.roster.map(s=>Number(s.account_id)):[]);
+  return luSortedMembers().filter(m=>!inThis.has(Number(m.account_id))).map(m=>({...m,other:other.get(Number(m.account_id))||""}));
+}
+
+/* ── Créer une line-up : nom, format et joueurs, en une étape ───── */
 async function luCreate(){
   if(!LU_CANEDIT){ showLuNotice("Ton grade ne permet pas de créer une line-up.","bad"); return; }
-  let week=luDateISO(luMonday(null)), typed=false;
-  const defName=wk=>"Équipe "+(LINEUPS.filter(l=>{ const m=luMeta(l); return m.week_start===wk&&m.format===LU_FORMAT; }).length+1);
+  let fmt="bastion10", typed=false, getIds=()=>[];
+  const defName=f=>{ const base="Équipe "+(LU_FORMAT_LABELS[f]||"Line-up"), used=new Set(LINEUPS.map(l=>String(l.name||"")));
+    if(!used.has(base)) return base; for(let k=2;;k++) if(!used.has(base+" "+k)) return base+" "+k; };
   const res=await luDialog({
-    title:"Nouvelle line-up", icon:"i-plus", confirm:"Créer la line-up",
+    title:"Nouvelle line-up", icon:"i-plus", confirm:"Créer la line-up", wide:true,
     body:`<label class="lx-dlg-lab" for="lxNewName">Nom</label>
-      <input class="lx-input" id="lxNewName" maxlength="80" value="${esc(defName(week))}" autocomplete="off">
-      <div class="lx-dlg-lab" id="lxNewWeekL">Semaine</div>
-      <div class="lx-weekpick" role="group" aria-labelledby="lxNewWeekL">
-        <button type="button" class="lx-btn lx-icon" data-w="-7" aria-label="Semaine précédente">${luIco("i-back")}</button>
-        <div class="lx-weekpick-v" aria-live="polite"><b id="lxNewWeek"></b><span id="lxNewWhen"></span></div>
-        <button type="button" class="lx-btn lx-icon" data-w="7" aria-label="Semaine suivante">${luIco("i-chev")}</button>
-      </div>
-      <p class="lx-dlg-hint">Tu ajouteras ensuite les joueurs et les compositions, directement dans la line-up.</p>`,
+      <input class="lx-input" id="lxNewName" maxlength="80" autocomplete="off">
+      ${luFmtPickHtml("lxNewFmt",fmt)}
+      <div class="lx-dlg-lab">Joueurs <span class="lx-dlg-lab-n">— coche-les, ${LU_MAX_PLAYERS} au maximum</span></div>
+      <div id="lxPickBox">${luPickHtml(luPickMembers(fmt,null))}</div>
+      <p class="lx-dlg-hint">Les joueurs restent dans la line-up jusqu'à ce qu'un officier les retire. Tu pourras en ajouter plus tard.</p>`,
     onOpen(d){
-      const name=d.querySelector("#lxNewName");
-      const paint=()=>{ d.querySelector("#lxNewWeek").textContent=luWeekLabel(week); d.querySelector("#lxNewWhen").innerHTML=luWhenHtml(week); if(!typed) name.value=defName(week); };
-      d.querySelectorAll("[data-w]").forEach(b=>b.onclick=()=>{ week=luShiftWeek(week,Number(b.dataset.w)); paint(); });
+      const name=d.querySelector("#lxNewName"); name.value=defName(fmt);
+      getIds=luPickWire(d,LU_MAX_PLAYERS);
+      luFmtPickWire(d,f=>{
+        // Changer de format met à jour les « déjà dans » ; les cases cochées sont gardées.
+        const keep=new Set(getIds()); fmt=f; if(!typed) name.value=defName(fmt);
+        d.querySelector("#lxPickBox").innerHTML=luPickHtml(luPickMembers(fmt,null));
+        d.querySelectorAll("#lxPickList input").forEach(b=>{ b.checked=keep.has(Number(b.value)); });
+        getIds=luPickWire(d,LU_MAX_PLAYERS);
+      });
       name.oninput=()=>{ typed=true; };
-      paint(); name.focus(); name.select();
+      name.focus(); name.select();
     },
-    collect(d){ return {name:d.querySelector("#lxNewName").value.trim()||defName(week), week}; }
+    collect(d){ return {name:(d.querySelector("#lxNewName").value.trim()||defName(fmt)).slice(0,80), fmt, ids:getIds().slice(0,LU_MAX_PLAYERS)}; }
   });
   if(!res) return;
+  // week_start reste écrit pour les versions précédentes du site ; il n'est plus affiché.
+  const week=luDateISO(luMonday(null));
+  const roster=res.ids.map(acc=>({account_id:acc,name:luMemberName(acc)||"Joueur",tank:"",position:"Soldat",availability:Array(7).fill(false),format:res.fmt,week_start:week}));
   showLuNotice("Création de la line-up…");
-  const r=await fnCall("lineups",{session:localStorage.getItem(LS_SESSION),action:"save",lineup:{id:null,name:res.name.slice(0,80),notes:"",
-    slots:[{_type:"meta",kind:"comps",v:2,week_start:res.week,format:LU_FORMAT,comps:[]}]}});
+  const r=await fnCall("lineups",{session:localStorage.getItem(LS_SESSION),action:"save",lineup:{id:null,name:res.name,notes:"",
+    slots:roster.concat([{_type:"meta",kind:"comps",v:2,week_start:week,format:res.fmt,comps:[]}])}});
   if(!r.ok){ showLuNotice("Création impossible : "+((r.j&&r.j.error)||r.status),"bad"); return; }
   await loadLineups();
-  // Le serveur ne renvoie pas l'identifiant : la plus récente à ce nom et cette semaine est la nôtre.
-  const made=LINEUPS.filter(l=>l.name===res.name.slice(0,80)&&luMeta(l).week_start===res.week)
-    .sort((a,b)=>String(b.created_at||"").localeCompare(String(a.created_at||"")))[0];
+  // Le serveur ne renvoie pas l'identifiant : la plus récente à ce nom est la nôtre.
+  const made=LINEUPS.filter(l=>l.name===res.name).sort((a,b)=>String(b.created_at||"").localeCompare(String(a.created_at||"")))[0];
   showLuNotice("");
   if(made) luOpen(made.id,"players");
+}
+/* Modifier : nom, format, note pour l'équipe. */
+async function luEditLineup(){
+  const w=LU_W; if(!w||!LU_CANEDIT) return;
+  let fmt=w.format;
+  const res=await luDialog({
+    title:"Modifier la line-up", icon:"i-pen", confirm:"Enregistrer",
+    body:`<label class="lx-dlg-lab" for="lxEdName">Nom</label>
+      <input class="lx-input" id="lxEdName" maxlength="80" value="${esc(w.name)}" autocomplete="off">
+      ${luFmtPickHtml("lxEdFmt",fmt)}
+      <label class="lx-dlg-lab" for="lxEdNote">Note pour l'équipe <span class="lx-dlg-lab-n">— facultatif</span></label>
+      <input class="lx-input" id="lxEdNote" maxlength="500" value="${esc(w.notes)}" placeholder="Par exemple : vocal ouvert à 20 h 45" autocomplete="off">`,
+    onOpen(d){ luFmtPickWire(d,f=>{ fmt=f; }); const n=d.querySelector("#lxEdName"); n.focus(); n.select(); },
+    collect(d){ return {name:d.querySelector("#lxEdName").value.trim().slice(0,80), notes:d.querySelector("#lxEdNote").value.trim().slice(0,500), fmt}; }
+  });
+  if(!res) return;
+  w.name=res.name||LU_FORMAT_LABELS[res.fmt]||"Line-up"; w.notes=res.notes; w.format=res.fmt;
+  luQueueSave(0); luRenderDetail();
 }
 
 /* ── Le détail d'une line-up ──────────────────────────────────── */
@@ -7505,61 +7540,34 @@ function luRenderDetail(){
   const det=document.getElementById("luDetail"), lu=luOpenLu(); if(!lu) return;
   if(!LU_W||String(LU_W.id)!==String(lu.id)) LU_W=luWorkFrom(lu);
   const w=LU_W;
-  if(!w.comps.some(c=>c.id===LU_COMP_ID)) LU_COMP_ID=w.comps[0]?w.comps[0].id:null;
-  const week=LU_CANEDIT
-    ? `<span class="lx-weekstep"><button type="button" data-week="-7" aria-label="Semaine précédente">${luIco("i-back")}</button><span>${esc(luWeekLabel(w.week_start))}</span><button type="button" data-week="7" aria-label="Semaine suivante">${luIco("i-chev")}</button></span>`
-    : `<span>${esc(luWeekLabel(w.week_start))}</span>`;
-  const title=LU_CANEDIT
-    ? `<input class="lx-dtitle lx-dtitle-in" id="lxName" data-fk="lu-name" value="${esc(w.name)}" maxlength="80" placeholder="Nom de la line-up" aria-label="Nom de la line-up" autocomplete="off" spellcheck="false">`
-    : `<h3 class="lx-dtitle" data-i18n-skip>${esc(w.name||"Line-up")}</h3>`;
-  const notes=LU_CANEDIT
-    ? `<input class="lx-dnotes-in" id="lxNotes" data-fk="lu-notes" value="${esc(w.notes)}" maxlength="500" placeholder="Ajouter une note pour l'équipe (facultatif)" aria-label="Note pour l'équipe" autocomplete="off">`
-    : (w.notes?`<p class="lx-dnotes" data-i18n-skip>${esc(w.notes)}</p>`:"");
-  const tab=(k,label,n,id)=>`<button type="button" role="tab" id="${id}" data-tab="${k}" aria-selected="${LU_TAB===k}" aria-controls="lxBody"><span>${label}</span>${n==null?"":`<b id="${id}N">${n}</b>`}</button>`;
+  const tab=(k,label,n,id)=>`<button type="button" role="tab" id="${id}" data-tab="${k}" aria-selected="${LU_TAB===k}" aria-controls="lxBody" tabindex="${LU_TAB===k?0:-1}"><span>${label}</span>${n==null?"":`<b id="${id}N">${n}</b>`}</button>`;
   det.innerHTML=`<section class="lx-detail${LU_FRESH?" lx-in":""}" aria-label="Line-up">
     <div class="lx-dtop">
       <button type="button" class="lx-back" id="lxBack">${luIco("i-back")}<span>Toutes les line-ups</span></button>
       ${LU_CANEDIT?'<span class="lx-sync" id="lxSync" role="status" aria-live="polite"></span>':""}
     </div>
-    <div class="lx-dtitle-row">
-      <div class="lx-dtitle-txt">
-        <div class="lx-kick" id="lxKick">${luWhenHtml(w.week_start)}${week}</div>
-        ${title}${notes}
-      </div>
-      ${LU_CANEDIT?`<div class="lx-dactions"><button type="button" class="lx-btn lx-btn-quiet lx-btn-danger" id="lxDel">${luIco("i-trash")}<span>Supprimer la line-up</span></button></div>`:""}
+    <div class="lx-dhead">
+      <div class="lx-did"><span class="lx-fmt">${esc(LU_FORMAT_LABELS[w.format]||w.format)}</span><h3 class="lx-dtitle" data-i18n-skip>${esc(w.name||"Line-up")}</h3></div>
+      ${LU_CANEDIT?`<div class="lx-dactions"><button type="button" class="lx-btn lx-btn-quiet" id="lxEdit">${luIco("i-pen")}<span>Modifier</span></button><button type="button" class="lx-btn lx-btn-quiet lx-btn-danger" id="lxDel">${luIco("i-trash")}<span>Supprimer</span></button></div>`:""}
     </div>
+    ${w.notes?`<p class="lx-dnotes" data-i18n-skip>${esc(w.notes)}</p>`:""}
     <div class="lx-seg" role="tablist" aria-label="Contenu de la line-up">
-      ${tab("players","Joueurs",w.roster.length,"lxTabPlayers")}${tab("chars","Chars",null,"lxTabChars")}${tab("comps","Compositions",w.comps.length,"lxTabComps")}
+      ${tab("players","Joueurs et dispos",w.roster.length,"lxTabPlayers")}${tab("chars","Chars",null,"lxTabChars")}${tab("comps","Compositions",w.comps.length,"lxTabComps")}
     </div>
     <div id="lxBody" role="tabpanel" aria-labelledby="${LU_TAB==="comps"?"lxTabComps":LU_TAB==="chars"?"lxTabChars":"lxTabPlayers"}"></div>
   </section>`;
   document.getElementById("lxBack").onclick=luClose;
   const del=document.getElementById("lxDel"); if(del) del.onclick=()=>deleteLineup(w.id);
+  const ed=document.getElementById("lxEdit"); if(ed) ed.onclick=luEditLineup;
   const ORDRE=["players","chars","comps"];
   det.querySelectorAll(".lx-seg [data-tab]").forEach(b=>{
     b.onclick=()=>{ if(LU_TAB===b.dataset.tab) return; LU_TAB=b.dataset.tab; luRenderDetail(); };
     b.onkeydown=e=>{ if(e.key==="ArrowRight"||e.key==="ArrowLeft"){ e.preventDefault();
       LU_TAB=ORDRE[(ORDRE.indexOf(LU_TAB)+(e.key==="ArrowRight"?1:2))%3]; luRenderDetail(); document.querySelector(`#luDetail [data-tab="${LU_TAB}"]`).focus(); } };
   });
-  if(LU_CANEDIT){
-    const nm=document.getElementById("lxName"), nt=document.getElementById("lxNotes");
-    nm.oninput=()=>{ w.name=nm.value.slice(0,80); luQueueSave(900); };
-    nm.onblur=()=>{ if(!nm.value.trim()){ w.name=LU_FORMAT_LABELS[w.format]||"Line-up"; nm.value=w.name; luQueueSave(); } };
-    nm.onkeydown=e=>{ if(e.key==="Enter"){ e.preventDefault(); nm.blur(); } };
-    nt.oninput=()=>{ w.notes=nt.value.slice(0,500); luQueueSave(900); };
-    nt.onkeydown=e=>{ if(e.key==="Enter"){ e.preventDefault(); nt.blur(); } };
-    det.querySelectorAll("[data-week]").forEach(b=>b.onclick=()=>{ w.week_start=luShiftWeek(w.week_start,Number(b.dataset.week)); luQueueSave(); luRenderDetailWeek(); });
-  }
   luSyncUI();
   luEnsureData(w);   // avant le rendu du corps : l'état « lecture en cours » est posé tout de suite
   luRenderBody();
-}
-/* Changer de semaine ne redessine que le bandeau : le focus reste sur la flèche. */
-function luRenderDetailWeek(){
-  const w=LU_W, k=document.getElementById("lxKick"); if(!w||!k) return;
-  const lab=k.querySelector(".lx-weekstep>span"); if(lab) lab.textContent=luWeekLabel(w.week_start);
-  const when=k.querySelector(".lx-when"); if(when) when.outerHTML=luWhenHtml(w.week_start);
-  if(LU_TAB==="players") luRenderBody();   // les membres déjà pris dépendent de la semaine
 }
 async function luEnsureData(w){
   const ids=w.roster.map(s=>Number(s.account_id)).filter(Boolean);
@@ -7585,94 +7593,74 @@ function luKeepFocus(render){
   b.focus({preventScroll:true});
   if(sel&&typeof b.setSelectionRange==="function"){ try{ b.setSelectionRange(sel[0],sel[1]); }catch(e){} }
 }
-/* La source des chiffres, dite à chaque fois qu'on les montre. */
-function luSourceHtml(roster){
-  const at=LU_GAR.ts?new Date(LU_GAR.ts).toLocaleTimeString(window.CP_LOC,{hour:"2-digit",minute:"2-digit"}):"";
-  const err=LU_GAR.state==="error"
-    ? `<p class="lx-src warn" role="status">⚠ <span>Wargaming n'a pas répondu : impossible de dire qui a joué quels chars pour l'instant.</span> <button type="button" class="lx-link" id="lxGarRetry" data-fk="gar-retry">Réessayer</button></p>` : "";
-  const cats=!LU_CATDATA?`<p class="lx-src warn">⚠ <span>Le classement des chars par catégorie n'a pas pu être chargé : les chiffres par catégorie sont indisponibles.</span></p>`:"";
-  const noHidden=roster.filter(s=>LU_GAR.data[Number(s.account_id)]===null).map(s=>s.name);
-  const verified=roster.filter(s=>LU_GAR.ver[Number(s.account_id)]).map(s=>s.name);
-  const verHtml=verified.length?`<p class="lx-src">✓ <span>Garage réel, envoyé par le mod Clan Plus, pour</span> <b data-i18n-skip>${esc(verified.join(", "))}</b> <span>: pour eux, ce sont les chars qu'ils possèdent aujourd'hui, pas les chars déjà joués.</span></p>`:"";
-  return `${err}${cats}${verHtml}${noHidden.length?`<p class="lx-src">? <span>Wargaming ne renvoie aucune statistique pour</span> <b data-i18n-skip>${esc(noHidden.join(", "))}</b>.</p>`:""}
-    <p class="lx-src">Source : statistiques publiques Wargaming — les chars de rang X que chaque joueur a déjà joués. Un char vendu reste compté : sans connexion de chaque joueur, Wargaming ne publie pas le contenu exact du garage. Chaque char est rangé dans une ou deux catégories d'après le classement commun Clan Plus.${at?` <span class="lx-src-t">Lu à ${at}.</span> <button type="button" class="lx-link" id="lxGarRefresh" data-fk="gar-refresh">Actualiser</button>`:""}</p>`;
-}
 
-/* ── Onglet Joueurs : qui joue, quels jours ────────────────────── */
-/* Membres qu'on peut encore ajouter : ni déjà dans cette line-up, ni dans
-   une autre line-up de la même semaine (même format). */
-function luAvailableMembers(w){
-  const inThis=new Set(w.roster.map(s=>Number(s.account_id))), taken=new Map();
-  LINEUPS.forEach(l=>{
-    if(String(l.id)===String(w.id)) return;
-    const m=luMeta(l); if(m.week_start!==w.week_start||m.format!==w.format) return;
-    luRoster(l).forEach(s=>{ const a=Number(s.account_id); if(!taken.has(a)) taken.set(a,l.name||"Line-up"); });
-  });
-  const members=luSortedMembers();
-  const list=members.filter(m=>!inThis.has(Number(m.account_id))&&!taken.has(Number(m.account_id)));
-  const hidden={}; members.forEach(m=>{ const a=Number(m.account_id); if(!inThis.has(a)&&taken.has(a)){ const n=taken.get(a); hidden[n]=(hidden[n]||0)+1; } });
-  return {list,hidden};
-}
+/* ── Onglet Joueurs et dispos ─────────────────────────────────────
+   Les soirs sont des jours fixes, du lundi au dimanche, gardés d'une
+   semaine sur l'autre. */
 function luRenderPlayers(){
   const body=document.getElementById("lxBody"), w=LU_W; if(!body||!w) return;
   luKeepFocus(()=>{
-    const roster=w.roster, n=roster.length, meIn=roster.some(s=>luIsMe(s.account_id));
-    let html="";
-    if(n){
-      const counts=LU_DAYS.map((_,i)=>roster.filter(s=>s.availability[i]).length), max=Math.max(...counts), best=counts.indexOf(max);
-      const head=`<div class="lx-at-row lx-at-head" role="row"><span class="lx-at-name" role="columnheader">Joueur</span>${LU_DAYS.map((d,i)=>`<span class="lx-at-day${max&&counts[i]===max?" best":""}" role="columnheader"><b>${d}</b><i aria-hidden="true"><s style="height:${Math.round(counts[i]/n*100)}%"></s></i><em>${counts[i]}</em></span>`).join("")}${LU_CANEDIT?'<span role="columnheader" class="lx-at-x"></span>':""}</div>`;
-      const rows=roster.map(s=>{
-        const me=luIsMe(s.account_id), strat=s.position==="Stratège", acc=s.account_id;
-        const can=LU_CANEDIT||me;
-        const days=s.availability.map((v,i)=>can
-          ? `<span class="lx-at-c" role="cell"><button type="button" class="lx-at-cell${v?" on":""}" data-day="${acc}:${i}" data-fk="d-${acc}-${i}" aria-pressed="${v}" aria-label="${esc(s.name)} — ${t(LU_DAY_NAMES[i])} : ${t(v?"présent":"absent")}">${v?luIco("i-check"):""}</button></span>`
-          : `<span class="lx-at-c" role="cell"><span class="lx-at-cell${v?" on":""}" role="img" aria-label="${t(LU_DAY_NAMES[i])} : ${t(v?"présent":"absent")}">${v?luIco("i-check"):""}</span></span>`).join("");
-        const stratHtml=LU_CANEDIT
-          ? `<button type="button" class="lx-strat${strat?" on":""}" data-strat="${acc}" data-fk="st-${acc}" aria-pressed="${strat}" title="Stratège : dirige la partie">${luIco("i-star")}<span>Stratège</span></button>`
-          : (strat?`<em class="lx-tag">${luIco("i-star")}Stratège</em>`:"");
-        return `<div class="lx-at-row${me?" is-me":""}${LU_JUST_ROW===acc?" just":""}" role="row"><span class="lx-at-name" role="rowheader"><span class="lx-at-nm" data-i18n-skip>${esc(s.name||"Joueur")}</span>${me?'<em class="lx-me">toi</em>':""}${stratHtml}</span>${days}${LU_CANEDIT?`<span class="lx-at-c" role="cell"><button type="button" class="lx-at-rm" data-rm="${acc}" data-fk="rm-${acc}" aria-label="Retirer ${esc(s.name)} de la line-up" title="Retirer de la line-up">${luIco("i-x")}</button></span>`:""}</div>`;
-      }).join("");
-      const foot=LU_CANEDIT?"Clique sur une case pour cocher ou décocher un jour. Chaque joueur peut aussi cocher les siens."
-        :meIn?"Coche tes jours dans ta ligne : c'est enregistré aussitôt.":"Lecture seule : tu n'es pas dans cette line-up.";
-      html+=`<div class="lx-at${LU_CANEDIT?" can-edit":""}" role="table" aria-label="Joueurs et présences de la semaine">${head}${rows}</div>
-        <div class="lx-at-foot"><span>${max?`Meilleur jour : <b>${LU_DAY_NAMES[best]}</b>, ${luPlural(max,"présent","présents")} sur ${n}`:"Aucune présence cochée pour l'instant."}</span><span>${foot}</span></div>`;
-    } else if(!LU_CANEDIT){
-      html+=`<div class="lx-empty"><h4>Aucun joueur dans cette line-up</h4><p>Les officiers n'ont pas encore ajouté de joueur.</p></div>`;
+    const n=w.roster.length;
+    if(!n){
+      body.innerHTML=`<div class="lx-empty">${luIco("i-users","lx-empty-ic")}<h4>Aucun joueur dans cette line-up</h4><p>${LU_CANEDIT
+        ?"Ajoute les joueurs de l'équipe : chacun pourra ensuite cocher les soirs où il peut jouer."
+        :"Les officiers n'ont pas encore ajouté de joueur."}</p>${LU_CANEDIT?`<button type="button" class="lx-btn lx-btn-gold" id="lxAddP" data-fk="addp">${luIco("i-plus")}<span>Ajouter des joueurs</span></button>`:""}</div>`;
+      return;
     }
-    if(LU_CANEDIT) html+=luAddPlayersHtml(w);
-    body.innerHTML=html;
+    const roster=w.roster.slice().sort((a,b)=>luIsMe(b.account_id)-luIsMe(a.account_id)), meIn=roster.some(s=>luIsMe(s.account_id));
+    const counts=LU_DAYS.map((_,i)=>roster.filter(s=>s.availability[i]).length), max=Math.max(...counts), best=max?counts.indexOf(max):-1, today=luToday();
+    const dcls=i=>`lx-d${i===best?" best":""}${i===today?" today":""}`;
+    const head=LU_DAYS.map((d,i)=>`<th scope="col" class="${dcls(i)}"><abbr title="${esc(t(LU_DAY_NAMES[i]))}">${d}</abbr></th>`).join("");
+    const rows=roster.map(s=>{
+      const acc=s.account_id, me=luIsMe(acc), can=LU_CANEDIT||me, strat=s.position==="Stratège";
+      const days=s.availability.map((v,i)=>`<td class="${dcls(i)}">${can
+        ? `<button type="button" class="lx-day${v?" on":""}" data-day="${acc}:${i}" data-fk="d-${acc}-${i}" aria-pressed="${v}" aria-label="${esc(s.name)} — ${t(LU_DAY_NAMES[i])}">${v?luIco("i-check"):""}</button>`
+        : `<span class="lx-day${v?" on":""}" role="img" aria-label="${t(LU_DAY_NAMES[i])} : ${t(v?"disponible":"pas disponible")}">${v?luIco("i-check"):""}</span>`}</td>`).join("");
+      const role=LU_CANEDIT
+        ? `<button type="button" class="lx-role${strat?" on":""}" data-strat="${acc}" data-fk="st-${acc}" aria-pressed="${strat}" title="Le stratège dirige la partie en bataille">${luIco("i-star")}<span>${strat?"Stratège":"Soldat"}</span></button>`
+        : `<span class="lx-role is-ro${strat?" on":""}">${strat?luIco("i-star"):""}<span>${strat?"Stratège":"Soldat"}</span></span>`;
+      return `<tr class="${me?"is-me":""}${LU_JUST_ROWS.has(acc)?" just":""}">
+        <th scope="row" class="lx-pl"><span class="lx-pl-nm" data-i18n-skip>${esc(s.name||"Joueur")}</span>${me?'<em class="lx-me">toi</em>':""}</th>
+        ${days}<td class="lx-rolec">${role}</td>
+        ${LU_CANEDIT?`<td class="lx-rmc"><button type="button" class="lx-rm" data-rm="${acc}" data-fk="rm-${acc}" aria-label="Retirer ${esc(s.name)} de la line-up" title="Retirer de la line-up">${luIco("i-x")}</button></td>`:""}</tr>`;
+    }).join("");
+    const hint=LU_CANEDIT?"Coche les soirs où chacun peut jouer. Chaque joueur peut aussi cocher les siens."
+      :meIn?"Coche les soirs où tu peux jouer : c'est enregistré aussitôt."
+      :"Tu ne fais pas partie de cette line-up : tu peux seulement la consulter.";
+    const full=n>=LU_MAX_PLAYERS;
+    body.innerHTML=`<p class="lx-hint">${hint}</p>
+      <div class="lx-tbl-wrap"><table class="lx-tbl lx-av${LU_CANEDIT?" can-edit":""}">
+        <thead><tr><th scope="col" class="lx-pl">Joueur</th>${head}<th scope="col" class="lx-rolec">Rôle</th>${LU_CANEDIT?'<th class="lx-rmc"><span class="lx-sr">Retirer</span></th>':""}</tr></thead>
+        <tbody>${rows}</tbody>
+        <tfoot><tr><th scope="row" class="lx-pl">Disponibles</th>${counts.map((c,i)=>`<td class="${dcls(i)}">${c}</td>`).join("")}<td class="lx-rolec"></td>${LU_CANEDIT?'<td class="lx-rmc"></td>':""}</tr></tfoot>
+      </table></div>
+      <div class="lx-below">
+        <span class="lx-best">${best>=0?`Meilleur soir : <b>${LU_DAY_NAMES[best]}</b>, ${luPlural(max,"joueur","joueurs")} sur ${n}`:"Aucun soir coché pour l'instant."}</span>
+        ${LU_CANEDIT?`<span class="lx-below-act"><span class="lx-count">${n} / ${LU_MAX_PLAYERS}</span><button type="button" class="lx-btn" id="lxAddP" data-fk="addp"${full?" disabled":""}>${luIco("i-plus")}<span>Ajouter des joueurs</span></button></span>`:""}
+      </div>
+      ${LU_CANEDIT&&full?`<p class="lx-src">La line-up est complète : retire un joueur pour en ajouter un autre.</p>`:""}`;
   });
-  LU_JUST_ROW=null;
+  LU_JUST_ROWS.clear();
 }
-function luAddPlayersHtml(w){
-  const n=w.roster.length;
-  if(n>=LU_MAX_PLAYERS) return `<div class="lx-ap is-full"><p class="lx-ap-full">${luIco("i-check")}<span>Line-up complète : ${n} joueurs sur ${LU_MAX_PLAYERS}. Retire un joueur pour en ajouter un autre.</span></p></div>`;
-  const {hidden}=luAvailableMembers(w), hid=Object.entries(hidden), nh=hid.reduce((a,x)=>a+x[1],0);
-  return `<div class="lx-ap${n?"":" is-first"}">
-    <div class="lx-ap-head"><h4 class="lx-ap-title">${n?"Ajouter des joueurs":"Ajoute les joueurs de la line-up"}</h4><span class="lx-ap-count">${n} / ${LU_MAX_PLAYERS}</span></div>
-    ${n?"":'<p class="lx-ap-lead">Clique sur un membre du clan pour l\'ajouter. Chacun pourra ensuite cocher ses jours.</p>'}
-    <label class="lx-tp-search lx-ap-search">${luIco("i-search")}<input type="search" id="lxApQ" data-fk="apq" value="${esc(LU_APQ)}" placeholder="Chercher un membre du clan" aria-label="Chercher un membre du clan" autocomplete="off" spellcheck="false"></label>
-    <div class="lx-ap-list" id="lxApList">${luApListHtml(w)}</div>
-    ${nh?`<p class="lx-src"><span>${luPlural(nh,"membre déjà dans une autre line-up cette semaine, non proposé :","membres déjà dans une autre line-up cette semaine, non proposés :")}</span> ${hid.map(([nm,c])=>`<b data-i18n-skip>${esc(nm)}</b> (${c})`).join(", ")}.</p>`:""}
-  </div>`;
-}
-function luApListHtml(w){
-  const {list}=luAvailableMembers(w), q=luFold(LU_APQ);
-  const shown=q?list.filter(m=>luFold(m.nickname).includes(q)):list;
-  if(!shown.length) return `<p class="lx-pe-hint">${q?`Aucun membre disponible ne correspond à « ${esc(LU_APQ)} ».`:"Tous les membres disponibles sont déjà dans la line-up."}</p>`;
-  return shown.map(m=>`<button type="button" class="lx-ap-chip" data-add-acc="${Number(m.account_id)}" data-fk="ap-${Number(m.account_id)}">${luIco("i-plus")}<span data-i18n-skip>${esc(m.nickname)}</span></button>`).join("");
-}
-function luAddPlayer(acc,fromChip){
-  const w=LU_W; if(!w||!LU_CANEDIT||w.roster.length>=LU_MAX_PLAYERS) return;
-  if(w.roster.some(s=>s.account_id===acc)) return;
-  // Le focus passe au membre suivant de la liste : on enchaîne les ajouts au clavier.
-  let next=null;
-  if(fromChip){ const chips=[...document.querySelectorAll("#lxApList [data-add-acc]")], i=chips.indexOf(fromChip); next=chips[i+1]||chips[i-1]||null; }
-  w.roster.push({account_id:acc,name:luMemberName(acc)||"Joueur",position:"Soldat",tank:"",availability:Array(7).fill(false)});
-  LU_JUST_ROW=acc; luQueueSave(); luRenderBody();
-  const target=next&&document.querySelector(`#lxApList [data-add-acc="${next.dataset.addAcc}"]`)||document.getElementById("lxApQ");
-  if(target) target.focus({preventScroll:true});
-  luGarageLoad([acc]).then(()=>{ if(LU_W===w&&LU_TAB!=="players") luRenderBody(); });
+async function luAddPlayers(){
+  const w=LU_W; if(!w||!LU_CANEDIT) return;
+  const room=LU_MAX_PLAYERS-w.roster.length; if(room<=0) return;
+  let getIds=()=>[];
+  const res=await luDialog({
+    title:"Ajouter des joueurs", icon:"i-users", confirm:"Ajouter", wide:true,
+    body:`<p class="lx-dlg-text">${luPlural(room,"place libre","places libres")} dans cette line-up.</p>
+      <div class="lx-dlg-lab">Membres du clan</div>${luPickHtml(luPickMembers(w.format,w))}`,
+    onOpen(d){ getIds=luPickWire(d,room); const q=d.querySelector("#lxPickQ"); if(q) q.focus(); },
+    collect(){ return getIds(); }
+  });
+  if(!res||!res.length||LU_W!==w) return;
+  res.slice(0,LU_MAX_PLAYERS-w.roster.length).forEach(acc=>{
+    if(w.roster.some(s=>s.account_id===acc)) return;
+    w.roster.push({account_id:acc,name:luMemberName(acc)||"Joueur",position:"Soldat",tank:"",availability:Array(7).fill(false)});
+    LU_JUST_ROWS.add(acc);
+  });
+  luQueueSave(); luRenderBody();
+  luGarageLoad(res).then(()=>{ if(LU_W===w&&LU_TAB!=="players") luRenderBody(); });
 }
 async function luRemovePlayer(acc){
   const w=LU_W; if(!w||!LU_CANEDIT) return;
@@ -7713,208 +7701,186 @@ async function toggleMyDay(day){
 }
 
 /* ── Onglet Chars : qui a quoi ─────────────────────────────────── */
+function luSourceHtml(){
+  const at=LU_GAR.ts?new Date(LU_GAR.ts).toLocaleTimeString(window.CP_LOC,{hour:"2-digit",minute:"2-digit"}):"";
+  const err=LU_GAR.state==="error"
+    ? `<p class="lx-src warn" role="status">⚠ <span>Wargaming n'a pas répondu : les chars joués sont indisponibles pour l'instant.</span> <button type="button" class="lx-link" id="lxGarRetry" data-fk="gar-retry">Réessayer</button></p>` : "";
+  const cats=!LU_CATDATA?`<p class="lx-src warn">⚠ <span>Le classement des chars par catégorie n'a pas pu être chargé.</span></p>`:"";
+  return `${err}${cats}<p class="lx-src"><span>« Garage réel » : la liste envoyée par le mod Clan Plus du joueur, à jour.</span> <span>« Chars joués » : statistiques publiques Wargaming ; un char vendu y reste compté. Pour corriger, le joueur relie son jeu (« Relier mon jeu », dans le menu).</span>${at?` <span class="lx-src-t">Lu à ${at}.</span> <button type="button" class="lx-link" id="lxGarRefresh" data-fk="gar-refresh">Actualiser</button>`:""}</p>`;
+}
+function luTankChip(x,tier){
+  const cats=luHasCats(tier)?x.cats.map(k=>luCatIco(k)).join(""):"";
+  const tip=luHasCats(tier)&&x.cats.length?x.cats.map(k=>t(luCat(k)[1])).join(" / "):"";
+  return `<span class="lx-tank"${tip?` title="${esc(tip)}"`:""}>${cats}<span data-i18n-skip>${esc(x.nom)}</span><em>${fmt(x.n)}</em></span>`;
+}
 function luRenderChars(){
   const body=document.getElementById("lxBody"), w=LU_W; if(!body||!w) return;
-  const roster=w.roster;
+  const roster=w.roster, tier=luTier(w), rank=tier===8?"VIII":"X";
   if(!roster.length){
-    body.innerHTML=`<div class="lx-empty">${luIco("i-users","lx-empty-ic")}<h4>Aucun joueur dans cette line-up</h4><p>Ajoute des joueurs dans l'onglet « Joueurs » : leurs chars de rang X apparaîtront ici, rangés par catégorie.</p></div>`;
+    body.innerHTML=`<div class="lx-empty">${luIco("i-users","lx-empty-ic")}<h4>Aucun joueur dans cette line-up</h4><p>Ajoute des joueurs dans l'onglet « Joueurs et dispos » : leurs chars apparaîtront ici.</p></div>`;
     return;
   }
+  const cv=luHasCats(tier)?LU_CV:"player";
   luKeepFocus(()=>{
-    const known=luGarKnown(roster), n=roster.length;
-    // Couverture : pour chaque catégorie, combien de joueurs de la line-up en ont déjà joué un char.
-    const cov=`<section class="lx-cov" aria-label="Couverture de la line-up par catégorie">
-      <h4 class="lx-sub">Couverture de la line-up</h4>
-      <p class="lx-sub-lead">Pour chaque catégorie, le nombre de joueurs de la line-up qui en ont déjà joué au moins un char.</p>
-      <div class="lx-cov-grid">${LU_CATS.filter(c=>c[0]!=="libre").map(([k,l,,d])=>{ const m=known?luCatCoverage(k,roster):null;
-        return `<div class="lx-cov-t${m===0?" is-zero":""}" title="${esc(d)}">${luCatIco(k)}<span class="lx-cov-l">${l}</span><b>${m==null?"—":`${m}<small>/${n}</small>`}</b></div>`; }).join("")}</div>
-    </section>`;
-    const rows=roster.map(s=>{
-      const acc=s.account_id, by=luGarageByCat(acc), open=LU_GARAGE===acc, me=luIsMe(acc);
-      let chips="", count="", detail="";
-      if(by===undefined){ chips='<span class="lx-gar-wait" aria-hidden="true"></span>'; count=t("Lecture…"); }
-      else if(by===null){ count="?"; chips=`<span class="lx-gar-none">${t("Donnée indisponible")}</span>`; }
-      else {
-        const present=LU_CATS.filter(c=>by[c[0]]);
-        const ids=new Set(); Object.values(by).forEach(l=>l.forEach(x=>ids.add(x.id)));
-        count=luPlural(ids.size,"char","chars");
-        chips=present.length?present.map(([k,l])=>`<span class="lx-gar-chip" title="${esc(l)}">${luCatIco(k)}<em>${by[k].length}</em></span>`).join("")
-          :`<span class="lx-gar-none">${t("Aucun char de rang X joué")}</span>`;
-        if(open) detail=present.length?`<div class="lx-gar-body">${present.map(([k,l])=>`<div class="lx-gar-cat"><span class="lx-gar-cl">${luCatIco(k)}<span>${l}</span></span><span class="lx-gar-tanks">${by[k].map(x=>`<span class="lx-tank"><span data-i18n-skip>${esc(x.nom)}</span><em>${fmt(x.n)}</em></span>`).join("")}</span></div>`).join("")}</div>`:"";
-      }
-      return `<div class="lx-gar${open?" open":""}${me?" is-me":""}">
-        <button type="button" class="lx-gar-head" data-garage="${acc}" data-fk="gar-${acc}" aria-expanded="${open}"${by?"":" disabled"}>
-          <span class="lx-gar-name"><span data-i18n-skip>${esc(s.name)}</span>${me?'<em class="lx-me">toi</em>':""}</span>
-          <span class="lx-gar-chips">${chips}</span>
-          <span class="lx-gar-n">${count}</span>${by?`<span class="lx-gar-chev" aria-hidden="true">${luIco("i-chev")}</span>`:""}
-        </button>${detail}</div>`;
-    }).join("");
-    body.innerHTML=`${cov}<section class="lx-gars" aria-label="Chars de chaque joueur"><h4 class="lx-sub">Chars de chaque joueur</h4>
-      <p class="lx-sub-lead">Clique sur un joueur pour voir ses chars, avec le nombre de batailles jouées sur chacun.</p>${rows}</section>${luSourceHtml(roster)}`;
+    const lists=new Map(roster.map(s=>[s.account_id,luTanksOf(s.account_id,tier)]));
+    const cls=LU_CLASSES.filter(([k])=>k!=="SPG"||[...lists.values()].some(l=>Array.isArray(l)&&l.some(x=>x.classe==="SPG")));
+    const toggle=luHasCats(tier)?`<div class="lx-view" role="group" aria-label="Affichage">
+        <button type="button" data-cv="player" aria-pressed="${cv==="player"}" data-fk="cv-p">Par joueur</button>
+        <button type="button" data-cv="cat" aria-pressed="${cv==="cat"}" data-fk="cv-c">Par catégorie</button></div>`:"";
+    const lead=`<div class="lx-chars-top"><p class="lx-hint">${cv==="cat"
+      ?`Pour chaque catégorie, les joueurs qui ont au moins un char de rang ${rank} de ce type.`
+      :`Les chars de rang ${rank} de chaque joueur. Clique sur un nom pour voir ses chars.`}</p>${toggle}</div>
+      ${tier===8?`<p class="lx-src">Rang VIII : les chars sont rangés par classe. Le classement par catégorie (hulldown, brawl…) ne couvre que le rang X.</p>`:""}`;
+    let main="";
+    if(cv==="cat"){
+      main=`<div class="lx-cv">${LU_CATS.filter(c=>c[0]!=="libre").map(([k,l,,d])=>{
+        const who=roster.map(s=>{ const x=luTanksFor(s.account_id,k,tier); return {s,x:Array.isArray(x)?x:[]}; }).filter(o=>o.x.length).sort((a,b)=>b.x[0].n-a.x[0].n);
+        return `<div class="lx-cv-row${who.length?"":" is-zero"}"><span class="lx-cv-cat" title="${esc(d)}">${luCatIco(k)}<span>${l}</span></span>
+          <span class="lx-cv-n">${who.length}<small>/${roster.length}</small></span>
+          <span class="lx-cv-who">${who.length?who.map(o=>`<span class="lx-cv-p${luIsMe(o.s.account_id)?" is-me":""}" title="${esc(o.x.map(x=>x.nom+" · "+fmt(x.n)).join("\n"))}"><span data-i18n-skip>${esc(o.s.name)}</span><em>${o.x.length}</em></span>`).join(""):'<span class="lx-cv-none">Personne dans la line-up</span>'}</span></div>`; }).join("")}</div>`;
+    } else {
+      const rows=roster.map(s=>{
+        const acc=s.account_id, l=lists.get(acc), open=LU_GARAGE===acc, me=luIsMe(acc), ver=!!LU_GAR.ver[Number(acc)];
+        const src=l===undefined?`<span class="lx-src-c">Lecture…</span>`:l===null?`<span class="lx-src-c">? Indisponible</span>`
+          :ver?`<span class="lx-src-c is-ver">✓ <span>garage réel</span></span>`:`<span class="lx-src-c">chars joués</span>`;
+        const cells=cls.map(([k,lab])=>{ const c=Array.isArray(l)?l.filter(x=>x.classe===k).length:null;
+          return `<td class="lx-num${c?"":" is-zero"}" data-l="${esc(t(lab))}">${c==null?"·":c||"—"}</td>`; }).join("");
+        const total=Array.isArray(l)?l.length:null;
+        const name=`<span class="lx-pl-nm" data-i18n-skip>${esc(s.name)}</span>${me?'<em class="lx-me">toi</em>':""}`;
+        const detail=open&&Array.isArray(l)?`<tr class="lx-exp"><td colspan="${cls.length+3}">${cls.filter(([k])=>l.some(x=>x.classe===k)).map(([k,lab])=>
+          `<div class="lx-exp-g"><span class="lx-exp-l">${lab}</span><span class="lx-exp-t">${l.filter(x=>x.classe===k).map(x=>luTankChip(x,tier)).join("")}</span></div>`).join("")||`<p class="lx-src">Aucun char de rang ${rank}.</p>`}</td></tr>`:"";
+        return `<tr class="${me?"is-me":""}${open?" is-open":""}">
+          <th scope="row" class="lx-pl">${Array.isArray(l)&&l.length?`<button type="button" class="lx-plb" data-garage="${acc}" data-fk="gar-${acc}" aria-expanded="${open}">${luIco("i-chev")}${name}</button>`:`<span class="lx-plb is-ro">${name}</span>`}</th>
+          ${cells}<td class="lx-num lx-tot" data-l="${esc(t("Total"))}">${total==null?"·":total}</td><td class="lx-srcc">${src}</td></tr>${detail}`;
+      }).join("");
+      main=`<div class="lx-tbl-wrap"><table class="lx-tbl lx-ch">
+        <thead><tr><th scope="col" class="lx-pl">Joueur</th>${cls.map(([,lab])=>`<th scope="col" class="lx-num">${lab}</th>`).join("")}<th scope="col" class="lx-num">Total</th><th scope="col" class="lx-srcc">Source</th></tr></thead>
+        <tbody>${rows}</tbody></table></div>`;
+    }
+    body.innerHTML=lead+main+luSourceHtml();
   });
 }
 
-/* ── Onglet Compositions ──────────────────────────────────────── */
+/* ── Onglet Compositions ──────────────────────────────────────────
+   Toutes les compositions de la line-up, l'une sous l'autre. Un poste :
+   une catégorie, et si l'on veut un joueur et son char, choisis dans
+   deux listes. Les listes disent qui a un char de la catégorie et qui
+   n'a pas coché ce soir. */
+function luCompById(id){ return LU_W?(LU_W.comps.find(c=>c.id===id)||null):null; }
+function luPlayerOptions(p,comp,w,tier){
+  const today=luToday(), others={};
+  comp.posts.forEach((q,k)=>{ if(q!==p&&q.account_id) (others[q.account_id]=others[q.account_id]||[]).push(k+1); });
+  const opts=w.roster.map(s=>{ const l=luTanksFor(s.account_id,p.cat,tier); return {s,n:Array.isArray(l)?l.length:null,top:Array.isArray(l)&&l[0]?l[0].n:0}; });
+  const lab=o=>{ const bits=[o.s.name];
+    if(p.cat!=="libre"&&o.n!=null) bits.push(o.n?`${o.n} ${t(o.n>1?"chars":"char")}`:t("aucun char"));
+    if(!o.s.availability[today]) bits.push(t("pas dispo ce soir"));
+    const k=others[o.s.account_id]; if(k) bits.push(t("déjà au poste")+" "+k.join(", "));
+    return bits.join(" · "); };
+  const opt=o=>`<option value="${o.s.account_id}"${p.account_id===o.s.account_id?" selected":""}>${esc(lab(o))}</option>`;
+  let html=`<option value="">${esc(t("À pourvoir"))}</option>`;
+  const yes=opts.filter(o=>o.n).sort((a,b)=>b.n-a.n||b.top-a.top), no=opts.filter(o=>o.n===0);
+  if(p.cat==="libre"||opts.some(o=>o.n==null)||!yes.length||!no.length) html+=opts.map(opt).join("");
+  else html+=`<optgroup label="${esc(t(luHasCats(tier)?"Ont un char de cette catégorie":"Ont un char de cette classe"))}">${yes.map(opt).join("")}</optgroup><optgroup label="${esc(t("Les autres"))}">${no.map(opt).join("")}</optgroup>`;
+  if(p.account_id&&!w.roster.some(s=>s.account_id===p.account_id))
+    html+=`<option value="${p.account_id}" selected>${esc((luMemberName(p.account_id)||t("Joueur"))+" · "+t("plus dans la line-up"))}</option>`;
+  return html;
+}
+function luTankOptions(p,tier){
+  const l=luTanksFor(p.account_id,p.cat,tier);
+  let html=`<option value="">${esc(t("Char au choix"))}</option>`;
+  (Array.isArray(l)?l:[]).forEach(x=>{ html+=`<option value="${x.id}"${p.tank_id===x.id?" selected":""}>${esc(x.nom+" · "+fmt(x.n)+" "+t("bat."))}</option>`; });
+  if(p.tank_id&&!(Array.isArray(l)&&l.some(x=>x.id===p.tank_id))){
+    // Choisi plus tôt : soit le char n'est pas de cette catégorie, soit le joueur ne l'a plus.
+    const all=luTanksOf(p.account_id,tier), why=!Array.isArray(all)?"":all.some(x=>x.id===p.tank_id)?t("hors catégorie"):t("plus dans ses chars");
+    html+=`<option value="${p.tank_id}" selected>${esc(luTankName(p.tank_id)+(why?" · "+why:""))}</option>`;
+  }
+  return html;
+}
+/* Ce qu'un officier ne doit pas manquer sur un poste. */
+function luPostWarn(p,i,comp,w,tier,tonight){
+  if(!p.account_id) return "";
+  const s=w.roster.find(x=>x.account_id===p.account_id), out=[];
+  if(!s) out.push(t("n'est plus dans la line-up"));
+  else {
+    const dup=comp.posts.map((q,k)=>q.account_id===p.account_id&&k!==i?k+1:0).filter(Boolean);
+    if(dup.length) out.push(t("aussi au poste")+" "+dup.join(", "));
+    if(p.cat!=="libre"){ const l=luTanksFor(p.account_id,p.cat,tier);
+      if(Array.isArray(l)&&!l.length) out.push(t(luHasCats(tier)?(LU_GAR.ver[p.account_id]?"aucun char de cette catégorie au garage":"aucun char de cette catégorie joué"):"aucun char de cette classe")); }
+    if(tonight&&!s.availability[luToday()]) out.push(t("pas coché disponible ce soir"));
+  }
+  return out.length?`<span class="lx-pr-warn" data-i18n-skip>⚠ ${esc(out.join(" · "))}</span>`:"";
+}
+function luAddPostHtml(comp,w,tier){
+  if(comp.posts.length>=LU_MAX_POSTS) return `<div class="lx-addp"><span class="lx-addp-hint">Maximum ${LU_MAX_POSTS} postes.</span></div>`;
+  const n=w.roster.length;
+  const groups=LU_CAT_GROUPS.map(([cls,label])=>{ const cats=LU_CATS.filter(c=>cls==="autre"?(c[2]==="SPG"||c[2]===""):c[2]===cls);
+    return `<optgroup label="${esc(t(label))}">${cats.map(([k,l])=>{
+      const m=k==="libre"||!n?null:w.roster.filter(s=>{ const x=luTanksFor(s.account_id,k,tier); return Array.isArray(x)&&x.length; }).length;
+      return `<option value="${k}">${esc(t(l)+(m==null?"":` · ${m}/${n} ${t("en ont un")}`))}</option>`; }).join("")}</optgroup>`; }).join("");
+  return `<div class="lx-addp">${luIco("i-plus")}<select class="lx-sel lx-addp-sel" data-addpost="${esc(comp.id)}" data-fk="ap-${esc(comp.id)}" aria-label="Ajouter un poste" data-i18n-skip><option value="">${esc(t("Ajouter un poste…"))}</option>${groups}</select>
+    <span class="lx-addp-hint">Choisis une catégorie : le poste s'ajoute en bas de la liste.</span></div>`;
+}
+function luCompHtml(c,w,tier){
+  const on=luTonightOn(w,c), filled=c.posts.filter(p=>p.account_id).length, cid=esc(c.id);
+  const name=LU_CANEDIT
+    ? `<input class="lx-cname" data-cname="${cid}" data-fk="cn-${cid}" value="${esc(c.name)}" maxlength="40" aria-label="Nom de la composition" autocomplete="off" data-i18n-skip>`
+    : `<h4 class="lx-cname-ro" data-i18n-skip>${esc(c.name)}</h4>`;
+  const acts=LU_CANEDIT
+    ? `<button type="button" class="lx-btn lx-btn-quiet lx-btn-tn${on?" on":""}" data-tn="${cid}" data-fk="tn-${cid}" aria-pressed="${on}" title="${t("Épingler comme composition du soir : le mod Clan Plus montre à chaque joueur son poste et son char, jusqu'à demain 6 h")}">${luIco("i-star")}<span>${on?t("Composition du soir"):t("Ce soir")}</span></button>
+       ${w.comps.length<LU_MAX_COMPS?`<button type="button" class="lx-btn lx-btn-quiet" data-cdup="${cid}" data-fk="cd-${cid}" title="Dupliquer la composition">${luIco("i-copy")}<span>Dupliquer</span></button>`:""}
+       <button type="button" class="lx-btn lx-btn-quiet lx-btn-danger" data-cdel="${cid}" data-fk="cx-${cid}" title="Supprimer la composition">${luIco("i-trash")}<span>Supprimer</span></button>`
+    : (on?`<span class="lx-tn-pill">★ <span>Composition du soir</span></span>`:"");
+  const note=LU_CANEDIT
+    ? `<input class="lx-input lx-cnote" data-cnote="${cid}" data-fk="cnt-${cid}" maxlength="200" value="${esc(c.note)}" placeholder="Consigne pour cette composition (facultatif)" aria-label="Consigne pour cette composition">`
+    : (c.note?`<p class="lx-cnote-ro" data-i18n-skip>${esc(c.note)}</p>`:"");
+  const tnNote=on?`<p class="lx-tn-note"><b>★</b> <span>Composition du soir : chaque joueur dont le mod Clan Plus est relié voit son poste et son char en tête de sa fenêtre, jusqu'à</span> <b data-i18n-skip>${esc(new Date(w.tonight.until).toLocaleString(window.CP_LOC,{weekday:"long",hour:"2-digit",minute:"2-digit"}))}</b>.</p>`:"";
+  const rows=c.posts.map((p,i)=>{
+    const k=luCat(p.cat), me=luIsMe(p.account_id), key=`${cid}|${esc(p.id)}`, s=p.account_id?w.roster.find(x=>x.account_id===p.account_id):null;
+    const who=LU_CANEDIT
+      ? `<select class="lx-sel${p.account_id?"":" is-empty"}" data-assign="${key}" data-fk="pa-${esc(p.id)}" aria-label="${t("Joueur du poste")} ${i+1}" data-i18n-skip>${luPlayerOptions(p,c,w,tier)}</select>`
+      : p.account_id?`<span class="lx-pr-who"><span data-i18n-skip>${esc(s?s.name:(luMemberName(p.account_id)||"Joueur"))}</span>${me?'<em class="lx-me">toi</em>':""}</span>`:`<span class="lx-pr-none">À pourvoir</span>`;
+    const tank=!p.account_id?`<span class="lx-pr-none" aria-hidden="true">—</span>`
+      : LU_CANEDIT
+        ? (luTanksOf(p.account_id,tier)===undefined&&!p.tank_id?`<span class="lx-pr-none">Lecture…</span>`
+          :`<select class="lx-sel${p.tank_id?"":" is-empty"}" data-tank="${key}" data-fk="pt-${esc(p.id)}" aria-label="${t("Char du poste")} ${i+1}" data-i18n-skip>${luTankOptions(p,tier)}</select>`)
+        : p.tank_id?`<span class="lx-pr-tank" data-i18n-skip>${esc(luTankName(p.tank_id))}</span>`:`<span class="lx-pr-none">Char au choix</span>`;
+    return `<div class="lx-pr${me?" is-me":""}${LU_JUST_POST===p.id?" just":""}" data-post="${esc(p.id)}">
+      <span class="lx-pr-n">${i+1}</span>
+      <span class="lx-pr-cat" title="${esc(k[3])}">${luCatIco(p.cat)}<span>${k[1]}</span></span>
+      <span class="lx-pr-p">${who}</span>
+      <span class="lx-pr-t">${tank}</span>
+      <span class="lx-pr-x">${LU_CANEDIT?`<button type="button" class="lx-rm" data-rmpost="${key}" data-fk="rp-${esc(p.id)}" aria-label="${t("Supprimer le poste")} ${i+1}" title="Supprimer ce poste">${luIco("i-x")}</button>`:""}</span>
+      ${luPostWarn(p,i,c,w,tier,on)}
+    </div>`;
+  }).join("");
+  return `<section class="lx-comp${on?" is-tonight":""}${LU_JUST_COMP===c.id?" lx-in":""}" data-comp="${cid}" aria-label="${esc(c.name)}">
+    <header class="lx-comp-h"><div class="lx-comp-id">${name}<span class="lx-comp-meta"><span>${luPlural(c.posts.length,"poste","postes")}</span><span>${filled} <span>avec un joueur</span></span></span></div>
+      <div class="lx-comp-acts">${acts}</div></header>
+    ${note||tnNote?`<div class="lx-comp-notes">${tnNote}${note}</div>`:""}
+    <div class="lx-posts">${rows||`<p class="lx-pr-empty">${LU_CANEDIT?"Aucun poste pour l'instant : choisis une catégorie dans la liste ci-dessous.":"Aucun poste pour l'instant."}</p>`}</div>
+    ${LU_CANEDIT?luAddPostHtml(c,w,tier):""}
+  </section>`;
+}
 function luRenderComps(){
   const body=document.getElementById("lxBody"), w=LU_W; if(!body||!w) return;
-  const roster=w.roster, comps=w.comps, comp=luCurComp();
-  if(!comps.length){
+  const tier=luTier(w);
+  if(!w.comps.length){
     body.innerHTML=`<div class="lx-empty">${luIco("i-grid","lx-empty-ic")}<h4>Aucune composition pour cette line-up</h4><p>${LU_CANEDIT
-      ?"Une composition aligne des postes : pour chacun, une catégorie de char — Lourd hulldown, Moyen rapide, Éclaireur passif… — et le joueur qui le tient. Tu peux aussi reprendre une composition d'une autre line-up."
-      :"Les officiers n'ont pas encore préparé de composition pour cette line-up."}</p>${LU_CANEDIT?`<button type="button" class="lx-btn lx-btn-gold" id="lxCompFirst" data-fk="comp-first">${luIco("i-plus")}<span>Créer une composition</span></button>`:""}</div>`;
+      ?"Une composition est une liste de postes : pour chacun, une catégorie de char (Lourd hulldown, Moyen rapide…), et si tu veux le joueur et son char."
+      :"Les officiers n'ont pas encore préparé de composition pour cette line-up."}</p>${LU_CANEDIT?`<button type="button" class="lx-btn lx-btn-gold" id="lxCompAdd" data-fk="comp-first">${luIco("i-plus")}<span>Nouvelle composition</span></button>`:""}</div>`;
     return;
   }
   luKeepFocus(()=>{
-    const stats=luCompStats(comp,roster);
-    const plans=comps.map(c=>{ const s=luCompStats(c,roster), on=c.id===comp.id;
-      return `<button type="button" role="tab" class="lx-plan${on?" on":""}" aria-selected="${on}" data-comp="${esc(c.id)}" data-fk="plan-${esc(c.id)}">
-        <span class="lx-plan-name" data-i18n-skip>${esc(c.name)}</span>${luTonightOn(w,c)?'<span class="lx-plan-tn">Ce soir</span>':""}<span class="lx-plan-fill" title="Postes pourvus">${s.filled}/${s.total}</span>
-        <span class="lx-plan-sub" aria-hidden="true">${c.posts.length?c.posts.slice(0,8).map(p=>luCatIco(p.cat)).join(""):"—"}</span></button>`; }).join("")
-      +(LU_CANEDIT&&comps.length<LU_MAX_COMPS?`<button type="button" class="lx-plan-add" id="lxCompAdd" data-fk="plan-add">${luIco("i-plus")}<span>Composition</span></button>`:"");
-    const idHtml=LU_CANEDIT
-      ? `<input class="lx-cname" id="lxCName" data-fk="cname" value="${esc(comp.name)}" maxlength="40" size="${Math.max(6,comp.name.length+1)}" aria-label="Nom de la composition" autocomplete="off">`
-      : `<h4 class="lx-cname-ro" data-i18n-skip>${esc(comp.name)}</h4>`;
-    const statsHtml=`<div class="lx-cstats">
-        <div class="lx-cstat"><b>${stats.filled}<small>/${stats.total}</small></b><span>postes pourvus</span></div>
-        <div class="lx-cstat" title="Postes dont au moins un joueur de la line-up a déjà joué un char de la catégorie">${stats.covered==null?`<b>—</b>`:`<b>${stats.covered}<small>/${stats.definable}</small></b>`}<span>postes couverts</span></div>
-        ${stats.conflicts?`<div class="lx-cstat warn"><b>⚠ ${stats.conflicts}</b><span>${stats.conflicts>1?"joueurs sur plusieurs postes":"joueur sur plusieurs postes"}</span></div>`:""}
-      </div>`;
-    const tnOn=luTonightOn(w,comp);
-    const tnBtn=`<button type="button" class="lx-btn lx-btn-quiet lx-btn-tn${tnOn?" on":""}" id="lxCTonight" data-fk="ctonight" aria-pressed="${tnOn}" title="${t("Épingler comme composition du soir : le mod Clan Plus montre à chaque joueur son poste et son char, jusqu'à demain 6 h")}">${luIco("i-star")}<span>${tnOn?t("Composition du soir"):t("Ce soir")}</span></button>`;
-    const tnNote=tnOn?`<p class="lx-tn-note"><b>★</b> <span>Composition du soir : chaque joueur dont le mod Clan Plus est relié voit son poste et son char en tête de sa fenêtre, jusqu'à</span> <b data-i18n-skip>${esc(new Date(w.tonight.until).toLocaleString(window.CP_LOC,{weekday:"long",hour:"2-digit",minute:"2-digit"}))}</b>.</p>`:"";
-    const menu=LU_CANEDIT?`<div class="lx-cmenu">${tnBtn}${comps.length<LU_MAX_COMPS?`<button type="button" class="lx-btn lx-btn-quiet" id="lxCDup" data-fk="cdup">${luIco("i-copy")}<span>Dupliquer</span></button>`:""}<button type="button" class="lx-btn lx-btn-quiet lx-btn-danger" id="lxCDel" data-fk="cdel">${luIco("i-trash")}<span>Supprimer</span></button></div>`:"";
-    const note=LU_CANEDIT
-      ? `<input class="lx-input lx-cnote" id="lxCNote" data-fk="cnote" maxlength="200" value="${esc(comp.note)}" placeholder="Consigne générale pour cette composition (facultatif)" aria-label="Consigne générale">`
-      : (comp.note?`<p class="lx-cnote-ro" data-i18n-skip>${esc(comp.note)}</p>`:"");
-    body.innerHTML=`<div class="lx-plans" role="tablist" aria-label="Compositions">${plans}</div>
-      <div class="lx-comp${LU_ANIM_COMP?" lx-fade":""}" data-comp="${esc(comp.id)}">
-        <div class="lx-chead"><div class="lx-chead-id">${idHtml}</div>${statsHtml}${menu}</div>
-        ${tnNote}
-        ${note}
-        ${luMineBar(comp)}
-        ${luMatrixHtml(comp,roster,stats)}
-        ${luCatPickerHtml(comp,roster)}
-        <div class="lx-legend" aria-label="Légende">
-          <span><i class="lx-lg lx-lg-n">3</i>chars de la catégorie déjà joués</span>
-          <span><i class="lx-lg lx-lg-d">—</i>aucun</span>
-          <span><i class="lx-lg lx-lg-d">?</i>donnée indisponible</span>
-          <span><i class="lx-lg lx-lg-on">${luIco("i-check")}</i>joueur désigné</span>
-        </div>
-        ${luSourceHtml(roster)}
-      </div>`;
+    body.innerHTML=`<p class="lx-hint">${LU_CANEDIT
+        ?"Pour chaque poste, choisis le joueur puis son char. Les listes indiquent qui a un char de la catégorie et qui n'a pas coché ce soir."
+        :"Les compositions préparées par les officiers. Ta ligne est surlignée."}</p>
+      ${w.comps.map(c=>luCompHtml(c,w,tier)).join("")}
+      ${LU_CANEDIT&&w.comps.length<LU_MAX_COMPS?`<button type="button" class="lx-btn lx-comp-new" id="lxCompAdd" data-fk="comp-add">${luIco("i-plus")}<span>Nouvelle composition</span></button>`:""}
+      <p class="lx-src">★ <span>La composition du soir s'affiche dans le mod Clan Plus de chaque joueur relié, avec son poste et son char, jusqu'au lendemain 6 h.</span></p>`;
   });
-  const pd=document.querySelector("#lxBody .lx-pd-host");
-  if(pd) requestAnimationFrame(()=>pd.classList.add("open"));
-  LU_JUST=null; LU_ANIM_COMP=false;
-}
-function luMineBar(comp){
-  const i=comp.posts.findIndex(p=>luIsMe(p.account_id)); if(i<0) return "";
-  const p=comp.posts[i], c=luCat(p.cat), o=luOwn(ME_ID,p), tk=luPostTank(p);
-  const st=p.cat==="libre"?`<span class="lx-st">${t("Char au choix")}</span>`
-    :tk?`<span class="lx-minebar-tank"><span>avec ton</span> <b data-i18n-skip>${esc(tk.nom)}</b></span><span class="lx-st ok">✓ ${fmt(tk.n)} batailles</span>`
-    :o.s==="absent"?`<span class="lx-st warn">⚠ ${o.v?t("Aucun char de cette catégorie dans ton garage"):t("Aucun char de cette catégorie dans tes stats")}</span>`:"";
-  return `<div class="lx-minebar" role="note"><span class="lx-minebar-k">Ton poste</span><span class="lx-minebar-v"><b>n° ${i+1}</b>${luCatIco(p.cat)}<span>${c[1]}</span></span>${st}</div>`;
-}
-function luMatrixHtml(comp,roster,stats){
-  const np=roster.length;
-  if(!comp.posts.length){
-    return `<div class="lx-mx-empty">${LU_CANEDIT?"Cette composition n'a encore aucun poste. Choisis les catégories ci-dessous : un clic ajoute un poste.":"Cette composition n'a encore aucun poste."}</div>`;
-  }
-  if(!np){
-    return `<div class="lx-mx-empty">La line-up ne compte encore aucun joueur : ajoute-les dans l'onglet « Joueurs » pour voir qui peut tenir quel poste.</div>`;
-  }
-  const loading=LU_GAR.state==="loading";
-  const head=`<div class="lx-mx-row lx-mx-head" role="row">
-      <div class="lx-post lx-mx-hpost" role="columnheader">Poste</div>
-      <div class="lx-cells" role="presentation">${roster.map(s=>{ const me=luIsMe(s.account_id), n=stats.per[Number(s.account_id)]||0, days=s.availability.filter(Boolean).length;
-        return `<div class="lx-mx-ph${me?" is-me":""}" role="columnheader" title="${esc(s.name)} — ${days} ${t(days>1?"jours disponibles":"jour disponible")}"><span class="lx-ph-name" data-i18n-skip>${esc(s.name)}</span><span class="lx-ph-days" aria-hidden="true">${s.availability.map(v=>`<i${v?' class="on"':""}></i>`).join("")}</span><span class="lx-ph-tags">${me?'<em class="lx-me">toi</em>':""}${n>1?`<em class="lx-warn" title="${n} ${t("postes")}">⚠ ${n}</em>`:""}</span></div>`; }).join("")}</div>
-      <div class="lx-mx-as" role="columnheader">Désigné</div>
-    </div>`;
-  const rows=comp.posts.map((p,i)=>luRowHtml(p,i,comp,roster,stats)).join("");
-  return `<div class="lx-mx-wrap"><div class="lx-mx${loading?" is-loading":""}" role="table" aria-label="Qui peut tenir chaque poste" style="--np:${np}">${head}${rows}</div></div>`;
-}
-function luRowHtml(p,i,comp,roster,stats){
-  const c=luCat(p.cat), open=LU_POST===p.id;
-  const head=`<span class="lx-num">${i+1}</span><span class="lx-pic">${luCatIco(p.cat)}</span>
-      <span class="lx-req"><span class="lx-req-name">${c[1]}</span><span class="lx-req-kind">${c[3]}</span></span>
-      <span class="lx-post-pen" aria-hidden="true">${luIco("i-chev")}</span>`;
-  const post=`<button type="button" class="lx-post${open?" on":""}" role="rowheader" data-post-open="${esc(p.id)}" data-fk="po-${esc(p.id)}" aria-expanded="${open}" aria-label="${t("Poste")} ${i+1} : ${esc(t(c[1]))} — ${t(open?"replier":"voir qui peut le tenir")}">${head}</button>`;
-  const cells=roster.map(s=>luCellHtml(p,s,stats)).join("");
-  const row=`<div class="lx-mx-row${open?" is-open":""}" role="row" data-post="${esc(p.id)}">${post}<div class="lx-cells" role="presentation">${cells}</div>${luAssignHtml(p,roster)}</div>`;
-  return open?row+`<div class="lx-pd-host" role="presentation"><div>${luPostDetailHtml(p,i,roster)}</div></div>`:row;
-}
-function luCellHtml(p,s,stats){
-  const acc=Number(s.account_id), o=luOwn(acc,p), on=p.account_id===acc, me=luIsMe(acc);
-  const conflict=on&&(stats.per[acc]||0)>1, just=on&&LU_JUST&&LU_JUST.post===p.id&&LU_JUST.acc===acc;
-  let v="", say="", tip="";
-  // Libellés lus par un lecteur d'écran : le nom du joueur n'est pas traduisible,
-  // on traduit donc chaque fragment de texte séparément.
-  if(o.s==="played"){ v=String(o.n); say=o.n+" "+t(o.v?(o.n>1?"chars de cette catégorie au garage":"char de cette catégorie au garage"):(o.n>1?"chars de cette catégorie déjà joués":"char de cette catégorie déjà joué")); tip=o.tanks.slice(0,6).map(x=>`${x.nom} · ${fmt(x.n)}`).join("\n"); }
-  else if(o.s==="absent"){ v="—"; say=t(o.v?"aucun char de cette catégorie au garage":"aucun char de cette catégorie joué"); }
-  else if(o.s==="unknown"){ v="?"; say=t("donnée indisponible"); }
-  else if(o.s==="wait"){ v=""; say=t("lecture en cours"); }
-  else { v="·"; say=t("poste libre"); }
-  const h=o.s==="played"?Math.min(1,o.n/3):0;
-  const cls=`lx-cell s-${o.s}${on?" is-on":""}${conflict?" is-conflict":""}${just?" just":""}`;
-  const inner=`<span class="lx-cell-name" data-i18n-skip>${esc(s.name)}</span><span class="lx-cell-v">${v}</span>${on?`<span class="lx-cell-ok" aria-hidden="true">${luIco(conflict?"i-alert":"i-check")}</span>`:""}`;
-  const aria=`${s.name} : ${say}${on?" — "+t(conflict?"désigné, aussi sur un autre poste":"désigné"):""}`;
-  const wrap=`lx-c${me?" is-me":""}`;
-  if(LU_CANEDIT) return `<div class="${wrap}" role="cell"><button type="button" class="${cls}" style="--h:${h.toFixed(2)}" data-assign="${esc(p.id)}" data-acc="${acc}" data-fk="c-${esc(p.id)}-${acc}" aria-pressed="${on}" aria-label="${esc(aria)}"${tip?` title="${esc(tip)}"`:""}>${inner}</button></div>`;
-  return `<div class="${wrap}" role="cell"><span class="${cls}" style="--h:${h.toFixed(2)}" aria-label="${esc(aria)}"${tip?` title="${esc(tip)}"`:""}>${inner}</span></div>`;
-}
-function luAssignHtml(p,roster){
-  if(!p.account_id) return `<div class="lx-mx-as is-none" role="cell"><span class="lx-as-name">À pourvoir</span>${LU_CANEDIT?'<span class="lx-as-hint">Clique sur une case de la ligne</span>':""}</div>`;
-  const s=roster.find(x=>Number(x.account_id)===p.account_id), me=luIsMe(p.account_id);
-  const name=s?s.name:(luMemberName(p.account_id)||"Joueur");
-  const o=luOwn(p.account_id,p), tk=luPostTank(p), just=LU_JUST&&LU_JUST.post===p.id;
-  let st="";
-  if(!s) st='<span class="lx-st warn">⚠ Hors de la line-up</span>';
-  else if(p.cat==="libre") st=`<span class="lx-st unk">${t("Char au choix")}</span>`;
-  else if(tk) st=`<span class="lx-as-tank" data-i18n-skip>${esc(tk.nom)}</span><span class="lx-st ok">✓ ${fmt(tk.n)} batailles</span>`;
-  else if(o.s==="absent") st='<span class="lx-st warn">⚠ Aucun char de cette catégorie</span>';
-  else if(o.s==="unknown") st='<span class="lx-st unk">? Donnée indisponible</span>';
-  else if(o.s==="wait") st='<span class="lx-st unk">Lecture…</span>';
-  return `<div class="lx-mx-as${just?" just":""}" role="cell"><span class="lx-as-k">Désigné</span><span class="lx-as-name${me?" is-me":""}"><span data-i18n-skip>${esc(name)}</span>${me?'<em class="lx-me">toi</em>':""}</span>${st}</div>`;
-}
-/* Un poste déplié : qui peut le tenir, avec quels chars. L'officier désigne d'un clic
-   sur un joueur (son char le plus joué) ou directement sur l'un de ses chars. */
-function luPostDetailHtml(p,i,roster){
-  const c=luCat(p.cat);
-  const rm=LU_CANEDIT?`<button type="button" class="lx-btn lx-btn-quiet lx-btn-danger" data-rm-post="${esc(p.id)}" data-fk="rmp-${esc(p.id)}">${luIco("i-trash")}<span>Retirer le poste</span></button>`:"";
-  let list="";
-  if(p.cat==="libre"){
-    list=`<p class="lx-pe-hint">N'importe quel char de rang X : le joueur désigné choisit le sien.</p>`;
-  } else {
-    const rows=roster.map(s=>({s,o:luOwn(s.account_id,p)}))
-      .sort((a,b)=>(b.s.account_id===p.account_id)-(a.s.account_id===p.account_id)||(b.o.n||0)-(a.o.n||0)||((b.o.tanks&&b.o.tanks[0].n)||0)-((a.o.tanks&&a.o.tanks[0].n)||0));
-    list=`<div class="lx-pd-list">${rows.map(({s,o})=>{
-      const acc=Number(s.account_id), on=p.account_id===acc, chosen=on?luPostTank(p):null;
-      const nm=LU_CANEDIT
-        ? `<button type="button" class="lx-pd-name${on?" on":""}" data-pick="${esc(p.id)}|${acc}|0" data-fk="pk-${esc(p.id)}-${acc}" aria-pressed="${on}">${on?luIco("i-check"):""}<span data-i18n-skip>${esc(s.name)}</span></button>`
-        : `<span class="lx-pd-name${on?" on":""}">${on?luIco("i-check"):""}<span data-i18n-skip>${esc(s.name)}</span></span>`;
-      const tanks=o.s==="played"?o.tanks.map(x=>{ const sel=chosen&&chosen.id===x.id;
-          const inner=`<span data-i18n-skip>${esc(x.nom)}</span><em>${fmt(x.n)}</em>`;
-          return LU_CANEDIT?`<button type="button" class="lx-tank${sel?" on":""}" data-pick="${esc(p.id)}|${acc}|${x.id}" aria-pressed="${!!sel}" title="${t("Désigner avec ce char")}">${inner}</button>`:`<span class="lx-tank${sel?" on":""}">${inner}</span>`; }).join("")
-        : `<span class="lx-pd-none">${o.s==="absent"?(o.v?t("Aucun char de cette catégorie au garage"):t("Aucun char de cette catégorie joué")):o.s==="wait"?t("Lecture…"):t("Donnée indisponible")}</span>`;
-      return `<div class="lx-pd-row${on?" on":""}${o.s==="played"?"":" is-dim"}">${nm}<span class="lx-pd-tanks">${tanks}</span></div>`; }).join("")}</div>`;
-  }
-  return `<div class="lx-pd" role="group" aria-label="${t("Poste")} ${i+1}">
-    <div class="lx-pd-head"><div class="lx-pd-t">${luCatIco(p.cat)}<div><b>${c[1]}</b><span>${c[3]}</span></div></div>${rm}</div>
-    ${p.cat==="libre"?"":`<div class="lx-pd-lab">Qui peut tenir ce poste${LU_CANEDIT?" — clique sur un joueur, ou directement sur le char qu'il amènera":""}</div>`}
-    ${list}
-  </div>`;
-}
-/* Ajouter un poste : les catégories, rangées par classe ; sous chacune, combien de
-   joueurs de la line-up en ont déjà joué un char. */
-function luCatPickerHtml(comp,roster){
-  if(!LU_CANEDIT) return "";
-  const full=comp.posts.length>=LU_MAX_POSTS, dis=full?" disabled":"", known=luGarKnown(roster);
-  return `<div class="lx-catpick"><div class="lx-catpick-h"><span class="lx-addbar-l">${full?`Maximum ${LU_MAX_POSTS} postes`:"Ajouter un poste"}</span>${full?"":'<span class="lx-catpick-hint">Un clic ajoute un poste de cette catégorie.</span>'}</div>
-    ${LU_CAT_GROUPS.map(([cls,label])=>{ const cats=LU_CATS.filter(c=>cls==="autre"?(c[2]==="SPG"||c[2]===""):c[2]===cls);
-      return `<div class="lx-catgroup"><span class="lx-catgroup-l">${label}</span><div class="lx-cattiles">${cats.map(([k,l,,d])=>{
-        const m=k==="libre"||!known||!roster.length?null:luCatCoverage(k,roster);
-        return `<button type="button" class="lx-cattile" data-add-cat="${k}" data-fk="addcat-${k}" title="${esc(d)}"${dis}>${luCatIco(k)}<span>${l}</span>${m==null?"":`<em class="${m?"":"is-zero"}" title="${t("Joueurs de la line-up qui en ont déjà joué un")}">${m}/${roster.length}</em>`}</button>`; }).join("")}</div></div>`; }).join("")}
-  </div>`;
+  if(LU_JUST_POST){ const r=body.querySelector(`.lx-pr[data-post="${LU_JUST_POST}"]`); if(r) r.scrollIntoView({behavior:"smooth",block:"nearest"}); }
+  if(LU_JUST_COMP){ const s=body.querySelector(`.lx-comp[data-comp="${LU_JUST_COMP}"]`); if(s){ s.scrollIntoView({behavior:"smooth",block:"start"}); const n=s.querySelector(".lx-cname"); if(n) n.focus({preventScroll:true}); } }
+  LU_JUST_POST=null; LU_JUST_COMP=null;
 }
 
 /* ── Modifications des compositions (officiers) ───────────────── */
@@ -7923,19 +7889,22 @@ function luMut(fn,opts){
   fn(); luQueueSave();
   if(!(opts&&opts.quiet)) luRenderBody();
 }
-function luPostById(id){ const c=luCurComp(); return c?c.posts.find(p=>p.id===id)||null:null; }
+function luToggleTonight(cid){
+  const w=LU_W, c=luCompById(cid); if(!w||!c) return;
+  luMut(()=>{ w.tonight=luTonightOn(w,c)?null:{comp:c.id,until:luTonightUntil()}; });
+}
 function luNextPlanName(w){
   const used=new Set(w.comps.map(c=>c.name)); let k=0, name;
   do{ name="Plan "+String.fromCharCode(65+(k%26))+(k>=26?String(Math.floor(k/26)+1):""); k++; }while(used.has(name));
   return name;
 }
-// Dupliquer la composition affichée (joueurs compris : même line-up).
-function luDupComp(){
-  const w=LU_W, from=luCurComp(); if(!w||!from||w.comps.length>=LU_MAX_COMPS) return;
+// Dupliquer une composition (joueurs compris : même line-up).
+function luDupComp(cid){
+  const w=LU_W, from=luCompById(cid); if(!w||!from||w.comps.length>=LU_MAX_COMPS) return;
   luMut(()=>{
     const c=luNormComp({...luClone(from),id:luUid("c"),name:(from.name+" (copie)").slice(0,40)},w.comps.length);
     c.posts.forEach(p=>p.id=luUid("p"));
-    w.comps.push(c); LU_COMP_ID=c.id; LU_POST=null; LU_ANIM_COMP=true;
+    w.comps.splice(w.comps.indexOf(from)+1,0,c); LU_JUST_COMP=c.id;
   });
 }
 /* Nouvelle composition : vide, ou reprise d'une composition existante — de cette
@@ -7949,11 +7918,12 @@ async function luNewComp(){
     title:"Nouvelle composition", icon:"i-plus", confirm:"Créer la composition",
     body:`<label class="lx-dlg-lab" for="lxNcName">Nom</label>
       <input class="lx-input" id="lxNcName" maxlength="40" value="${esc(luNextPlanName(w))}" autocomplete="off">
-      <label class="lx-dlg-lab" for="lxNcSrc">Partir de</label>
+      ${sources.length?`<label class="lx-dlg-lab" for="lxNcSrc">Partir de</label>
       <select class="lx-input lx-select" id="lxNcSrc"><option value="">Composition vide</option>${sources.map((s,si)=>`<optgroup label="${esc(s.name)}${s.lu===w?" "+t("(cette line-up)"):""}">${s.comps.map((c,ci)=>opt(si,ci,c)).join("")}</optgroup>`).join("")}</select>
-      <p class="lx-dlg-hint">${sources.length?"Reprendre une composition copie ses postes : pratique pour réutiliser tes compositions types d'une semaine sur l'autre.":"Tu choisiras ensuite les catégories de chars, poste par poste."}</p>`,
+      <p class="lx-dlg-hint">Reprendre une composition copie ses postes : pratique pour réutiliser une composition type.</p>`
+      :`<p class="lx-dlg-hint">Tu ajouteras ensuite les postes, catégorie par catégorie.</p>`}`,
     onOpen(d){ const n=d.querySelector("#lxNcName"); n.focus(); n.select(); },
-    collect(d){ return {name:d.querySelector("#lxNcName").value.trim(), src:d.querySelector("#lxNcSrc").value}; }
+    collect(d){ const s=d.querySelector("#lxNcSrc"); return {name:d.querySelector("#lxNcName").value.trim(), src:s?s.value:""}; }
   });
   if(!res) return;
   luMut(()=>{
@@ -7962,86 +7932,68 @@ async function luNewComp(){
       if(from){ const same=s.lu===w, keep=new Set(w.roster.map(x=>x.account_id));
         posts=from.posts.map(p=>({...p,id:luUid("p"),account_id:same&&keep.has(p.account_id)?p.account_id:null,tank_id:same?p.tank_id:null})); } }
     const c=luNormComp({id:luUid("c"),name:res.name||luNextPlanName(w),note:"",posts},w.comps.length);
-    w.comps.push(c); LU_COMP_ID=c.id; LU_POST=null; LU_ANIM_COMP=true;
+    w.comps.push(c); LU_JUST_COMP=c.id;
   });
 }
-async function luDelComp(){
-  const w=LU_W, c=luCurComp(); if(!w||!c) return;
+async function luDelComp(cid){
+  const w=LU_W, c=luCompById(cid); if(!w||!c) return;
   const ok=await luDialog({title:"Supprimer la composition ?",danger:true,confirm:"Supprimer",
     text:`« <b>${esc(c.name)}</b> » et ${luPlural(c.posts.length,"poste","postes")} seront supprimés. Les autres compositions ne changent pas.`});
   if(!ok) return;
-  luMut(()=>{ const i=w.comps.indexOf(c); if(i<0) return; w.comps.splice(i,1); LU_COMP_ID=(w.comps[Math.max(0,i-1)]||{}).id||null; LU_POST=null; LU_ANIM_COMP=true; });
+  luMut(()=>{ const i=w.comps.indexOf(c); if(i>=0) w.comps.splice(i,1); });
 }
-function luAddPost(cat){
-  const c=luCurComp(); if(!c||c.posts.length>=LU_MAX_POSTS) return;
+function luAddPost(cid,cat){
+  const c=luCompById(cid); if(!c||c.posts.length>=LU_MAX_POSTS||!LU_CATS.some(x=>x[0]===cat)) return;
   const p=luNormPost({id:luUid("p"),cat});
-  luMut(()=>{ c.posts.push(p); });
-  const row=document.querySelector(`#lxBody .lx-mx-row[data-post="${p.id}"]`);
-  if(row){ row.classList.add("just"); row.scrollIntoView({behavior:"smooth",block:"nearest"}); }
+  LU_JUST_POST=p.id; luMut(()=>{ c.posts.push(p); });
 }
-function luAssign(postId,acc,tankId){
-  const p=luPostById(postId); if(!p) return;
-  luMut(()=>{
-    if(tankId){ p.account_id=acc; p.tank_id=tankId; }                               // un char précis
-    else if(p.account_id===acc){ p.account_id=null; p.tank_id=null; }                // re-clic : on libère
-    else { p.account_id=acc; p.tank_id=null; }                                        // son char le plus joué
-    LU_JUST=p.account_id?{post:p.id,acc}:null;
-  });
+function luPostOf(key){
+  const [cid,pid]=String(key).split("|"), c=luCompById(cid);
+  return {c,p:c?c.posts.find(p=>p.id===pid)||null:null};
 }
 /* Un seul jeu d'écouteurs pour les trois onglets. */
 function luWireBody(){
   const body=document.getElementById("lxBody"); if(!body) return;
   body.onclick=e=>{
     const b=e.target.closest("button"); if(!b||b.disabled) return;
-    // Onglet Joueurs
-    if(b.dataset.addAcc) return luAddPlayer(Number(b.dataset.addAcc),b);
+    // Joueurs et dispos
+    if(b.id==="lxAddP") return luAddPlayers();
     if(b.dataset.rm) return luRemovePlayer(Number(b.dataset.rm));
     if(b.dataset.day){ const [acc,day]=b.dataset.day.split(":").map(Number); return luToggleDay(acc,day); }
     if(b.dataset.strat){ const w=LU_W, s=w&&w.roster.find(x=>x.account_id===Number(b.dataset.strat)); if(!s||!LU_CANEDIT) return;
       s.position=s.position==="Stratège"?"Soldat":"Stratège"; luQueueSave(); return luRenderBody(); }
-    // Onglet Chars
+    // Chars
+    if(b.dataset.cv){ LU_CV=b.dataset.cv; LU_GARAGE=null; return luRenderBody(); }
     if(b.dataset.garage){ const a=Number(b.dataset.garage); LU_GARAGE=LU_GARAGE===a?null:a; return luRenderBody(); }
-    // Onglet Compositions
-    if(b.dataset.comp!==undefined&&b.classList.contains("lx-plan")){ if(LU_COMP_ID!==b.dataset.comp){ LU_COMP_ID=b.dataset.comp; LU_POST=null; LU_ANIM_COMP=true; luRenderBody(); } return; }
-    if(b.dataset.postOpen){ LU_POST=LU_POST===b.dataset.postOpen?null:b.dataset.postOpen; return luRenderBody(); }
     if(b.id==="lxGarRetry"||b.id==="lxGarRefresh"){ const w=LU_W; if(!w) return;
       luGarageLoad(w.roster.map(s=>s.account_id),true).then(()=>{ if(LU_W===w) luRenderBody(); }); luRenderBody(); return; }
+    // Compositions
     if(!LU_CANEDIT) return;
-    if(b.id==="lxCompFirst"||b.id==="lxCompAdd") return luNewComp();
-    if(b.id==="lxCDup") return luDupComp();
-    if(b.id==="lxCDel") return luDelComp();
-    if(b.id==="lxCTonight") return luToggleTonight();
-    if(b.dataset.assign) return luAssign(b.dataset.assign,Number(b.dataset.acc),0);
-    if(b.dataset.pick){ const [pid,acc,tk]=b.dataset.pick.split("|"); return luAssign(pid,Number(acc),Number(tk)); }
-    if(b.dataset.addCat) return luAddPost(b.dataset.addCat);
-    if(b.dataset.rmPost){ const c=luCurComp(); return luMut(()=>{ c.posts=c.posts.filter(p=>p.id!==b.dataset.rmPost); LU_POST=null; }); }
-  };
-  body.oninput=e=>{
-    const el=e.target;
-    if(el.id==="lxApQ"){ LU_APQ=el.value; const box=document.getElementById("lxApList"); if(box&&LU_W) box.innerHTML=luApListHtml(LU_W); return; }
-    const c=luCurComp(); if(!c||!LU_CANEDIT) return;
-    if(el.id==="lxCName"){ luMut(()=>{ c.name=el.value.slice(0,40); },{quiet:true}); el.size=Math.max(6,el.value.length+1);
-      const tab=body.querySelector(`.lx-plan[data-comp="${c.id}"] .lx-plan-name`); if(tab) tab.textContent=el.value||"—"; return; }
-    if(el.id==="lxCNote"){ return luMut(()=>{ c.note=el.value.slice(0,200); },{quiet:true}); }
+    if(b.id==="lxCompAdd") return luNewComp();
+    if(b.dataset.tn) return luToggleTonight(b.dataset.tn);
+    if(b.dataset.cdup) return luDupComp(b.dataset.cdup);
+    if(b.dataset.cdel) return luDelComp(b.dataset.cdel);
+    if(b.dataset.rmpost){ const {c,p}=luPostOf(b.dataset.rmpost); if(!c||!p) return;
+      return luMut(()=>{ c.posts=c.posts.filter(x=>x!==p); }); }
   };
   body.onchange=e=>{
-    const el=e.target, c=luCurComp(); if(!c||!LU_CANEDIT) return;
-    if(el.id==="lxCName"&&!el.value.trim()){ luMut(()=>{ c.name=luNormComp({},LU_W.comps.indexOf(c)).name; },{quiet:true}); el.value=c.name;
-      const tab=body.querySelector(`.lx-plan[data-comp="${c.id}"] .lx-plan-name`); if(tab) tab.textContent=c.name; }
+    const el=e.target; if(!LU_CANEDIT) return;
+    if(el.dataset.assign){ const {p}=luPostOf(el.dataset.assign); if(!p) return;
+      const acc=Number(el.value)||null; if(acc===p.account_id) return;
+      return luMut(()=>{ p.account_id=acc; p.tank_id=null; }); }
+    if(el.dataset.tank){ const {p}=luPostOf(el.dataset.tank); if(!p) return;
+      return luMut(()=>{ p.tank_id=Number(el.value)||null; }); }
+    if(el.dataset.addpost){ const v=el.value; el.value=""; if(v) luAddPost(el.dataset.addpost,v); return; }
+    if(el.dataset.cname){ const c=luCompById(el.dataset.cname); if(c&&!el.value.trim()){ luMut(()=>{ c.name=luNormComp({},LU_W.comps.indexOf(c)).name; },{quiet:true}); el.value=c.name; } }
+  };
+  body.oninput=e=>{
+    const el=e.target; if(!LU_CANEDIT) return;
+    if(el.dataset.cname){ const c=luCompById(el.dataset.cname); if(c) luMut(()=>{ c.name=el.value.slice(0,40); },{quiet:true}); return; }
+    if(el.dataset.cnote){ const c=luCompById(el.dataset.cnote); if(c) luMut(()=>{ c.note=el.value.slice(0,200); },{quiet:true}); }
   };
   body.onkeydown=e=>{
     const el=e.target;
-    if(el.id==="lxApQ"&&e.key==="Enter"){ e.preventDefault(); const first=document.querySelector("#lxApList [data-add-acc]"); if(first) first.click(); return; }
-    if(e.key==="Escape"&&LU_POST){ const id=LU_POST; LU_POST=null; luRenderBody(); const b=document.querySelector(`#lxBody [data-post-open="${id}"]`); if(b) b.focus(); return; }
-    // Flèches : déplacement de case en case dans la matrice.
-    if(el.classList&&el.classList.contains("lx-cell")&&/^Arrow/.test(e.key)){
-      const rows=[...body.querySelectorAll(".lx-mx-row:not(.lx-mx-head)")], r=el.closest(".lx-mx-row");
-      const cells=[...r.querySelectorAll("button.lx-cell")], ci=cells.indexOf(el), ri=rows.indexOf(r);
-      let target=null;
-      if(e.key==="ArrowRight") target=cells[ci+1]; else if(e.key==="ArrowLeft") target=cells[ci-1];
-      else { const nr=rows[ri+(e.key==="ArrowDown"?1:-1)]; if(nr) target=nr.querySelectorAll("button.lx-cell")[ci]; }
-      if(target){ e.preventDefault(); target.focus(); }
-    }
+    if((el.dataset.cname||el.dataset.cnote)&&e.key==="Enter"){ e.preventDefault(); el.blur(); }
   };
 }
 
@@ -8050,12 +8002,12 @@ async function deleteLineup(id){
   if(!LU_CANEDIT){ showLuNotice("Suppression refusée : cette action est réservée aux officiers et commandants.","bad"); return; }
   const lu=LINEUPS.find(x=>String(x.id)===String(id)), name=(LU_W&&String(LU_W.id)===String(id)?LU_W.name:lu&&lu.name)||"Line-up";
   const ok=await luDialog({title:"Supprimer la line-up ?",danger:true,confirm:"Supprimer",
-    text:`« <b>${esc(name)}</b> » sera supprimée pour tout le clan, avec ses joueurs, leurs présences et ses compositions. Cette action est définitive.`});
+    text:`« <b>${esc(name)}</b> » sera supprimée pour tout le clan, avec ses joueurs, leurs disponibilités et ses compositions. Cette action est définitive.`});
   if(!ok) return;
   clearTimeout(LU_SAVE.timer); LU_SAVE.timer=null; LU_SAVE.state="idle";
   const r=await fnCall("lineups",{session:localStorage.getItem(LS_SESSION),action:"delete",id:Number(id)});
   if(!r.ok){ showLuNotice("Suppression impossible : "+((r.j&&r.j.error)||r.status),"bad"); return; }
-  LU_OPEN_ID=null; LU_W=null; LU_POST=null; LU_FRESH=true;
+  LU_OPEN_ID=null; LU_W=null; LU_FRESH=true;
   showLuNotice("✓ Line-up supprimée.","good");
   loadLineups();
 }

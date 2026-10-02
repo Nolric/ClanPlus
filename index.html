@@ -18,12 +18,12 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <script src="i18n/index.fr.js?v=4d034ab3"></script>
-<script src="i18n/index.en.js?v=67d77347"></script>
+<script src="i18n/index.en.js?v=acdf94ab"></script>
 <script src="i18n.js?v=ed3f8a4f"></script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <!-- La charte vit dans app.css : progression.html la partage, et le
        navigateur la garde en cache d'une visite à l'autre. -->
-  <link rel="stylesheet" href="app.css?v=3f6872a6">
+  <link rel="stylesheet" href="app.css?v=4a2127e0">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" defer></script>
 </head>
 <body>
@@ -61,6 +61,7 @@
   <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
   <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 8v5M12 16.5v.5"/></symbol>
   <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></symbol>
+  <symbol id="i-pen" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></symbol>
   <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></symbol>
 </svg>
 
@@ -369,34 +370,21 @@
       
 
   <div id="viewLineups" class="hidden dashx">
-    <!-- LINE-UPS — contrat de conception
-         THESIS : une composition se lit comme une matrice postes × joueurs de la
-           line-up ; chaque case dit si ce joueur a déjà joué le char demandé.
-           Refuse la pile de cartes et le tableur tenu à la main.
+    <!-- LINE-UPS — contrat de conception (refonte du 02/10/2026)
+         THESIS : une line-up se lit en trois questions simples — qui joue et
+           quels soirs, quels chars ils ont, quelle composition on joue. Une
+           question par onglet, rien de caché derrière un clic.
          OWN-WORLD : monde .dashx inchangé — acier presque noir (--panel, --panel-2),
-           filets d'un pixel (--line), l'or réservé à la sélection, à l'affectation
-           et à l'action principale ; titres en --fx, chiffres tabulaires ; icônes
-           de classe du jeu, rôles tactiques au trait.
-         STORY : l'officier voit qui peut tenir chaque poste, désigne un joueur d'un
-           clic, compare Plan A et Plan B ; le joueur voit son poste et son char.
-         FIRST VIEWPORT : liste des line-ups (semaine, 7 barres de présence,
-           compositions) ; ouverte, une line-up montre ses plans puis la matrice
-           pleine largeur ; « Enregistrer » dans une barre collante.
-         FORM : matrice de couverture, 3e de 7 structures, seed 302f0dc6 ; chaque
-           case porte sa provenance (joué / jamais joué / inconnu). -->
+           filets d'un pixel (--line), l'or réservé à la sélection, à « ce soir »
+           et à l'action principale ; titres en --fx, chiffres tabulaires.
+         FIRST VIEWPORT : « Ce soir » (ton poste) puis la liste de toutes les
+           line-ups, sans filtre ; ouverte : format, nom, trois onglets. -->
     <header class="lu-head lx-top">
       <div class="lx-top-txt">
-        <h2 class="lu-title">Line-ups du clan</h2>
-        <p class="lx-lead">Qui joue, quels jours, sur quel char. Une line-up réunit les joueurs de la semaine, leurs chars et les compositions prévues.</p>
-        <p class="lx-rolehint" id="luRole"></p>
+        <h2 class="lu-title">Line-ups</h2>
+        <p class="lx-lead">Les équipes du clan : leurs joueurs, leurs soirs disponibles, leurs chars et leurs compositions.</p>
       </div>
-      <div class="lx-top-side">
-        <div class="lx-ctx"><span>Mode <b id="luModeLabel">Manœuvres</b></span><span>Tier <b id="luTierLabel">X</b></span></div>
-        <div class="lu-format-tabs hidden" id="luFormatTabs">
-          <button type="button" class="on" data-lu-format="manoeuvres">Manœuvres</button>
-        </div>
-        <button type="button" class="btn lu-new hidden" id="luNewBtn">＋ Nouvelle line-up</button>
-      </div>
+      <button type="button" class="btn lu-new hidden" id="luNewBtn">＋ Nouvelle line-up</button>
     </header>
     <div class="lu-notice hidden" id="luNotice" role="status" aria-live="polite"></div>
     <div id="luList"></div>
@@ -526,7 +514,7 @@
 <!-- Le code de l'application vit dans app.js : progression.html le
      partage, pour qu'il n'existe jamais deux versions des mêmes
      calculs. « defer » l'exécute après lecture complète de la page. -->
-  <script src="app.js?v=e5286cc8" defer></script>
+  <script src="app.js?v=fd5c26ce" defer></script>
 <script src="app-fin.js?v=4e570ee3" defer></script>
 </body>
 </html>
