@@ -6929,6 +6929,7 @@ let LU_OPEN_ID=null,   // line-up ouverte (null = la liste)
     LU_JUST_ROWS=new Set(), // joueurs qu'on vient d'ajouter : leur ligne s'éclaire une fois
     LU_JUST_POST=null, // poste qu'on vient d'ajouter
     LU_JUST_COMP=null, // composition qu'on vient de créer
+    LU_ADDING=null,    // composition dont la palette « Ajouter un poste » est ouverte
     LU_FRESH=false;    // la vue vient d'apparaître : on joue son entrée
 
 function luCurrentMember(){
@@ -7346,7 +7347,7 @@ function luOpen(id,tab){
   if(String(id)!==String(LU_OPEN_ID)){
     if(LU_SAVE.timer) luFlush();
     if(!LU_SAVE.busy&&!LU_SAVE.timer) LU_SAVE.state="idle";   // « Enregistré » concernait la line-up précédente
-    LU_W=null; LU_GARAGE=null; LU_CV="player";
+    LU_W=null; LU_GARAGE=null; LU_CV="player"; LU_ADDING=null;
   }
   LU_OPEN_ID=lu.id; LU_TAB=tab||"players";
   LU_FRESH=true; showLuNotice(""); renderLineups(); luScrollTop();
@@ -7796,32 +7797,110 @@ function luTankOptions(p,tier){
   }
   return html;
 }
-/* Ce qu'un officier ne doit pas manquer sur un poste. */
-function luPostWarn(p,i,comp,w,tier,tonight){
-  if(!p.account_id) return "";
+/* Les postes se lisent par classe : lourds, moyens, légers, chasseurs,
+   artillerie, puis les postes libres. */
+const LU_CLS_ORDER=["heavyTank","mediumTank","lightTank","AT-SPG","SPG",""];
+const LU_CLS_LABEL={heavyTank:"Lourds",mediumTank:"Moyens",lightTank:"Légers","AT-SPG":"Chasseurs",SPG:"Artillerie","":"Libres"};
+const LU_CLS_WORDS={heavyTank:["lourd","lourds"],mediumTank:["moyen","moyens"],lightTank:["léger","légers"],"AT-SPG":["chasseur","chasseurs"],SPG:["artillerie","artilleries"],"":["libre","libres"]};
+function luClsRank(cat){ const r=LU_CLS_ORDER.indexOf(luCat(cat)[2]); return r<0?LU_CLS_ORDER.length:r; }
+// Icône de classe du jeu (web/classes), teinte par le CSS ; « libre » prend l'icône de sa catégorie.
+function luClsIco(cls){ return cls?`<span class="lx-clsic" style="--cimg:url(classes/${cls}.png)" aria-hidden="true"></span>`:luCatIco("libre","lx-clsic-svg"); }
+function luSortedByCls(c){ return c.posts.every((p,i)=>!i||luClsRank(c.posts[i-1].cat)<=luClsRank(p.cat)); }
+/* Ce qu'un officier ne doit pas manquer sur un poste (vide = rien à signaler). */
+function luPostIssues(p,i,comp,w,tier,tonight){
+  if(!p.account_id) return [];
   const s=w.roster.find(x=>x.account_id===p.account_id), out=[];
-  if(!s) out.push(t("n'est plus dans la line-up"));
-  else {
-    const dup=comp.posts.map((q,k)=>q.account_id===p.account_id&&k!==i?k+1:0).filter(Boolean);
-    if(dup.length) out.push(t("aussi au poste")+" "+dup.join(", "));
-    if(p.cat!=="libre"){ const l=luTanksFor(p.account_id,p.cat,tier);
-      if(Array.isArray(l)&&!l.length) out.push(t(luHasCats(tier)?(LU_GAR.ver[p.account_id]?"aucun char de cette catégorie au garage":"aucun char de cette catégorie joué"):"aucun char de cette classe")); }
-    if(tonight&&!s.availability[luToday()]) out.push(t("pas coché disponible ce soir"));
-  }
-  return out.length?`<span class="lx-pr-warn" data-i18n-skip>⚠ ${esc(out.join(" · "))}</span>`:"";
+  if(!s) return [t("n'est plus dans la line-up")];
+  const dup=comp.posts.map((q,k)=>q.account_id===p.account_id&&k!==i?k+1:0).filter(Boolean);
+  if(dup.length) out.push(t("aussi au poste")+" "+dup.join(", "));
+  if(p.cat!=="libre"){ const l=luTanksFor(p.account_id,p.cat,tier);
+    if(Array.isArray(l)&&!l.length) out.push(t(luHasCats(tier)?(LU_GAR.ver[p.account_id]?"aucun char de cette catégorie au garage":"aucun char de cette catégorie joué"):"aucun char de cette classe")); }
+  if(tonight&&!s.availability[luToday()]) out.push(t("pas coché disponible ce soir"));
+  return out;
 }
-function luAddPostHtml(comp,w,tier){
-  if(comp.posts.length>=LU_MAX_POSTS) return `<div class="lx-addp"><span class="lx-addp-hint">Maximum ${LU_MAX_POSTS} postes.</span></div>`;
-  const n=w.roster.length;
-  const groups=LU_CAT_GROUPS.map(([cls,label])=>{ const cats=LU_CATS.filter(c=>cls==="autre"?(c[2]==="SPG"||c[2]===""):c[2]===cls);
-    return `<optgroup label="${esc(t(label))}">${cats.map(([k,l])=>{
-      const m=k==="libre"||!n?null:w.roster.filter(s=>{ const x=luTanksFor(s.account_id,k,tier); return Array.isArray(x)&&x.length; }).length;
-      return `<option value="${k}">${esc(t(l)+(m==null?"":` · ${m}/${n} ${t("en ont un")}`))}</option>`; }).join("")}</optgroup>`; }).join("");
-  return `<div class="lx-addp">${luIco("i-plus")}<select class="lx-sel lx-addp-sel" data-addpost="${esc(comp.id)}" data-fk="ap-${esc(comp.id)}" aria-label="Ajouter un poste" data-i18n-skip><option value="">${esc(t("Ajouter un poste…"))}</option>${groups}</select>
-    <span class="lx-addp-hint">Choisis une catégorie : le poste s'ajoute en bas de la liste.</span></div>`;
+/* Pour un poste vide : les joueurs de la line-up encore sans poste dans cette
+   composition et qui ont un char qui convient. Ceux qui ont coché ce soir
+   d'abord, puis du plus expérimenté au moins. */
+function luSuggest(p,comp,w,tier){
+  const used=new Set(comp.posts.filter(q=>q.account_id).map(q=>q.account_id)), today=luToday(), out=[];
+  w.roster.forEach(s=>{
+    if(used.has(s.account_id)) return;
+    const av=!!s.availability[today];
+    if(p.cat==="libre"){ out.push({s,tk:null,n:0,av}); return; }
+    const l=luTanksFor(s.account_id,p.cat,tier); if(!Array.isArray(l)||!l.length) return;
+    out.push({s,tk:l[0],n:l[0].n,av});
+  });
+  return out.sort((a,b)=>(b.av-a.av)||(b.n-a.n)).slice(0,4);
+}
+function luSugHtml(p,comp,w,tier,key){
+  if(w.roster.some(s=>luTanksOf(s.account_id,tier)===undefined)) return "";   // garages encore en lecture
+  const list=luSuggest(p,comp,w,tier);
+  if(!list.length) return `<span class="lx-sug"><span class="lx-sug-none">${p.cat==="libre"?"Tous les joueurs de la line-up ont déjà un poste.":"Aucun joueur libre de la line-up n'a de char qui convient."}</span></span>`;
+  return `<span class="lx-sug"><span class="lx-sug-k">Suggestions :</span>${list.map(o=>`<button type="button" class="lx-sug-b" data-sug="${key}|${o.s.account_id}|${o.tk?o.tk.id:0}" data-fk="sg-${esc(p.id)}-${o.s.account_id}" title="${esc(o.tk?`${o.tk.nom} · ${fmt(o.tk.n)} ${t("bat.")}`:t("Char au choix"))}">
+    <span data-i18n-skip>${esc(o.s.name)}</span>${o.tk?`<em data-i18n-skip>${esc(o.tk.nom)}</em>`:""}${o.av?"":`<i>${t("pas dispo ce soir")}</i>`}</button>`).join("")}</span>`;
+}
+/* En-tête : de quoi la composition est faite, combien de postes sont pourvus, ce qui reste à faire. */
+function luCompSumHtml(c,w,tier,on){
+  const n=c.posts.length;
+  if(!n) return `<div class="lx-sum"><span class="lx-sum-st">Aucun poste pour l'instant</span></div>`;
+  const cnt={}; c.posts.forEach(p=>{ const k=luCat(p.cat)[2]; cnt[k]=(cnt[k]||0)+1; });
+  const mix=LU_CLS_ORDER.filter(k=>cnt[k]).map(k=>`<span class="lx-mix">${luClsIco(k)}<b>${cnt[k]}</b><span>${(cnt[k]>1?LU_CLS_WORDS[k][1]:LU_CLS_WORDS[k][0])}</span></span>`).join("");
+  const filled=c.posts.filter(p=>p.account_id).length, empty=n-filled;
+  const bad=c.posts.filter((p,i)=>luPostIssues(p,i,c,w,tier,on).length).length;
+  const st=(bad?`<span class="lx-sum-st is-warn">⚠ ${luPlural(bad,"poste à vérifier","postes à vérifier")}</span>`:"")
+    +(empty?`<span class="lx-sum-st">${luPlural(empty,"poste à pourvoir","postes à pourvoir")}</span>`:"")
+    +(!bad&&!empty?`<span class="lx-sum-st is-ok">✓ Complète</span>`:"");
+  return `<div class="lx-sum">
+    <span class="lx-mixes">${mix}</span>
+    <span class="lx-fill"><span class="lx-fill-bar" aria-hidden="true"><i style="width:${Math.round(filled/n*100)}%"></i></span><span class="lx-fill-t">${filled}/${n} <span>pourvus</span></span></span>
+    ${st}
+  </div>`;
+}
+/* Ajouter des postes : une palette de catégories, rangées par classe. Elle reste
+   ouverte pour en ajouter plusieurs à la suite. Sous chaque catégorie, combien de
+   joueurs de la line-up en ont un char. */
+function luAddPanelHtml(c,w,tier){
+  const cid=esc(c.id), full=c.posts.length>=LU_MAX_POSTS, open=!full&&(LU_ADDING===c.id||!c.posts.length);
+  const sortBtn=c.posts.length>1&&!luSortedByCls(c)?`<button type="button" class="lx-link" data-sort="${cid}" data-fk="so-${cid}">Ranger les postes par classe</button>`:"";
+  if(!open) return `<div class="lx-addp">
+    <button type="button" class="lx-btn lx-addp-b" data-addopen="${cid}" data-fk="ao-${cid}"${full?" disabled":""}>${luIco("i-plus")}<span>Ajouter un poste</span></button>
+    ${full?`<span class="lx-addp-hint">Maximum ${LU_MAX_POSTS} postes.</span>`:""}${sortBtn}</div>`;
+  const n=w.roster.length, known=n&&!w.roster.some(s=>luTanksOf(s.account_id,tier)===undefined);
+  const groups=LU_CAT_GROUPS.map(([cls,label])=>{
+    const cats=LU_CATS.filter(x=>cls==="autre"?(x[2]==="SPG"||x[2]===""):x[2]===cls);
+    return `<div class="lx-cg"><span class="lx-cg-l">${cls==="autre"?"":luClsIco(cls)}<span>${label}</span></span><div class="lx-cg-t">${cats.map(([k,l,,d])=>{
+      const m=k==="libre"||!known?null:w.roster.filter(s=>{ const x=luTanksFor(s.account_id,k,tier); return Array.isArray(x)&&x.length; }).length;
+      return `<button type="button" class="lx-ct" data-addcat="${cid}|${k}" data-fk="ac-${cid}-${k}" title="${esc(d)}${m==null?"":` — ${m} ${t("joueurs sur")} ${n} ${t("en ont un")}`}">${luCatIco(k)}<span class="lx-ct-n">${l}</span>${m==null?"":`<em class="${m?"":"is-zero"}">${m}/${n}</em>`}</button>`; }).join("")}</div></div>`; }).join("");
+  return `<div class="lx-addpanel">
+    <div class="lx-addpanel-h"><b>Quel poste ajouter ?</b><span>Un clic ajoute un poste de cette catégorie, rangé avec sa classe. Le chiffre : combien de joueurs de la line-up en ont un char.</span>
+      ${c.posts.length?`<button type="button" class="lx-btn" data-addclose="${cid}" data-fk="ax-${cid}">${luIco("i-check")}<span>Terminé</span></button>`:""}</div>
+    ${groups}
+  </div>`;
+}
+function luPostRowHtml(p,i,c,w,tier,on,cid){
+  const k=luCat(p.cat), me=luIsMe(p.account_id), key=`${cid}|${esc(p.id)}`, s=p.account_id?w.roster.find(x=>x.account_id===p.account_id):null;
+  const who=LU_CANEDIT
+    ? `<select class="lx-sel${p.account_id?"":" is-empty"}" data-assign="${key}" data-fk="pa-${esc(p.id)}" aria-label="${t("Joueur du poste")} ${i+1}" data-i18n-skip>${luPlayerOptions(p,c,w,tier)}</select>`
+    : p.account_id?`<span class="lx-pr-who"><span data-i18n-skip>${esc(s?s.name:(luMemberName(p.account_id)||"Joueur"))}</span>${me?'<em class="lx-me">toi</em>':""}</span>`:`<span class="lx-pr-none">À pourvoir</span>`;
+  const tank=!p.account_id?`<span class="lx-pr-none" aria-hidden="true">—</span>`
+    : LU_CANEDIT
+      ? (luTanksOf(p.account_id,tier)===undefined&&!p.tank_id?`<span class="lx-pr-none">Lecture…</span>`
+        :`<select class="lx-sel${p.tank_id?"":" is-empty"}" data-tank="${key}" data-fk="pt-${esc(p.id)}" aria-label="${t("Char du poste")} ${i+1}" data-i18n-skip>${luTankOptions(p,tier)}</select>`)
+      : p.tank_id?`<span class="lx-pr-tank" data-i18n-skip>${esc(luTankName(p.tank_id))}</span>`:`<span class="lx-pr-none">Char au choix</span>`;
+  const issues=luPostIssues(p,i,c,w,tier,on);
+  const under=issues.length?`<span class="lx-pr-warn" data-i18n-skip>⚠ ${esc(issues.join(" · "))}</span>`
+    : !p.account_id&&LU_CANEDIT?luSugHtml(p,c,w,tier,key):"";
+  return `<div class="lx-pr${me?" is-me":""}${p.account_id?"":" is-open"}${LU_JUST_POST===p.id?" just":""}" data-post="${esc(p.id)}">
+    <span class="lx-pr-n">${i+1}</span>
+    <span class="lx-pr-cat"><span class="lx-pr-ic">${luCatIco(p.cat)}</span><span class="lx-pr-cl"><b>${k[1]}</b><small>${k[3]}</small></span></span>
+    <span class="lx-pr-p">${who}</span>
+    <span class="lx-pr-t">${tank}</span>
+    <span class="lx-pr-x">${LU_CANEDIT?`<button type="button" class="lx-rm" data-rmpost="${key}" data-fk="rp-${esc(p.id)}" aria-label="${t("Supprimer le poste")} ${i+1}" title="Supprimer ce poste">${luIco("i-x")}</button>`:""}</span>
+    ${under}
+  </div>`;
 }
 function luCompHtml(c,w,tier){
-  const on=luTonightOn(w,c), filled=c.posts.filter(p=>p.account_id).length, cid=esc(c.id);
+  const on=luTonightOn(w,c), cid=esc(c.id);
   const name=LU_CANEDIT
     ? `<input class="lx-cname" data-cname="${cid}" data-fk="cn-${cid}" value="${esc(c.name)}" maxlength="40" aria-label="Nom de la composition" autocomplete="off" data-i18n-skip>`
     : `<h4 class="lx-cname-ro" data-i18n-skip>${esc(c.name)}</h4>`;
@@ -7834,31 +7913,24 @@ function luCompHtml(c,w,tier){
     ? `<input class="lx-input lx-cnote" data-cnote="${cid}" data-fk="cnt-${cid}" maxlength="200" value="${esc(c.note)}" placeholder="Consigne pour cette composition (facultatif)" aria-label="Consigne pour cette composition">`
     : (c.note?`<p class="lx-cnote-ro" data-i18n-skip>${esc(c.note)}</p>`:"");
   const tnNote=on?`<p class="lx-tn-note"><b>★</b> <span>Composition du soir : chaque joueur dont le mod Clan Plus est relié voit son poste et son char en tête de sa fenêtre, jusqu'à</span> <b data-i18n-skip>${esc(new Date(w.tonight.until).toLocaleString(window.CP_LOC,{weekday:"long",hour:"2-digit",minute:"2-digit"}))}</b>.</p>`:"";
-  const rows=c.posts.map((p,i)=>{
-    const k=luCat(p.cat), me=luIsMe(p.account_id), key=`${cid}|${esc(p.id)}`, s=p.account_id?w.roster.find(x=>x.account_id===p.account_id):null;
-    const who=LU_CANEDIT
-      ? `<select class="lx-sel${p.account_id?"":" is-empty"}" data-assign="${key}" data-fk="pa-${esc(p.id)}" aria-label="${t("Joueur du poste")} ${i+1}" data-i18n-skip>${luPlayerOptions(p,c,w,tier)}</select>`
-      : p.account_id?`<span class="lx-pr-who"><span data-i18n-skip>${esc(s?s.name:(luMemberName(p.account_id)||"Joueur"))}</span>${me?'<em class="lx-me">toi</em>':""}</span>`:`<span class="lx-pr-none">À pourvoir</span>`;
-    const tank=!p.account_id?`<span class="lx-pr-none" aria-hidden="true">—</span>`
-      : LU_CANEDIT
-        ? (luTanksOf(p.account_id,tier)===undefined&&!p.tank_id?`<span class="lx-pr-none">Lecture…</span>`
-          :`<select class="lx-sel${p.tank_id?"":" is-empty"}" data-tank="${key}" data-fk="pt-${esc(p.id)}" aria-label="${t("Char du poste")} ${i+1}" data-i18n-skip>${luTankOptions(p,tier)}</select>`)
-        : p.tank_id?`<span class="lx-pr-tank" data-i18n-skip>${esc(luTankName(p.tank_id))}</span>`:`<span class="lx-pr-none">Char au choix</span>`;
-    return `<div class="lx-pr${me?" is-me":""}${LU_JUST_POST===p.id?" just":""}" data-post="${esc(p.id)}">
-      <span class="lx-pr-n">${i+1}</span>
-      <span class="lx-pr-cat" title="${esc(k[3])}">${luCatIco(p.cat)}<span>${k[1]}</span></span>
-      <span class="lx-pr-p">${who}</span>
-      <span class="lx-pr-t">${tank}</span>
-      <span class="lx-pr-x">${LU_CANEDIT?`<button type="button" class="lx-rm" data-rmpost="${key}" data-fk="rp-${esc(p.id)}" aria-label="${t("Supprimer le poste")} ${i+1}" title="Supprimer ce poste">${luIco("i-x")}</button>`:""}</span>
-      ${luPostWarn(p,i,c,w,tier,on)}
-    </div>`;
-  }).join("");
+  // Les postes, avec un intertitre à chaque changement de classe.
+  let rows="";
+  c.posts.forEach((p,i)=>{
+    const cls=luCat(p.cat)[2];
+    if(!i||luCat(c.posts[i-1].cat)[2]!==cls){
+      let n=0; for(let j=i;j<c.posts.length&&luCat(c.posts[j].cat)[2]===cls;j++) n++;
+      rows+=`<div class="lx-grp">${luClsIco(cls)}<span>${LU_CLS_LABEL[cls]||cls}</span><em>${n}</em></div>`;
+    }
+    rows+=luPostRowHtml(p,i,c,w,tier,on,cid);
+  });
   return `<section class="lx-comp${on?" is-tonight":""}${LU_JUST_COMP===c.id?" lx-in":""}" data-comp="${cid}" aria-label="${esc(c.name)}">
-    <header class="lx-comp-h"><div class="lx-comp-id">${name}<span class="lx-comp-meta"><span>${luPlural(c.posts.length,"poste","postes")}</span><span>${filled} <span>avec un joueur</span></span></span></div>
-      <div class="lx-comp-acts">${acts}</div></header>
+    <header class="lx-comp-h">
+      <div class="lx-comp-top"><div class="lx-comp-id">${name}</div><div class="lx-comp-acts">${acts}</div></div>
+      ${luCompSumHtml(c,w,tier,on)}
+    </header>
     ${note||tnNote?`<div class="lx-comp-notes">${tnNote}${note}</div>`:""}
-    <div class="lx-posts">${rows||`<p class="lx-pr-empty">${LU_CANEDIT?"Aucun poste pour l'instant : choisis une catégorie dans la liste ci-dessous.":"Aucun poste pour l'instant."}</p>`}</div>
-    ${LU_CANEDIT?luAddPostHtml(c,w,tier):""}
+    ${rows?`<div class="lx-posts">${rows}</div>`:(LU_CANEDIT?"":`<p class="lx-pr-empty">Aucun poste pour l'instant.</p>`)}
+    ${LU_CANEDIT?luAddPanelHtml(c,w,tier):""}
   </section>`;
 }
 function luRenderComps(){
@@ -7872,13 +7944,13 @@ function luRenderComps(){
   }
   luKeepFocus(()=>{
     body.innerHTML=`<p class="lx-hint">${LU_CANEDIT
-        ?"Pour chaque poste, choisis le joueur puis son char. Les listes indiquent qui a un char de la catégorie et qui n'a pas coché ce soir."
+        ?"Ajoute les postes, puis désigne le joueur et son char. Pour un poste vide, clique sur une suggestion : le joueur et son char sont désignés d'un coup."
         :"Les compositions préparées par les officiers. Ta ligne est surlignée."}</p>
       ${w.comps.map(c=>luCompHtml(c,w,tier)).join("")}
       ${LU_CANEDIT&&w.comps.length<LU_MAX_COMPS?`<button type="button" class="lx-btn lx-comp-new" id="lxCompAdd" data-fk="comp-add">${luIco("i-plus")}<span>Nouvelle composition</span></button>`:""}
       <p class="lx-src">★ <span>La composition du soir s'affiche dans le mod Clan Plus de chaque joueur relié, avec son poste et son char, jusqu'au lendemain 6 h.</span></p>`;
   });
-  if(LU_JUST_POST){ const r=body.querySelector(`.lx-pr[data-post="${LU_JUST_POST}"]`); if(r) r.scrollIntoView({behavior:"smooth",block:"nearest"}); }
+  if(LU_JUST_POST&&!LU_ADDING){ const r=body.querySelector(`.lx-pr[data-post="${LU_JUST_POST}"]`); if(r) r.scrollIntoView({behavior:"smooth",block:"nearest"}); }
   if(LU_JUST_COMP){ const s=body.querySelector(`.lx-comp[data-comp="${LU_JUST_COMP}"]`); if(s){ s.scrollIntoView({behavior:"smooth",block:"start"}); const n=s.querySelector(".lx-cname"); if(n) n.focus({preventScroll:true}); } }
   LU_JUST_POST=null; LU_JUST_COMP=null;
 }
@@ -7944,8 +8016,13 @@ async function luDelComp(cid){
 }
 function luAddPost(cid,cat){
   const c=luCompById(cid); if(!c||c.posts.length>=LU_MAX_POSTS||!LU_CATS.some(x=>x[0]===cat)) return;
-  const p=luNormPost({id:luUid("p"),cat});
-  LU_JUST_POST=p.id; luMut(()=>{ c.posts.push(p); });
+  const p=luNormPost({id:luUid("p"),cat}), r=luClsRank(cat);
+  LU_JUST_POST=p.id;
+  luMut(()=>{ const i=c.posts.findIndex(q=>luClsRank(q.cat)>r); if(i<0) c.posts.push(p); else c.posts.splice(i,0,p); });
+}
+function luSortComp(cid){
+  const c=luCompById(cid); if(!c) return;
+  luMut(()=>{ c.posts=c.posts.map((p,i)=>({p,i})).sort((x,y)=>luClsRank(x.p.cat)-luClsRank(y.p.cat)||x.i-y.i).map(x=>x.p); });
 }
 function luPostOf(key){
   const [cid,pid]=String(key).split("|"), c=luCompById(cid);
@@ -7975,6 +8052,14 @@ function luWireBody(){
     if(b.dataset.cdel) return luDelComp(b.dataset.cdel);
     if(b.dataset.rmpost){ const {c,p}=luPostOf(b.dataset.rmpost); if(!c||!p) return;
       return luMut(()=>{ c.posts=c.posts.filter(x=>x!==p); }); }
+    if(b.dataset.addopen){ LU_ADDING=b.dataset.addopen; luRenderBody();
+      const f=document.querySelector(`#lxBody .lx-comp[data-comp="${LU_ADDING}"] .lx-ct`); if(f) f.focus(); return; }
+    if(b.dataset.addclose){ const id=b.dataset.addclose; LU_ADDING=null; luRenderBody();
+      const f=document.querySelector(`#lxBody [data-addopen="${id}"]`); if(f) f.focus(); return; }
+    if(b.dataset.addcat){ const [cid,cat]=b.dataset.addcat.split("|"); LU_ADDING=cid; return luAddPost(cid,cat); }
+    if(b.dataset.sort) return luSortComp(b.dataset.sort);
+    if(b.dataset.sug){ const [cid,pid,acc,tk]=b.dataset.sug.split("|"), {p}=luPostOf(cid+"|"+pid); if(!p) return;
+      return luMut(()=>{ p.account_id=Number(acc)||null; p.tank_id=Number(tk)||null; }); }
   };
   body.onchange=e=>{
     const el=e.target; if(!LU_CANEDIT) return;
@@ -7983,7 +8068,6 @@ function luWireBody(){
       return luMut(()=>{ p.account_id=acc; p.tank_id=null; }); }
     if(el.dataset.tank){ const {p}=luPostOf(el.dataset.tank); if(!p) return;
       return luMut(()=>{ p.tank_id=Number(el.value)||null; }); }
-    if(el.dataset.addpost){ const v=el.value; el.value=""; if(v) luAddPost(el.dataset.addpost,v); return; }
     if(el.dataset.cname){ const c=luCompById(el.dataset.cname); if(c&&!el.value.trim()){ luMut(()=>{ c.name=luNormComp({},LU_W.comps.indexOf(c)).name; },{quiet:true}); el.value=c.name; } }
   };
   body.oninput=e=>{
