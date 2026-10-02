@@ -197,6 +197,21 @@
   .su-logout{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;border:1px solid rgba(255,255,255,.08);
     background:#0e0e0f;color:#9b9b96;font:inherit;font-size:12.5px;font-weight:600;padding:9px;border-radius:9px;cursor:pointer;transition:.15s}
   .su-logout svg{width:15px;height:15px}
+  /* « Relier mon jeu » : même gabarit que Déconnexion, survol en or (pas en rouge) */
+  .su-linkgame{margin-bottom:6px}
+  .su-linkgame:hover{border-color:var(--gold-line);color:var(--gold-2);background:rgba(216,181,102,.08)}
+  .lg-row{display:flex;gap:8px;margin:14px 0 6px}
+  .lg-row .lx-input{font:600 15px/1 "IBM Plex Mono",ui-monospace,Consolas,monospace;letter-spacing:.08em;text-transform:uppercase}
+  .lg-msg{min-height:20px;margin:4px 0 0;font-size:13px;color:var(--muted)}
+  .lg-msg.ok{color:var(--good)} .lg-msg.bad{color:var(--bad)}
+  .lg-list{margin:14px 0 0;border-top:1px solid var(--line)}
+  .lg-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);font-size:13px;color:var(--ink-2,#bdb9af)}
+  .lg-item b{color:var(--ink)} .lg-item .lg-meta{color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
+  .lg-item .lx-btn{margin-left:auto;height:30px}
+  .lg-empty{padding:10px 0;font-size:13px;color:var(--muted);border-bottom:1px solid var(--line)}
+  .lg-note{margin:14px 0 0;font-size:12.5px;line-height:1.55;color:var(--muted)}
+  .pr-verified{margin:10px 0 0;font-size:12.5px;color:var(--muted)}
+  .pr-verified b{color:var(--good)}
   .su-logout:hover{border-color:var(--bad,#e8626b);color:#e8626b;background:rgba(232,98,107,.10)}
   .sidebar.collapsed .su-who,.sidebar.collapsed .su-lbl{display:none}
   .sidebar.collapsed .su-logout{padding:9px 0}

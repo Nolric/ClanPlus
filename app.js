@@ -41,6 +41,7 @@ function wgLoginUrl(){
 let RAW = [];   // lignes joueur enrichies (avec ts/mode/result de la bataille)
 let MEMBERS = [];   // roster du clan (importé de l'API Wargaming)
 let ME_ID = null;   // account_id du joueur connecté
+let PR_VERIFIED = null;   // date du garage vérifié par le mod (chars prioritaires)
 const state = { mode:"", days:0, search:"", sortKey:"ce", sortDir:-1 };
 // clés normalisées (minuscules, espaces/tirets -> underscore) : gère "Private" comme "private"
 const normRole = r => String(r||"").toLowerCase().replace(/[\s-]+/g,"_");
@@ -2704,6 +2705,7 @@ function wireUI(){
   // (classement : le module #clanRanking construit son propre sélecteur)
   { const _tb=document.getElementById("themeBtn"); if(_tb) _tb.style.display="none"; }  // thème sombre uniquement
   document.getElementById("logoutBtn").onclick=()=>{ localStorage.removeItem(LS_SESSION); location.href=redirectUri(); };
+  const lgBtn=document.getElementById("linkGameBtn"); if(lgBtn) lgBtn.onclick=()=>openLinkGame();
   window.addEventListener("resize",()=>{ if(document.getElementById("app").classList.contains("hidden"))return;
     if(playerActive()) renderPlayerView(); else renderTrend(applyFilters().filter(r=>r.isMember)); });
 }
@@ -7158,17 +7160,98 @@ function luDialog(o){
   });
 }
 
+/* ============================================================
+   RELIER MON JEU — le mod Clan Plus et ce compte (v1.0.34)
+   Dans le jeu, la fenêtre du mod affiche un code (« LINK TO
+   CLANPLUS.EU », en bas). On le tape ici. Le serveur n'accepte le
+   code que pour le compte qui joue sur ce jeu. Ensuite, le mod envoie
+   le garage réel (rangs VI, VIII, X), qui sert aux line-ups et aux
+   chars prioritaires. Fonction serveur : backend/functions/mod.
+   ============================================================ */
+const LG_ERR={
+  bad_code:"Le code fait 6 caractères, par exemple CP-7KQ4MX.",
+  unknown_code:"Code inconnu ou expiré : un code ne vaut que 15 minutes. Redemande-en un dans le jeu.",
+  invalid_session:"Ta session a expiré : reconnecte-toi au site.",
+};
+function lgWhen(iso){
+  if(!iso) return "";
+  return new Date(iso).toLocaleString(window.CP_LOC,{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});
+}
+async function lgRenderList(d){
+  const el=d.querySelector("#lgList"); if(!el) return;
+  const r=await fnCall("mod",{session:localStorage.getItem(LS_SESSION),action:"links"}).catch(()=>null);
+  if(!r||!r.ok){ el.innerHTML=`<div class="lg-empty">${r&&r.status===404?t("Service pas encore en ligne (fonction « mod » à déployer)."):t("Liste des jeux reliés indisponible.")}</div>`; return; }
+  const links=r.j.links||[], gar=r.j.garage;
+  el.innerHTML=(links.length?links.map(l=>`<div class="lg-item">${luIco("i-link")}
+      <span><span>Jeu de</span> <b data-i18n-skip>${esc(l.game_nickname||"?")}</b>
+      <span class="lg-meta" data-i18n-skip>${l.mod_version?" · mod "+esc(l.mod_version):""}${l.last_seen?" · "+esc(lgWhen(l.last_seen)):""}</span></span>
+      <button type="button" class="lx-btn lx-btn-quiet" data-unlink="${Number(l.id)}">Délier</button></div>`).join("")
+    :`<div class="lg-empty">${t("Aucun jeu relié pour l'instant.")}</div>`)
+    +(gar?`<div class="lg-item"><span><span>Garage partagé :</span> <b>${Number(gar.count)}</b> <span>chars de rang VI, VIII et X</span><span class="lg-meta" data-i18n-skip> · ${esc(lgWhen(gar.updated_at))}</span></span></div>`:"");
+  el.querySelectorAll("[data-unlink]").forEach(b=>b.onclick=async()=>{
+    const ok=await luDialog({title:"Délier ce jeu ?",danger:true,confirm:"Délier",
+      text:"Le mod n'enverra plus ton garage, et celui déjà partagé avec ton clan sera effacé."});
+    if(!ok) return;
+    await fnCall("mod",{session:localStorage.getItem(LS_SESSION),action:"unlink",id:Number(b.dataset.unlink)}).catch(()=>null);
+    lgRenderList(d);
+  });
+}
+function openLinkGame(){
+  const back=document.activeElement, d=document.createElement("dialog");
+  d.className="dashx lx-dlg"; d.setAttribute("aria-labelledby","lgT");
+  d.innerHTML=`<form class="lx-dlg-box" novalidate>
+    <div class="lx-dlg-head"><span class="lx-dlg-ic">${luIco("i-link")}</span><h3 id="lgT">Relier mon jeu</h3></div>
+    <p class="lx-dlg-text">Dans le jeu, ouvre la fenêtre Clan Plus (touche F2) et clique sur « LINK TO CLANPLUS.EU », en bas. Tape ici le code qu'elle affiche.</p>
+    <div class="lg-row"><input class="lx-input" id="lgCode" placeholder="CP-XXXXXX" autocomplete="off" spellcheck="false" maxlength="12" aria-label="Code affiché dans le jeu">
+      <button type="submit" class="lx-btn lx-btn-gold" id="lgGo">Relier</button></div>
+    <p class="lg-msg" id="lgMsg" role="status"></p>
+    <div class="lg-list" id="lgList"><div class="lg-empty">${t("Lecture…")}</div></div>
+    <p class="lg-note">Une fois relié, le mod partage avec ton clan la liste de tes chars de rang VI, VIII et X et leur équipement : les officiers composent les line-ups avec ton vrai garage. Tu peux délier ton jeu à tout moment.</p>
+    <div class="lx-dlg-actions"><button type="button" class="lx-btn lx-btn-quiet" data-dlg="cancel">Fermer</button></div>
+  </form>`;
+  document.body.appendChild(d);
+  const close=()=>{ d.classList.add("is-closing");
+    setTimeout(()=>{ try{ d.close(); }catch(e){} d.remove(); if(back&&back.isConnected) back.focus({preventScroll:true}); },150); };
+  d.querySelector('[data-dlg="cancel"]').onclick=close;
+  d.addEventListener("cancel",e=>{ e.preventDefault(); close(); });
+  d.addEventListener("keydown",e=>{ if(e.key==="Escape"){ e.preventDefault(); e.stopPropagation(); close(); } });
+  d.addEventListener("mousedown",e=>{ if(e.target===d) close(); });
+  const msg=d.querySelector("#lgMsg"), go=d.querySelector("#lgGo"), inp=d.querySelector("#lgCode");
+  d.querySelector("form").onsubmit=async e=>{
+    e.preventDefault();
+    const code=inp.value.trim(); if(!code){ inp.focus(); return; }
+    go.disabled=true; msg.className="lg-msg"; msg.textContent=t("Vérification…");
+    const r=await fnCall("mod",{session:localStorage.getItem(LS_SESSION),action:"pair_confirm",code}).catch(()=>null);
+    go.disabled=false;
+    if(r&&r.ok&&r.j&&r.j.ok){
+      msg.className="lg-msg ok"; msg.textContent=t("Jeu relié ✓ — le mod envoie ton garage dans les secondes qui suivent.");
+      inp.value=""; lgRenderList(d); return;
+    }
+    const err=r&&r.j&&r.j.error;
+    msg.className="lg-msg bad";
+    msg.textContent=err==="other_account"
+      ? t("Ce code vient du jeu d'un autre compte")+(r.j.game_nickname?" ("+r.j.game_nickname+")":"")+t(" : connecte-toi au site avec ce compte-là.")
+      : LG_ERR[err]?t(LG_ERR[err]):!r?t("Le serveur ne répond pas."):r.status===404?t("Service pas encore en ligne (fonction « mod » à déployer)."):t("Liaison impossible : ")+String(err||r.status);
+  };
+  d.showModal(); inp.focus();
+  lgRenderList(d);
+}
+
 /* ── Chars joués, d'après Wargaming ────────────────────────────────
    Un seul appel pour tout le roster (10 comptes au plus), gardé 15 min.
    data[compte] : Map(tank_id → batailles), ou null quand Wargaming ne
    renvoie rien pour ce compte. Absent de data = pas encore lu. */
-const LU_GAR={data:{},at:{},state:"idle",err:"",ts:0};
+const LU_GAR={data:{},at:{},ver:{},state:"idle",err:"",ts:0};   // ver[compte] = date du garage vérifié par le mod
 const LU_GAR_TTL=15*60*1000;
 async function luGarageLoad(ids,force){
   const now=Date.now();
   const need=[...new Set(ids.map(Number).filter(id=>id>0&&(force||!(id in LU_GAR.at)||now-LU_GAR.at[id]>LU_GAR_TTL)))];
   if(!need.length) return;
   LU_GAR.state="loading"; LU_GAR.err="";
+  // Garages RÉELS, envoyés par le mod des joueurs qui l'ont relié (v1.0.34).
+  // Lu en parallèle ; absent (fonction pas encore déployée) = on s'en passe.
+  const verP=fnCall("mod",{session:localStorage.getItem(LS_SESSION),action:"garages",account_ids:need})
+    .then(r=>(r.ok&&r.j&&Array.isArray(r.j.garages))?r.j.garages:[]).catch(()=>[]);
   const url=WG_API+"/wot/account/tanks/?application_id="+WG_APP_ID+"&account_id="+need.join(",")+"&fields=tank_id%2Cstatistics.battles";
   let j=null,err="";
   for(let n=0;n<2&&!j;n++){   // une reprise : l'API sert régulièrement des 504 passagers
@@ -7178,12 +7261,21 @@ async function luGarageLoad(ids,force){
     }catch(e){ err=String((e&&e.message)||e); }
     if(!j&&n===0) await new Promise(res=>setTimeout(res,900));
   }
-  if(!j){ LU_GAR.state="error"; LU_GAR.err=err; return; }
-  need.forEach(id=>{
+  if(j) need.forEach(id=>{
     const list=j.data?j.data[String(id)]:null;
     LU_GAR.data[id]=Array.isArray(list)?new Map(list.map(x=>[Number(x.tank_id),Number(x.statistics&&x.statistics.battles)||0])):null;
     LU_GAR.at[id]=now;
   });
+  // Garage vérifié : remplace les « chars joués » de ce joueur. Les batailles
+  // viennent toujours de Wargaming (0 pour un char jamais joué), mais un char
+  // vendu ne compte plus, et un char acheté compte tout de suite.
+  (await verP).forEach(g=>{
+    const id=Number(g.account_id); if(!need.includes(id)) return;
+    const wg=LU_GAR.data[id], m=new Map();
+    (g.tanks||[]).forEach(tk=>{ const tid=Number(tk.id); m.set(tid,(wg instanceof Map&&wg.get(tid))||0); });
+    LU_GAR.data[id]=m; LU_GAR.ver[id]=g.updated_at||true; LU_GAR.at[id]=now;
+  });
+  if(!j){ LU_GAR.state="error"; LU_GAR.err=err; return; }
   LU_GAR.state="ok"; LU_GAR.ts=now;
 }
 /* Les chars de rang X d'un joueur, rangés par catégorie : {cat:[{id,nom,n}]}.
@@ -7192,8 +7284,8 @@ function luGarageByCat(acc){
   const g=LU_GAR.data[Number(acc)];
   if(g===undefined) return undefined;
   if(g===null||!LU_CATDATA) return null;
-  const by={};
-  g.forEach((n,id)=>{ if(n>0){ const tk=LU_CATDATA.get(id); if(tk) tk.cats.forEach(k=>(by[k]=by[k]||[]).push({id,nom:tk.nom,n})); } });
+  const by={}, ver=!!LU_GAR.ver[Number(acc)];
+  g.forEach((n,id)=>{ if(n>0||ver){ const tk=LU_CATDATA.get(id); if(tk) tk.cats.forEach(k=>(by[k]=by[k]||[]).push({id,nom:tk.nom,n})); } });
   Object.values(by).forEach(l=>l.sort((a,b)=>b.n-a.n));
   return by;
 }
@@ -7205,7 +7297,8 @@ function luOwn(acc,post){
   if(by===undefined) return {s:LU_GAR.state==="loading"||LU_GAR.state==="idle"?"wait":"unknown"};
   if(by===null) return {s:"unknown"};
   const tanks=by[post.cat]||[];
-  return tanks.length?{s:"played",n:tanks.length,tanks}:{s:"absent"};
+  const v=!!LU_GAR.ver[Number(acc)];   // garage vérifié : « au garage », pas « déjà joué »
+  return tanks.length?{s:"played",n:tanks.length,tanks,v}:{s:"absent",v};
 }
 /* Le char qu'amène le joueur désigné : celui choisi par l'officier, sinon son plus joué de la catégorie. */
 function luPostTank(p){
@@ -7485,7 +7578,9 @@ function luSourceHtml(roster){
     ? `<p class="lx-src warn" role="status">⚠ <span>Wargaming n'a pas répondu : impossible de dire qui a joué quels chars pour l'instant.</span> <button type="button" class="lx-link" id="lxGarRetry" data-fk="gar-retry">Réessayer</button></p>` : "";
   const cats=!LU_CATDATA?`<p class="lx-src warn">⚠ <span>Le classement des chars par catégorie n'a pas pu être chargé : les chiffres par catégorie sont indisponibles.</span></p>`:"";
   const noHidden=roster.filter(s=>LU_GAR.data[Number(s.account_id)]===null).map(s=>s.name);
-  return `${err}${cats}${noHidden.length?`<p class="lx-src">? <span>Wargaming ne renvoie aucune statistique pour</span> <b data-i18n-skip>${esc(noHidden.join(", "))}</b>.</p>`:""}
+  const verified=roster.filter(s=>LU_GAR.ver[Number(s.account_id)]).map(s=>s.name);
+  const verHtml=verified.length?`<p class="lx-src">✓ <span>Garage réel, envoyé par le mod Clan Plus, pour</span> <b data-i18n-skip>${esc(verified.join(", "))}</b> <span>: pour eux, ce sont les chars qu'ils possèdent aujourd'hui, pas les chars déjà joués.</span></p>`:"";
+  return `${err}${cats}${verHtml}${noHidden.length?`<p class="lx-src">? <span>Wargaming ne renvoie aucune statistique pour</span> <b data-i18n-skip>${esc(noHidden.join(", "))}</b>.</p>`:""}
     <p class="lx-src">Source : statistiques publiques Wargaming — les chars de rang X que chaque joueur a déjà joués. Un char vendu reste compté : sans connexion de chaque joueur, Wargaming ne publie pas le contenu exact du garage. Chaque char est rangé dans une ou deux catégories d'après le classement commun Clan Plus.${at?` <span class="lx-src-t">Lu à ${at}.</span> <button type="button" class="lx-link" id="lxGarRefresh" data-fk="gar-refresh">Actualiser</button>`:""}</p>`;
 }
 
@@ -7699,7 +7794,7 @@ function luMineBar(comp){
   const p=comp.posts[i], c=luCat(p.cat), o=luOwn(ME_ID,p), tk=luPostTank(p);
   const st=p.cat==="libre"?`<span class="lx-st">${t("Char au choix")}</span>`
     :tk?`<span class="lx-minebar-tank"><span>avec ton</span> <b data-i18n-skip>${esc(tk.nom)}</b></span><span class="lx-st ok">✓ ${fmt(tk.n)} batailles</span>`
-    :o.s==="absent"?`<span class="lx-st warn">⚠ Aucun char de cette catégorie dans tes stats</span>`:"";
+    :o.s==="absent"?`<span class="lx-st warn">⚠ ${o.v?t("Aucun char de cette catégorie dans ton garage"):t("Aucun char de cette catégorie dans tes stats")}</span>`:"";
   return `<div class="lx-minebar" role="note"><span class="lx-minebar-k">Ton poste</span><span class="lx-minebar-v"><b>n° ${i+1}</b>${luCatIco(p.cat)}<span>${c[1]}</span></span>${st}</div>`;
 }
 function luMatrixHtml(comp,roster,stats){
@@ -7736,8 +7831,8 @@ function luCellHtml(p,s,stats){
   let v="", say="", tip="";
   // Libellés lus par un lecteur d'écran : le nom du joueur n'est pas traduisible,
   // on traduit donc chaque fragment de texte séparément.
-  if(o.s==="played"){ v=String(o.n); say=o.n+" "+t(o.n>1?"chars de cette catégorie déjà joués":"char de cette catégorie déjà joué"); tip=o.tanks.slice(0,6).map(x=>`${x.nom} · ${fmt(x.n)}`).join("\n"); }
-  else if(o.s==="absent"){ v="—"; say=t("aucun char de cette catégorie joué"); }
+  if(o.s==="played"){ v=String(o.n); say=o.n+" "+t(o.v?(o.n>1?"chars de cette catégorie au garage":"char de cette catégorie au garage"):(o.n>1?"chars de cette catégorie déjà joués":"char de cette catégorie déjà joué")); tip=o.tanks.slice(0,6).map(x=>`${x.nom} · ${fmt(x.n)}`).join("\n"); }
+  else if(o.s==="absent"){ v="—"; say=t(o.v?"aucun char de cette catégorie au garage":"aucun char de cette catégorie joué"); }
   else if(o.s==="unknown"){ v="?"; say=t("donnée indisponible"); }
   else if(o.s==="wait"){ v=""; say=t("lecture en cours"); }
   else { v="·"; say=t("poste libre"); }
@@ -7782,7 +7877,7 @@ function luPostDetailHtml(p,i,roster){
       const tanks=o.s==="played"?o.tanks.map(x=>{ const sel=chosen&&chosen.id===x.id;
           const inner=`<span data-i18n-skip>${esc(x.nom)}</span><em>${fmt(x.n)}</em>`;
           return LU_CANEDIT?`<button type="button" class="lx-tank${sel?" on":""}" data-pick="${esc(p.id)}|${acc}|${x.id}" aria-pressed="${!!sel}" title="${t("Désigner avec ce char")}">${inner}</button>`:`<span class="lx-tank${sel?" on":""}">${inner}</span>`; }).join("")
-        : `<span class="lx-pd-none">${o.s==="absent"?t("Aucun char de cette catégorie joué"):o.s==="wait"?t("Lecture…"):t("Donnée indisponible")}</span>`;
+        : `<span class="lx-pd-none">${o.s==="absent"?(o.v?t("Aucun char de cette catégorie au garage"):t("Aucun char de cette catégorie joué")):o.s==="wait"?t("Lecture…"):t("Donnée indisponible")}</span>`;
       return `<div class="lx-pd-row${on?" on":""}${o.s==="played"?"":" is-dim"}">${nm}<span class="lx-pd-tanks">${tanks}</span></div>`; }).join("")}</div>`;
   }
   return `<div class="lx-pd" role="group" aria-label="${t("Poste")} ${i+1}">
@@ -8483,6 +8578,13 @@ async function loadPrio(){
       +' — l\'action « prio_get » est-elle déployée ?</div>'; return; }
     PR_LIST=(r.j.prio||[]).map(Number);
     PR_OWNED=new Set((r.j.owned||[]).map(Number));
+    // Mod relié : les cases suivent le garage RÉEL (et ne se cochent plus à la main).
+    PR_VERIFIED=null;
+    if(ME_ID!=null){
+      const g=await fnCall("mod",{session:localStorage.getItem(LS_SESSION),action:"garages",account_ids:[ME_ID]}).catch(()=>null);
+      const row=g&&g.ok&&g.j&&Array.isArray(g.j.garages)?g.j.garages.find(x=>Number(x.account_id)===Number(ME_ID)):null;
+      if(row){ PR_VERIFIED=row.updated_at||true; PR_OWNED=new Set((row.tanks||[]).map(x=>Number(x.id))); }
+    }
     PR_CANEDIT=meIsManager();
     prRenderAll();
   }catch(e){ el.innerHTML='<div class="empty">Impossible de joindre « loadouts » ('+esc(String(e))+').</div>'; }
@@ -8517,10 +8619,11 @@ function prRenderPanel(){
             <span class="pr-dot"></span>
             <img class="pr-ic" src="${esc(prIcon(t))}" onerror="this.style.visibility='hidden'" loading="lazy">
             <span class="pr-nm">${esc(prNrm(t.name))}</span>${prGem(t)}
-            <input type="checkbox" class="pr-cb" data-own="${id}"${PR_OWNED.has(id)?" checked":""}
-              title="Je possède ce char"></label>`;
+            <input type="checkbox" class="pr-cb" data-own="${id}"${PR_OWNED.has(id)?" checked":""}${PR_VERIFIED?" disabled":""}
+              title="${PR_VERIFIED?"D'après ton garage (mod relié)":"Je possède ce char"}"></label>`;
         }).join(""):'<div class="pr-col-empty">—</div>'}</div></div>`;
     }).join("")}</div>
+    ${PR_VERIFIED?`<p class="pr-verified"><b>✓</b> <span>Cases cochées d'après ton garage réel, envoyé par le mod Clan Plus.</span>${PR_VERIFIED===true?"":` <span class="lg-meta" data-i18n-skip>${esc(lgWhen(PR_VERIFIED))}</span>`}</p>`:""}
     <div class="pr-legend">
       <span class="pr-leg"><span class="pr-dot"></span>Violet : char optionnel ou difficile à obtenir — campagne, atelier d'assemblage ou box</span>
       <span class="pr-leg pr-leg-prem"><svg class="pr-prem-ic"><use href="#i-prem"/></svg>Doré : char premium ou de collection — ne se débloque pas à l'XP</span>
