@@ -17,13 +17,13 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20240%20240%22%3E%3Crect%20width%3D%22240%22%20height%3D%22240%22%20rx%3D%2254%22%20fill%3D%22%23141310%22%2F%3E%3Cg%20transform%3D%22translate%2830%2030%29%20scale%280.75%29%22%20fill%3D%22%23d8b566%22%3E%3Ccircle%20cx%3D%22120%22%20cy%3D%22120%22%20r%3D%22100%22%20fill%3D%22none%22%20stroke%3D%22%23d8b566%22%20stroke-width%3D%227%22%2F%3E%3Crect%20x%3D%2281%22%20y%3D%228%22%20width%3D%2218%22%20height%3D%2218%22%2F%3E%3Crect%20x%3D%22111%22%20y%3D%224%22%20width%3D%2218%22%20height%3D%2218%22%2F%3E%3Crect%20x%3D%22141%22%20y%3D%228%22%20width%3D%2218%22%20height%3D%2218%22%2F%3E%3Cpath%20d%3D%22M161%2C155%20A54%2C54%200%201%201%20161%2C85%22%20fill%3D%22none%22%20stroke%3D%22%23d8b566%22%20stroke-width%3D%2220%22%20stroke-linecap%3D%22round%22%2F%3E%3Crect%20x%3D%22112%22%20y%3D%2294%22%20width%3D%2216%22%20height%3D%2252%22%20rx%3D%225%22%2F%3E%3Crect%20x%3D%2294%22%20y%3D%22112%22%20width%3D%2252%22%20height%3D%2216%22%20rx%3D%225%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<script src="i18n/index.fr.js?v=ff0b68ba"></script>
+<script src="i18n/index.fr.js?v=1242067e"></script>
 <script src="i18n/index.en.js?v=2dd146b6"></script>
 <script src="i18n.js?v=ed3f8a4f"></script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <!-- La charte vit dans app.css : progression.html la partage, et le
        navigateur la garde en cache d'une visite à l'autre. -->
-  <link rel="stylesheet" href="app.css?v=c0d6687b">
+  <link rel="stylesheet" href="app.css?v=0b3257b3">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" defer></script>
 </head>
 <body>
@@ -67,140 +67,369 @@
 
 <!-- ======================= PAGE D'ACCUEIL PUBLIQUE ======================= -->
 <div id="landing" class="hidden">
-  <div class="lprog" aria-hidden="true"><i></i></div>
-  <div class="sh"><header class="lnav">
-    <a class="lbrand" href="/"><span class="mk"><svg viewBox="0 0 240 240" aria-hidden="true"><circle cx="120" cy="120" r="100" fill="none" stroke="#d8b566" stroke-width="7"/><circle cx="120" cy="120" r="88" fill="none" stroke="#d8b566" stroke-width="2.5" opacity=".5"/><rect x="81" y="8" width="18" height="18" fill="#d8b566"/><rect x="111" y="4" width="18" height="18" fill="#d8b566"/><rect x="141" y="8" width="18" height="18" fill="#d8b566"/><circle cx="20" cy="120" r="4.5" fill="#d8b566"/><circle cx="220" cy="120" r="4.5" fill="#d8b566"/><path d="M161,155 A54,54 0 1 1 161,85" fill="none" stroke="#d8b566" stroke-width="20" stroke-linecap="round"/><rect x="112" y="94" width="16" height="52" rx="5" fill="#d8b566"/><rect x="94" y="112" width="52" height="16" rx="5" fill="#d8b566"/></svg></span><b>Clan <em>Plus</em></b></a>
-    <span class="lsp"></span>
-    <a class="llk" href="mod.html">The mod</a>
-    <a class="llk" href="soutenir.html">Support</a>
-    <button class="lgo" id="lpLoginTop">Sign in</button><span class="cp-lang-slot"></span>
-  </header></div>
-
-  <header class="lhero"><div class="sh">
-    <div class="lmark"><svg viewBox="0 0 240 240" aria-hidden="true"><circle cx="120" cy="120" r="100" fill="none" stroke="#d8b566" stroke-width="7"/><circle cx="120" cy="120" r="88" fill="none" stroke="#d8b566" stroke-width="2.5" opacity=".5"/><rect x="81" y="8" width="18" height="18" fill="#d8b566"/><rect x="111" y="4" width="18" height="18" fill="#d8b566"/><rect x="141" y="8" width="18" height="18" fill="#d8b566"/><circle cx="20" cy="120" r="4.5" fill="#d8b566"/><circle cx="220" cy="120" r="4.5" fill="#d8b566"/><path d="M161,155 A54,54 0 1 1 161,85" fill="none" stroke="#d8b566" stroke-width="20" stroke-linecap="round"/><rect x="112" y="94" width="16" height="52" rx="5" fill="#d8b566"/><rect x="94" y="112" width="52" height="16" rx="5" fill="#d8b566"/></svg></div>
-    <p class="lkick">World of Tanks EU · Strongholds</p>
-    <h1><span class="ln"><i>Your clan plays.</i></span><span class="ln"><i class="dim">The rest gets measured.</i></span></h1>
-    <p class="lled">The mod records every clan battle. The site turns that into statistics, a teamplay rating and a plan to improve — for you and for the whole clan.</p>
-    <div class="lacts">
-      <a class="lbtn lbtn-1" href="mod.html">See the mod →</a>
-      <button class="lbtn lbtn-2" id="lpLogin">Go to my clan →</button>
+<!-- VITRINE — contrat de conception (refonte du 03/10/2026, 2e version)
+     THESIS : le QG du clan. La page montre Clan Plus en entier — revoir,
+       mesurer, préparer, rassembler — au lieu d'un seul outil ; elle refuse la
+       grille d'icônes « fonctionnalités » et le résumé de la page du mod.
+     OWN-WORLD : la charte du site — acier presque noir, filets d'un pixel, l'or
+       seul ; courbes de niveau d'une vraie carte, vraie minimap, icônes du jeu ;
+       IBM Plex (Condensed titres, Mono données).
+     STORY : on comprend ce que fait Clan Plus (mod + site), on y croit grâce aux
+       démonstrations et à la précision mesurée du SR, on se connecte ou on
+       installe le mod.
+     FIRST VIEWPORT : titre et deux actions à gauche ; à droite le tableau de
+       bord d'un clan qui se remplit, la fenêtre du mod et le SR en surimpression ;
+       courbes de niveau en fond, révélées par un balayage.
+     FORM : cinq chapitres, une barre qui suit la lecture. -->
+  <header class="vt-top" id="vtTop">
+    <div class="vt-bar">
+      <a class="vt-brand" href="/" aria-label="Clan Plus"><span class="mk"><svg viewBox="0 0 240 240" aria-hidden="true"><circle cx="120" cy="120" r="100" fill="none" stroke="#d8b566" stroke-width="7"/><circle cx="120" cy="120" r="88" fill="none" stroke="#d8b566" stroke-width="2.5" opacity=".5"/><rect x="81" y="8" width="18" height="18" fill="#d8b566"/><rect x="111" y="4" width="18" height="18" fill="#d8b566"/><rect x="141" y="8" width="18" height="18" fill="#d8b566"/><path d="M161,155 A54,54 0 1 1 161,85" fill="none" stroke="#d8b566" stroke-width="20" stroke-linecap="round"/><rect x="112" y="94" width="16" height="52" rx="5" fill="#d8b566"/><rect x="94" y="112" width="52" height="16" rx="5" fill="#d8b566"/></svg></span><b>Clan <em>Plus</em></b></a>
+      <nav class="vt-links" aria-label="Site">
+        <a href="mod.html">The mod</a>
+        <a href="trouver-clan.html">Find a clan</a>
+        <a href="soutenir.html">Support</a>
+      </nav>
+      <button class="vt-signin" id="lpLoginTop" type="button">Sign in</button>
+      <span class="cp-lang-slot"></span>
     </div>
-    <p class="lspec">Free · ad-free · World of Tanks EU 2.4.0.2</p>
-  </div></header>
+    <nav class="vt-strip" id="vtStrip" aria-label="Chapters">
+      <a href="#c1"><b><svg class="ic" aria-hidden="true"><use href="#i-sword"/></svg></b><span>Review</span></a>
+      <a href="#c2"><b><svg class="ic" aria-hidden="true"><use href="#i-gauge"/></svg></b><span>Measure</span></a>
+      <a href="#c3"><b><svg class="ic" aria-hidden="true"><use href="#i-target"/></svg></b><span>Prepare</span></a>
+      <a href="#c4"><b><svg class="ic" aria-hidden="true"><use href="#i-users"/></svg></b><span>Rally</span></a>
+      <a href="#c5"><b><svg class="ic" aria-hidden="true"><use href="#i-tools"/></svg></b><span>The mod</span></a>
+    </nav>
+  </header>
 
-  <section class="lsec"><div class="sh">
-    <div class="lsh rv2" data-a="head"><span class="lsn">01</span><h2>Every battle,<br>replayable and measured.</h2></div>
-    <p class="lsub rv2" data-a="up">What the mod records while you play, the site hands back to you afterwards.</p>
-
-    <figure class="rv2" data-a="plate">
-      <div class="lscr">
-        <div class="lscr-b"><i></i><i></i><i></i><span class="lscr-t">Himmelsdorf · 7 — 5 · victory</span></div>
-        <svg class="lmap" viewBox="0 0 720 300" role="img" aria-label="The battle replayed on the map: both teams' tanks, their paths, a shot and a kill.">
-          <defs><pattern id="ldg" width="30" height="30" patternUnits="userSpaceOnUse">
-            <path d="M30 0H0V30" fill="none" stroke="rgba(255,255,255,.045)"/></pattern>
-            <filter id="ldsoft"><feGaussianBlur stdDeviation="5"/></filter>
-            <linearGradient id="ldscan" x1="0" x2="1"><stop offset="0" stop-color="#d8b566" stop-opacity="0"/>
-              <stop offset="1" stop-color="#d8b566" stop-opacity=".13"/></linearGradient></defs>
-          <rect width="720" height="300" fill="#12161a"/><rect width="720" height="300" fill="url(#ldg)"/>
-          <rect class="scan" x="-140" y="0" width="140" height="300" fill="url(#ldscan)"/>
-          <g fill="#1b2127">
-            <rect x="248" y="52" width="92" height="58" rx="2"/><rect x="366" y="46" width="74" height="70" rx="2"/>
-            <rect x="252" y="140" width="66" height="52" rx="2"/><rect x="352" y="150" width="98" height="44" rx="2"/>
-            <rect x="268" y="214" width="80" height="50" rx="2"/><rect x="386" y="212" width="62" height="56" rx="2"/>
-            <rect x="120" y="120" width="54" height="66" rx="2"/><rect x="540" y="112" width="58" height="70" rx="2"/></g>
-          <g><circle cx="74" cy="150" r="30" fill="none" stroke="#5fc27e" stroke-dasharray="4 5" opacity=".7"/>
-            <path d="M74 132v36" stroke="#5fc27e" stroke-width="2"/><path d="M74 132h16l-4 7 4 7H74z" fill="#5fc27e"/>
-            <circle cx="646" cy="150" r="30" fill="none" stroke="#e2685f" stroke-dasharray="4 5" opacity=".7"/>
-            <path d="M646 132v36" stroke="#e2685f" stroke-width="2"/><path d="M646 132h16l-4 7 4 7h-16z" fill="#e2685f"/></g>
-          <g fill="none" stroke-linecap="round" opacity=".5">
-            <path class="v" d="M92 176C150 190 196 214 236 232" stroke="#5fc27e" stroke-width="1.6"/>
-            <path class="v" d="M96 126C154 108 200 86 238 72" stroke="#5fc27e" stroke-width="1.6"/>
-            <path class="v" d="M100 150C168 148 214 150 250 152" stroke="#5fc27e" stroke-width="1.6"/>
-            <path class="v" d="M628 124C566 104 512 86 470 74" stroke="#e2685f" stroke-width="1.6"/>
-            <path class="v" d="M624 178C570 200 522 220 486 234" stroke="#e2685f" stroke-width="1.6"/>
-            <path class="v" d="M636 150C592 150 552 150 520 150" stroke="#e2685f" stroke-width="1.6"/></g>
-          <g class="sh2"><path d="M186 93L529 93" stroke="#e8a13c" stroke-width="1.6" stroke-dasharray="7 5" opacity=".95"/>
-            <text x="357" y="82" fill="#e8a13c" font-family="IBM Plex Mono,monospace" font-size="11" text-anchor="middle">−1 240</text></g>
-          <circle class="bo" cx="529" cy="93" r="14" fill="#e8a13c" opacity=".24" filter="url(#ldsoft)"/>
-          <g class="c c3"><circle r="8" fill="#5fc27e"/><rect x="-4" y="-2.5" width="8" height="5" rx="1" fill="#0f1a12"/></g>
-          <g class="c c2"><circle r="8" fill="#5fc27e"/><rect x="-4" y="-2.5" width="8" height="5" rx="1" fill="#0f1a12"/></g>
-          <g class="c c1"><circle r="8" fill="#5fc27e"/><path d="M0 -4l4 4-4 4-4-4z" fill="#0f1a12"/></g>
-          <g class="c c4"><circle r="8" fill="#5fc27e"/><circle r="2.6" fill="#0f1a12"/></g>
-          <g class="c c5"><circle r="8" fill="#5fc27e"/><path d="M-4 -3h8l-4 6z" fill="#0f1a12"/></g>
-          <g class="c c6"><circle r="8" fill="#e2685f"/><rect x="-4" y="-2.5" width="8" height="5" rx="1" fill="#1a0f0f"/></g>
-          <g class="c c7"><circle r="8" fill="#e2685f"/><rect x="-4" y="-2.5" width="8" height="5" rx="1" fill="#1a0f0f"/></g>
-          <g class="c c8"><circle r="8" fill="#e2685f"/><path d="M0 -4l4 4-4 4-4-4z" fill="#1a0f0f"/></g>
-          <g class="ki" stroke="#c2beb4" stroke-width="2.2" opacity=".9"><path d="M523 87l12 12M535 87l-12 12"/></g>
-        </svg>
-        <div class="lctl"><span class="p">▶</span><span class="b"><i></i></span><span class="s">×2</span></div>
+  <!-- ══ ouverture : le QG du clan ══
+       Une séquence au chargement (≈ 3 s) : le terrain apparaît sous un
+       balayage, le titre monte, puis le tableau de bord du clan se remplit
+       (chiffres, forme, courbe, dernières batailles) et la fenêtre du mod et
+       le SR viennent se poser dessus. Sans script ou en mouvement réduit :
+       l'état final. -->
+  <section class="vt-hero" id="vtHero">
+    <div class="vt-terrain" aria-hidden="true"><div class="vt-terrain-in"><img class="vt-relief" src="relief/malinovka.svg" alt=""></div><i class="vt-scan"></i></div>
+    <div class="vt-wrap vt-hero-in">
+      <div class="vt-pitch">
+        <p class="vt-kick">Stronghold · Skirmishes · Clan Wars</p>
+        <h1><span class="vt-l"><span>The HQ</span></span><span class="vt-l"><span>of your</span></span><span class="vt-l"><span class="g">World of Tanks clan.</span></span></h1>
+        <p class="vt-lede">Every clan battle recorded by the mod, then replayed, measured and debriefed on the site — with the strategies, line-ups and tools to prepare the next one.</p>
+        <div class="vt-acts">
+          <button class="vt-btn vt-btn-gold" id="lpLogin" type="button">Go to my clan →</button>
+          <a class="vt-btn vt-btn-line" href="mod.html">Install the mod</a>
+        </div>
+        <p class="vt-meta">Free · no ads · official Wargaming sign-in · WoT EU 2.4.0.2</p>
       </div>
-      <figcaption><b>The battle replays itself.</b> Every tank second by second: the paths, the shots, the damage and who dealt it, the kills. You can pause it and draw on it — that's your debrief.</figcaption>
-    </figure>
 
-    <div class="lduo">
-      <figure class="rv2" data-a="plate" style="--i:0">
-        <div class="lscr">
-          <div class="lscr-b"><i></i><i></i><i></i><span class="lscr-t">My progress</span></div>
-          <div class="lsr">
-            <div class="lsr-r"><div class="lsr-n">1,712</div>
-              <div><div class="lsr-t">Solid teammate</div><div class="lsr-s">64 battles · margin ±63</div></div></div>
-            <div class="lsr-k">
-              <s style="left:0;width:5.5%;background:#e2685f"></s><s style="left:5.5%;width:19.5%;background:#d8b566"></s>
-              <s style="left:25%;width:16.7%;background:#8d8a80"></s><s style="left:41.7%;width:19.4%;background:#4f97ee"></s>
-              <s style="left:61.1%;width:27.8%;background:#5fc27e"></s><s style="left:88.9%;width:11.1%;background:#a970ff"></s>
-              <u style="left:45.1%"></u></div>
-            <div class="lsr-x"><span>1000</span><span>1350</span><span>1650</span><span>2000</span><span>2500</span></div>
+      <div class="vt-stage">
+        <figure class="vt-dash" aria-label="Example: a clan's dashboard on Clan Plus.">
+          <div class="vt-dash-h">
+            <span class="vt-emb"><svg class="ic" aria-hidden="true"><use href="#i-shield"/></svg></span>
+            <span class="vt-dash-id"><b>[TAG] Your clan</b><span>Stronghold X · last 30 days</span></span>
+          </div>
+          <div class="vt-dash-kpi">
+            <div style="--i:0"><span>Win rate</span><b>61%</b><em class="up">▲ 4 pts</em></div>
+            <div style="--i:1"><span>Battles</span><b>84</b><em>51 wins · 33 losses</em></div>
+            <div style="--i:2"><span>Next session</span><b>Thu 21:00</b><em>Stronghold X</em></div>
+          </div>
+          <div class="vt-dash-mid">
+            <div class="vt-dash-form">
+              <span class="lbl">Last 12 battles</span>
+              <ol aria-label="Last 12 battles: 8 wins, 4 losses">
+                <li class="w" style="--i:0">✓</li><li class="w" style="--i:1">✓</li><li class="l" style="--i:2">✕</li><li class="w" style="--i:3">✓</li>
+                <li class="w" style="--i:4">✓</li><li class="l" style="--i:5">✕</li><li class="w" style="--i:6">✓</li><li class="w" style="--i:7">✓</li>
+                <li class="l" style="--i:8">✕</li><li class="w" style="--i:9">✓</li><li class="l" style="--i:10">✕</li><li class="w" style="--i:11">✓</li>
+              </ol>
+            </div>
+            <div class="vt-dash-chart">
+              <span class="lbl">Win rate, 30 days</span>
+              <svg viewBox="0 0 300 70" preserveAspectRatio="none" aria-hidden="true">
+                <path class="grid" d="M0 35H300"/>
+                <path class="area" d="M0 52 L30 48 L60 50 L90 41 L120 44 L150 36 L180 38 L210 29 L240 31 L270 24 L300 20 L300 70 L0 70Z"/>
+                <path class="line" pathLength="1" d="M0 52 L30 48 L60 50 L90 41 L120 44 L150 36 L180 38 L210 29 L240 31 L270 24 L300 20"/>
+              </svg>
+            </div>
+          </div>
+          <ul class="vt-dash-last">
+            <li style="--i:0"><span class="r w">Victory</span><b>Himmelsdorf</b><span class="sc">7 — 5</span><span class="rp">Replay ▸</span></li>
+            <li style="--i:1"><span class="r l">Defeat</span><b>Mines</b><span class="sc">4 — 7</span><span class="rp">Replay ▸</span></li>
+            <li style="--i:2"><span class="r w">Victory</span><b>Prokhorovka</b><span class="sc">7 — 2</span><span class="rp">Replay ▸</span></li>
+          </ul>
+        </figure>
+        <p class="vt-stage-cap">Illustrative example.</p>
+        <div class="vt-float vt-float-sr" aria-hidden="true">
+          <span class="n">1,712</span><span class="t"><b>Solid teammate</b><span>your SR · margin ±63</span></span>
+        </div>
+        <div class="vt-float vt-float-game" aria-hidden="true">
+          <p class="k">in the garage</p>
+          <div class="vt-win-tn" lang="en">
+            <div class="k"><b>TONIGHT</b><span>Bastion T10 · Plan A</span></div>
+            <div class="p"><strong>#2 Brawling heavy</strong><span>Maus</span><i>SELECT</i></div>
           </div>
         </div>
-        <figcaption><b>A rating that measures teamplay.</b> Not raw damage: your actual share of the win, weighted by how strong the opposition was, with its margin of error shown.</figcaption>
-      </figure>
-      <figure class="rv2" data-a="plate" style="--i:1">
-        <div class="lscr">
-          <div class="lscr-b"><i></i><i></i><i></i><span class="lscr-t">What to work on</span></div>
-          <div class="lrad">
-            <svg viewBox="0 0 320 210" role="img" aria-label="Radar of the five skills against the median for the role.">
-              <g transform="translate(160,102)">
-                <polygon points="0,-72 68,-22 42,58 -42,58 -68,-22" fill="none" stroke="rgba(255,255,255,.09)"/>
-                <polygon points="0,-36 34,-11 21,29 -21,29 -34,-11" fill="none" stroke="rgba(255,255,255,.07)"/>
-                <polygon points="0,-54 51,-17 32,44 -32,44 -51,-17" fill="none" stroke="#d8b566" stroke-width="1.2" stroke-dasharray="3 3" opacity=".85"/>
-                <polygon points="0,-70 44,-14 30,41 -25,34 -37,-12" fill="rgba(216,181,102,.2)" stroke="#d8b566" stroke-width="2" stroke-linejoin="round"/>
-                <g fill="#d8b566"><circle cx="0" cy="-70" r="3.2"/><circle cx="44" cy="-14" r="3.2"/><circle cx="30" cy="41" r="3.2"/><circle cx="-25" cy="34" r="3.2"/><circle cx="-37" cy="-12" r="3.2"/></g></g>
-              <g font-family="IBM Plex Mono,monospace" font-size="9.5" fill="#8d8a80">
-                <text x="160" y="16" text-anchor="middle">DAMAGE</text><text x="252" y="84" text-anchor="middle">TAKEN</text>
-                <text x="216" y="182" text-anchor="middle">ARMOUR</text><text x="104" y="182" text-anchor="middle">SPOTTING</text>
-                <text x="66" y="84" text-anchor="middle">OBJECTIVE</text></g>
-              <g font-family="IBM Plex Mono,monospace" font-size="10">
-                <text x="160" y="30" text-anchor="middle" fill="#5fc27e">▲1,34×</text>
-                <text x="252" y="98" text-anchor="middle" fill="#e2685f">▼0,72×</text></g>
-            </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ chapitre 1 : revoir ══ -->
+  <section class="vt-post-sec vt-wide" id="c1">
+    <div class="vt-wrap">
+      <div class="vt-copy vt-copy-row">
+        <div>
+          <p class="vt-slot"><b><svg class="ic" aria-hidden="true"><use href="#i-sword"/></svg></b><span>Review</span></p>
+          <h2>Every battle, replayed on the real map.</h2>
+        </div>
+        <p>Every tank, second by second: the paths, the shots, the damage and who dealt it, the kills, the direction each one was watching. Pause it, scrub it, draw on it.</p>
+      </div>
+      <figure class="vt-replay">
+        <div class="vt-replay-h"><span>Himmelsdorf · 7 — 5 · victory</span><span class="t">04:12</span></div>
+        <div class="vt-replay-body">
+          <svg class="vt-map" viewBox="0 0 512 512" role="img" aria-label="Both teams' tanks moving across the Himmelsdorf minimap, a shot for 1,240 damage and a kill.">
+            <image href="maps/top/himmelsdorf.jpg" width="512" height="512" preserveAspectRatio="xMidYMid slice"/>
+            <rect width="512" height="512" fill="#0c0c0b" opacity=".35"/>
+            <g class="vt-base"><circle cx="221" cy="474" r="20"/><circle class="red" cx="270" cy="40" r="20"/></g>
+            <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path pathLength="100" class="tr g" d="M221 466 L232 420 L205 362 L192 328"/>
+              <path pathLength="100" class="tr g" d="M214 468 L96 432 L64 318 L62 214"/>
+              <path pathLength="100" class="tr g" d="M230 468 L358 430 L428 368 L440 300"/>
+              <path pathLength="100" class="tr g" d="M226 462 L300 400 L330 344"/>
+              <path pathLength="100" class="tr r" d="M270 48 L252 112 L232 182"/>
+              <path pathLength="100" class="tr r" d="M276 48 L418 92 L452 182"/>
+              <path pathLength="100" class="tr r" d="M264 48 L86 92 L62 152"/>
+            </g>
+            <g class="vt-shot"><path d="M192 328 L232 182" stroke="#d8b566" stroke-width="2" stroke-dasharray="6 5" fill="none"/>
+              <text x="222" y="262" text-anchor="start">−1,240</text></g>
+            <circle class="vt-boom" cx="232" cy="182" r="16" fill="#d8b566" opacity=".3"/>
+            <g class="vt-kill"><path d="M224 174l16 16M240 174l-16 16" stroke="#f6f5f1" stroke-width="2.6"/></g>
+            <g class="tk g k1"><circle r="7.5"/><path d="M-3.6-2.2h7.2v4.4h-7.2z"/></g>
+            <g class="tk g k2"><circle r="7.5"/><path d="M0-3.8l3.8 3.8L0 3.8-3.8 0z"/></g>
+            <g class="tk g k3"><circle r="7.5"/><path d="M-3.6-2.2h7.2v4.4h-7.2z"/></g>
+            <g class="tk g k4"><circle r="7.5"/><path d="M-3.8-3h7.6L0 3.4z"/></g>
+            <g class="tk r k5"><circle r="7.5"/><path d="M-3.6-2.2h7.2v4.4h-7.2z"/></g>
+            <g class="tk r k6"><circle r="7.5"/><path d="M0-3.8l3.8 3.8L0 3.8-3.8 0z"/></g>
+            <g class="tk r k7"><circle r="7.5"/><path d="M-3.6-2.2h7.2v4.4h-7.2z"/></g>
+          </svg>
+          <div class="vt-side">
+            <div class="vt-dmg">
+              <p class="vt-dmg-h">Damage dealt</p>
+              <ol>
+                <li><span>Kranvagn</span><i style="--w:100"></i><b>3,120</b></li>
+                <li><span>Maus</span><i style="--w:81"></i><b>2,540</b></li>
+                <li><span>Object 140</span><i style="--w:63"></i><b>1,980</b></li>
+                <li><span>113</span><i style="--w:39"></i><b>1,210</b></li>
+                <li><span>EBR 105</span><i style="--w:21"></i><b>640</b></li>
+              </ol>
+            </div>
+          <ol class="vt-feed" aria-label="Battle feed">
+            <li><span class="t">03:58</span><span>Maus</span><i>▸</i><span>E 100</span><b>−860</b></li>
+            <li><span class="t">04:05</span><span>Object 140</span><i>▸</i><span>Leopard 1</span><b>−390</b></li>
+            <li class="hit"><span class="t">04:12</span><span>Kranvagn</span><i>▸</i><span>IS-7</span><b>−1,240</b></li>
+            <li class="kill"><span class="t">04:12</span><span>IS-7</span><i>✕</i><span>destroyed</span></li>
+          </ol>
           </div>
         </div>
-        <figcaption><b>A plan, not a table.</b> Your five skills against the median for your role, and what to work on first — with the gap in numbers.</figcaption>
+        <div class="vt-replay-f"><span class="play">▶</span><span class="bar"><i></i></span><span>×2</span></div>
       </figure>
+      <p class="vt-note">Illustrative example on the Himmelsdorf minimap.</p>
+      <div class="vt-split vt-flip vt-sub">
+        <div class="vt-copy">
+          <h3>Debrief in the editor that drew the plan.</h3>
+          <p>The strategy was drawn on the map before the session. Afterwards, the replay runs right under it: what was planned and what happened, on the same screen. No other tool does this.</p>
+        <div class="vt-layers" role="group" aria-label="Show on the map">
+          <button type="button" data-l="plan">The plan</button>
+          <button type="button" data-l="real">What happened</button>
+          <button type="button" data-l="both" class="on" aria-pressed="true">Both</button>
+        </div>
+          <p class="vt-more"><a href="aide-editeur.html">How the editor works →</a></p>
+        </div>
+      <div class="vt-demo">
+        <figure class="vt-plan" id="vtPlan" data-l="both">
+          <svg viewBox="0 0 512 512" role="img" aria-label="The plan drawn as gold arrows, and the paths the tanks really took.">
+            <image href="maps/top/himmelsdorf.jpg" width="512" height="512" preserveAspectRatio="xMidYMid slice"/>
+            <rect width="512" height="512" fill="#0c0c0b" opacity=".45"/>
+            <g class="lay-plan" fill="none" stroke="#d8b566" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M222 452 L240 330 L250 250" stroke-dasharray="2 12"/><path d="M243 262l7-16 9 15"/>
+              <path d="M236 452 L380 410 L440 320 L452 230" stroke-dasharray="2 12"/><path d="M443 240l9-14 7 15"/>
+              <circle cx="250" cy="240" r="24" stroke-width="2.5" stroke-dasharray="5 5"/>
+              <text x="282" y="236" fill="#d8b566" stroke="none" class="lbl">hold the square</text>
+              <text x="462" y="210" fill="#d8b566" stroke="none" class="lbl" text-anchor="end">push the hill</text>
+            </g>
+            <g class="lay-real" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="3">
+              <path d="M222 460 L232 420 L205 362 L192 328" stroke="#2ec26e"/>
+              <path d="M236 460 L330 420 L372 380" stroke="#2ec26e"/>
+              <circle cx="192" cy="328" r="7" fill="#2ec26e" stroke="#0c0c0b" stroke-width="2"/>
+              <circle cx="372" cy="380" r="7" fill="#2ec26e" stroke="#0c0c0b" stroke-width="2"/>
+              <path d="M364 372l16 16M380 372l-16 16" stroke="#f6f5f1" stroke-width="2.4"/>
+              <text x="384" y="406" fill="#f6f5f1" stroke="none" class="lbl">destroyed 2:41</text>
+            </g>
+          </svg>
+          <figcaption>Illustrative example.</figcaption>
+        </figure>
+      </div>
+      </div>
     </div>
-  </div></section>
+  </section>
 
-  <section class="lsec"><div class="sh">
-    <div class="lsh rv2" data-a="head"><span class="lsn">02</span><h2>And for the command staff</h2></div>
-    <p class="lsub rv2" data-a="up">A clan isn't just a sum of players. Officers get tools of their own.</p>
-    <div class="lgrid">
-      <div class="lcard rv2" data-a="up" style="--i:0"><span class="n">STRATEGY</span><h3>The plan editor</h3>
-        <p>Draw the manoeuvre on the real map, share it, and run the replay underneath to compare what was planned with what happened.</p></div>
-      <div class="lcard rv2" data-a="up" style="--i:1"><span class="n">LINE-UPS</span><h3>Line-ups and loadouts</h3>
-        <p>Compositions by map and by format, and the recommended equipment tank by tank, decided once for the whole clan.</p></div>
-      <div class="lcard rv2" data-a="up" style="--i:2"><span class="n">ROSTER</span><h3>Who plays what</h3>
-        <p>Every member's Stronghold performance, how their line-up stands, and the internal ranking — without keeping a spreadsheet.</p></div>
+  <!-- ══ chapitre 2 : mesurer ══ -->
+  <section class="vt-post-sec" id="c2">
+    <div class="vt-wrap vt-split">
+      <div class="vt-copy">
+        <p class="vt-slot"><b><svg class="ic" aria-hidden="true"><use href="#i-gauge"/></svg></b><span>Measure</span></p>
+        <h2>A rating that measures teamplay.</h2>
+        <p>The Synergy Rating weighs your real share of the win against how strong the opposition was — not raw damage. And it shows its margin of error.</p>
+        <p class="vt-proof"><b>Measured, not claimed:</b> over 604 tier X battles, the season 1 SR picks the winner 68 times out of 100 (± 5, cross-validated).</p>
+        <p class="vt-more"><a href="aide-sr.html">The SR explained →</a></p>
+      </div>
+      <div class="vt-demo">
+        <div class="vt-sr">
+          <div class="vt-sr-top"><span class="vt-sr-n">1,712</span><span><b>Solid teammate</b><small>64 battles · margin ±63</small></span></div>
+          <div class="vt-sr-scale" aria-hidden="true"><s style="--a:0;--b:25"></s><s style="--a:25;--b:50"></s><s class="on" style="--a:50;--b:75"></s><s style="--a:75;--b:100"></s><em style="--a:49.9;--b:58.9"></em><u style="--x:54.4"></u></div>
+          <div class="vt-sr-ticks"><span>1000</span><span>1350</span><span>1650</span><span>2000</span><span>2500</span></div>
+          <p class="vt-sr-h">What to work on</p>
+          <ul class="vt-sr-work">
+            <li class="dn"><span>Spotting</span><b>▼ 0.72×</b><em>start here</em></li>
+            <li class="up"><span>Damage</span><b>▲ 1.34×</b><em></em></li>
+            <li class="up"><span>Armour use</span><b>▲ 1.08×</b><em></em></li>
+          </ul>
+          <p class="vt-sr-f">Compared with the median for your role · example</p>
+        </div>
+      </div>
     </div>
-  </div></section>
+  </section>
 
-  <div class="lend"><div class="sh rv2" data-a="up">
-    <h2>Two minutes to get started.</h2>
-    <p>One file to drop into a folder. After that, just play as usual.</p>
-    <a class="lbtn lbtn-1" href="mod.html">See the mod →</a>
-  </div></div>
+  <!-- ══ chapitre 3 : préparer ══ -->
+  <section class="vt-post-sec vt-wide" id="c3">
+    <div class="vt-wrap">
+      <div class="vt-copy vt-copy-row">
+        <div>
+          <p class="vt-slot"><b><svg class="ic" aria-hidden="true"><use href="#i-target"/></svg></b><span>Prepare</span></p>
+          <h2>Prepare the evening, right down to the garage.</h2>
+        </div>
+        <p>Strategies drawn on the real map, line-ups built with everyone's real garage, the clan's setup tank by tank — and each player finds it all in the mod's window.</p>
+      </div>
+      <div class="vt-sub vt-sub-first">
+        <h3>From the officer's sheet to your garage.</h3>
+        <p class="vt-sub-p">An officer builds the line-up on the site with everyone's real garage, then pins it for tonight. Each linked player finds their slot in the mod's window, with a button that puts the right tank in place.</p>
+      <div class="vt-relay">
+        <div class="vt-relay-site">
+          <p class="vt-relay-k">clanplus.eu · line-up</p>
+          <ol>
+            <li><span>1</span>Hull-down heavy<b>Kettenhund · Kranvagn</b></li>
+            <li class="me"><span>2</span>Brawling heavy<b>Morane · Maus</b></li>
+            <li><span>3</span>Fast heavy<b>OldBrass · 113</b></li>
+          </ol>
+          <p class="vt-relay-pin">Pinned for tonight</p>
+        </div>
+        <div class="vt-relay-wire" aria-hidden="true"><i></i></div>
+        <div class="vt-relay-game">
+          <p class="vt-relay-k">in the garage · Morane</p>
+          <div class="vt-win-tn" lang="en">
+            <div class="k"><b>TONIGHT</b><span>Bastion T10 · Plan A</span></div>
+            <div class="p"><strong>#2 Brawling heavy</strong><span>Maus</span><i>SELECT</i></div>
+          </div>
+        </div>
+      </div>
+      </div>
+      <div class="vt-split vt-flip vt-sub">
+        <div class="vt-copy">
+          <h3>Everyone rolls out ready.</h3>
+          <p>The clan decides the equipment and consumables tank by tank, once. In the garage, each player sees what doesn't match — and what's missing before the battle: ammo, crew, repairs.</p>
+          <p>Tier lists and priority tanks, decided by the officers, live next to them.</p>
+        </div>
+      <div class="vt-demo">
+        <div class="vt-setup" lang="en">
+          <div class="vt-setup-h"><b>Object 140</b><span class="pl warn">SETUP −1</span></div>
+          <ul>
+            <li class="ok"><span>Gun Rammer</span><b>✓</b></li>
+            <li class="ok"><span>Vertical Stabilizer</span><b>✓</b></li>
+            <li class="no"><span>Turbocharger</span><b>✕ Coated Optics fitted</b></li>
+            <li class="ok"><span>Repair Kit · First Aid Kit · Fire Extinguisher</span><b>✓</b></li>
+          </ul>
+          <div class="vt-setup-pills"><span class="pl warn">AMMO 41/68</span><span class="pl warn">CREW</span><span class="pl bad">LOCKED 3h12</span></div>
+        </div>
+      </div>
+      </div>
+    </div>
+  </section>
 
-  <footer class="lfoot"><div class="sh">
-    <nav class="lfn">
+  <!-- ══ chapitre 4 : rassembler ══ -->
+  <section class="vt-post-sec" id="c4">
+    <div class="vt-wrap">
+      <div class="vt-copy vt-copy-row">
+        <div>
+          <p class="vt-slot"><b><svg class="ic" aria-hidden="true"><use href="#i-users"/></svg></b><span>Rally</span></p>
+          <h2>The whole clan, without the spreadsheet.</h2>
+        </div>
+        <p>Everything an officer used to keep in a spreadsheet, kept up to date by the battles themselves.</p>
+      </div>
+      <div class="vt-roster">
+        <div class="vt-roster-r"><b>Clan dashboard</b><span>Who plays, how the clan is doing, the official Wargaming ratings.</span></div>
+        <div class="vt-roster-r"><b>Calendar</b><span>Sessions and events, the next one shown on the dashboard.</span></div>
+        <div class="vt-roster-r"><b>EU clan rankings</b><span>Every clan on the server, Stronghold rating by tier.</span></div>
+        <div class="vt-roster-r"><b>Recruitment</b><span>Your clan's public recruitment page.</span></div>
+        <a class="vt-roster-r" href="trouver-clan.html"><b>Find a clan</b><span>For players without one: the clans that are recruiting.</span></a>
+        <a class="vt-roster-r" href="carte3d.html"><b>3D maps</b><span>Every map in real relief, to read the terrain.</span></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ chapitre 5 : le mod ══ -->
+  <section class="vt-post-sec" id="c5">
+    <div class="vt-wrap vt-split vt-flip">
+      <div class="vt-copy">
+        <p class="vt-slot"><b><svg class="ic" aria-hidden="true"><use href="#i-tools"/></svg></b><span>The mod</span></p>
+        <h2>It all starts with one file.</h2>
+        <p>The Clan Plus mod records every clan battle — positions second by second, shots, damage and who dealt it — and sends it to the site the moment the fight ends. Nothing shows during the battle.</p>
+        <p>In the garage, its window shows your slot for tonight and checks every tank: setup, ammo, crew, a clan lock still running.</p>
+        <p class="vt-more"><a href="mod.html">Everything about the mod →</a></p>
+      </div>
+      <div class="vt-demo">
+        <div class="vt-win" lang="en" aria-label="The mod's window in the garage">
+          <div class="vt-win-bar"><b>Clan <em>Plus</em></b><span>TIER X</span></div>
+          <div class="vt-win-tn">
+            <div class="k"><b>TONIGHT</b><span>Bastion T10 · Plan A</span></div>
+            <div class="p"><strong>#2 Brawling heavy</strong><span>Maus</span><i>SELECT</i></div>
+          </div>
+          <div class="vt-win-row"><span class="fl de"></span><span class="nm">Maus</span><span class="pl gold">PLANNED</span><span class="sta">OK</span></div>
+          <div class="vt-win-row"><span class="fl su"></span><span class="nm">Object 140</span><span class="pl good">SETUP ✓</span><span class="sta">OK</span></div>
+          <div class="vt-win-row"><span class="fl uk"></span><span class="nm">FV215b</span><span class="pl warn">SETUP −2</span><span class="sta">OK</span></div>
+          <div class="vt-win-row is-lock"><span class="fl cz"></span><span class="nm">Vz. 60S Dravec</span><span class="pl bad">LOCKED 3h12</span><span class="sta out">OUT</span></div>
+          <div class="vt-win-foot"><kbd>F2</kbd><span>SHOW / HIDE</span><span class="lk">LINKED</span><span class="db">DEBRIEF →</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ engagements ══ -->
+  <section class="vt-rules">
+    <div class="vt-wrap vt-rules-in">
+      <h2>Rules of engagement.</h2>
+      <ul>
+        <li><b>Free, for good.</b> No paid feature, ever. If funding falls short, costs get cut — nothing gets a paywall.</li>
+        <li><b>No ads.</b> It's a tool you use during a clan session, not a blog.</li>
+        <li><b>Your password stays with Wargaming.</b> Sign-in goes through the official Wargaming site.</li>
+        <li><b>Margins of error, shown.</b> When there isn't enough data, the site says so instead of guessing.</li>
+        <li><b>Independent.</b> A community project, not affiliated with Wargaming.</li>
+      </ul>
+      <p class="vt-more"><a href="soutenir.html">What it costs, line by line →</a></p>
+    </div>
+  </section>
+
+  <!-- ══ clôture ══ -->
+  <section class="vt-end">
+    <div class="vt-wrap">
+      <h2>Three steps to equip your clan.</h2>
+      <ol class="vt-steps">
+        <li><span class="vt-n">1</span><b>Install the mod</b><p>One file in the game folder. Two minutes.</p><a class="vt-btn vt-btn-line" href="mod.html">Get the mod</a></li>
+        <li><span class="vt-n">2</span><b>Sign in</b><p>With your World of Tanks account, through Wargaming.</p><button class="vt-btn vt-btn-gold" id="lpLoginEnd" type="button">Sign in</button></li>
+        <li><span class="vt-n">3</span><b>Link your game</b><p>A code in the mod's window, typed once on the site.</p></li>
+      </ol>
+      <p class="vt-noclan">No clan yet? <a href="trouver-clan.html">Find one that's recruiting →</a></p>
+    </div>
+  </section>
+
+  <footer class="vt-foot"><div class="vt-wrap">
+    <nav class="vt-foot-nav">
       <a href="mod.html">The mod</a><a href="aide-editeur.html">Editor manual</a>
       <a href="aide-sr.html">The SR explained</a><a href="soutenir.html">Support</a>
       <a href="trouver-clan.html">Find a clan</a>
@@ -514,7 +743,7 @@
 <!-- Le code de l'application vit dans app.js : progression.html le
      partage, pour qu'il n'existe jamais deux versions des mêmes
      calculs. « defer » l'exécute après lecture complète de la page. -->
-  <script src="app.js?v=31177403" defer></script>
+  <script src="app.js?v=e8d9a144" defer></script>
 <script src="app-fin.js?v=4e570ee3" defer></script>
 </body>
 </html>

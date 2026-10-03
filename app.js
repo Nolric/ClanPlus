@@ -2084,7 +2084,7 @@ function showLanding(){
 let _landingWired=false;
 function wireLanding(){
   if(_landingWired) return; _landingWired=true;
-  ["lpLogin","lpLoginTop"].forEach(id=>{
+  ["lpLogin","lpLoginTop","lpLoginEnd"].forEach(id=>{
     const el=document.getElementById(id); if(el) el.onclick=()=>showLogin();
   });
   // liens légaux (accueil, footer, bandeau cookies)
@@ -10430,43 +10430,48 @@ function initClanRanking(clanIdIn, clanTagIn){
    qui n'existe que sur index.html. */
 if (document.getElementById("loginScreen")) boot();
 
-/* ══ Motion de l'accueil ══════════════════════════════════════════════
-   Le masquage est posé par le script (classe .lmo sur <html>) : sans JS,
-   la page reste entièrement visible. Filet de sécurité à 3 s. */
+/* ══ Vitrine « le QG du clan » ════════════════════════════════════════
+   Trois gestes, tous posés par le script : sans lui, la page reste
+   entière et immobile.
+     · .vt-go sur #landing : l'ouverture (le tableau de bord du clan se
+       remplit) et les démonstrations s'animent — pas si l'utilisateur
+       demande moins d'animation ;
+     · la barre des chapitres apparaît sous l'en-tête une fois
+       l'ouverture passée, et suit la lecture ;
+     · le chapitre « Revoir » bascule entre le plan, ce qui s'est passé,
+       et les deux. */
 (function(){
   var land = document.getElementById("landing");
   if (!land) return;
-  var doux = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  var blocs = land.querySelectorAll(".rv2, .lsec, .lduo figure");
-  var tout = function(){
-    Array.prototype.forEach.call(blocs, function(b){ b.classList.add("vu"); });
-  };
-  if (doux || !("IntersectionObserver" in window)) { tout(); return; }
-  document.documentElement.classList.add("lmo");
-  // les segments du SR se remplissent l'un après l'autre
-  var segs = land.querySelectorAll(".lsr-k s");
-  Array.prototype.forEach.call(segs, function(x, i){ x.style.setProperty("--d", i); });
-  var io = new IntersectionObserver(function(es){
-    es.forEach(function(e){
-      if (e.isIntersecting){ e.target.classList.add("vu"); io.unobserve(e.target); }
+  if (!matchMedia("(prefers-reduced-motion: reduce)").matches) land.classList.add("vt-go");
+
+  var plan = document.getElementById("vtPlan");
+  var couches = land.querySelectorAll(".vt-layers button");
+  Array.prototype.forEach.call(couches, function(b){
+    b.addEventListener("click", function(){
+      Array.prototype.forEach.call(couches, function(x){ x.classList.remove("on"); x.setAttribute("aria-pressed", "false"); });
+      b.classList.add("on"); b.setAttribute("aria-pressed", "true");
+      if (plan) plan.setAttribute("data-l", b.getAttribute("data-l"));
     });
-  }, { rootMargin: "0px 0px -12% 0px", threshold: .08 });
-  Array.prototype.forEach.call(blocs, function(b){ io.observe(b); });
-  setTimeout(tout, 3000);
+  });
 
-  // barre de progression de lecture
-  var jauge = land.querySelector(".lprog i");
-  if (jauge){
-    var tick = false;
-    addEventListener("scroll", function(){
-      if (tick) return; tick = true;
-      requestAnimationFrame(function(){
-        var h = document.documentElement.scrollHeight - innerHeight;
-        jauge.style.width = (h > 0 ? Math.min(100, scrollY / h * 100) : 0) + "%";
-        tick = false;
-      });
-    }, { passive: true });
+  var tete = document.getElementById("vtTop"), ouverture = land.querySelector(".vt-hero");
+  var liens = land.querySelectorAll("#vtStrip a");
+  var postes = Array.prototype.map.call(liens, function(a){ return document.getElementById(a.getAttribute("href").slice(1)); });
+  var attente = false;
+  function suit(){
+    attente = false;
+    if (!tete || land.classList.contains("hidden")) return;
+    tete.classList.toggle("is-strip", !!ouverture && ouverture.getBoundingClientRect().bottom < 90);
+    var courant = -1, h = innerHeight;
+    postes.forEach(function(p, i){ if (p && p.getBoundingClientRect().top < h * 0.45) courant = i; });
+    Array.prototype.forEach.call(liens, function(a, i){
+      a.classList.toggle("is-done", i <= courant);
+      a.classList.toggle("is-on", i === courant);
+      if (i === courant) a.setAttribute("aria-current", "true"); else a.removeAttribute("aria-current");
+    });
   }
+  addEventListener("scroll", function(){ if (!attente){ attente = true; requestAnimationFrame(suit); } }, { passive: true });
+  addEventListener("resize", suit, { passive: true });
+  suit();
 })();
-
-
