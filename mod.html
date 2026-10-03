@@ -17,7 +17,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20240%20240%22%3E%3Crect%20width%3D%22240%22%20height%3D%22240%22%20rx%3D%2254%22%20fill%3D%22%23141310%22%2F%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22%23d8b566%22%3E%3Ccircle%20cx%3D%22120%22%20cy%3D%22120%22%20r%3D%22100%22%20stroke-width%3D%227%22%2F%3E%3Cpath%20d%3D%22M161%2C155%20A54%2C54%200%201%201%20161%2C85%22%20stroke-width%3D%2220%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fg%3E%3Cg%20fill%3D%22%23d8b566%22%3E%3Crect%20x%3D%22112%22%20y%3D%2294%22%20width%3D%2216%22%20height%3D%2252%22%20rx%3D%225%22%2F%3E%3Crect%20x%3D%2294%22%20y%3D%22112%22%20width%3D%2252%22%20height%3D%2216%22%20rx%3D%225%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<script src="i18n/mod.fr.js?v=6647aaa5"></script>
+<script src="i18n/mod.fr.js?v=46feae4a"></script>
 <script src="i18n.js?v=ed3f8a4f"></script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
@@ -119,86 +119,150 @@ h1 .dim{color:var(--ink-3)}
 .spec dd{margin:0;color:var(--ink);font-weight:500}
 .spec dd.on{color:var(--live)}
 
-/* ── la fenêtre du mod, reconstruite en HTML ─────────────────────── */
+/* ── la fenêtre du mod, reconstruite en HTML ───────────────────────
+   Reprise de la vraie fenêtre 1.0.43 (flash/src/ClanUIWindow.as) : mêmes
+   jetons que web/app.css, mêmes bandeaux, mêmes pastilles. Les icônes de
+   classe et de rôle sont celles du jeu (classes/, img/lineup/roles/) ; les
+   rôles affichés sont les vrais, relevés dans le journal du mod. */
 .rig{position:relative}
 .rig::before{content:"";position:absolute;inset:-14% -10%;
   background:radial-gradient(ellipse at 55% 45%, rgba(216,181,102,.16), transparent 66%);
   filter:blur(26px);pointer-events:none}
-.win{position:relative;background:linear-gradient(180deg,#2c343b,#242b31);
-     border:1px solid rgba(255,255,255,.13);border-radius:5px;overflow:hidden;
-     box-shadow:0 40px 90px -30px rgba(0,0,0,.9),0 2px 0 rgba(255,255,255,.05) inset;
-     font-size:12px}
-.win-bar{display:flex;align-items:center;gap:9px;padding:9px 12px;
-         background:linear-gradient(180deg,#1d242a,#171d22);border-bottom:1px solid rgba(0,0,0,.5)}
-.win-bar b{font-family:var(--d-cond);font-weight:700;letter-spacing:.09em;font-size:13px;color:#e9e6df}
-.win-bar .sep{color:var(--gold);opacity:.8}
-.win-bar .min{margin-left:auto;color:#8f9aa3;font-size:14px;line-height:1}
-.win-opt{display:flex;align-items:center;gap:9px;padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.35);
-         background:rgba(0,0,0,.14)}
-.chk{width:14px;height:14px;border:1px solid var(--gold);border-radius:2px;background:var(--gold);
-     display:grid;place-items:center;color:#14120c;font-size:10px;font-weight:700;flex:0 0 auto}
-.win-opt .txt{color:#d3cfc6}
-.win-opt .cnt{margin-left:auto;color:#9aa4ac;font-family:var(--d-mono);font-size:11px;white-space:nowrap}
-.win-opt .cnt b{color:var(--halt);font-weight:600}
-.win-filters{display:flex;align-items:center;gap:2px;padding:7px 10px;border-bottom:1px solid rgba(0,0,0,.35)}
-.fl,.fl-ic{cursor:pointer;background:none;border:0;font:inherit;border-radius:2px;
-  transition:background .14s,color .14s,opacity .14s}
-.fl{padding:5px 11px;color:#98a2aa;font-size:11px;letter-spacing:.08em}
-.fl:hover,.fl-ic:hover{background:rgba(255,255,255,.08)}
-.fl-ic.on{background:rgba(255,255,255,.09);opacity:1}
-.fl-ic.on svg{fill:#e9e6df}
+.win{--w-s1:#151412;--w-s2:#201f1b;--w-card:#1a1917;--w-ink:#f6f5f1;--w-ink2:#bdb9af;--w-mut:#87847b;
+  --w-line:rgba(255,255,255,.09);--w-gold:#d8b566;--w-gold2:#ecd190;--w-soft:rgba(216,181,102,.14);
+  --w-good:#2ec26e;--w-bad:#ec6a6a;--w-warn:#e0a34a;
+  position:relative;background:var(--w-s1);border:1px solid var(--w-line);border-radius:9px;overflow:hidden;
+  box-shadow:0 40px 90px -30px rgba(0,0,0,.9);font:12.5px/1.3 var(--d-sans);color:var(--w-ink);text-align:left}
+.win-bar{display:flex;align-items:center;gap:10px;height:40px;padding:0 12px;border-bottom:1px solid var(--w-line)}
+.win-bar .mk{width:20px;height:20px;flex:0 0 auto}
+.win-bar .mk svg{display:block;width:100%;height:100%}
+.win-bar .wm{font:700 15px/1 var(--d-cond)}
+.win-bar .wm em{font-style:normal;color:var(--w-gold)}
+.win-bar .tier{padding-left:10px;border-left:1px solid var(--w-line);font:500 10.5px/1 var(--d-mono);
+  letter-spacing:.14em;color:var(--w-ink2)}
+.win-bar .min{margin-left:auto;width:8px;height:8px;border-left:1.5px solid var(--w-ink2);border-top:1.5px solid var(--w-ink2);
+  transform:translateY(2px) rotate(45deg)}
+/* « ce soir » : la composition épinglée par un officier */
+.win-tn{padding:9px 12px 10px 15px;background:var(--w-card);border-bottom:1px solid var(--w-line);
+  box-shadow:inset 3px 0 0 var(--w-gold)}
+.tn-k{display:flex;align-items:baseline;gap:10px;font-size:11.5px;color:var(--w-ink2)}
+.tn-k b{font:600 10px/1 var(--d-mono);letter-spacing:.16em;color:var(--w-gold)}
+.tn-p{display:flex;align-items:center;gap:10px;margin-top:6px;min-height:26px}
+.tn-p strong{font:700 15.5px/1.2 var(--d-cond);white-space:nowrap}
+.tn-car{margin-left:auto;white-space:nowrap}
+.win-tn.done .tn-car{color:var(--w-good)}
+.tn-sel{font:700 10.5px/1 var(--d-cond);letter-spacing:.1em;color:var(--w-gold);background:none;
+  border:1px solid rgba(216,181,102,.6);border-radius:6px;padding:6px 10px;cursor:pointer;transition:background .16s}
+.tn-sel:hover{background:var(--w-soft)}
+.win-tn.done .tn-sel{display:none}
+/* mode simulation, filtres */
+.win-opt{display:flex;align-items:center;gap:10px;padding:11px 12px 9px}
+.chk{width:16px;height:16px;flex:0 0 auto;display:grid;place-items:center;padding:0;cursor:pointer;
+  border:1.5px solid var(--w-gold);border-radius:4px;background:transparent;color:var(--w-gold);
+  font-size:10px;font-weight:700;line-height:1;transition:border-color .16s}
+.chk span{transition:opacity .14s}
+.win:not(.sim) .chk{border-color:var(--w-mut)}
+.win:not(.sim) .chk span{opacity:0}
+.chk:hover{border-color:var(--w-gold2)}
+.win-opt .cnt{margin-left:auto;font:500 11px/1 var(--d-mono);letter-spacing:.06em;color:var(--w-mut);white-space:nowrap}
+.win-opt .cnt b{color:var(--w-bad);font-weight:600}
+.win-opt .cnt.off,.win:not(.sim) .cnt.on{display:none}
+.win:not(.sim) .cnt.off{display:inline}
+.win-filters{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:0 12px 11px;border-bottom:1px solid var(--w-line)}
+.seg{display:flex;gap:2px;padding:3px;border:1px solid var(--w-line);border-radius:9px;background:var(--w-card)}
+.seg button{font:inherit;width:30px;height:24px;display:grid;place-items:center;padding:0;border:0;border-radius:6px;background:none;
+  color:var(--w-ink2);cursor:pointer;opacity:.65;transition:background .14s,opacity .14s}
+.seg .all{width:36px;font:700 10.5px/1 var(--d-cond);letter-spacing:.08em}
+.seg img{width:26px;height:26px;margin:-1px;display:block}
+.seg svg{width:13px;height:13px;fill:currentColor}
+.seg button:hover{background:rgba(255,255,255,.06);opacity:1}
+.seg button.on{background:var(--w-s2);color:var(--w-ink);opacity:1}
+.repair{margin-left:auto;font:700 11px/1 var(--d-cond);letter-spacing:.09em;color:var(--w-gold);
+  background:none;border:1px solid rgba(216,181,102,.6);border-radius:8px;padding:8px 12px;white-space:nowrap;
+  cursor:pointer;transition:background .16s,opacity .16s}
+.repair:hover{background:var(--w-soft)}
+.win:not(.sim) .repair{visibility:hidden}
+/* la liste : drapeau · char · étoile · nom · pastille · rôle · classe · état */
+.win-head,.win-row{display:grid;align-items:center;gap:8px;padding:0 12px;
+  grid-template-columns:20px 40px 14px minmax(0,1fr) auto 13px 13px 38px}
+.win:not(.sim) .win-head,.win:not(.sim) .win-row{grid-template-columns:20px 40px 14px minmax(0,1fr) auto 13px 13px}
+.win-head{height:26px;font:500 9.5px/1 var(--d-mono);letter-spacing:.14em;color:var(--w-mut)}
+.win-head .h-tank{grid-column:2 / 5}
+.win-head .r{grid-column:-3 / -1;text-align:right}
+.win:not(.sim) .win-head .r{display:none}
+.win-row{width:100%;height:33px;border:0;font:inherit;color:inherit;border-top:1px solid var(--w-line);background:transparent;
+  text-align:left;cursor:pointer;transition:background .14s}
+.win-row:hover{background:rgba(255,255,255,.04)}
+.win-row.sel{background:rgba(216,181,102,.1);box-shadow:inset 3px 0 0 var(--w-gold)}
 .win-row.masque{display:none}
-.win-vide{padding:22px 12px;color:#7e8891;font-family:var(--d-mono);font-size:11px;letter-spacing:.06em}
-.fl.on{background:rgba(255,255,255,.09);color:#e9e6df}
-.fl-ic{width:22px;height:20px;display:grid;place-items:center;opacity:.55}
-.fl-ic svg{width:11px;height:11px;fill:#c7ccd1}
-.repair{margin-left:auto;font-family:var(--d-cond);font-weight:700;font-size:11px;letter-spacing:.09em;
-        color:var(--gold);border:1px solid rgba(216,181,102,.55);border-radius:2px;padding:5px 12px;white-space:nowrap}
-.win-head,.win-row{display:grid;align-items:center;gap:8px;padding:0 12px}
-/* ordre des colonnes repris du mod : drapeau · tier · véhicule · nom · type · état */
-.win-head,.win-row{grid-template-columns:19px 20px 42px 1fr 26px 46px}
-.win:not(.sim) .win-head,.win:not(.sim) .win-row{grid-template-columns:19px 20px 42px 1fr 26px}
-.veh{display:block;line-height:0}
-.veh svg{width:42px;height:19px;fill:#94a08c;opacity:.92}
-.win-row.ko .veh svg{fill:#6d7268;opacity:.7}
-@media(max-width:620px){
-  .win-head,.win-row{grid-template-columns:16px 17px 34px 1fr 42px}
-  .win:not(.sim) .win-head,.win:not(.sim) .win-row{grid-template-columns:16px 17px 34px 1fr}
-  .veh svg{width:34px;height:16px}
-}
-.win-head{height:26px;background:rgba(0,0,0,.34);font-family:var(--d-mono);font-size:9.5px;
-          letter-spacing:.13em;color:#7e8891;text-transform:uppercase}
-.win-head .r{text-align:right}
-.win-row{height:31px;border-bottom:1px solid rgba(0,0,0,.22);color:#dad6cd}
-.win-row:nth-of-type(even){background:rgba(255,255,255,.022)}
-.win-row.sel{background:rgba(216,181,102,.1);box-shadow:inset 2px 0 0 var(--gold)}
-.win-row.dead{background:rgba(226,104,95,.09);color:#a9a49b}
-.win-row .tier{font-family:var(--d-mono);font-size:11px;color:#b9b4aa}
-.flag{width:17px;height:12px;border-radius:1px;box-shadow:0 0 0 1px rgba(0,0,0,.4);background-size:cover}
-.flag.pl{background:linear-gradient(#fff 50%,#dc143c 50%)}
+.win-row.lock{cursor:default}
+.win-row.lock:hover{background:transparent}
+.win-row.lock :is(.flag,.veh,.nm,.role,.cls){opacity:.45}
+.win.sim .win-row.ko .nm{color:var(--w-mut)}
+.flag{width:18px;height:12px;border-radius:2px;box-shadow:0 0 0 1px rgba(0,0,0,.4)}
 .flag.fr{background:linear-gradient(90deg,#0055a4 33%,#fff 33% 66%,#ef4135 66%)}
 .flag.de{background:linear-gradient(#101010 33%,#dd0000 33% 66%,#ffce00 66%)}
+.flag.it{background:linear-gradient(90deg,#009246 33%,#fff 33% 66%,#ce2b37 66%)}
+.flag.jp{background:radial-gradient(circle,#bc002d 0 26%,#fff 28%)}
+.flag.cz{background:
+  linear-gradient(to top right,#11457e 50%,transparent 50%) 0 0/50% 50% no-repeat,
+  linear-gradient(to bottom right,#11457e 50%,transparent 50%) 0 100%/50% 50% no-repeat,
+  linear-gradient(#fff 50%,#d7141a 50%)}
+.flag.us{background:linear-gradient(#3c3b6e,#3c3b6e) 0 0/44% 54% no-repeat,
+  repeating-linear-gradient(#b22234 0 15.4%,#fff 15.4% 30.8%)}
 .flag.uk{background:
   linear-gradient(0deg,transparent 40%,#c8102e 40% 60%,transparent 60%),
   linear-gradient(90deg,transparent 37%,#c8102e 37% 63%,transparent 63%),
   linear-gradient(0deg,transparent 31%,#fff 31% 69%,transparent 69%),
   linear-gradient(90deg,transparent 28%,#fff 28% 72%,transparent 72%),
   #012169}
-.flag.cn{background:
-  radial-gradient(circle at 48% 20%,#ffde00 0 7%,transparent 7%),
-  radial-gradient(circle at 56% 36%,#ffde00 0 7%,transparent 7%),
-  radial-gradient(circle at 48% 52%,#ffde00 0 7%,transparent 7%),
-  radial-gradient(circle at 26% 32%,#ffde00 0 20%,transparent 20%),#de2910}
 .flag.su{background:radial-gradient(circle at 30% 34%,#ffd700 0 24%,transparent 24%),#a8000f}
-.nm{font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cls{opacity:.5}.cls svg{width:11px;height:11px;fill:#c7ccd1}
-.badge{font-family:var(--d-mono);font-size:9.5px;font-weight:600;letter-spacing:.06em;text-align:center;
-       border-radius:2px;padding:2px 0;color:#0d1408}
-.badge.ok{background:#5fa64a}
-.badge.out{background:#b0413a;color:#fff}
-.win-fade{height:34px;background:linear-gradient(transparent,#242b31)}
+.veh{display:block;line-height:0}
+.veh svg{width:40px;height:18px;fill:#9aa38f;opacity:.9}
+.star{font-size:13px;line-height:1;text-align:center;color:var(--w-mut);transition:color .14s}
+.star::before{content:"☆"}
+.win-row.fav .star{color:var(--w-gold)}
+.win-row.fav .star::before{content:"★"}
+.star:hover{color:var(--w-gold2)}
+.nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pill{font:600 9.5px/1 var(--d-mono);letter-spacing:.08em;padding:4px 6px;border-radius:5px;white-space:nowrap}
+.pill.good{color:var(--w-good);background:rgba(46,194,110,.12)}
+.pill.warn{color:var(--w-warn);background:rgba(224,163,74,.13)}
+.pill.bad{color:var(--w-bad);background:rgba(236,106,106,.13)}
+.pill.gold{color:#1a1608;background:var(--w-gold)}
+.role img{display:block;width:13px;height:13px}
+.cls img{display:block;width:26px;height:26px;margin:-6.5px}
+.cls img{opacity:.8}
+.st{display:none;font:600 9.5px/1 var(--d-mono);letter-spacing:.08em;text-align:center;padding:5px 0;border-radius:5px}
+.win.sim .st{display:block;color:var(--w-good);background:rgba(46,194,110,.12)}
+.win.sim .st::before{content:"OK"}
+.win.sim .win-row:is(.ko,.lock) .st{color:var(--w-bad);background:rgba(236,106,106,.13)}
+.win.sim .win-row:is(.ko,.lock) .st::before{content:"OUT"}
+.win-vide{padding:22px 12px;border-top:1px solid var(--w-line);color:var(--w-mut);font:500 11px/1.4 var(--d-mono);letter-spacing:.06em}
+.win-foot{display:flex;align-items:center;gap:8px;height:32px;padding:0 12px;border-top:1px solid var(--w-line);
+  font:500 10px/1 var(--d-mono);letter-spacing:.1em;color:var(--w-mut)}
+.win-foot kbd{font:600 10px/1 var(--d-mono);color:var(--w-ink2);background:var(--w-s2);border:1px solid var(--w-line);
+  border-radius:4px;padding:3px 5px}
+.win-foot .lk{margin-left:auto;display:inline-flex;align-items:center;gap:6px}
+.win-foot .lk::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--w-good)}
+.win-foot .db{margin-left:10px;font:700 10.5px/1 var(--d-cond);letter-spacing:.1em;color:var(--w-gold)}
 .rig-cap{font-family:var(--d-mono);font-size:11px;color:var(--ink-3);margin:14px 0 0;text-align:center;
          letter-spacing:.04em}
+.rig-cap .pt{color:var(--gold)}
+@media(max-width:620px){
+  .win{font-size:12px}
+  .win .veh,.win .role{display:none}
+  .win-head,.win-row{grid-template-columns:18px 14px minmax(0,1fr) auto 13px 36px;gap:7px}
+  .win:not(.sim) .win-head,.win:not(.sim) .win-row{grid-template-columns:18px 14px minmax(0,1fr) auto 13px}
+  .win-head .h-tank{grid-column:2 / 4}
+  .seg button{width:26px}
+  .seg .all{width:32px}
+  .win-opt .cnt{font-size:10px}
+  .win-foot .hide{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .chk,.chk span,.repair,.tn-sel,.seg button,.win-row,.star{transition:none}
+}
 
 /* ── écrans du produit : ce que le mod débloque ──────────────────── */
 .scr{background:linear-gradient(180deg,#191d21,#141719);border:1px solid var(--rule-2);
@@ -320,41 +384,6 @@ figcaption b{display:block;color:var(--ink);font-family:var(--d-cond);font-weigh
   .gain-big .scr,.gain-duo .scr{transition:none}
 }
 
-
-/* ── la fenêtre est manipulable : deux états, comme le vrai mod ────── */
-.win-opt .chk{cursor:pointer;font:inherit;padding:0;border:1px solid var(--gold);background:var(--gold);
-  color:#14120c;font-size:10px;font-weight:700;line-height:1;transition:background .16s,border-color .16s}
-.win-opt .chk span{opacity:1;transition:opacity .14s}
-.win:not(.sim) .chk{background:transparent;border-color:#6f7a83}
-.win:not(.sim) .chk span{opacity:0}
-.win-opt .chk:hover{border-color:var(--gold-hi)}
-.win-opt .cnt.off{display:none}
-.win:not(.sim) .cnt.on{display:none}
-.win:not(.sim) .cnt.off{display:inline}
-.win:not(.sim) .repair{visibility:hidden}
-.repair{cursor:pointer;font-family:var(--d-cond);background:none;
-  transition:background .16s,color .16s}
-.repair:hover{background:rgba(216,181,102,.16)}
-.win-row{width:100%;text-align:left;font:inherit;border-left:0;border-right:0;border-top:0;
-  background:transparent;cursor:pointer;transition:background .14s}
-.win-row:hover{background:rgba(255,255,255,.05)}
-.win-row .badge{padding:0;background:none}
-.win-row .badge span{display:none;border-radius:2px;padding:2px 0;font-family:var(--d-mono);
-  font-size:9.5px;font-weight:600;letter-spacing:.06em;text-align:center}
-.win.sim .win-row .badge .ok{display:block;background:#5fa64a;color:#0d1408}
-.win.sim .win-row.ko .badge .ok{display:none}
-.win.sim .win-row.ko .badge .out{display:block;background:#b0413a;color:#fff}
-.win.sim .win-row.ko{background:rgba(226,104,95,.09);color:#a9a49b}
-.win-row.sel{background:rgba(216,181,102,.1);box-shadow:inset 2px 0 0 var(--gold)}
-.win.sim .win-row.ko.sel{box-shadow:inset 2px 0 0 var(--halt)}
-/* sans le mode simulation, la colonne STATUS disparaît */
-.win:not(.sim) .win-head .r,.win:not(.sim) .win-row .badge{display:none}
-.rig-cap .pt{color:var(--gold)}
-@media(max-width:620px){
-}
-@media (prefers-reduced-motion:reduce){
-  .win-opt .chk,.win-opt .chk span,.repair,.win-row{transition:none}
-}
 
 /* ── sections ────────────────────────────────────────────────────── */
 section{padding:96px 0;border-top:1px solid var(--rule);position:relative}
@@ -498,9 +527,6 @@ footer p{max-width:70ch;font-size:13.5px;line-height:1.7}
   .rel-v{padding-top:0;margin-bottom:4px}
   .rel-b{border-left:0;padding-left:0}
   .rel-b::before{display:none}
-  .win{font-size:11px}
-  .win-head .h-type,.win-row .cls{display:none}
-  .win-opt .cnt{font-size:10px}
   .tree{font-size:11.5px;padding:16px}
   .end{padding:76px 0}
 }
@@ -514,11 +540,11 @@ footer p{max-width:70ch;font-size:13.5px;line-height:1.7}
   <a class="logo" href="/">
     <span class="mk"><svg viewBox="0 0 240 240" aria-hidden="true"><circle cx="120" cy="120" r="100" fill="none" stroke="#d8b566" stroke-width="7"/><circle cx="120" cy="120" r="88" fill="none" stroke="#d8b566" stroke-width="2.5" opacity=".5"/><rect x="81" y="8" width="18" height="18" fill="#d8b566"/><rect x="111" y="4" width="18" height="18" fill="#d8b566"/><rect x="141" y="8" width="18" height="18" fill="#d8b566"/><circle cx="20" cy="120" r="4.5" fill="#d8b566"/><circle cx="220" cy="120" r="4.5" fill="#d8b566"/><path d="M161,155 A54,54 0 1 1 161,85" fill="none" stroke="#d8b566" stroke-width="20" stroke-linecap="round"/><rect x="112" y="94" width="16" height="52" rx="5" fill="#d8b566"/><rect x="94" y="112" width="52" height="16" rx="5" fill="#d8b566"/></svg></span>
     <span class="wm">Clan <em>Plus</em></span></a>
-  <span class="top-ref">MOD / 1.0.31</span>
+  <span class="top-ref">MOD / 1.0.43</span>
   <span class="top-sp"></span>
   <a class="top-lk" href="soutenir.html">Support</a>
   <a class="top-lk" href="/">Sign in</a>
-  <a class="top-cta" href="download/clanplus_1.0.31.wotmod" download>Download</a>
+  <a class="top-cta" href="download/clanplus_1.0.43.wotmod" download>Download</a>
 </div></div>
 
 <main id="main">
@@ -527,14 +553,14 @@ footer p{max-width:70ch;font-size:13.5px;line-height:1.7}
   <div>
     <p class="eyebrow">Field manual</p>
     <h1>Nothing during<br>the fight.<br><span class="dim">Everything after.</span></h1>
-    <p class="lede">A window to set up your Bastion line-up, and a full recording of every clan battle. The site does the rest.</p>
+    <p class="lede">A window that shows your slot for tonight and checks every tank before a clan battle, and a full recording of the battle itself. The site does the rest.</p>
     <div class="acts">
-      <a class="btn btn-go" href="download/clanplus_1.0.31.wotmod" download>Download the mod</a> <a class="btn btn-alt" href="#pose">How to install it</a>
+      <a class="btn btn-go" href="download/clanplus_1.0.43.wotmod" download>Download the mod</a> <a class="btn btn-alt" href="#pose">How to install it</a>
     </div>
     <dl class="spec">
-      <div><dt>Version</dt><dd class="mono">1.0.31</dd></div>
-      <div><dt>Size</dt><dd class="mono">97 KB</dd></div>
-      <div><dt>Client</dt><dd class="mono">WoT EU 2.3.1.0</dd></div>
+      <div><dt>Version</dt><dd class="mono">1.0.43</dd></div>
+      <div><dt>Size</dt><dd class="mono">213 KB</dd></div>
+      <div><dt>Client</dt><dd class="mono">WoT EU 2.4.0.2</dd></div>
     </dl>
   </div>
 
@@ -566,115 +592,134 @@ footer p{max-width:70ch;font-size:13.5px;line-height:1.7}
     <path d="M5.5 13.8 8.5 7.4h19.5l2 6.4z"/>
     <rect x="27" y="7.6" width="16" height="2" rx=".6"/>
   </symbol>
-  <symbol id="v-spg" viewBox="0 0 44 20">
-    <rect x="3" y="13.8" width="29" height="3.8" rx="1.9"/>
-    <path d="M5.5 13.8 6.5 9h20l1.5 4.8z"/>
-    <rect x="24" y="8.4" width="17" height="1.9" rx=".6" transform="rotate(-19 24 9.3)"/>
-  </symbol>
 </defs></svg>
-    <div class="win sim" id="win">
-      <div class="win-bar"><span class="sep">▌</span><b>CLAN PLUS</b><span class="sep">—</span><b>BASTION</b><span class="min">—</span></div>
+    <!-- Reprise de la fenêtre 1.0.43. Les textes restent en anglais (lang="en") :
+         c'est ce que le joueur lit dans le jeu. -->
+    <div class="win sim" id="win" lang="en">
+      <div class="win-bar">
+        <span class="mk" aria-hidden="true"><svg viewBox="0 0 240 240"><circle cx="120" cy="120" r="100" fill="none" stroke="#d8b566" stroke-width="9"/><rect x="81" y="8" width="18" height="18" fill="#d8b566"/><rect x="111" y="4" width="18" height="18" fill="#d8b566"/><rect x="141" y="8" width="18" height="18" fill="#d8b566"/><path d="M161,155 A54,54 0 1 1 161,85" fill="none" stroke="#d8b566" stroke-width="22" stroke-linecap="round"/><rect x="112" y="94" width="16" height="52" rx="5" fill="#d8b566"/><rect x="94" y="112" width="52" height="16" rx="5" fill="#d8b566"/></svg></span>
+        <span class="wm">Clan <em>Plus</em></span>
+        <span class="tier">TIER X</span>
+        <span class="min" aria-hidden="true"></span>
+      </div>
+      <div class="win-tn" id="winTn">
+        <div class="tn-k"><b>TONIGHT</b><span>Bastion T10 · Plan A</span></div>
+        <div class="tn-p"><strong>#2 Brawling heavy</strong><span class="tn-car" id="tnCar">Maus</span><button type="button" class="tn-sel" id="tnSel">SELECT</button></div>
+      </div>
       <div class="win-opt">
         <button type="button" class="chk" id="winSim" role="switch" aria-checked="true"
                 aria-label="Clan Wars simulation mode"><span aria-hidden="true">✓</span></button>
-        <span class="txt" lang="en">Clan Wars simulation mode</span>
-        <span class="cnt on" lang="en">Out of commission: <b id="winCnt">1</b> / 64</span>
-        <span class="cnt off" lang="en">Click a tank to select it</span>
+        <span class="txt">Clan Wars simulation mode</span>
+        <span class="cnt on"><b id="winCnt">2</b> / 24 OUT</span>
+        <span class="cnt off">Click a tank to select it</span>
       </div>
       <div class="win-filters">
-      <button type="button" class="fl on" data-f="all">ALL</button>
-        <button type="button" class="fl-ic" data-f="heavy" aria-label="Heavy tanks"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9h14v6H5z"/></svg></button>
-        <button type="button" class="fl-ic" data-f="medium" aria-label="Medium tanks"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l9 9-9 9-9-9z"/></svg></button>
-        <button type="button" class="fl-ic" data-f="light" aria-label="Light tanks"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/></svg></button>
-        <button type="button" class="fl-ic" data-f="td" aria-label="Tank destroyers"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18l-9 13z"/></svg></button>
-        <button type="button" class="fl-ic" data-f="spg" aria-label="Artillery"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16v3H4zm0 7h16v3H4z"/></svg></button>
-        <button type="button" class="repair" id="winFix" lang="en">REPAIR ALL</button>
+        <div class="seg" role="group" aria-label="Filter">
+          <button type="button" class="all on" data-f="all">ALL</button>
+          <button type="button" data-f="heavy" aria-label="Heavy tanks"><img src="classes/heavyTank.png" alt=""></button>
+          <button type="button" data-f="medium" aria-label="Medium tanks"><img src="classes/mediumTank.png" alt=""></button>
+          <button type="button" data-f="light" aria-label="Light tanks"><img src="classes/lightTank.png" alt=""></button>
+          <button type="button" data-f="td" aria-label="Tank destroyers"><img src="classes/AT-SPG.png" alt=""></button>
+          <button type="button" data-f="spg" aria-label="Artillery"><img src="classes/SPG.png" alt=""></button>
+          <button type="button" data-f="fav" aria-label="Favourites"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9 6.8 19.6l1-5.8-4.3-4.1 5.9-.9z"/></svg></button>
+        </div>
+        <button type="button" class="repair" id="winFix">REPAIR ALL</button>
       </div>
-      <div class="win-head"><span></span><span>TIER</span><span></span><span>NAME</span><span class="h-type">TYPE</span><span class="r">STATUS</span></div>
+      <div class="win-head"><span class="h-tank">TANK</span><span class="r">STATUS</span></div>
 
-      <button type="button" class="win-row" data-nom="60TP Lewandowskiego" data-cls="heavy">
-        <span class="flag pl"></span>
-        <span class="tier">X</span>
+      <button type="button" class="win-row" data-cls="heavy" data-plan="1">
+        <span class="flag de"></span>
         <span class="veh"><svg viewBox="0 0 44 20" aria-hidden="true"><use href="#v-heavy"/></svg></span>
-        <span class="nm">60TP Lewandowskiego</span>
-        <span class="cls"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9h14v6H5z"/></svg></span>
-        <span class="badge"><span class="ok">OK</span><span class="out">OUT</span></span>
+        <span class="star" title="Favourite"></span>
+        <span class="nm">Maus</span>
+        <span class="pill gold">PLANNED</span>
+        <span class="role"><img src="img/lineup/roles/role-assault.png" alt="Assault"></span>
+        <span class="cls"><img src="classes/heavyTank.png" alt=""></span>
+        <span class="st"></span>
       </button>
-      <button type="button" class="win-row ko" data-nom="AMX 50 B" data-cls="heavy">
-        <span class="flag fr"></span>
-        <span class="tier">X</span>
-        <span class="veh"><svg viewBox="0 0 44 20" aria-hidden="true"><use href="#v-heavy"/></svg></span>
-        <span class="nm">AMX 50 B</span>
-        <span class="cls"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9h14v6H5z"/></svg></span>
-        <span class="badge"><span class="ok">OK</span><span class="out">OUT</span></span>
-      </button>
-      <button type="button" class="win-row" data-nom="BZ-75" data-cls="heavy">
-        <span class="flag cn"></span>
-        <span class="tier">X</span>
-        <span class="veh"><svg viewBox="0 0 44 20" aria-hidden="true"><use href="#v-heavy"/></svg></span>
-        <span class="nm">BZ-75</span>
-        <span class="cls"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9h14v6H5z"/></svg></span>
-        <span class="badge"><span class="ok">OK</span><span class="out">OUT</span></span>
-      </button>
-      <button type="button" class="win-row" data-nom="121" data-cls="medium">
-        <span class="flag cn"></span>
-        <span class="tier">X</span>
+      <button type="button" class="win-row fav" data-cls="medium">
+        <span class="flag su"></span>
         <span class="veh"><svg viewBox="0 0 44 20" aria-hidden="true"><use href="#v-medium"/></svg></span>
-        <span class="nm">121</span>
-        <span class="cls"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l9 9-9 9-9-9z"/></svg></span>
-        <span class="badge"><span class="ok">OK</span><span class="out">OUT</span></span>
+        <span class="star" title="Favourite"></span>
+        <span class="nm">Object 140</span>
+        <span class="pill good">SETUP ✓</span>
+        <span class="role"><img src="img/lineup/roles/role-universal.png" alt="Universal"></span>
+        <span class="cls"><img src="classes/mediumTank.png" alt=""></span>
+        <span class="st"></span>
       </button>
-      <button type="button" class="win-row sel" data-nom="Chieftain Mk. 6" data-cls="heavy">
+      <button type="button" class="win-row fav" data-cls="heavy">
         <span class="flag uk"></span>
-        <span class="tier">X</span>
         <span class="veh"><svg viewBox="0 0 44 20" aria-hidden="true"><use href="#v-heavy"/></svg></span>
-        <span class="nm">Chieftain Mk. 6</span>
-        <span class="cls"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9h14v6H5z"/></svg></span>
-        <span class="badge"><span class="ok">OK</span><span class="out">OUT</span></span>
+        <span class="star" title="Favourite"></span>
+        <span class="nm">FV215b</span>
+        <span class="pill warn">SETUP −2</span>
+        <span class="role"><img src="img/lineup/roles/role-support.png" alt="Support"></span>
+        <span class="cls"><img src="classes/heavyTank.png" alt=""></span>
+        <span class="st"></span>
       </button>
-      <button type="button" class="win-row" data-nom="Manticore" data-cls="light">
-        <span class="flag uk"></span>
-        <span class="tier">X</span>
-        <span class="veh"><svg viewBox="0 0 44 20" aria-hidden="true"><use href="#v-light"/></svg></span>
-        <span class="nm">Manticore</span>
-        <span class="cls"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/></svg></span>
-        <span class="badge"><span class="ok">OK</span><span class="out">OUT</span></span>
-      </button>
-      <button type="button" class="win-row" data-nom="E 100" data-cls="heavy">
-        <span class="flag de"></span>
-        <span class="tier">X</span>
+      <button type="button" class="win-row lock" data-cls="heavy">
+        <span class="flag cz"></span>
         <span class="veh"><svg viewBox="0 0 44 20" aria-hidden="true"><use href="#v-heavy"/></svg></span>
-        <span class="nm">E 100</span>
-        <span class="cls"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9h14v6H5z"/></svg></span>
-        <span class="badge"><span class="ok">OK</span><span class="out">OUT</span></span>
+        <span class="star" title="Favourite"></span>
+        <span class="nm">Vz. 60S Dravec</span>
+        <span class="pill bad">LOCKED 3h12</span>
+        <span class="role"><img src="img/lineup/roles/role-break.png" alt="Break-through"></span>
+        <span class="cls"><img src="classes/heavyTank.png" alt=""></span>
+        <span class="st"></span>
       </button>
-      <button type="button" class="win-row" data-nom="Grille 15" data-cls="td">
-        <span class="flag de"></span>
-        <span class="tier">X</span>
+      <button type="button" class="win-row" data-cls="medium">
+        <span class="flag fr"></span>
+        <span class="veh"><svg viewBox="0 0 44 20" aria-hidden="true"><use href="#v-medium"/></svg></span>
+        <span class="star" title="Favourite"></span>
+        <span class="nm">Bat.-Châtillon 25 t</span>
+        <span class="pill warn">CREW</span>
+        <span class="role"><img src="img/lineup/roles/role-support.png" alt="Support"></span>
+        <span class="cls"><img src="classes/mediumTank.png" alt=""></span>
+        <span class="st"></span>
+      </button>
+      <button type="button" class="win-row" data-cls="medium">
+        <span class="flag it"></span>
+        <span class="veh"><svg viewBox="0 0 44 20" aria-hidden="true"><use href="#v-medium"/></svg></span>
+        <span class="star" title="Favourite"></span>
+        <span class="nm">Carro da Combattimento 45 t</span>
+        <span></span>
+        <span class="role"><img src="img/lineup/roles/role-universal.png" alt="Universal"></span>
+        <span class="cls"><img src="classes/mediumTank.png" alt=""></span>
+        <span class="st"></span>
+      </button>
+      <button type="button" class="win-row" data-cls="heavy">
+        <span class="flag us"></span>
+        <span class="veh"><svg viewBox="0 0 44 20" aria-hidden="true"><use href="#v-heavy"/></svg></span>
+        <span class="star" title="Favourite"></span>
+        <span class="nm">MBT-B</span>
+        <span class="pill good">SETUP ✓</span>
+        <span class="role"><img src="img/lineup/roles/role-support.png" alt="Support"></span>
+        <span class="cls"><img src="classes/heavyTank.png" alt=""></span>
+        <span class="st"></span>
+      </button>
+      <button type="button" class="win-row" data-cls="td">
+        <span class="flag jp"></span>
         <span class="veh"><svg viewBox="0 0 44 20" aria-hidden="true"><use href="#v-td"/></svg></span>
-        <span class="nm">Grille 15</span>
-        <span class="cls"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18l-9 13z"/></svg></span>
-        <span class="badge"><span class="ok">OK</span><span class="out">OUT</span></span>
+        <span class="star" title="Favourite"></span>
+        <span class="nm">Ashigaru</span>
+        <span class="pill warn">EQUIP</span>
+        <span class="role"><img src="img/lineup/roles/role-sniper.png" alt="Sniper"></span>
+        <span class="cls"><img src="classes/AT-SPG.png" alt=""></span>
+        <span class="st"></span>
       </button>
-      <button type="button" class="win-row" data-nom="Object 261" data-cls="spg">
-        <span class="flag su"></span>
-        <span class="tier">X</span>
-        <span class="veh"><svg viewBox="0 0 44 20" aria-hidden="true"><use href="#v-spg"/></svg></span>
-        <span class="nm">Object 261</span>
-        <span class="cls"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16v3H4zm0 7h16v3H4z"/></svg></span>
-        <span class="badge"><span class="ok">OK</span><span class="out">OUT</span></span>
+      <button type="button" class="win-row ko" data-cls="light">
+        <span class="flag de"></span>
+        <span class="veh"><svg viewBox="0 0 44 20" aria-hidden="true"><use href="#v-light"/></svg></span>
+        <span class="star" title="Favourite"></span>
+        <span class="nm">Rheinmetall Panzerwagen</span>
+        <span></span>
+        <span class="role"><img src="img/lineup/roles/role-universal.png" alt="Universal"></span>
+        <span class="cls"><img src="classes/lightTank.png" alt=""></span>
+        <span class="st"></span>
       </button>
-      <button type="button" class="win-row" data-nom="IS-7" data-cls="heavy">
-        <span class="flag su"></span>
-        <span class="tier">X</span>
-        <span class="veh"><svg viewBox="0 0 44 20" aria-hidden="true"><use href="#v-heavy"/></svg></span>
-        <span class="nm">IS-7</span>
-        <span class="cls"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9h14v6H5z"/></svg></span>
-        <span class="badge"><span class="ok">OK</span><span class="out">OUT</span></span>
-      </button>
-      <div class="win-fade"></div>
+      <div class="win-foot"><kbd>F2</kbd><span class="hide">SHOW / HIDE</span><span class="lk">LINKED</span><span class="db">DEBRIEF →</span></div>
     </div>
-    <p class="rig-cap"><span class="pt" aria-hidden="true">▸</span> Tick the box, click a tank — this is the real window, not a screenshot.</p>
+    <p class="rig-cap"><span class="pt" aria-hidden="true">▸</span> Click a tank, a star or SELECT — the real window, rebuilt here, not a screenshot.</p>
   </div>
 </div></div></header>
 
@@ -904,8 +949,9 @@ footer p{max-width:70ch;font-size:13.5px;line-height:1.7}
       <ul>
         <li><i>01</i><span>Shows a window on the clan battle screens</span></li>
         <li><i>02</i><span>Selects the tank you click on, right in the garage</span></li>
-        <li><i>03</i><span>Reads the numbers <strong>after</strong> the fight is over</span></li>
-        <li><i>04</i><span>Sends those numbers to the site for the clan's analysis</span></li>
+        <li><i>03</i><span>Checks each tank against the clan's plan: tonight's slot, setup, ammo, crew</span></li>
+        <li><i>04</i><span>Reads the numbers <strong>after</strong> the fight and sends them to the site</span></li>
+        <li><i>05</i><span>Once linked to your account, shares your tier VI, VIII and X garage with your clan</span></li>
       </ul>
     </div>
     <div class="plate no">
@@ -915,6 +961,7 @@ footer p{max-width:70ch;font-size:13.5px;line-height:1.7}
         <li><i>✕</i><span>No advantage: no enemy positions, no aiming assistance</span></li>
         <li><i>✕</i><span>No changes of any kind on Wargaming's servers</span></li>
         <li><i>✕</i><span>No access to your password or your login details</span></li>
+        <li><i>✕</i><span>Nothing is tracked outside clan battles</span></li>
       </ul>
     </div>
   </div>
@@ -922,13 +969,14 @@ footer p{max-width:70ch;font-size:13.5px;line-height:1.7}
   <div class="card key rv">
     <p class="lbl">Could this get me banned?</p>
     <p class="answer">No.</p>
-    <p>The mod only reads information the game already shows you, only once the fight is over, and it never talks to Wargaming's servers.</p>
+    <p>The mod only reads information the game already shows you — your garage before the battle, the results after it — and it never talks to Wargaming's servers.</p>
     <p>In all honesty: Wargaming publishes no official whitelist of mods. What can be guaranteed is that this mod does none of the things that are forbidden. That's exactly the list above.</p>
   </div>
 
   <div class="card rv">
     <p class="lbl">Where the data goes</p>
-    <p>The end-of-battle numbers go to the shared Clan Plus storage and feed the clan's analysis. A copy stays on your machine in <code>mods/configs/im.robert.clanui/</code>. If an upload fails, the battle waits and goes out later. Nothing is lost.</p>
+    <p>The end-of-battle numbers go to the shared Clan Plus storage and feed the clan's analysis. A copy stays on your machine in <code>mods/configs/clanplus/</code>. If an upload fails, the battle waits and goes out later. Nothing is lost.</p>
+    <p>If you link your game to your account, the list of your tier VI, VIII and X tanks and their equipment is shared with your clan only, so officers build line-ups from your real garage. You can switch that off in the mod's settings, or unlink from the site: what was shared is then erased.</p>
     <p>The full detail of what is kept: <a href="/#legal-privacy">privacy policy</a>.</p>
   </div>
 
@@ -945,8 +993,8 @@ footer p{max-width:70ch;font-size:13.5px;line-height:1.7}
   <div class="plates rv" style="grid-template-columns:repeat(auto-fit,minmax(268px,1fr))">
     <div class="plate">
       <p class="lbl">Before the battle</p>
-      <h3>Set up the line-up</h3>
-      <p style="color:var(--ink-2);font-size:15px;margin:0">Every tank you own in one list: nation, tier, name, type. One click selects the tank in the garage. Tick <span lang="en" style="color:var(--gold-hi)">Clan Wars simulation mode</span> and unavailable tanks switch to <span lang="en" style="color:var(--halt)">OUT</span>, just like in real Advances.</p>
+      <h3>Get the right tank ready</h3>
+      <p style="color:var(--ink-2);font-size:15px;margin:0">Tonight's slot, pinned by an officer, sits at the top: <span lang="en" style="color:var(--gold-hi)">SELECT</span> puts the planned tank in your slot. Next to each tank, what doesn't match the clan setup and what's missing — ammo, crew, repairs — or how long a clan lock still lasts. Tick <span lang="en" style="color:var(--gold-hi)">Clan Wars simulation mode</span> to mark tanks <span lang="en" style="color:var(--halt)">OUT</span>, just like in real Advances.</p>
     </div>
     <div class="plate">
       <p class="lbl">During the battle</p>
@@ -956,7 +1004,7 @@ footer p{max-width:70ch;font-size:13.5px;line-height:1.7}
     <div class="plate">
       <p class="lbl">After the battle</p>
       <h3>Read the numbers</h3>
-      <p style="color:var(--ink-2);font-size:15px;margin:0">Damage, blocked, assisted, spotting, kills, survival, map, result. This is the raw material for the stats and the Synergy Rating.</p>
+      <p style="color:var(--ink-2);font-size:15px;margin:0">Damage, blocked, assisted, spotting, kills, survival, map, result, plus teamwork measures like first blood and stuns: the raw material for the stats and the Synergy Rating. Then <span lang="en" style="color:var(--gold-hi)">DEBRIEF →</span> in the window opens the battle on the site.</p>
     </div>
   </div>
 </div></section>
@@ -979,8 +1027,8 @@ footer p{max-width:70ch;font-size:13.5px;line-height:1.7}
       <div class="step-n">01</div>
       <div>
         <h3>Get the file</h3>
-        <p><code>clanplus_1.0.31.wotmod</code>, 97 KB. It lands in your <em>Downloads</em> folder like any other file.</p>
-        <p style="margin-top:18px"><a class="btn btn-alt" style="height:46px;font-size:15px" href="download/clanplus_1.0.31.wotmod" download>Download</a></p>
+        <p><code>clanplus_1.0.43.wotmod</code>, 213 KB. It lands in your <em>Downloads</em> folder like any other file.</p>
+        <p style="margin-top:18px"><a class="btn btn-alt" style="height:46px;font-size:15px" href="download/clanplus_1.0.43.wotmod" download>Download</a></p>
         <div class="card warn" style="margin-top:20px">
           <p class="lbl">If the browser blocks it</p>
           <p style="margin:0">Some browsers are wary of a file extension they don't recognise. Choose <strong>“Keep”</strong>. It isn't a program — it's an archive only World of Tanks knows how to read, and its contents are described above.</p>
@@ -993,12 +1041,12 @@ footer p{max-width:70ch;font-size:13.5px;line-height:1.7}
       <div>
         <h3>Open the game folder</h3>
         <p>In the <strong>Wargaming Game Center</strong>: click World of Tanks, then the cog, then <strong>“Show in Explorer”</strong>. Failing that, it's usually in <code>C:\Games\World_of_Tanks_EU\</code>.</p>
-<div class="tree" role="img" aria-label="Inside the game folder, the mod file goes into the mods folder, then into the subfolder named after the version number, for example 2.3.1.0.">World_of_Tanks_EU\
+<div class="tree" role="img" aria-label="Inside the game folder, the mod file goes into the mods folder, then into the subfolder named after the version number, for example 2.4.0.2.">World_of_Tanks_EU\
                res\
                res_mods\
                <span class="on">mods\</span>
-                  <span class="on">2.3.1.0\</span>
-                     <span class="hit">clanplus_1.0.31.wotmod</span>   <span class="cm">← here</span>
+                  <span class="on">2.4.0.2\</span>
+                     <span class="hit">clanplus_1.0.43.wotmod</span>   <span class="cm">← here</span>
                WorldOfTanks.exe</div>
         <div class="card warn">
           <p class="lbl">The most common mistake</p>
@@ -1014,7 +1062,7 @@ footer p{max-width:70ch;font-size:13.5px;line-height:1.7}
         <p>Inside <code>mods</code>, open the folder named after the game's version number, then drag the file into it. Nothing to unzip, nothing to rename.</p>
         <div class="card warn">
           <p class="lbl">The folder isn't there?</p>
-          <p style="margin:0">On a fresh install, <code>mods</code> can be empty. Create a folder named <strong>exactly</strong> after the version number the Game Center shows, for example <code>2.3.1.0</code>, and drop the file inside.</p>
+          <p style="margin:0">On a fresh install, <code>mods</code> can be empty. Create a folder named <strong>exactly</strong> after the version number the Game Center shows, for example <code>2.4.0.2</code>, and drop the file inside.</p>
         </div>
       </div>
     </div>
@@ -1030,11 +1078,24 @@ footer p{max-width:70ch;font-size:13.5px;line-height:1.7}
         </div>
       </div>
     </div>
+
+    <div class="step rv">
+      <div class="step-n">05</div>
+      <div>
+        <h3>Link it to your account</h3>
+        <p>Sign in at <a href="/">clanplus.eu</a> with your World of Tanks account: a window asks for a code. In the game, press <code>F2</code> and click <strong>LINK TO CLANPLUS.EU</strong> at the bottom of the window, then type the code it shows. Once and for all.</p>
+        <div class="card key">
+          <p class="lbl">What it unlocks</p>
+          <p style="margin:0">Tonight's slot and the clan setup appear in your window, and officers see your real garage when they build line-ups. Without linking, your battles are still recorded.</p>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="card rv" style="margin-top:34px">
     <p class="lbl">Every time World of Tanks updates</p>
     <p style="margin:0">The game creates a new version folder inside <code>mods</code> and the mods in the old one stop loading. Copy the file into the new folder. That's all: your settings and your history live elsewhere and don't move.</p>
+    <p style="margin:10px 0 0">When a new version of Clan Plus comes out, the mod tells you in the garage.</p>
   </div>
 </div></section>
 
@@ -1044,25 +1105,55 @@ footer p{max-width:70ch;font-size:13.5px;line-height:1.7}
     <p class="sec-sub">Updating the mod means replacing the file. Nothing to uninstall.</p>
   </div>
   <div class="rel rv">
-    <div class="rel-v now">1.0.31 · current</div>
+    <div class="rel-v now">1.0.43 · current</div>
     <div class="rel-b now">
-      <h3>You can see where each tank is looking</h3>
-      <p>The mod records where each tank is aiming: hull heading plus turret angle. On the replay, a tank holding an angle is finally distinguishable from one just driving through.</p>
+      <h3>Clan Plus, everywhere</h3>
+      <p>The settings panel is now called Clan Plus and its folder becomes <code>mods/configs/clanplus/</code> — renamed on first launch, nothing is lost. The window is wider, so tank names stay whole.</p>
     </div>
-    <div class="rel-v">1.0.30</div>
+    <div class="rel-v">1.0.41</div>
     <div class="rel-b">
-      <h3>Uploads no longer get lost</h3>
-      <p>When an upload fails, the battle is queued instead of lost, then sent again automatically. Added a settings panel reachable from the garage.</p>
+      <h3>Teamwork, measured</h3>
+      <p>The mod sends what the game knows and used to leave out: first blood, stuns, who destroyed whom, damage dealt before your team took any, your share of the team's damage.</p>
     </div>
-    <div class="rel-v">1.0.29</div>
+    <div class="rel-v">1.0.40</div>
     <div class="rel-b">
-      <h3>The real base flags</h3>
-      <p>Bases are no longer circles but the game's own flags, including the neutral base in 7-vs-7 battles.</p>
+      <h3>Favourites and roles</h3>
+      <p>A star in front of each tank puts it at the top of the list, and the ★ filter shows only those. Next to the class icon, the game's role symbol.</p>
     </div>
-    <div class="rel-v">1.0.27</div>
+    <div class="rel-v">1.0.39</div>
+    <div class="rel-b">
+      <h3>Debrief in one click</h3>
+      <p>Once a clan battle is on the site, a notice appears in the garage and <strong>DEBRIEF →</strong> opens its page in your browser, already unfolded.</p>
+    </div>
+    <div class="rel-v">1.0.38</div>
+    <div class="rel-b">
+      <h3>Ready for battle?</h3>
+      <p>A pill flags what a tank is missing: ammo, crew, repairs, an empty consumable or equipment slot. A tank locked on the Global Map shows how long the lock lasts.</p>
+    </div>
+    <div class="rel-v">1.0.37</div>
+    <div class="rel-b">
+      <h3>Settings that do something</h3>
+      <p>The key that opens the window, opening it automatically in Stronghold, the magnet, and what gets sent to clanplus.eu. Nothing is recorded outside clan battles any more.</p>
+    </div>
+    <div class="rel-v">1.0.36</div>
+    <div class="rel-b">
+      <h3>The clan setup</h3>
+      <p>Next to each tank that has a clan loadout: <strong>SETUP ✓</strong> when your equipment and consumables match, <strong>SETUP −2</strong> when two items are missing. Hover for the detail.</p>
+    </div>
+    <div class="rel-v">1.0.35</div>
+    <div class="rel-b">
+      <h3>Your slot tonight</h3>
+      <p>When an officer pins tonight's composition on the site, your window shows your slot and your tank, with a <strong>SELECT</strong> button.</p>
+    </div>
+    <div class="rel-v">1.0.34</div>
+    <div class="rel-b">
+      <h3>Link your game</h3>
+      <p>A code links the mod to your clanplus.eu account. Your real garage is shared with your clan: in line-ups, a sold tank no longer counts and a new one counts straight away.</p>
+    </div>
+    <div class="rel-v">1.0.32</div>
     <div class="rel-b" style="padding-bottom:0">
-      <h3>The replay becomes an analysis</h3>
-      <p>Kills, damage shot by shot with who dealt it, and every shot recorded. The battle can be replayed and debriefed on the site.</p>
+      <h3>A new window</h3>
+      <p>The site's colours, the game's class icons, a window that snaps to the Stronghold line-up, and the right tier picked automatically. Since 1.0.33, the mod tells you when a new version is out.</p>
     </div>
   </div>
 </div></section>
@@ -1070,26 +1161,28 @@ footer p{max-width:70ch;font-size:13.5px;line-height:1.7}
 <section id="secours"><div class="sheet">
   <div class="rv">
     <div class="sec-h"><span class="sec-n">06</span><h2>When something goes wrong</h2></div>
-    <p class="sec-sub" style="margin-bottom:28px">The five cases that keep coming up.</p>
+    <p class="sec-sub" style="margin-bottom:28px">The six cases that keep coming up.</p>
   </div>
   <div class="rv">
     <details><summary>The window doesn't appear</summary>
-      <p>In order: press <code>F2</code> — it may simply have been closed. Check you're actually on a <strong>Stronghold, Advances or Skirmish</strong> screen. Finally, make sure the file is in <code>mods</code> and not <code>res_mods</code>, and that the version folder matches the version of the game you're launching.</p></details>
+      <p>In order: press <code>F2</code>, or the key you chose in the settings — it may simply have been closed. Check you're actually on a <strong>Stronghold, Advances or Skirmish</strong> screen. Finally, make sure the file is in <code>mods</code> and not <code>res_mods</code>, and that the version folder matches the version of the game you're launching.</p></details>
     <details><summary>The game updated and the mod vanished</summary>
       <p>That's expected: each game version has its own folder inside <code>mods</code>. Copy the file into the new one. Your settings and your history are kept.</p></details>
     <details><summary>My battles don't show up on the site</summary>
       <p>Only <strong>clan battles</strong> are recorded — random battles never count. Also check you're signed in with the World of Tanks account <em>you actually played on</em>. If an upload failed, the battle will go out again next time you launch.</p></details>
+    <details><summary>The TONIGHT strip doesn't appear</summary>
+      <p>Two possible reasons: your game isn't linked to your account yet (<strong>LINK TO CLANPLUS.EU</strong>, at the bottom of the window), or no officer has pinned tonight's composition on the site. Once one is pinned, the strip shows up within five minutes.</p></details>
     <details><summary>I have other mods — could they conflict?</summary>
       <p>The mod is self-contained and overwrites no game file. It uses ModsSettingsAPI and ModsList when they're there, but works without them. If it errors, it switches itself off quietly rather than crashing your game. If another mod already uses <code>F2</code>, the key can be changed in the settings.</p></details>
     <details><summary>How do I uninstall it?</summary>
-      <p>Delete the <code>.wotmod</code> file from <code>mods/&lt;version&gt;/</code>. To wipe the settings and local history as well, delete the <code>mods/configs/im.robert.clanui/</code> folder.</p></details>
+      <p>Delete the <code>.wotmod</code> file from <code>mods/&lt;version&gt;/</code>. To wipe the settings and local history as well, delete the <code>mods/configs/clanplus/</code> folder.</p></details>
   </div>
 </div></section>
 
 <div class="end"><div class="sheet rv">
   <h2>Two minutes.</h2>
   <p>One file, one folder. And every clan battle you play feeds the whole clan's analysis.</p>
-  <a class="btn btn-go" href="download/clanplus_1.0.31.wotmod" download>Download version 1.0.31</a>
+  <a class="btn btn-go" href="download/clanplus_1.0.43.wotmod" download>Download version 1.0.43</a>
 </div></div>
 
 </main>
@@ -1125,64 +1218,97 @@ footer p{max-width:70ch;font-size:13.5px;line-height:1.7}
 })();
 
 /* La fenêtre du mod, réellement manipulable. Reproduit les gestes du vrai
-   mod : cocher le mode simulation, sélectionner un char, corriger son état
-   d'un clic sur le badge, et tout réparer. */
+   mod (1.0.43) : cocher le mode simulation, sélectionner un char, corriger
+   son état d'un clic sur la pastille OK/OUT, tout réparer, marquer un
+   favori, filtrer par classe, et SELECT qui prend le char prévu ce soir.
+   Un char bloqué par la Carte des clans (LOCKED) ne se sélectionne pas. */
 (function(){
   var win = document.getElementById("win");
   if (!win) return;
   var sim = document.getElementById("winSim");
   var cnt = document.getElementById("winCnt");
   var fix = document.getElementById("winFix");
+  var tn = document.getElementById("winTn");
+  var tnSel = document.getElementById("tnSel");
+  var tnCar = document.getElementById("tnCar");
   var lignes = win.querySelectorAll(".win-row");
-  var TOTAL = 64, horsService = 1;   // 1 sur 64, comme la capture
+  var chaque = function(f){ Array.prototype.forEach.call(lignes, f); };
+  var prevu = win.querySelector(".win-row[data-plan]");
+  var nomPrevu = prevu ? prevu.querySelector(".nm").textContent : "";
+  var horsJeu = function(l){ return win.classList.contains("sim") && l.classList.contains("ko"); };
 
   var compte = function(){
     var n = 0;
-    Array.prototype.forEach.call(lignes, function(l){ if (l.classList.contains("ko")) n++; });
-    horsService = n;
+    chaque(function(l){ if (l.classList.contains("ko") || l.classList.contains("lock")) n++; });
     cnt.textContent = n;
   };
+  // le bandeau du soir : SELECT tant que le char prévu n'est pas dans la case
+  var soir = function(){
+    var fait = !!prevu && prevu.classList.contains("sel");
+    tn.classList.toggle("done", fait);
+    tnCar.textContent = (fait ? "✓ " : "") + nomPrevu;
+  };
+  var choisir = function(l){
+    chaque(function(x){ x.classList.remove("sel"); });
+    l.classList.add("sel");
+    soir();
+  };
+
   sim.addEventListener("click", function(){
     var actif = win.classList.toggle("sim");
     sim.setAttribute("aria-checked", actif ? "true" : "false");
   });
   fix.addEventListener("click", function(){
-    Array.prototype.forEach.call(lignes, function(l){ l.classList.remove("ko"); });
+    chaque(function(l){ l.classList.remove("ko"); });
     compte();
   });
-  Array.prototype.forEach.call(lignes, function(l){
+  tnSel.addEventListener("click", function(){
+    if (prevu && !horsJeu(prevu)) choisir(prevu);
+  });
+
+  // les filtres de classe, et ★ : les favoris seulement
+  var filtre = "all";
+  var vide = document.createElement("div");
+  vide.className = "win-vide";
+  vide.hidden = true;
+  win.querySelector(".win-foot").before(vide);
+  var appliquer = function(){
+    var visibles = 0;
+    chaque(function(l){
+      var ok = filtre === "all" || (filtre === "fav" ? l.classList.contains("fav") : l.dataset.cls === filtre);
+      l.classList.toggle("masque", !ok);
+      if (ok) visibles++;
+    });
+    vide.textContent = filtre === "fav" ? "No favourite yet: click a star" : "No tank of this class in the garage";
+    vide.hidden = visibles > 0;
+  };
+  var boutons = win.querySelectorAll("[data-f]");
+  Array.prototype.forEach.call(boutons, function(b){
+    b.addEventListener("click", function(){
+      Array.prototype.forEach.call(boutons, function(x){ x.classList.remove("on"); });
+      b.classList.add("on");
+      filtre = b.dataset.f;
+      appliquer();
+    });
+  });
+
+  chaque(function(l){
     l.addEventListener("click", function(e){
-      // en mode simulation, le badge corrige l'état ; ailleurs on sélectionne
-      if (win.classList.contains("sim") && e.target.closest(".badge")) {
-        l.classList.toggle("ko"); compte(); return;
+      if (e.target.closest(".star")) { l.classList.toggle("fav"); appliquer(); return; }
+      if (l.classList.contains("lock")) return;
+      // en mode simulation, la pastille d'état corrige l'état ; ailleurs on sélectionne
+      if (win.classList.contains("sim") && e.target.closest(".st")) {
+        l.classList.toggle("ko");
+        if (l.classList.contains("ko") && l.classList.contains("sel")) { l.classList.remove("sel"); soir(); }
+        compte();
+        return;
       }
-      if (win.classList.contains("sim") && l.classList.contains("ko")) return;
-      Array.prototype.forEach.call(lignes, function(x){ x.classList.remove("sel"); });
-      l.classList.add("sel");
+      if (horsJeu(l)) return;
+      choisir(l);
     });
   });
   compte();
-
-  // les filtres de classe, comme dans le mod
-  var filtres = win.querySelectorAll("[data-f]");
-  var vide = document.createElement("div");
-  vide.className = "win-vide";
-  vide.textContent = "No tank of this class in the garage";
-  vide.hidden = true;
-  win.querySelector(".win-fade").before(vide);
-  Array.prototype.forEach.call(filtres, function(b){
-    b.addEventListener("click", function(){
-      Array.prototype.forEach.call(filtres, function(x){ x.classList.remove("on"); });
-      b.classList.add("on");
-      var f = b.dataset.f, visibles = 0;
-      Array.prototype.forEach.call(lignes, function(l){
-        var ok = (f === "all" || l.dataset.cls === f);
-        l.classList.toggle("masque", !ok);
-        if (ok) visibles++;
-      });
-      vide.hidden = visibles > 0;
-    });
-  });
+  soir();
 })();
 
 </script>

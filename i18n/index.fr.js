@@ -33,7 +33,7 @@ window.CP_FR = Object.assign(window.CP_FR || {}, {
   "Every battle,<br>replayable and measured.": "Chaque bataille,<br>rejouable et mesurée.",
   "Every member's Stronghold performance, how their line-up stands, and the internal ranking — without keeping a spreadsheet.": "Les performances de chaque membre en Bastion, l'état de sa formation, et le classement\n        interne — sans avoir à tenir un tableur.",
   "Find a clan": "Trouver un clan",
-  "Free · ad-free · World of Tanks EU 2.3.1.0": "Gratuit · sans publicité · World of Tanks EU 2.3.1.0",
+  "Free · ad-free · World of Tanks EU 2.4.0.2": "Gratuit · sans publicité · World of Tanks EU 2.4.0.2",
   "Go to my clan →": "Accéder à mon clan →",
   "Got it": "J'ai compris",
   "LINE-UPS": "FORMATION",
