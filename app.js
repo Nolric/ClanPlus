@@ -208,7 +208,8 @@ async function openApp(){
   renderMembers();
   renderClanInfo();
   populatePlayerSel();
-  openBattleFromLink();
+  // arrivé par le bouton DEBRIEF du mod : on ne lui barre pas la route avec une fenêtre
+  if(!openBattleFromLink()) setTimeout(linkWelcome, 700);
 }
 
 /* Lien direct vers une bataille : clanplus.eu/?bataille=<arenaUniqueID>.
@@ -228,7 +229,7 @@ function openBattleFromLink(){
   try{ id=sessionStorage.getItem(OPEN_BATTLE_KEY); sessionStorage.removeItem(OPEN_BATTLE_KEY); }catch(e){}
   try{ const u=new URL(location.href);
     if(u.searchParams.has("bataille")){ u.searchParams.delete("bataille"); history.replaceState({},"",u.pathname+u.search+u.hash); } }catch(e){}
-  if(!id) return;
+  if(!id) return false;
   // Les identifiants dépassent 2^53 : le site les lit arrondis, on compare de même.
   const want=[id,String(Number(id))];
   const hit=RAW.find(r=>want.includes(String(r.battleId)));
@@ -241,13 +242,14 @@ function openBattleFromLink(){
     BL_PAGE=i>=0?Math.floor(i/BL_PER_PAGE):0;
   }
   switchView("battles");
-  if(!hit) return;                 // pas encore arrivée (ou d'un autre clan) : la liste suffit
+  if(!hit) return true;            // pas encore arrivée (ou d'un autre clan) : la liste suffit
   setTimeout(()=>{
     const c=document.querySelector(`.bl-row[data-bid="${CSS.escape(String(hit.battleId))}"]`);
     if(!c) return;
     c.classList.add("open");
     c.scrollIntoView({block:"center",behavior:"smooth"});
   }, 420);
+  return true;
 }
 
 let CLANINFO=null, CLANRATINGS=null;
@@ -7229,6 +7231,22 @@ const LG_ERR={
   unknown_code:"Code inconnu ou expiré : un code ne vaut que 15 minutes. Redemande-en un dans le jeu.",
   invalid_session:"Ta session a expiré : reconnecte-toi au site.",
 };
+const LG_OK="cp_link_ok", LG_LATER="cp_link_later", LG_SNOOZE=7*24*3600*1000;
+function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+/* À la connexion : un joueur qui n'a relié aucun jeu voit la fenêtre de
+   liaison au milieu de l'écran. Une fois relié (ici ou sur un autre
+   navigateur), plus jamais ; « Plus tard », pas avant une semaine. Une
+   panne du serveur ne doit rien afficher : on se tait. */
+async function linkWelcome(){
+  if(lsGet(LG_OK)==="1") return;
+  if(Date.now()-Number(lsGet(LG_LATER)||0)<LG_SNOOZE) return;
+  const r=await fnCall("mod",{session:localStorage.getItem(LS_SESSION),action:"links"}).catch(()=>null);
+  if(!r||!r.ok||!r.j||!Array.isArray(r.j.links)) return;
+  if(r.j.links.length){ lsSet(LG_OK,"1"); return; }
+  if(document.querySelector("dialog[open]")) return;   // une autre fenêtre est déjà ouverte
+  openLinkGame({welcome:true});
+}
 function lgWhen(iso){
   if(!iso) return "";
   return new Date(iso).toLocaleString(window.CP_LOC,{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});
@@ -7238,6 +7256,7 @@ async function lgRenderList(d){
   const r=await fnCall("mod",{session:localStorage.getItem(LS_SESSION),action:"links"}).catch(()=>null);
   if(!r||!r.ok){ el.innerHTML=`<div class="lg-empty">${r&&r.status===404?t("Service pas encore en ligne (fonction « mod » à déployer)."):t("Liste des jeux reliés indisponible.")}</div>`; return; }
   const links=r.j.links||[], gar=r.j.garage;
+  if(links.length) lsSet(LG_OK,"1");
   el.innerHTML=(links.length?links.map(l=>`<div class="lg-item">${luIco("i-link")}
       <span><span>Jeu de</span> <b data-i18n-skip>${esc(l.game_nickname||"?")}</b>
       <span class="lg-meta" data-i18n-skip>${l.mod_version?" · mod "+esc(l.mod_version):""}${l.last_seen?" · "+esc(lgWhen(l.last_seen)):""}</span></span>
@@ -7252,21 +7271,42 @@ async function lgRenderList(d){
     lgRenderList(d);
   });
 }
-function openLinkGame(){
+/* Fenêtre « Relier mon jeu ». Deux portes d'entrée :
+   · le bouton du menu (liste des jeux reliés, possibilité de délier) ;
+   · o.welcome : l'accueil à la connexion d'un joueur qui n'a encore relié
+     aucun jeu — les trois gestes à faire, et un lien vers le mod pour qui
+     ne l'a pas. « Plus tard » la fait taire une semaine (LG_LATER). */
+function openLinkGame(o){
+  o=o||{};
   const back=document.activeElement, d=document.createElement("dialog");
-  d.className="dashx lx-dlg"; d.setAttribute("aria-labelledby","lgT");
-  d.innerHTML=`<form class="lx-dlg-box" novalidate>
-    <div class="lx-dlg-head"><span class="lx-dlg-ic">${luIco("i-link")}</span><h3 id="lgT">Relier mon jeu</h3></div>
-    <p class="lx-dlg-text">Dans le jeu, ouvre la fenêtre Clan Plus (touche F2) et clique sur « LINK TO CLANPLUS.EU », en bas. Tape ici le code qu'elle affiche.</p>
+  d.className="dashx lx-dlg"+(o.welcome?" is-wide lg-welcome":""); d.setAttribute("aria-labelledby","lgT");
+  const intro=o.welcome
+    ?`<span class="lg-kick">Première étape</span>
+    <div class="lx-dlg-head"><span class="lx-dlg-ic">${luIco("i-link")}</span><h3 id="lgT">Relie ton jeu à Clan Plus</h3></div>
+    <p class="lx-dlg-text">Une seule fois, en trente secondes. Ensuite, les officiers composent les line-ups avec ton <b>vrai garage</b>, et la fenêtre du mod t'affiche <b>ton poste du soir</b>.</p>
+    <ol class="lg-steps">
+      <li>Dans le jeu, ouvre la fenêtre Clan Plus avec la touche <kbd>F2</kbd>.</li>
+      <li>Clique sur <b>LINK TO CLANPLUS.EU</b>, en bas : un code s'affiche.</li>
+      <li>Tape ce code ici.</li>
+    </ol>`
+    :`<div class="lx-dlg-head"><span class="lx-dlg-ic">${luIco("i-link")}</span><h3 id="lgT">Relier mon jeu</h3></div>
+    <p class="lx-dlg-text">Dans le jeu, ouvre la fenêtre Clan Plus (touche F2) et clique sur « LINK TO CLANPLUS.EU », en bas. Tape ici le code qu'elle affiche.</p>`;
+  const outro=o.welcome
+    ?`<p class="lg-note">Pas encore le mod ? <a href="mod.html">Télécharge-le ici</a> — le bouton de liaison existe depuis la version 1.0.34. Tu retrouveras cette fenêtre dans le menu, sous « Relier mon jeu ».</p>`
+    :`<div class="lg-list" id="lgList"><div class="lg-empty">${t("Lecture…")}</div></div>
+    <p class="lg-note">Une fois relié, le mod partage avec ton clan la liste de tes chars de rang VI, VIII et X et leur équipement : les officiers composent les line-ups avec ton vrai garage. Tu peux délier ton jeu à tout moment.</p>`;
+  d.innerHTML=`<form class="lx-dlg-box" novalidate${o.welcome?' tabindex="-1" autofocus':""}>
+    ${intro}
     <div class="lg-row"><input class="lx-input" id="lgCode" placeholder="CP-XXXXXX" autocomplete="off" spellcheck="false" maxlength="12" aria-label="Code affiché dans le jeu">
       <button type="submit" class="lx-btn lx-btn-gold" id="lgGo">Relier</button></div>
     <p class="lg-msg" id="lgMsg" role="status"></p>
-    <div class="lg-list" id="lgList"><div class="lg-empty">${t("Lecture…")}</div></div>
-    <p class="lg-note">Une fois relié, le mod partage avec ton clan la liste de tes chars de rang VI, VIII et X et leur équipement : les officiers composent les line-ups avec ton vrai garage. Tu peux délier ton jeu à tout moment.</p>
-    <div class="lx-dlg-actions"><button type="button" class="lx-btn lx-btn-quiet" data-dlg="cancel">Fermer</button></div>
+    ${outro}
+    <div class="lx-dlg-actions"><button type="button" class="lx-btn lx-btn-quiet" data-dlg="cancel">${o.welcome?"Plus tard":"Fermer"}</button></div>
   </form>`;
   document.body.appendChild(d);
+  let linked=false;
   const close=()=>{ d.classList.add("is-closing");
+    if(o.welcome&&!linked) lsSet(LG_LATER,String(Date.now()));
     setTimeout(()=>{ try{ d.close(); }catch(e){} d.remove(); if(back&&back.isConnected) back.focus({preventScroll:true}); },150); };
   d.querySelector('[data-dlg="cancel"]').onclick=close;
   d.addEventListener("cancel",e=>{ e.preventDefault(); close(); });
@@ -7280,7 +7320,9 @@ function openLinkGame(){
     const r=await fnCall("mod",{session:localStorage.getItem(LS_SESSION),action:"pair_confirm",code}).catch(()=>null);
     go.disabled=false;
     if(r&&r.ok&&r.j&&r.j.ok){
+      linked=true; lsSet(LG_OK,"1");
       msg.className="lg-msg ok"; msg.textContent=t("Jeu relié ✓ — le mod envoie ton garage dans les secondes qui suivent.");
+      if(o.welcome) d.querySelector('[data-dlg="cancel"]').textContent=t("Fermer");
       inp.value=""; lgRenderList(d); return;
     }
     const err=r&&r.j&&r.j.error;
@@ -7289,8 +7331,9 @@ function openLinkGame(){
       ? t("Ce code vient du jeu d'un autre compte")+(r.j.game_nickname?" ("+r.j.game_nickname+")":"")+t(" : connecte-toi au site avec ce compte-là.")
       : LG_ERR[err]?t(LG_ERR[err]):!r?t("Le serveur ne répond pas."):r.status===404?t("Service pas encore en ligne (fonction « mod » à déployer)."):t("Liaison impossible : ")+String(err||r.status);
   };
-  d.showModal(); inp.focus();
-  lgRenderList(d);
+  // accueil : pas de clavier qui surgit sur mobile avant qu'on ait lu les étapes
+  d.showModal(); if(!o.welcome) inp.focus();
+  if(!o.welcome) lgRenderList(d);
 }
 
 /* ── Chars joués, d'après Wargaming ────────────────────────────────

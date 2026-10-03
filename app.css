@@ -210,6 +210,23 @@
   .lg-item .lx-btn{margin-left:auto;height:30px}
   .lg-empty{padding:10px 0;font-size:13px;color:var(--muted);border-bottom:1px solid var(--line)}
   .lg-note{margin:14px 0 0;font-size:12.5px;line-height:1.55;color:var(--muted)}
+  /* Accueil « Relie ton jeu » (première connexion) : un liseré d'or en tête,
+     les trois gestes numérotés, puis le champ du code. */
+  .lg-welcome .lx-dlg-box{padding:24px 24px 18px;border-top:2px solid var(--gold)}
+  .lg-welcome .lx-dlg-box:focus{outline:0}
+  .lg-kick{display:block;margin:0 0 12px;font:700 10.5px var(--fx);letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
+  .lg-steps{list-style:none;counter-reset:lg;margin:18px 0 0;padding:0;display:grid;gap:10px}
+  .lg-steps li{counter-increment:lg;position:relative;min-height:26px;padding:3px 0 0 38px;
+    font-size:14px;line-height:1.5;color:var(--ink-2);text-wrap:pretty}
+  .lg-steps li::before{content:counter(lg);position:absolute;left:0;top:0;display:grid;place-items:center;width:26px;height:26px;
+    box-sizing:border-box;border:1px solid var(--gold-line);border-radius:50%;background:var(--gold-soft);color:var(--gold-2);
+    font:600 12.5px/1 "IBM Plex Mono",ui-monospace,Consolas,monospace;font-variant-numeric:tabular-nums}
+  .lg-steps b{color:var(--ink);font-weight:600}
+  .lg-steps kbd{display:inline-block;min-width:24px;padding:1px 6px;border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;
+    background:var(--panel-2);color:var(--ink);font:600 12px/1.4 "IBM Plex Mono",ui-monospace,Consolas,monospace;text-align:center}
+  .lg-welcome .lg-row{margin-top:20px}
+  .lg-note a{color:var(--gold-2);font-weight:600;text-underline-offset:2px}
+  .lg-note a:hover{color:var(--gold)}
   .pr-verified{margin:10px 0 0;font-size:12.5px;color:var(--muted)}
   .pr-verified b{color:var(--good)}
   .su-logout:hover{border-color:var(--bad,#e8626b);color:#e8626b;background:rgba(232,98,107,.10)}
