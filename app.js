@@ -208,6 +208,46 @@ async function openApp(){
   renderMembers();
   renderClanInfo();
   populatePlayerSel();
+  openBattleFromLink();
+}
+
+/* Lien direct vers une bataille : clanplus.eu/?bataille=<arenaUniqueID>.
+   C'est l'adresse qu'ouvre le bouton DEBRIEF de la fenêtre du mod (v1.0.39),
+   juste après une bataille de clan. Le paramètre est mis de côté dès le
+   chargement : la connexion Wargaming ramène sur l'adresse nue. La bataille
+   s'ouvre une fois les données du clan chargées. */
+const OPEN_BATTLE_KEY="cp_open_battle";
+(function keepBattleLink(){
+  try{
+    const id=new URLSearchParams(location.search).get("bataille");
+    if(id&&/^\d{1,25}$/.test(id)) sessionStorage.setItem(OPEN_BATTLE_KEY,id);
+  }catch(e){}
+})();
+function openBattleFromLink(){
+  let id=null;
+  try{ id=sessionStorage.getItem(OPEN_BATTLE_KEY); sessionStorage.removeItem(OPEN_BATTLE_KEY); }catch(e){}
+  try{ const u=new URL(location.href);
+    if(u.searchParams.has("bataille")){ u.searchParams.delete("bataille"); history.replaceState({},"",u.pathname+u.search+u.hash); } }catch(e){}
+  if(!id) return;
+  // Les identifiants dépassent 2^53 : le site les lit arrondis, on compare de même.
+  const want=[id,String(Number(id))];
+  const hit=RAW.find(r=>want.includes(String(r.battleId)));
+  // ni la période ni le mode choisis ne doivent la cacher
+  state.days=0; state.mode="";
+  const ms=document.getElementById("modeSel"); if(ms) ms.value="";
+  document.querySelectorAll("#periodSeg button").forEach(b=>b.classList.toggle("on",b.dataset.d==="0"));
+  if(hit){
+    const i=groupBattles().findIndex(g=>String(g.id)===String(hit.battleId));
+    BL_PAGE=i>=0?Math.floor(i/BL_PER_PAGE):0;
+  }
+  switchView("battles");
+  if(!hit) return;                 // pas encore arrivée (ou d'un autre clan) : la liste suffit
+  setTimeout(()=>{
+    const c=document.querySelector(`.bl-row[data-bid="${CSS.escape(String(hit.battleId))}"]`);
+    if(!c) return;
+    c.classList.add("open");
+    c.scrollIntoView({block:"center",behavior:"smooth"});
+  }, 420);
 }
 
 let CLANINFO=null, CLANRATINGS=null;
