@@ -28,7 +28,7 @@ window.CP_FR = Object.assign(window.CP_FR || {}, {
   "Support": "Soutenir",
   "The SR explained": "Le SR expliqué",
   "The mod": "Le mod",
-  "This site uses only strictly necessary technical cookies (sign-in, theme). No advertising trackers. <a href=\"#\" data-legal=\"cookies\">Learn more</a>": "Ce site n'utilise que des cookies techniques strictement nécessaires (connexion, thème). Aucun traceur publicitaire. <a href=\"#\" data-legal=\"cookies\">En savoir plus</a>",
+  "This site sets no cookies and uses no trackers: only technical storage in your browser (sign-in, preferences). <a href=\"#\" data-legal=\"cookies\">Learn more</a>": "Ce site ne dépose aucun cookie et n'utilise aucun traceur : seulement du stockage technique dans ton navigateur (connexion, préférences). <a href=\"#\" data-legal=\"cookies\">En savoir plus</a>",
   "Your clan's Stronghold statistics. Sign in with your World of Tanks account to reach your clan's data.": "Statistiques Bastion de ton clan. Connecte-toi avec ton compte World of Tanks pour accéder aux données de ton clan.",
   "← Back to the homepage": "← Retour à l'accueil",
   "▶ Sign in with World of Tanks": "▶ Se connecter avec World of Tanks",

@@ -75,6 +75,7 @@ let DEV=false;   // mode test : débloque l'interface officier/commandant (côt�
 async function boot(){
   document.documentElement.setAttribute("data-theme", "dark");   // thème SOMBRE uniquement
   if(localStorage.getItem("cp_sidebar")==="1") document.getElementById("sidebar").classList.add("collapsed");
+  legalFromHash();   // clanplus.eu/#legal-privacy : la page légale s'ouvre par-dessus le reste
 
   // Mode test : ?dev l'active (persiste), ?dev=0 le coupe.
   const dv=new URLSearchParams(location.search).get("dev");
@@ -2094,40 +2095,96 @@ function wireLanding(){
   // bandeau cookies
   const ok=document.getElementById("cookieOk");
   if(ok) ok.onclick=()=>{ localStorage.setItem("cp_cookie_ok","1"); document.getElementById("cookieBar").classList.add("hidden"); };
-  // modale : fermeture
-  const mod=document.getElementById("legalModal"), x=document.getElementById("legalClose");
-  if(x) x.onclick=()=>mod.classList.add("hidden");
-  if(mod) mod.addEventListener("click",e=>{ if(e.target===mod) mod.classList.add("hidden"); });
-  document.addEventListener("keydown",e=>{ if(e.key==="Escape") mod.classList.add("hidden"); });
+  wireLegal();
 }
-const LEGAL_UPD="Dernière mise à jour : juillet 2026";
+const LEGAL_UPD="Dernière mise à jour : 3 octobre 2026";
+const LEGAL_MAIL="contact@clanplus.eu";
 const LEGAL={
-  legal:`<div class="lp-legal"><h2>Mentions légales</h2><p class="lp-legal-upd">${LEGAL_UPD}</p>
-    <h3>Éditeur du site</h3><p>Clan&nbsp;Plus est un projet communautaire indépendant, à but non lucratif, créé et maintenu par le clan <b>[ATFR]</b> sur World of Tanks.<br>Contact : pour toute demande, adresse-toi à un responsable du clan [ATFR] en jeu.</p>
-    <h3>Hébergement</h3><p>Le site est hébergé par <b>Netlify, Inc.</b> (2325 3rd Street, San Francisco, CA 94107, États-Unis — <a href="https://www.netlify.com" target="_blank" rel="noopener">netlify.com</a>).<br>Les données applicatives (comptes, statistiques) sont hébergées par <b>Supabase</b> sur des serveurs situés dans l'Union européenne — <b>Stockholm, Suède</b> (<a href="https://supabase.com" target="_blank" rel="noopener">supabase.com</a>).</p>
-    <h3>Propriété intellectuelle</h3><p><i>World of Tanks</i>, <i>Wargaming</i> et les éléments graphiques associés sont la propriété de Wargaming. Clan&nbsp;Plus n'est <b>pas affilié à, ni approuvé par Wargaming</b>. Le mod et le site sont fournis gratuitement, sans garantie, à usage communautaire.</p></div>`,
-  privacy:`<div class="lp-legal"><h2>Politique de confidentialité</h2><p class="lp-legal-upd">${LEGAL_UPD}</p>
-    <p>Cette page explique quelles données Clan&nbsp;Plus traite et pourquoi. Nous appliquons le principe de minimisation : nous ne collectons que le strict nécessaire au fonctionnement du service.</p>
-    <h3>Responsable du traitement</h3><p>Le responsable est l'éditeur du site (voir Mentions légales). Pour toute demande, adresse-toi à un responsable du clan [ATFR].</p>
-    <h3>Données collectées</h3><ul>
-      <li><b>À la connexion</b> (via le service officiel Wargaming / OpenID) : ton identifiant de compte, ton pseudo et ton appartenance à un clan. <b>Nous ne voyons jamais ton mot de passe.</b></li>
-      <li><b>Via le mod</b> (que tu installes volontairement) : les statistiques de tes batailles de Bastion — dégâts, assistance, repérage, blocage, survie, char joué, carte, résultat, et positions pour le relecteur.</li>
-    </ul>
-    <h3>Finalités</h3><p>Ces données servent uniquement à afficher les statistiques de ton clan, à calculer les indicateurs (dont le SR) et à proposer un suivi de progression. <b>Aucune publicité, aucune revente de données.</b></p>
-    <h3>Destinataires &amp; hébergement</h3><p>Les statistiques de clan sont visibles par les membres de ton clan. Aucune donnée n'est transmise à des tiers publicitaires. Prestataires techniques : Wargaming (authentification), Supabase (base de données, hébergée dans l'Union européenne — Stockholm, Suède), Netlify (hébergement du site).</p>
-    <h3>Conservation</h3><p>Tes données sont conservées tant que tu utilises le service. Tu peux demander leur suppression à tout moment.</p>
-    <h3>Tes droits (RGPD)</h3><p>Tu disposes d'un droit d'accès, de rectification, d'effacement et d'opposition. Pour les exercer, adresse-toi à un responsable du clan [ATFR]. Tu peux aussi te déconnecter et cesser d'utiliser le mod à tout moment.</p>
-    <h3>Cookies et stockage local</h3><p>Voir la page <a href="#" data-legal="cookies">Cookies</a> : le site n'utilise que du stockage technique essentiel, sans traceur.</p></div>`,
-  cookies:`<div class="lp-legal"><h2>Cookies &amp; stockage local</h2><p class="lp-legal-upd">${LEGAL_UPD}</p>
-    <p>Clan&nbsp;Plus <b>n'utilise aucun cookie publicitaire ni traceur</b>. Le site enregistre uniquement quelques informations techniques dans le stockage local de ton navigateur (<code>localStorage</code>), strictement nécessaires à son fonctionnement :</p>
+  legal:`<div class="lp-legal"><h2>Mentions légales</h2>
+    <p class="lp-legal-upd">${LEGAL_UPD}</p>
+    <h3>Éditeur du site</h3>
+    <p>Clan&nbsp;Plus est un projet communautaire indépendant, gratuit et sans but lucratif, édité par un particulier, joueur de World of Tanks EU. Éditeur non professionnel, il a choisi de rester anonyme, comme la loi l'y autorise (loi pour la confiance dans l'économie numérique, art. 6-III-2) ; ses coordonnées sont connues de l'hébergeur.</p>
+    <p>Contact : <a href="mailto:contact@clanplus.eu">contact@clanplus.eu</a></p>
+    <h3>Hébergement</h3>
+    <p>Le site est hébergé par <b>GitHub, Inc.</b> (service GitHub Pages), 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, États-Unis — +1 877 448 4820 — <a href="https://pages.github.com" target="_blank" rel="noopener">pages.github.com</a>.</p>
+    <p>Les données du service (comptes, statistiques, line-ups…) sont hébergées par <b>Supabase</b>, sur des serveurs situés dans l'Union européenne, à Stockholm (Suède) — <a href="https://supabase.com" target="_blank" rel="noopener">supabase.com</a>.</p>
+    <h3>Propriété intellectuelle</h3>
+    <p><i>World of Tanks</i>, <i>Wargaming</i> et les éléments graphiques associés (cartes, icônes, images de chars) sont la propriété de Wargaming. Clan&nbsp;Plus n'est <b>ni affilié à Wargaming, ni approuvé par Wargaming</b>. Le mod et le site sont fournis gratuitement, sans garantie, pour un usage communautaire.</p></div>`,
+  privacy:`<div class="lp-legal"><h2>Politique de confidentialité</h2>
+    <p class="lp-legal-upd">${LEGAL_UPD}</p>
+    <p>Cette page dit quelles données Clan&nbsp;Plus traite, pourquoi, qui les voit et combien de temps elles sont gardées. Le principe : ne collecter que ce qui sert au service. <b>Aucune publicité, aucune revente, aucun traceur.</b></p>
+    <h3>Responsable du traitement</h3>
+    <p>L'éditeur du site, un particulier (voir les <a href="#" data-legal="legal">mentions légales</a>). Contact : <a href="mailto:contact@clanplus.eu">contact@clanplus.eu</a></p>
+    <h3>Les données traitées</h3>
     <ul>
-      <li><code>cp_session</code> — te garder connecté à ta session.</li>
-      <li><code>clanplus_theme</code> — mémoriser le thème clair ou sombre.</li>
-      <li><code>cp_sidebar</code> — mémoriser si le menu est replié.</li>
-      <li><code>cp_cookie_ok</code> — mémoriser que tu as vu le bandeau d'information.</li>
+      <li><b>À la connexion</b> (service officiel Wargaming, OpenID) : ton identifiant de compte World of Tanks, ton pseudo et ton clan. Une session est ouverte pour 14 jours. <b>Nous ne voyons jamais ton mot de passe.</b></li>
+      <li><b>Les batailles de clan, envoyées par le mod</b> (si tu l'installes) : pour chaque participant, ce que l'écran de résultats du jeu affiche — pseudo, identifiant, clan, char, dégâts, assistance, repérage, blocage, éliminations, survie, et des mesures du jeu d'équipe (premier sang, étourdissements, qui a détruit qui) — ainsi que la carte, le résultat, les positions des chars pour le replay et la version du mod. Pour le joueur qui envoie, quelques mesures que le jeu ne montre qu'à lui (sa part des dégâts de l'équipe, par exemple). <b>Rien n'est enregistré en dehors des batailles de clan.</b></li>
+      <li><b>La liaison du jeu et le garage</b> (si tu relies ton jeu) : ton pseudo en jeu, la version du mod, sa dernière connexion, et une empreinte du secret de liaison — jamais le secret lui-même. Puis la liste de tes chars de rang VI, VIII et X, avec leur équipement et leurs consommables.</li>
+      <li><b>Ce que tu saisis sur le site</b> : line-ups (soirs disponibles, postes), stratégies et débriefings, loadouts, tier lists, chars prioritaires cochés, événements du calendrier.</li>
     </ul>
-    <p>Ces éléments étant strictement nécessaires, ils ne requièrent pas de consentement préalable selon la réglementation (RGPD / directive ePrivacy). Tu peux les effacer à tout moment en vidant les données du site dans ton navigateur.</p></div>`
+    <h3>Pourquoi</h3>
+    <p>Pour afficher les statistiques et les replays de ton clan, calculer les indicateurs (dont le SR), proposer un plan de progression, et aider les officiers à préparer les sessions (line-ups, setup du clan, poste du soir dans le mod). Base légale : l'intérêt légitime d'un outil communautaire que tu choisis d'utiliser, en te connectant, en installant le mod ou en reliant ton jeu.</p>
+    <h3>Qui voit quoi</h3>
+    <ul>
+      <li>Les statistiques, les replays, les line-ups, les stratégies et le garage partagé sont visibles des <b>membres de ton clan</b> connectés au site.</li>
+      <li>Une bataille est rattachée au clan du joueur qui l'a envoyée ; les joueurs adverses y apparaissent comme sur l'écran de résultats du jeu.</li>
+      <li>Les classements de clans et la page « Trouver un clan » reposent sur les données publiques de Wargaming.</li>
+      <li>Aucune donnée n'est vendue, ni transmise à des fins publicitaires.</li>
+    </ul>
+    <h3>Prestataires techniques</h3>
+    <ul>
+      <li><b>GitHub Pages</b> (GitHub, Inc., États-Unis) sert les pages du site ; comme tout hébergeur, il voit l'adresse IP des visiteurs.</li>
+      <li><b>Supabase</b> : base de données et fonctions serveur, hébergées dans l'Union européenne (Stockholm, Suède).</li>
+      <li><b>Wargaming</b> : la connexion, et les données publiques du jeu (clans, cotes, chars, emblèmes) que ton navigateur lit directement sur ses serveurs.</li>
+      <li><b>jsDelivr</b> distribue une bibliothèque technique (le client Supabase) chargée par certaines pages.</li>
+      <li>Les polices de caractères sont hébergées sur le site lui-même : aucun appel à Google.</li>
+    </ul>
+    <h3>Combien de temps</h3>
+    <ul>
+      <li>Session de connexion : 14 jours.</li>
+      <li>Code de liaison jamais confirmé : effacé au bout d'un jour.</li>
+      <li>Garage partagé : effacé dès que tu délies ton jeu ou que tu coupes le partage dans les réglages du mod.</li>
+      <li>Batailles et contenus du clan : conservés tant que le service existe, car ils forment l'historique du clan ; supprimés sur demande.</li>
+    </ul>
+    <h3>Tes droits</h3>
+    <p>Tu peux demander l'accès à tes données, leur rectification ou leur effacement, ou t'opposer à leur traitement, en écrivant à <a href="mailto:contact@clanplus.eu">contact@clanplus.eu</a>. Tu peux aussi, à tout moment, délier ton jeu depuis le site, couper l'envoi des batailles ou du garage dans les réglages du mod, ou désinstaller le mod. Si tu estimes que tes droits ne sont pas respectés, tu peux saisir la CNIL (<a href="https://www.cnil.fr" target="_blank" rel="noopener">cnil.fr</a>).</p>
+    <h3>Cookies et stockage local</h3>
+    <p>Voir la page <a href="#" data-legal="cookies">Cookies</a> : aucun cookie, seulement du stockage technique dans ton navigateur.</p></div>`,
+  cookies:`<div class="lp-legal"><h2>Cookies et stockage local</h2>
+    <p class="lp-legal-upd">${LEGAL_UPD}</p>
+    <p>Clan&nbsp;Plus <b>ne dépose aucun cookie</b> et n'utilise aucun traceur ni outil de mesure d'audience. Le site garde seulement quelques informations techniques dans le stockage local de ton navigateur (<code>localStorage</code>). Elles restent sur ton appareil, sauf la session, envoyée au serveur pour te reconnaître :</p>
+    <ul>
+      <li><code>cp_session</code>, <code>cp_nick</code>, <code>cp_clan</code> : te garder connecté et retrouver ton clan.</li>
+      <li><code>cp_lang</code> : la langue choisie.</li>
+      <li><code>cp_sidebar</code> : le menu replié ou non.</li>
+      <li><code>cp_cookie_ok</code> : tu as vu le bandeau d'information.</li>
+      <li><code>cp_link_ok</code>, <code>cp_link_later</code> : la fenêtre « Relie ton jeu » (jeu déjà relié, ou « plus tard »).</li>
+      <li><code>cp_emblems</code> : une copie des emblèmes de clans, pour aller plus vite.</li>
+      <li>Les préférences d'affichage : éditeur de stratégie, cartes 3D, tableau de bord (<code>cp_stgrid</code>, <code>cp_stsnap</code>, <code>cp_stanim</code>, <code>cp3d</code>, <code>cp_map3d</code>, <code>cp_cycle_…</code>).</li>
+    </ul>
+    <p>Strictement nécessaires au fonctionnement, ou simples préférences, ils ne demandent pas de consentement (RGPD, directive ePrivacy). Tu peux les effacer à tout moment en supprimant les données du site dans ton navigateur ; tu seras alors déconnecté.</p></div>`,
 };
+/* La modale légale se ferme partout, sur l'accueil comme dans l'application :
+   câblée une seule fois, sans dépendre de l'accueil. */
+let _legalWired=false;
+function wireLegal(){
+  if(_legalWired) return; _legalWired=true;
+  const mod=document.getElementById("legalModal"), x=document.getElementById("legalClose");
+  if(!mod) return;
+  const ferme=()=>{ mod.classList.add("hidden");
+    if(/^#legal-/.test(location.hash)) history.replaceState(null,"",location.pathname+location.search); };
+  if(x) x.onclick=ferme;
+  mod.addEventListener("click",e=>{ if(e.target===mod) ferme(); });
+  document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&!mod.classList.contains("hidden")) ferme(); });
+}
+/* Lien direct vers une page légale : clanplus.eu/#legal-privacy (page du mod,
+   autres pages, message). Sans lui, le lien ouvrait l'accueil et rien d'autre. */
+function legalFromHash(){
+  const m=/^#legal-(mentions|legal|privacy|cookies)$/.exec(location.hash);
+  if(!m) return;
+  wireLegal(); openLegal(m[1]==="mentions"?"legal":m[1]);
+}
+addEventListener("hashchange",legalFromHash);
 function openLegal(kind){
   const box=document.getElementById("legalBody");
   box.innerHTML=LEGAL[kind]||LEGAL.legal;
