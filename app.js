@@ -7257,6 +7257,11 @@ async function lgRenderList(d){
   if(!r||!r.ok){ el.innerHTML=`<div class="lg-empty">${r&&r.status===404?t("Service pas encore en ligne (fonction « mod » à déployer)."):t("Liste des jeux reliés indisponible.")}</div>`; return; }
   const links=r.j.links||[], gar=r.j.garage;
   if(links.length) lsSet(LG_OK,"1");
+  // Une seule liaison par compte : un jeu déjà relié retire le champ du code,
+  // et une phrase dit comment en relier un autre (délier d'abord).
+  const solo=links.length>0;
+  d.querySelectorAll(".lg-row,.lx-dlg-text:not(.lg-one)").forEach(x=>{ x.style.display=solo?"none":""; });
+  const one=d.querySelector("#lgOne"); if(one) one.style.display=solo?"":"none";
   el.innerHTML=(links.length?links.map(l=>`<div class="lg-item">${luIco("i-link")}
       <span><span>Jeu de</span> <b data-i18n-skip>${esc(l.game_nickname||"?")}</b>
       <span class="lg-meta" data-i18n-skip>${l.mod_version?" · mod "+esc(l.mod_version):""}${l.last_seen?" · "+esc(lgWhen(l.last_seen)):""}</span></span>
@@ -7290,7 +7295,8 @@ function openLinkGame(o){
       <li>Tape ce code ici.</li>
     </ol>`
     :`<div class="lx-dlg-head"><span class="lx-dlg-ic">${luIco("i-link")}</span><h3 id="lgT">Relier mon jeu</h3></div>
-    <p class="lx-dlg-text">Dans le jeu, ouvre la fenêtre Clan Plus (touche F2) et clique sur « LINK TO CLANPLUS.EU », en bas. Tape ici le code qu'elle affiche.</p>`;
+    <p class="lx-dlg-text">Dans le jeu, ouvre la fenêtre Clan Plus (touche F2) et clique sur « LINK TO CLANPLUS.EU », en bas. Tape ici le code qu'elle affiche.</p>
+    <p class="lx-dlg-text lg-one" id="lgOne" style="display:none">Ton jeu est relié. Une seule liaison par compte : pour relier une autre installation (autre PC, réinstallation), délie d'abord celle-ci.</p>`;
   const outro=o.welcome
     ?`<p class="lg-note">Pas encore le mod ? <a href="mod.html">Télécharge-le ici</a> — le bouton de liaison existe depuis la version 1.0.34. Tu retrouveras cette fenêtre dans le menu, sous « Relier mon jeu ».</p>`
     :`<div class="lg-list" id="lgList"><div class="lg-empty">${t("Lecture…")}</div></div>
@@ -7327,7 +7333,10 @@ function openLinkGame(o){
     }
     const err=r&&r.j&&r.j.error;
     msg.className="lg-msg bad";
-    msg.textContent=err==="other_account"
+    if(err==="already_linked") lgRenderList(d);   // montre le jeu relié et son bouton « Délier »
+    msg.textContent=err==="already_linked"
+      ? t("Ton compte est déjà relié à un jeu")+(r.j.game_nickname?" ("+r.j.game_nickname+")":"")+t(" : une seule liaison par compte. Délie-le d'abord (menu « Relier mon jeu »), puis recommence.")
+      : err==="other_account"
       ? t("Ce code vient du jeu d'un autre compte")+(r.j.game_nickname?" ("+r.j.game_nickname+")":"")+t(" : connecte-toi au site avec ce compte-là.")
       : LG_ERR[err]?t(LG_ERR[err]):!r?t("Le serveur ne répond pas."):r.status===404?t("Service pas encore en ligne (fonction « mod » à déployer)."):t("Liaison impossible : ")+String(err||r.status);
   };

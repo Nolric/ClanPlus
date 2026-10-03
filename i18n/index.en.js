@@ -1666,6 +1666,10 @@ window.CP_EN = Object.assign(window.CP_EN || {}, {
   "Dans le jeu, ouvre la fenêtre Clan Plus (touche F2) et clique sur « LINK TO CLANPLUS.EU », en bas. Tape ici le code qu'elle affiche.": "In the game, open the Clan Plus window (F2 key) and click “LINK TO CLANPLUS.EU” at the bottom. Type the code it shows here.",
   "Relier": "Link",
   "Code affiché dans le jeu": "Code shown in the game",
+  /* une seule liaison par compte (03/10/2026) */
+  "Ton jeu est relié. Une seule liaison par compte : pour relier une autre installation (autre PC, réinstallation), délie d'abord celle-ci.": "Your game is linked. One link per account: to link another install (another PC, a reinstall), unlink this one first.",
+  "Ton compte est déjà relié à un jeu": "Your account is already linked to a game",
+  " : une seule liaison par compte. Délie-le d'abord (menu « Relier mon jeu »), puis recommence.": ": one link per account. Unlink it first (menu “Link my game”), then try again.",
   /* accueil à la première connexion (aucun jeu relié) */
   "Première étape": "First step",
   "Relie ton jeu à Clan Plus": "Link your game to Clan Plus",
