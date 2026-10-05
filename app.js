@@ -9177,10 +9177,11 @@ const ST_STAMPS={
   push:'<path d="M-8.5 -7.5L-1 0L-8.5 7.5M1 -7.5L8.5 0L1 7.5"/>',
   fallback:'<path d="M-9 -3.5H3.5A5.5 5.5 0 0 1 3.5 7.5H-1.5"/><path d="M-5 -7.5L-9 -3.5L-5 0.5"/>',
   stop:'<circle r="9.5"/><path d="M-6.7 -6.7L6.7 6.7"/>',
+  pin:'<path d="M0 10.5C-2.4 8.2 -7 3 -7 -2.6A7 7 0 0 1 7 -2.6C7 3 2.4 8.2 0 10.5Z"/><circle cy="-2.6" r="2.5"/>',
   rally:'<path d="M-3.5 -10.5L0 -7L3.5 -10.5M-3.5 10.5L0 7L3.5 10.5M-10.5 -3.5L-7 0L-10.5 3.5M10.5 -3.5L7 0L10.5 3.5"/><circle r="2" fill="currentColor" stroke="none"/>'
 };
 const ST_STAMP_K=1.85, ST_STAMP_W=2.4;   // échelle d'un symbole de taille 1, et son trait
-const ST_STAMP_LIST=[["focus","Focus"],["spot","Vision"],["defend","Tenir"],["danger","Danger"],["objective","Objectif"],["push","Pousser"],["fallback","Repli"],["stop","Interdit"],["rally","Regroupement"]];
+const ST_STAMP_LIST=[["focus","Focus"],["spot","Vision"],["defend","Tenir"],["danger","Danger"],["objective","Objectif"],["push","Pousser"],["fallback","Repli"],["stop","Interdit"],["rally","Regroupement"],["pin","Repère"]];
 // échelle réelle de la carte : côté de la boundingBox officielle = taille en mètres (repli 1000).
 function stMapMeters(){ const b=ST_BASES&&ST_EDIT&&ST_BASES[ST_EDIT.map]&&ST_BASES[ST_EDIT.map].bbox; return b?Math.round(b[2]-b[0]):1000; }
 let ST_UNDO=[], ST_REDO=[];          // historique annuler/refaire (snapshots JSON de ST_EDIT.els)

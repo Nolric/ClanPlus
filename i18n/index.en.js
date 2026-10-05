@@ -1992,5 +1992,6 @@ Object.assign(window.CP_EN, {
   "Ta session a expiré : reconnecte-toi, puis enregistre à nouveau (ne ferme pas cette page).": "Your session has expired: sign in again, then save again (don't close this page).",
   "Abbaye": "Abbey",
   "Caucase": "Mountain Pass",
+  "Repère": "Pin",
   "Cette stratégie n'existe plus : elle a sans doute été supprimée entre-temps. Ton dessin est toujours à l'écran.": "This strategy no longer exists: it was probably deleted in the meantime. Your drawing is still on screen.",
 });
