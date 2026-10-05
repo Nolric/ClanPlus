@@ -15,7 +15,7 @@
 <meta property="og:image" content="https://clanplus.eu/og.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20240%20240%22%3E%3Crect%20width%3D%22240%22%20height%3D%22240%22%20rx%3D%2254%22%20fill%3D%22%23141310%22%2F%3E%3Cg%20transform%3D%22translate%2830%2030%29%20scale%280.75%29%22%20fill%3D%22%23d8b566%22%3E%3Ccircle%20cx%3D%22120%22%20cy%3D%22120%22%20r%3D%22100%22%20fill%3D%22none%22%20stroke%3D%22%23d8b566%22%20stroke-width%3D%227%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
-<script src="i18n/aide-editeur.fr.js?v=0f8c65ac"></script>
+<script src="i18n/aide-editeur.fr.js?v=cbf6272a"></script>
 <script src="i18n.js?v=ed3f8a4f"></script>
 <link rel="stylesheet" href="fonts/fonts.css?v=d81c6085">
 <style>
@@ -126,6 +126,9 @@
   td{padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.05);vertical-align:top}
   tr:last-child td{border-bottom:0}
   td.g{font-size:18px;text-align:center;width:50px;color:var(--accent);line-height:1.2}
+  /* les icônes du rail de l'éditeur, au même trait que dans l'éditeur */
+  .ico{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;vertical-align:-4px}
+  .btnref .ico{width:14px;height:14px;vertical-align:-2px}
   td.k{white-space:nowrap;width:94px}
   .yes{color:var(--good);font-weight:700}
   .no{color:var(--bad);font-weight:700}
@@ -180,7 +183,7 @@
     <li><a href="#s1"><span class="n">1</span> What it's for</a></li>
     <li><a href="#s2"><span class="n">2</span> Getting in</a></li>
     <li><a href="#s3"><span class="n">3</span> The interface</a></li>
-    <li><a href="#s4"><span class="n">4</span> The 15 tools</a></li>
+    <li><a href="#s4"><span class="n">4</span> The 9 tools</a></li>
     <li><a href="#s5"><span class="n">5</span> Select and move</a></li>
     <li><a href="#s6"><span class="n">6</span> Grid, snap, zoom</a></li>
     <li><a href="#s7"><span class="n">7</span> Steps</a></li>
@@ -231,71 +234,69 @@
 
 <section id="s3">
   <h2><span class="n">03</span> The interface</h2>
-  <p>From top to bottom:</p>
+  <p>The editor takes the whole screen, built like the 3D map editor: the map in the middle, and around it a few floating panels.</p>
   <ul>
-    <li><strong>The top bar</strong> — strategy name, game mode, map, who else is editing, then <span class="btnref">👥 Collaborators</span>, <span class="btnref">⛶ Full screen</span>, <span class="btnref">▶ Present</span>, <span class="btnref">Save</span> and the close cross.</li>
-    <li><strong>The tool palette</strong> — the 15 tools, to the left of the map.</li>
-    <li><strong>The options bar</strong> — undo/redo, grid, snap, pointer, bring to front/send to back, duplicate, delete, clear all. It changes with the active tool (colour, thickness, tank class…).</li>
-    <li><strong>The Replay bar</strong> — only in debrief mode. Detailed in <a href="#s8">section 8</a>.</li>
-    <li><strong>The steps</strong> — the slide tabs and the note for the current step.</li>
-    <li><strong>The map</strong> — a 10 × 11 grid labelled <kbd>A1</kbd> to <kbd>K0</kbd>, as in game.</li>
-    <li><strong>The discussion</strong> — a message thread attached to this strategy.</li>
+    <li><strong>The top bar</strong> — on the left, the close cross, the game mode for the official bases and the button to change map. On the right, the strategy name, whether it's saved, who else is here, the pointer, the collaborators, undo/redo, the button that shows or hides the panel, <span class="btnref">▶ Present</span> and <span class="btnref">Save</span>.</li>
+    <li><strong>The tool rail</strong> — the 9 tools, on the left of the map, and under them the side of the next tanks: allies or enemies.</li>
+    <li><strong>The panel</strong> — on the right, four sections you can fold: <strong>Steps</strong>, <strong>Properties</strong>, <strong>Elements</strong> (everything on the step, with the tank count per side) and <strong>Display</strong>.</li>
+    <li><strong>The Replay bar</strong> — only in debrief mode, under the map. Detailed in <a href="#s8">section 8</a>.</li>
+    <li><strong>The map</strong> — a 10 × 10 grid labelled <kbd>A1</kbd> to <kbd>K0</kbd>, as in game (there is no row I).</li>
   </ul>
+  <div class="note"><span class="lbl">The one idea to remember</span>
+  <p><strong>Properties</strong> adjusts what's selected. With nothing selected, it sets what the active tool will place next. And whatever you've just placed is selected straight away: place first, adjust after.</p></div>
+  <p><strong>Save</strong> keeps the editor open: saving isn't leaving. The cross asks before throwing away changes that aren't saved, and so does the browser if you close the page.</p>
 </section>
 
 <section id="s4">
-  <h2><span class="n">04</span> The 15 tools</h2>
-  <p>Every tool has a letter. Type the letter and the tool activates — faster than aiming for the button.</p>
+  <h2><span class="n">04</span> The 9 tools</h2>
+  <p>Every tool has a letter. Type the letter and the tool activates — faster than aiming for the button. They're the same letters as in the 3D map editor.</p>
   <div class="tw"><table>
     <thead><tr><th></th><th>Tool</th><th class="k">Key</th><th>What it does</th></tr></thead>
     <tbody>
-      <tr><td class="g">✋</td><td>Move</td><td class="k"><kbd>V</kbd></td><td>Select, move, resize, rotate.</td></tr>
-      <tr><td class="g">▰</td><td>Tanks</td><td class="k"><kbd>H</kbd></td><td>Drop a tank silhouette. Pick the class: light, medium, heavy, TD, SPG. The name can be edited.</td></tr>
-      <tr><td class="g">➤</td><td>Arrow</td><td class="k"><kbd>F</kbd></td><td>A movement, a line of attack. Straight or curved, solid or dashed.</td></tr>
-      <tr><td class="g">／</td><td>Line</td><td class="k"><kbd>L</kbd></td><td>A line with no head: a boundary, an alignment.</td></tr>
-      <tr><td class="g">▭</td><td>Area</td><td class="k"><kbd>Z</kbd></td><td>A rectangle: a sector to hold, a zone to avoid.</td></tr>
-      <tr><td class="g">◯</td><td>Circle</td><td class="k"><kbd>O</kbd></td><td>A round zone: rally point, danger.</td></tr>
-      <tr><td class="g">✪</td><td>Symbol</td><td class="k"><kbd>S</kbd></td><td>A pictogram that speaks for itself: Focus, Spot, Hold, Danger, Objective, Push, Fall back, No entry, Rally.</td></tr>
-      <tr><td class="g">◔</td><td>Firing arc</td><td class="k"><kbd>C</kbd></td><td>The angle a tank covers. Heading, width and range are all adjustable.</td></tr>
-      <tr><td class="g">⋯</td><td>Route</td><td class="k"><kbd>M</kbd></td><td>A multi-point path. Click each waypoint, <kbd>Enter</kbd> to finish, <kbd>Esc</kbd> to cancel.</td></tr>
-      <tr><td class="g">↔</td><td>Measure</td><td class="k"><kbd>D</kbd></td><td>The real distance between two points, <strong>in metres</strong>.</td></tr>
-      <tr><td class="g">◎</td><td>Range</td><td class="k"><kbd>R</kbd></td><td>A radius in metres around a point: view range, firing range.</td></tr>
-      <tr><td class="g">✎</td><td>Pencil</td><td class="k"><kbd>P</kbd></td><td>Freehand drawing.</td></tr>
-      <tr><td class="g">◉</td><td>Marker</td><td class="k"><kbd>J</kbd></td><td>A numbered counter that increments by itself. For an order of execution.</td></tr>
-      <tr><td class="g">T</td><td>Text</td><td class="k"><kbd>T</kbd></td><td>A free label on the map.</td></tr>
-      <tr><td class="g">⌫</td><td>Eraser</td><td class="k"><kbd>G</kbd></td><td>Click an element and it's gone.</td></tr>
+      <tr><td class="g"><svg class="ico" viewBox="0 0 20 20"><path d="M4 3l6 14 2-6 6-2z"/></svg></td><td>Select</td><td class="k"><kbd>V</kbd></td><td>Select, move, resize, rotate. Drag on empty ground to catch several.</td></tr>
+      <tr><td class="g"><svg class="ico" viewBox="0 0 20 20"><path d="M3 12h14v4H3z"/><path d="M5 12V9h8v3"/><path d="M9 9V7h9"/></svg></td><td>Tank</td><td class="k"><kbd>T</kbd></td><td>Click to place a tank. Class, colour, size, name and watch sector are in the panel. <kbd>C</kbd> switches between allies and enemies; double-click a tank to name it.</td></tr>
+      <tr><td class="g"><svg class="ico" viewBox="0 0 20 20"><path d="M3 16L16 4"/><path d="M9 4h7v7"/></svg></td><td>Arrow</td><td class="k"><kbd>A</kbd></td><td>Drag to draw a movement. In the panel: straight or curved, solid or dashed, with or without a head — without one, it's a plain line.</td></tr>
+      <tr><td class="g"><svg class="ico" viewBox="0 0 20 20"><path d="M3 16c4 0 3-6 7-6s3-5 7-5"/><circle cx="3" cy="16" r="1.6"/><circle cx="17" cy="5" r="1.6"/></svg></td><td>Route</td><td class="k"><kbd>J</kbd></td><td>A multi-point path. Click each waypoint, double-click or <kbd>Enter</kbd> to finish, <kbd>Esc</kbd> to cancel.</td></tr>
+      <tr><td class="g"><svg class="ico" viewBox="0 0 20 20"><path d="M4 6l6-2 6 3-2 8-8 1z"/></svg></td><td>Area</td><td class="k"><kbd>Z</kbd></td><td>Drag to mark out a sector to hold or a zone to avoid: rectangle or ellipse, solid or dashed outline.</td></tr>
+      <tr><td class="g"><svg class="ico" viewBox="0 0 20 20"><circle cx="10" cy="10" r="6.5"/><circle cx="10" cy="10" r="2.2"/><path d="M10 1.5v2M10 16.5v2M1.5 10h2M16.5 10h2"/></svg></td><td>Symbol</td><td class="k"><kbd>S</kbd></td><td>A pictogram that speaks for itself: Focus, Spotting, Hold, Danger, Objective, Push, Fall back, No-go, Regroup — or a <strong>numbered token</strong> that counts up by itself, for an order of execution.</td></tr>
+      <tr><td class="g"><svg class="ico" viewBox="0 0 20 20"><path d="M4 5.5V3.5h12v2M10 3.5v13M7.5 16.5h5"/></svg></td><td>Text</td><td class="k"><kbd>N</kbd></td><td>Click the map and type. Double-click a text to rewrite it.</td></tr>
+      <tr><td class="g"><svg class="ico" viewBox="0 0 20 20"><path d="M3.5 16.5l1-3.6L13.6 3.8l2.6 2.6-9.1 9.1z"/><path d="M12 5.4l2.6 2.6"/></svg></td><td>Pencil</td><td class="k"><kbd>P</kbd></td><td>Freehand drawing.</td></tr>
+      <tr><td class="g"><svg class="ico" viewBox="0 0 20 20"><path d="M3 13l10-10 4 4-10 10z"/><path d="M6 10l1.6 1.6M9 7l1.6 1.6M12 4l1.6 1.6"/></svg></td><td>Measure</td><td class="k"><kbd>M</kbd></td><td>The real distance between two points, <strong>in metres</strong> — or, set in the panel, a range circle around a point.</td></tr>
     </tbody>
   </table></div>
+  <div class="note"><span class="lbl">Where did the other tools go?</span>
+  <p>They became settings. An arrow without a head is the old <strong>Line</strong>; an ellipse area, the <strong>Circle</strong>; a Measure shown as a circle, the <strong>Range</strong>; a tank's watch sector, the <strong>Firing arc</strong>; the numbered token, the <strong>Marker</strong>. The <strong>Eraser</strong> gave way to <kbd>Del</kbd> and the panel's Delete button. Strategies drawn before open and display exactly as they were.</p></div>
   <div class="note"><span class="lbl">Tip</span>
-  <p><strong>Measure</strong> and <strong>Range</strong> give real distances in metres, computed from the map's actual dimensions. That's what lets you settle a “could he see me from there?” argument with a number rather than a hunch.</p></div>
+  <p><strong>Measure</strong> gives real distances in metres, computed from the map's actual dimensions. That's what lets you settle a “could he see me from there?” argument with a number rather than a hunch.</p></div>
 </section>
 
 <section id="s5">
   <h2><span class="n">05</span> Selecting and handling</h2>
-  <p>With the <strong>Move</strong> tool (<kbd>V</kbd>):</p>
+  <p>With the <strong>Select</strong> tool (<kbd>V</kbd>):</p>
   <ul>
-    <li><strong>One element</strong>: click it. Handles appear — the corners resize, the one above rotates.</li>
-    <li><strong>Several</strong>: drag a rectangle over empty space to catch them all, or <kbd>Ctrl</kbd>+<kbd>A</kbd> to select everything.</li>
+    <li><strong>One element</strong>: click it. Its settings appear in the panel, and handles appear on the map — the corners resize, the one above rotates (not on tanks, tokens and measures, where turning means nothing).</li>
+    <li><strong>Several</strong>: drag a rectangle over empty space, <kbd>Shift</kbd>+click to add or remove one, or <kbd>Ctrl</kbd>+<kbd>A</kbd> to select everything. The panel's <strong>Elements</strong> list selects too — handy for a small element hidden under another.</li>
     <li><strong>From the keyboard</strong>: the <kbd>arrow keys</kbd> nudge, <kbd>Shift</kbd>+<kbd>arrows</kbd> move in bigger steps.</li>
     <li><strong>Stacking</strong>: <kbd>]</kbd> brings to front, <kbd>[</kbd> sends to back.</li>
     <li><strong>Copy</strong>: <kbd>Ctrl</kbd>+<kbd>C</kbd> / <kbd>Ctrl</kbd>+<kbd>V</kbd>, or <kbd>Ctrl</kbd>+<kbd>D</kbd> to duplicate in place.</li>
-    <li><strong>Delete</strong>: <kbd>Del</kbd>. <kbd>Esc</kbd> deselects.</li>
-    <li><strong>Right-click</strong> an element for a context menu.</li>
+    <li><strong>Delete</strong>: <kbd>Del</kbd>, or the panel's Delete button. <kbd>Esc</kbd> deselects; pressed again, it goes back to the Select tool.</li>
+    <li><strong>Right-click</strong> an element for a context menu: rename, duplicate, copy, stack, delete.</li>
   </ul>
+  <p>With a placing tool in hand (Tank, Symbol, Text), clicking an element <strong>of the same kind</strong> picks it up instead of placing a second one on top.</p>
   <p>Everything is undoable: <kbd>Ctrl</kbd>+<kbd>Z</kbd> and <kbd>Ctrl</kbd>+<kbd>Y</kbd>.</p>
 </section>
 
 <section id="s6">
   <h2><span class="n">06</span> Grid, snap, zoom</h2>
   <h3>The grid</h3>
-  <p>The <span class="btnref">▦</span> button. It shows the game's <kbd>A1</kbd>–<kbd>K0</kbd> grid and is <strong>on by default</strong>: it's the shared vocabulary for calling out a position over voice. If you turn it off, your choice is remembered.</p>
+  <p>In the panel's <strong>Display</strong> section. It shows the game's <kbd>A1</kbd>–<kbd>K0</kbd> grid and is <strong>on by default</strong>: it's the shared vocabulary for calling out a position over voice. If you turn it off, your choice is remembered.</p>
   <h3>Snapping</h3>
-  <p>The <span class="btnref">🧲</span> button. Elements stick to the grid intersections. Handy for a tidy diagram, a nuisance for precise drawing.</p>
+  <p>Also under <strong>Display</strong>. Moved elements stick to the grid, and rotation goes in 15° steps. Handy for a tidy diagram, a nuisance for precise drawing.</p>
   <h3>Zoom and panning</h3>
   <ul>
     <li><kbd>+</kbd> / <kbd>−</kbd> to zoom, <kbd>0</kbd> to go back to 100%. The scroll wheel works too.</li>
     <li>When zoomed in, hold <kbd>Space</kbd> (or the middle mouse button) and drag to pan.</li>
-    <li>A <strong>mini-map</strong> appears bottom right: click or drag inside it to jump elsewhere.</li>
+    <li>A <strong>mini-map</strong> appears bottom left: click or drag inside it to jump elsewhere.</li>
   </ul>
 </section>
 
@@ -303,9 +304,9 @@
   <h2><span class="n">07</span> Steps</h2>
   <p>A strategy can hold up to <strong>12 steps</strong> — slides. Each has its own drawing and its own note. That's what lets you tell one phase after another instead of piling everything onto a single image.</p>
   <ul>
-    <li>The <strong>step tabs</strong> sit under the options bar. Click to move between them.</li>
-    <li>The <strong>“✎ Note for this step”</strong> field (140 characters) is shown when presenting. One note = one idea.</li>
-    <li><span class="btnref">🗑 Delete step</span> removes the current step.</li>
+    <li>The <strong>step tabs</strong> sit at the top of the panel. Click to move between them; <span class="btnref">+</span> adds a step that copies the current one.</li>
+    <li>The <strong>“What happens at this step”</strong> field (140 characters) is shown when presenting. One note = one idea.</li>
+    <li><strong>Delete this step</strong>, under the note, removes the current step.</li>
   </ul>
   <div class="note"><span class="lbl">Advice</span>
   <p>Three or four steps is almost always enough. Nobody remembers a ten-slide plan.</p></div>
@@ -323,8 +324,8 @@
       <tr><td><span class="btnref">⏴</span> <span class="btnref">⏵</span></td><td>Back / forward 5 seconds.</td></tr>
       <tr><td>The scrubber</td><td>Jump anywhere in the battle.</td></tr>
       <tr><td><span class="btnref">×2</span></td><td>Speed: ×1, ×2, ×4, ×8.</td></tr>
-      <tr><td><span class="btnref">📌 Slide here</span></td><td>Create a slide pinned to the moment shown.</td></tr>
-      <tr><td><span class="btnref">👥 Suggest</span></td><td>The “you should have been here” mode.</td></tr>
+      <tr><td><span class="btnref">Step here</span></td><td>Create a step pinned to the moment shown.</td></tr>
+      <tr><td><span class="btnref">Propose</span></td><td>The “you should have been here” mode.</td></tr>
       <tr><td><span class="btnref">✕</span></td><td>Remove the replay from the editor.</td></tr>
     </tbody>
   </table></div>
@@ -341,7 +342,7 @@
   </ul>
 
   <h3>Suggesting a position</h3>
-  <p>Turn on <span class="btnref">👥 Suggest</span>, then click a tank. A <strong>ghost</strong> appears, joined by a dashed arrow to its real position. Drag the ghost to where the player should have been.</p>
+  <p>Turn on <span class="btnref">Propose</span>, then click a tank. A <strong>ghost</strong> appears, joined by a dashed arrow to its real position. Drag the ghost to where the player should have been.</p>
   <div class="note"><span class="lbl">Why this matters</span>
   <p>The real position <strong>never moves</strong>: the tail of the arrow stays anchored to what actually happened. The message reads at a glance — “you were there, you needed to be here” — without letting you accidentally rewrite the battle's history.</p></div>
   <p>Click the button again to leave the mode and go back to drawing.</p>
@@ -352,7 +353,7 @@
 
 <section id="s9">
   <h2><span class="n">09</span> The pointer</h2>
-  <p>The <span class="btnref">🔴</span> button in the options bar. It turns your cursor into a glowing dot with a trail, so you can <strong>point without drawing</strong>.</p>
+  <p>The pointer button — two circles — in the top bar. It turns your cursor into a glowing dot with a trail, so you can <strong>point without drawing</strong>.</p>
   <ul>
     <li>While it's on, <strong>drawing is suspended</strong>: you can click anywhere without creating anything.</li>
     <li>A click makes a <strong>ping</strong> — an expanding circle, to draw the eye.</li>
@@ -374,7 +375,7 @@
       <tr><td class="k"><kbd>Esc</kbd></td><td>Exit.</td></tr>
     </tbody>
   </table></div>
-  <p>Three buttons at the top: <span class="btnref">✨</span> animates the transitions between steps, <span class="btnref">🔴</span> the laser, <span class="btnref">▦</span> the grid.</p>
+  <p>Three buttons at the top: the first animates the transitions between steps, the second is the laser, the third the grid.</p>
   <div class="note"><span class="lbl">A useful detail</span>
   <p>Clicking <strong>Previous / Next</strong> pauses <em>and re-cues the replay</em> to that slide's moment. That's what lets you go back to an exact moment while you're talking, without hunting through the scrubber.</p></div>
   <p>Presenting from the first slide starts at the beginning of the battle; from any other slide, it starts at that slide's moment.</p>
@@ -385,13 +386,14 @@
   <p>There are <strong>three distinct mechanisms</strong>, often confused with one another. Here's which does what.</p>
 
   <h3>Presence — who's here</h3>
-  <p>As soon as you open an <em>already saved</em> strategy, you join a room. The badges in the top bar list who's present, with <strong>✎</strong> if they're editing and <strong>👁</strong> if they're watching. Nothing for you to do: it's automatic.</p>
+  <p>As soon as you open an <em>already saved</em> strategy, you join a room. As soon as someone else is there, badges in the top bar list who's present — in gold for those editing. Nothing for you to do: it's automatic.</p>
   <div class="note warn"><span class="lbl">One condition</span>
   <p>A strategy that has <strong>never been saved has no room</strong>: the room is attached to its identifier. Save it once and collaboration becomes possible.</p></div>
 
   <h3>Simultaneous editing — what syncs</h3>
-  <p>Every 0.4 seconds your editor sends the state of your steps to the others and applies theirs. So you see the drawings appear live. Two important safeguards:</p>
+  <p>Every 0.4 seconds your editor sends the state of your steps to the others and applies theirs. So you see the drawings appear live. Three important safeguards:</p>
   <ul>
+    <li>When you <strong>arrive</strong>, your editor first asks those already there for the plan as it stands: you start from their drawing, even unsaved — not from the last saved version.</li>
     <li>Sending is suspended while you're <strong>in the middle of</strong> drawing, moving or rotating something — an unfinished gesture is never sent.</li>
     <li>Incoming updates are <strong>ignored</strong> while you're handling something: someone else's work can't snatch the element out of your hands.</li>
   </ul>
@@ -400,10 +402,10 @@
   <p>The <strong>pointer</strong> travels down the same channel — that's what lets you show each other things without drawing.</p>
 
   <h3>Collaborators — who's allowed to edit</h3>
-  <p>This is the only one of the three that touches <strong>permissions</strong>. The <span class="btnref">👥 Collaborators</span> button opens the clan's member list with a checkbox for each.</p>
+  <p>This is the only one of the three that touches <strong>permissions</strong>. The <strong>Collaborators</strong> button — two figures, in the top bar — opens the clan's member list with a checkbox for each.</p>
   <ol class="steps">
     <li>Open the strategy in the editor (you must be an officer).</li>
-    <li>Click <span class="btnref">👥 Collaborators</span>, find the member, tick their box.</li>
+    <li>Click <strong>Collaborators</strong>, find the member, tick their box.</li>
     <li>Close the window, then <strong>click Save</strong>.</li>
   </ol>
   <div class="note warn"><span class="lbl">The trap</span>
@@ -437,10 +439,12 @@
 <section id="s13">
   <h2><span class="n">13</span> Every shortcut</h2>
   <h3>Tools</h3>
-  <p><kbd>V</kbd> Move · <kbd>H</kbd> Tanks · <kbd>F</kbd> Arrow · <kbd>L</kbd> Line · <kbd>Z</kbd> Area · <kbd>O</kbd> Circle · <kbd>S</kbd> Symbol · <kbd>C</kbd> Arc · <kbd>M</kbd> Route · <kbd>D</kbd> Measure · <kbd>R</kbd> Range · <kbd>P</kbd> Pencil · <kbd>J</kbd> Marker · <kbd>T</kbd> Text · <kbd>G</kbd> Eraser</p>
+  <p><kbd>V</kbd> Select · <kbd>T</kbd> Tank · <kbd>A</kbd> Arrow · <kbd>J</kbd> Route · <kbd>Z</kbd> Area · <kbd>S</kbd> Symbol · <kbd>N</kbd> Text · <kbd>P</kbd> Pencil · <kbd>M</kbd> Measure · <kbd>C</kbd> switches the tanks' side</p>
   <h3>Editing</h3>
   <div class="tw"><table>
     <tbody>
+      <tr><td class="k"><kbd>Ctrl</kbd>+<kbd>S</kbd></td><td>Save</td></tr>
+      <tr><td class="k">Double-click</td><td>Name a tank, rewrite a text, renumber a token</td></tr>
       <tr><td class="k"><kbd>Ctrl</kbd>+<kbd>Z</kbd></td><td>Undo</td></tr>
       <tr><td class="k"><kbd>Ctrl</kbd>+<kbd>Y</kbd></td><td>Redo (or <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd>)</td></tr>
       <tr><td class="k"><kbd>Ctrl</kbd>+<kbd>C</kbd> / <kbd>V</kbd></td><td>Copy / paste</td></tr>
@@ -451,7 +455,7 @@
       <tr><td class="k"><kbd>arrow keys</kbd></td><td>Nudge (<kbd>Shift</kbd> = bigger step)</td></tr>
       <tr><td class="k"><kbd>]</kbd> / <kbd>[</kbd></td><td>Bring to front / send to back</td></tr>
       <tr><td class="k"><kbd>Enter</kbd></td><td>Finish a route</td></tr>
-      <tr><td class="k"><kbd>Esc</kbd></td><td>Cancel the route, or deselect</td></tr>
+      <tr><td class="k"><kbd>Esc</kbd></td><td>Cancel the route, deselect, then back to Select</td></tr>
     </tbody>
   </table></div>
   <h3>View</h3>
@@ -463,9 +467,9 @@
   <h3>Preparing a plan for tonight</h3>
   <ol class="steps">
     <li><span class="btnref">+ New strategy</span>, pick the map and the mode — the real bases and spawn points appear on their own.</li>
-    <li>Step 1: the deployment. <strong>Tanks</strong> tool (<kbd>H</kbd>), one silhouette per player, name them.</li>
-    <li>Step 2: the lines of attack. <strong>Arrow</strong> (<kbd>F</kbd>) for movements, <strong>Symbol</strong> (<kbd>S</kbd>) for “Spot” and “Hold”.</li>
-    <li>Step 3: plan B. Duplicate step 2 and change what differs.</li>
+    <li>Step 1: the deployment. <strong>Tank</strong> tool (<kbd>T</kbd>), one silhouette per player — <kbd>C</kbd> to switch to the enemies — then double-click each one to name it.</li>
+    <li>Step 2: the lines of attack. <strong>Arrow</strong> (<kbd>A</kbd>) for movements, <strong>Symbol</strong> (<kbd>S</kbd>) for “Spotting” and “Hold”.</li>
+    <li>Step 3: plan B. <span class="btnref">+</span> in the steps copies step 2; change what differs.</li>
     <li>A short note on each step, then <strong>Save</strong>.</li>
     <li>Come the evening: <span class="btnref">▶ Present</span>, and <kbd>L</kbd> to point while you talk.</li>
   </ol>
@@ -474,8 +478,8 @@
   <ol class="steps">
     <li>Battles tab → the battle → Replay tab → <span class="btnref">✎ Debrief in the editor</span>.</li>
     <li><strong>Watch the whole replay without annotating anything.</strong> Pick out the 3 or 4 moments that decided the game.</li>
-    <li>Go back to the first one, pause, <span class="btnref">📌 Slide here</span>.</li>
-    <li><span class="btnref">👥 Suggest</span>, then click the tank in question and drag its ghost to where it needed to be. An arrow to show the movement you wanted.</li>
+    <li>Go back to the first one, pause, <span class="btnref">Step here</span>.</li>
+    <li><span class="btnref">Propose</span>, then click the tank in question and drag its ghost to where it needed to be. An arrow to show the movement you wanted.</li>
     <li>Write the note: one sentence, the cause — not the blame.</li>
     <li>Repeat for the other moments, then <strong>Save</strong>.</li>
     <li><span class="btnref">▶ Present</span> in front of the clan. You start playback and talk; the slides arrive by themselves.</li>
@@ -492,6 +496,7 @@
     <li><strong>A debrief saved before July 2026</strong> doesn't know its battle and will open without a replay. Just redo it once from <span class="btnref">✎ Debrief</span>.</li>
     <li><strong>Bases and spawn points</strong> are only known for some maps in a blank strategy. In a debrief they come from the replay: exact, and available on every map.</li>
     <li><strong>12 steps maximum</strong> per strategy, and 140 characters per note.</li>
+    <li><strong>On a phone</strong>, the editor keeps the essentials: the tools at the bottom, the panel in a drawer, Save always in reach. Presenting and the collaborators wait for a bigger screen.</li>
   </ul>
 </section>
 

@@ -991,6 +991,7 @@ function wipGate(v){
 }
 function switchView(v){
   wipGate(v);
+  if(v!=="strats") stQuitteVue();
   document.querySelectorAll("#nav .tab").forEach(t=>t.classList.toggle("on",t.dataset.v===v));
   document.getElementById("viewClan").classList.toggle("hidden", v!=="clan");
   document.getElementById("viewBattles").classList.toggle("hidden", v!=="battles");
@@ -2160,7 +2161,7 @@ const LEGAL={
       <li><code>cp_cookie_ok</code> : tu as vu le bandeau d'information.</li>
       <li><code>cp_link_ok</code>, <code>cp_link_later</code> : la fenêtre « Relie ton jeu » (jeu déjà relié, ou « plus tard »).</li>
       <li><code>cp_emblems</code> : une copie des emblèmes de clans, pour aller plus vite.</li>
-      <li>Les préférences d'affichage : éditeur de stratégie, cartes 3D, tableau de bord (<code>cp_stgrid</code>, <code>cp_stsnap</code>, <code>cp_stanim</code>, <code>cp3d</code>, <code>cp_map3d</code>, <code>cp_cycle_…</code>).</li>
+      <li>Les préférences d'affichage : éditeur de stratégie, cartes 3D, tableau de bord (<code>cp_stgrid</code>, <code>cp_stsnap</code>, <code>cp_stanim</code>, <code>cp_st2d_panel</code>, <code>cp3d</code>, <code>cp_map3d</code>, <code>cp_cycle_…</code>).</li>
     </ul>
     <p>Strictement nécessaires au fonctionnement, ou simples préférences, ils ne demandent pas de consentement (RGPD, directive ePrivacy). Tu peux les effacer à tout moment en supprimant les données du site dans ton navigateur ; tu seras alors déconnecté.</p></div>`,
 };
@@ -9072,18 +9073,30 @@ let STRATS=[], STRAT_CANEDIT=false, STRAT_LOADED=false, STRAT_ME=null;
 function stCanEditNow(){ return STRAT_CANEDIT || isAppAdmin() || meIsManager(); }
 function stCanEdit(s){ return stCanEditNow() || (s && Array.isArray(s.editors) && s.editors.map(Number).includes(Number(STRAT_ME))); }
 // ===== Temps réel : présence + édition simultanée (Supabase Realtime) =====
+// ST_CID identifie CET onglet. Le compte ne suffisait pas : un officier ouvert
+// sur deux écrans s'ignorait lui-même et ses deux fenêtres divergeaient.
+const ST_CID=Math.random().toString(36).slice(2,10);
 let SB_CLIENT=null, ST_ROOM=null, ST_BC_LOOP=null, ST_BC_LAST='';
 function stRtClient(){ if(SB_CLIENT) return SB_CLIENT; if(!(window.supabase&&window.supabase.createClient)) return null;
   try{ SB_CLIENT=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON,{realtime:{params:{eventsPerSecond:8}}}); }catch(_){ SB_CLIENT=null; } return SB_CLIENT; }
 function stMyName(){ const m=(MEMBERS||[]).find(x=>Number(x.account_id)===Number(STRAT_ME)); return (m&&(m.nickname||m.name))||'Moi'; }
 function stJoinRoom(sid,role){ const sb=stRtClient(); if(!sb||!sid) return; stLeaveRoom();
-  const ch=sb.channel('strat-'+sid,{config:{presence:{key:String(STRAT_ME||('g'+Math.random().toString(36).slice(2)))}}});
+  const ch=sb.channel('strat-'+sid,{config:{presence:{key:String(STRAT_ME||('g'+ST_CID))}}});
   ch.on('presence',{event:'sync'},stRenderPresence);
   ch.on('presence',{event:'join'},stRenderPresence);
   ch.on('presence',{event:'leave'},stRenderPresence);
   ch.on('broadcast',{event:'els'},({payload})=>stApplyRemoteEls(payload));
   ch.on('broadcast',{event:'ptr'},({payload})=>stPtrRemote(payload));   // pointeur d'un collaborateur
-  ch.subscribe(async status=>{ if(status==='SUBSCRIBED'){ try{ await ch.track({id:STRAT_ME,name:stMyName(),role,at:Date.now()}); }catch(_){} } });
+  // Un éditeur qui ARRIVE demande l'état en cours. Sans cette demande il partait
+  // de la version enregistrée, et son premier geste écrasait le travail non
+  // enregistré des autres (constaté : trois chars effacés d'un coup).
+  ch.on('broadcast',{event:'req'},({payload})=>{ if(role!=='edit'||!payload||payload.by===ST_CID||!ST_EDIT) return; stBroadcastNow(); });
+  // Un collaborateur vient d'enregistrer : si l'on a exactement le même plan,
+  // on n'a plus rien « en attente ».
+  ch.on('broadcast',{event:'saved'},({payload})=>{ if(!payload||payload.by===ST_CID||!ST_EDIT) return; if(payload.sig===stSig(ST_EDIT.steps)) stSetDirty(false); });
+  ch.subscribe(async status=>{ if(status!=='SUBSCRIBED') return;
+    try{ await ch.track({id:STRAT_ME,name:stMyName(),role,at:Date.now()}); }catch(_){}
+    if(role==='edit'){ try{ ch.send({type:'broadcast',event:'req',payload:{by:ST_CID}}); }catch(_){} } });
   ST_ROOM=ch;
   if(role==='edit'){ ST_BC_LAST=ST_EDIT?JSON.stringify(ST_EDIT.steps):''; stStartBroadcastLoop(); }
 }
@@ -9091,43 +9104,65 @@ function stLeaveRoom(){ stStopBroadcastLoop(); if(ST_ROOM&&SB_CLIENT){ try{ SB_C
 function stPresenceUsers(){ if(!ST_ROOM) return []; let st={}; try{ st=ST_ROOM.presenceState(); }catch(_){ return []; }
   const seen={},out=[]; Object.values(st).forEach(a=>a.forEach(m=>{ const k=String(m.id!=null?m.id:m.name); if(!seen[k]){ seen[k]=1; out.push(m); } })); return out; }
 function stRenderPresence(){ const boxes=document.querySelectorAll('.st-presence'); if(!boxes.length) return; const us=stPresenceUsers();
-  const html=us.map(u=>`<span class="st-pres${u.role==='edit'?' editing':''}" title="${esc(u.name||'?')} — ${u.role==='edit'?'édite':'regarde'}">${esc(String(u.name||'?').slice(0,14))}${u.role==='edit'?' ✎':' 👁'}</span>`).join('');
+  // seul, on ne s'affiche pas : la pastille ne dit quelque chose qu'à plusieurs
+  const html=us.length<2?'':us.map(u=>`<span class="st-pres${u.role==='edit'?' editing':''}" title="${esc(u.name||'?')} — ${u.role==='edit'?'modifie':'regarde'}">${esc(String(u.name||'?').slice(0,14))}</span>`).join('');
   boxes.forEach(b=>b.innerHTML=html); }
-function stStartBroadcastLoop(){ stStopBroadcastLoop(); ST_BC_LOOP=setInterval(()=>{ if(!ST_ROOM||!ST_EDIT||ST_MOVE||ST_DRAW||ST_XFORM||ST_PATHBUILD) return; let j; try{ j=JSON.stringify(ST_EDIT.steps); }catch(_){ return; } if(j!==ST_BC_LAST){ ST_BC_LAST=j; try{ ST_ROOM.send({type:'broadcast',event:'els',payload:{by:STRAT_ME,steps:ST_EDIT.steps}}); }catch(_){} } },400); }
+function stBroadcastNow(){ if(!ST_ROOM||!ST_EDIT) return; let j; try{ j=JSON.stringify(ST_EDIT.steps); }catch(_){ return; }
+  ST_BC_LAST=j; try{ ST_ROOM.send({type:'broadcast',event:'els',payload:{by:ST_CID,steps:ST_EDIT.steps}}); }catch(_){} }
+function stStartBroadcastLoop(){ stStopBroadcastLoop(); ST_BC_LOOP=setInterval(()=>{ if(!ST_ROOM||!ST_EDIT||ST_MOVE||ST_DRAW||ST_XFORM||ST_PATHBUILD) return; let j; try{ j=JSON.stringify(ST_EDIT.steps); }catch(_){ return; } if(j!==ST_BC_LAST) stBroadcastNow(); },400); }
 function stStopBroadcastLoop(){ if(ST_BC_LOOP){ clearInterval(ST_BC_LOOP); ST_BC_LOOP=null; } }
-function stApplyRemoteEls(p){ if(!p||!ST_EDIT||String(p.by)===String(STRAT_ME)||ST_MOVE||ST_DRAW||ST_XFORM||ST_PATHBUILD||!Array.isArray(p.steps)||!p.steps.length) return;
-  // ⚠️ Conserver `note` ET `t` : ne garder que `els` effaçait les notes et les
-  // instants épinglés des diapos de débrief dès qu'un collaborateur dessinait.
-  ST_EDIT.steps=p.steps.map(s=>({ els:Array.isArray(s.els)?s.els:[], note:String(s&&s.note||''),
-                                  t:(s&&s.t!=null&&isFinite(s.t))?Number(s.t):null }));
-  if(ST_STEP>=ST_EDIT.steps.length) ST_STEP=ST_EDIT.steps.length-1; ST_EDIT.els=ST_EDIT.steps[ST_STEP].els; stSelClear();
+// petite empreinte d'un plan (djb2) : comparer deux états sans renvoyer tout le plan
+function stSig(steps){ let s; try{ s=JSON.stringify(steps); }catch(_){ return ''; } let h=5381; for(let i=0;i<s.length;i++) h=((h<<5)+h+s.charCodeAt(i))|0; return String(h>>>0)+':'+s.length; }
+function stApplyRemoteEls(p){ if(!p||!ST_EDIT||p.by===ST_CID||ST_MOVE||ST_DRAW||ST_XFORM||ST_PATHBUILD||!Array.isArray(p.steps)||!p.steps.length) return;
+  // ⚠️ Tout ce qui arrive par le canal est NETTOYÉ, comme le fait le serveur :
+  // le canal est ouvert, et son contenu part ensuite dans le SVG.
+  // ⚠️ Conserver `note` ET `t` (stStepsOf le fait) : ne garder que `els`
+  // effaçait les notes et les instants épinglés des diapos de débrief.
+  const steps=stStepsOf({steps:p.steps.slice(0,12)});
+  const j=JSON.stringify(steps); if(j===JSON.stringify(ST_EDIT.steps)){ ST_BC_LAST=j; return; }
+  ST_EDIT.steps=steps;
+  if(ST_STEP>=steps.length) ST_STEP=steps.length-1; ST_EDIT.els=steps[ST_STEP].els;
+  // La sélection survit si ses éléments existent encore. L'historique, lui,
+  // repart de zéro : « annuler » ne doit pas défaire le travail d'un autre.
+  [...ST_SELS].forEach(i=>{ if(i>=ST_EDIT.els.length) ST_SELS.delete(i); });
+  ST_UNDO=[]; ST_REDO=[];
   ST_BC_LAST=JSON.stringify(ST_EDIT.steps);
-  if(document.getElementById('stStepTabs')) renderStepTabs(); stRedraw(); if(typeof stUpdCount==='function') stUpdCount(); }
-let ST_EDIT=null;   // {id,name,map,els:[]}
-let ST_TOOL='arrow', ST_COLOR='#e5544b', ST_DRAW=null, ST_MOVE=null;
-let ST_SELS=new Set();   // indices des éléments sélectionnés (multi-sélection)
-let ST_BOX=null;         // rectangle de sélection en cours
-let ST_XFORM=null;       // redimensionnement / rotation en cours
-let ST_CLIP=[];          // presse-papier (copier/coller)
+  stSetDirty(true);
+  renderStepTabs(); stRedraw(); stMaj(); }
+
+/* ============================================================
+   ÉDITEUR 2D — état
+   Même langage que l'éditeur 3D : la carte au centre, un rail d'outils
+   à gauche, un panneau à droite qui règle ce qui est sélectionné (ou,
+   à défaut, ce que posera l'outil actif). Neuf outils au lieu de
+   quinze : les autres sont devenus des réglages (forme d'une zone,
+   pointe d'une flèche, cercle de portée…), plus une seule chose à
+   retenir par geste.
+   ============================================================ */
+let ST_EDIT=null;          // {id,name,map,mode,steps,els,editors,battleId}
+let ST_TOOL='select', ST_DRAW=null, ST_MOVE=null;
+let ST_SELS=new Set();     // indices des éléments sélectionnés
+let ST_BOX=null;           // rectangle de sélection en cours
+let ST_XFORM=null;         // redimensionnement / rotation en cours
+let ST_CLIP=[];            // presse-papier (copier/coller)
+let ST_DIRTY=false;        // modifications non enregistrées
+let ST_LASTDOWN=null;      // dernier appui : sert au double-clic (voir stWireEditor)
+let ST_PROP_SNAP=false;    // une saisie dans le panneau = une seule entrée d'historique
 let ST_SNAP=(typeof localStorage!=='undefined' && localStorage.getItem('cp_stsnap')==='1');   // aimantation à la grille
-const SNAP_STEP=50;      // pas d'aimantation (0-1000)
+const SNAP_STEP=50;        // pas d'aimantation (0-1000)
 function stSnap(v){ return Math.round(v/SNAP_STEP)*SNAP_STEP; }
-let ST_TANK={cls:'medium',color:'#5dbb46',size:0.78};   // "pinceau" pion de char courant (classe + couleur + taille, petit par défaut)
+// Réglages des outils : ce que posera le prochain geste.
+let ST_COLOR='#e5544b';
+let ST_STROKE={dash:false,w:7,curve:false,head:true};   // flèche, trajet, crayon
+let ST_ZONE={shape:'rect',dash:false};
+let ST_TANK={cls:'medium',color:'#5dbb46',size:0.78};
 const ST_TANK_SIZES=[["Petit",0.78],["Moyen",1.0],["Grand",1.3]];
 const ST_TANK_COLORS=[["#5dbb46","Vert (alliés)"],["#e0483f","Rouge (ennemis)"],["#e5c84b","Jaune"],["#5bb0e5","Bleu"],["#c264ff","Violet"],["#ffffff","Blanc"]];
-let ST_STAMP={kind:'focus',size:0.75};   // symbole tactique courant (+ taille, petit par défaut)
+const ST_ALLY='#5dbb46', ST_ENEMY='#e0483f';
+let ST_STAMP={kind:'focus',size:0.75};   // kind 'num' = jeton numéroté
 const ST_STAMP_SIZES=[["Petit",0.75],["Moyen",1.05],["Grand",1.4]];
-let ST_CONE={spread:30};                 // demi-angle du cône de tir (degrés)
-const ST_CONE_SPREADS=[["Étroit",15],["Moyen",30],["Large",50]];
-let ST_PATHBUILD=null;                    // trajet multipoint en cours de construction
-// Formations pré-enregistrées : décalages relatifs des pions (unités viewBox 0-1000).
-const ST_FORMATIONS=[["line","Ligne"],["column","Colonne"],["wedge","Coin"],["echelon","Échelon"]];
-const ST_FORM_SHAPES={
-  line:[[-116,0],[-58,0],[0,0],[58,0],[116,0]],
-  column:[[0,-116],[0,-58],[0,0],[0,58],[0,116]],
-  wedge:[[0,-72],[-48,-26],[48,-26],[-96,20],[96,20]],
-  echelon:[[-96,-72],[-48,-36],[0,0],[48,36],[96,72]],
-};
+let ST_MEAS={circle:false};              // mesure : distance, ou cercle de portée
+let ST_PATHBUILD=null;                   // trajet multipoint en cours de construction
 // Symboles tactiques : SVG dessiné dans une boîte ~ -15..15, coloré via currentColor.
 const ST_STAMPS={
   focus:'<circle r="13"/><circle r="5"/><path d="M0,-15 V-11 M0,15 V11 M-15,0 H-11 M15,0 H11"/>',
@@ -9145,20 +9180,21 @@ const ST_STAMP_LIST=[["focus","Focus"],["spot","Vision"],["defend","Tenir"],["da
 function stMapMeters(){ const b=ST_BASES&&ST_EDIT&&ST_BASES[ST_EDIT.map]&&ST_BASES[ST_EDIT.map].bbox; return b?Math.round(b[2]-b[0]):1000; }
 let ST_UNDO=[], ST_REDO=[];          // historique annuler/refaire (snapshots JSON de ST_EDIT.els)
 let ST_STEP=0;                       // étape courante (slideshow) ; ST_EDIT.els = ST_EDIT.steps[ST_STEP].els
-let ST_STROKE={dash:false,w:7,curve:false};   // style de trait courant (flèche/ligne/crayon/forme)
 // Grille A-K / 1-0 : ACTIVE PAR DÉFAUT (on ne la masque que si l'utilisateur l'a
 // explicitement désactivée). C'est le repère commun pour parler d'une position.
 let ST_GRID = (typeof localStorage==='undefined') || localStorage.getItem('cp_stgrid')!=='0';
 let ST_ZOOM={x:0,y:0,w:1000,h:1000};   // viewBox courant du canvas (zoom + déplacement)
 let ST_PANNING=null, ST_SPACE=false;   // déplacement (main) en cours / barre Espace maintenue
-let ST_FULL=true;                      // éditeur en plein écran (défaut)
-// raccourcis clavier : touche -> outil
-const ST_KEYS={v:'select',h:'tank',f:'arrow',l:'line',z:'rect',o:'circle',s:'stamp',d:'measure',r:'range',c:'cone',m:'path',p:'pen',j:'marker',t:'text',g:'erase'};
+// Sections repliées du panneau (et panneau masqué), mémorisées d'une visite à l'autre.
+let ST_PANEL=(()=>{ let o={}; try{ o=JSON.parse(localStorage.getItem('cp_st2d_panel')||'{}')||{}; }catch(_){} return Object.assign({disp:true},o); })();
+function stPanelSave(){ try{ localStorage.setItem('cp_st2d_panel',JSON.stringify(ST_PANEL)); }catch(_){} }
+// raccourcis clavier : touche -> outil (les mêmes lettres que l'éditeur 3D)
+const ST_KEYS={v:'select',t:'tank',a:'arrow',j:'path',z:'zone',s:'stamp',n:'text',p:'pen',m:'measure'};
 function stApplyZoom(){ const svg=document.getElementById("stSvg"); if(!svg) return;
   const W=ST_ZOOM.w=ST_ZOOM.h=Math.max(250,Math.min(1000,ST_ZOOM.w));   // viewBox carré, zoom max x4
   ST_ZOOM.x=Math.max(0,Math.min(1000-W,ST_ZOOM.x)); ST_ZOOM.y=Math.max(0,Math.min(1000-W,ST_ZOOM.y));
   svg.setAttribute("viewBox",`${Math.round(ST_ZOOM.x)} ${Math.round(ST_ZOOM.y)} ${Math.round(W)} ${Math.round(W)}`);
-  const lvl=document.getElementById("stZoomLvl"); if(lvl) lvl.textContent=Math.round(1000/W*100)+"%"; stMiniSync(); }
+  const lvl=document.getElementById("stZoomLvl"); if(lvl) lvl.textContent=Math.round(1000/W*100)+"%"; stMiniSync(); stRedraw(); }
 // Mini-carte de navigation : affichée seulement en zoom, avec le cadre de la zone visible.
 function stMiniSync(){ const mm=document.getElementById("stMinimap"), vp=document.getElementById("stMiniVp"); if(!mm||!vp) return;
   const zoomed=ST_ZOOM.w<999; mm.style.display=zoomed?'block':'none'; if(!zoomed) return; const P=v=>Math.max(0,Math.min(100,v/1000*100));
@@ -9176,8 +9212,42 @@ function stGridInner(){ let s=''; const cols='1234567890'.split(''), rows='ABCDE
   return s; }
 // chemin d'une flèche/ligne courbe (bezier quadratique, contrôle perpendiculaire au milieu)
 function stCurvePath(el){ const mx=(el.x1+el.x2)/2,my=(el.y1+el.y2)/2, dx=el.x2-el.x1,dy=el.y2-el.y1, len=Math.hypot(dx,dy)||1, off=len*0.26; const cx=mx+(-dy/len)*off, cy=my+(dx/len)*off; return `M ${el.x1} ${el.y1} Q ${Math.round(cx)} ${Math.round(cy)} ${el.x2} ${el.y2}`; }
-// construit les étapes d'une stratégie (nouveau format .steps, sinon .elements sur 1 étape)
-function stStepsOf(s){ if(s&&Array.isArray(s.steps)&&s.steps.length) return s.steps.map(st=>({els:Array.isArray(st.els)?JSON.parse(JSON.stringify(st.els)):[], note:st.note?String(st.note):'', t:(st.t!=null&&isFinite(st.t)?Number(st.t):null)})); const e=(s&&Array.isArray(s.elements))?JSON.parse(JSON.stringify(s.elements)):[]; return [{els:e,note:''}]; }
+/* NETTOYAGE des éléments — copie fidèle de cleanEls() côté serveur
+   (backend/functions/strategies). Tout ce qui entre dans l'éditeur passe
+   par là : une stratégie chargée, et surtout le canal temps réel, ouvert
+   à quiconque connaît son nom. Une coordonnée ou une couleur non
+   contrôlée finissait telle quelle dans un attribut SVG (constaté). */
+const ST_HEX=/^#[0-9a-fA-F]{3,8}$/;
+function stN(v){ const n=Number(v); return Number.isFinite(n)?Math.round(Math.max(-2000,Math.min(2000,n))*10)/10:0; }
+function stClean(arr){
+  const out=[], cls=c=>['light','medium','heavy','td','spg'].includes(String(c))?String(c):'medium',
+    S=(v,n)=>String(v==null?'':v).slice(0,n), sz=(v,d)=>Math.max(0.4,Math.min(2,Number(v)||d)),
+    W=v=>{ const n=Number(v); return Number.isFinite(n)?Math.max(1,Math.min(20,Math.round(n))):7; },
+    P=(a,max)=>(Array.isArray(a)?a:[]).slice(0,max).map(p=>Array.isArray(p)?[stN(p[0]),stN(p[1])]:[0,0]);
+  (Array.isArray(arr)?arr:[]).slice(0,400).forEach(o=>{
+    if(!o||typeof o!=='object') return;
+    const type=String(o.type||''), color=ST_HEX.test(String(o.color))?String(o.color):'#e5544b';
+    const rn=Number(o.rot), R=x=>{ if(Number.isFinite(rn)&&Math.round(rn)) x.rot=Math.max(-180,Math.min(180,Math.round(rn))); return x; };
+    if(type==='arrow'||type==='line') out.push(R({type,color,x1:stN(o.x1),y1:stN(o.y1),x2:stN(o.x2),y2:stN(o.y2),w:W(o.w),dash:!!o.dash,curve:!!o.curve}));
+    else if(type==='rect'||type==='circle') out.push(R({type,color,x1:stN(o.x1),y1:stN(o.y1),x2:stN(o.x2),y2:stN(o.y2),w:W(o.w),dash:!!o.dash}));
+    else if(type==='pen'||type==='path'){ const pts=P(o.pts,300); if(pts.length>1) out.push(R({type,color,pts,w:W(o.w),dash:!!o.dash})); }
+    else if(type==='marker') out.push(R({type,color,x:stN(o.x),y:stN(o.y),label:S(o.label,4)}));
+    else if(type==='text') out.push(R({type,color,x:stN(o.x),y:stN(o.y),text:S(o.text,60)}));
+    else if(type==='tank'){ const t={type,color,cls:cls(o.cls),x:stN(o.x),y:stN(o.y),name:S(o.name,18),size:sz(o.size,0.78)};
+      const cap=Number(o.cap); if(Number.isFinite(cap)) t.cap=((Math.round(cap)%360)+360)%360;
+      const sec=Number(o.secteur); if(Number.isFinite(sec)&&sec>0) t.secteur=Math.min(90,Math.round(sec));
+      out.push(R(t)); }
+    else if(type==='ghost') out.push(R({type,color,cls:cls(o.cls),x:stN(o.x),y:stN(o.y),x0:stN(o.x0),y0:stN(o.y0),name:S(o.name,18),size:sz(o.size,0.72)}));
+    else if(type==='stamp') out.push(R({type,color,kind:ST_STAMP_LIST.some(k=>k[0]===String(o.kind))?String(o.kind):'focus',x:stN(o.x),y:stN(o.y),size:sz(o.size,0.75)}));
+    else if(type==='cone'){ const a=Number(o.a); out.push(R({type,color,x:stN(o.x),y:stN(o.y),a:Number.isFinite(a)?Math.round(a):0,spread:Math.max(4,Math.min(160,Math.round(Number(o.spread)||30))),r:Math.max(1,Math.min(1500,Math.round(Number(o.r)||120)))})); }
+    else if(type==='measure') out.push({type,color,x1:stN(o.x1),y1:stN(o.y1),x2:stN(o.x2),y2:stN(o.y2),m:Math.max(0,Math.min(9999,Math.round(Number(o.m)||0)))});
+    else if(type==='range') out.push({type,color,x:stN(o.x),y:stN(o.y),r:Math.max(0,Math.min(1500,Math.round(Number(o.r)||0))),m:Math.max(0,Math.min(9999,Math.round(Number(o.m)||0)))});
+  });
+  return out; }
+// construit les étapes d'une stratégie (nouveau format .steps, sinon .elements sur 1 étape) — NETTOYÉES
+function stStepsOf(s){ if(s&&Array.isArray(s.steps)&&s.steps.length) return s.steps.slice(0,12).map(st=>{ st=st||{}; const t=Number(st.t);
+    return {els:stClean(st.els), note:st.note?String(st.note).slice(0,140):'', t:(st.t!=null&&Number.isFinite(t)&&t>=0?Math.round(t*10)/10:null)}; });
+  return [{els:stClean(s&&s.elements),note:'',t:null}]; }
 const ST_MAPS=[
   ["himmelsdorf","Himmelsdorf"],["ensk","Ensk"],["lakeville","Lakeville"],["redshire","Redshire"],
   ["prohorovka","Prokhorovka"],["murovanka","Murovanka"],["malinovka","Malinovka"],["ruinberg","Ruinberg"],
@@ -9189,27 +9259,49 @@ const ST_MAPS=[
   ["japort","Baie de la nacre"],["northamerica","Highway"],["asiagreatwall","Frontière de l’empire"],["sweden","Kleinberg"]
 ];
 const ST_MAPNAME=Object.fromEntries(ST_MAPS.map(m=>[m[0],m[1]]));
-const ST_COLORS=["#e5544b","#e5c84b","#5bb0e5","#8fd14f","#ffffff","#e59a4b","#c264ff","#141414"];
-const ST_TOOLS=[["select","Déplacer","✋"],["tank","Chars","▰"],["arrow","Flèche","➤"],["line","Trait","／"],["rect","Zone","▭"],["circle","Cercle","◯"],["stamp","Symbole","✪"],["cone","Cône de tir","◔"],["path","Trajet","⋯"],["measure","Mesure","↔"],["range","Portée","◎"],["pen","Crayon","✎"],["marker","Jeton","◉"],["text","Texte","T"],["erase","Gomme","⌫"]];
+// Six couleurs de dessin : assez pour distinguer deux pelotons et l'ennemi,
+// pas assez pour qu'on hésite. (Les anciennes couleurs restent affichées.)
+const ST_COLORS=[["#e5544b","Rouge"],["#e5c84b","Jaune"],["#5bb0e5","Bleu"],["#8fd14f","Vert"],["#c264ff","Violet"],["#ffffff","Blanc"]];
+// Le rail : [outil, nom, touche]. Les séparateurs tombent avant les index de ST_RAIL_SEP.
+const ST_TOOLS=[["select","Sélection","V"],["tank","Char","T"],["arrow","Flèche","A"],["path","Trajet","J"],["zone","Zone","Z"],["stamp","Symbole","S"],["text","Texte","N"],["pen","Crayon","P"],["measure","Mesure","M"]];
+const ST_RAIL_SEP=[1,2,8];
 const ST_CLASSES=[["light","Léger"],["medium","Moyen"],["heavy","Lourd"],["td","TD"],["spg","Arto"]];   // classes = silhouettes officielles du jeu (web/strat/class_*.png)
-// Icônes SVG des outils (style ligne, cohérent avec la DA du site — viewBox 0 0 24 24).
-const ST_TOOL_ICONS={
-  select:'<path d="M5 3l14 6.5-6 1.8-1.8 6z"/>',
-  tank:'<path d="M4 13h13v3.5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><rect x="8" y="9" width="6" height="4" rx="1"/><path d="M13.5 11H20"/>',
-  arrow:'<path d="M4 12h13"/><path d="M12 7l5 5-5 5"/>',
-  line:'<path d="M5 19L19 5"/>',
-  rect:'<rect x="4" y="6.5" width="16" height="11" rx="1.5"/>',
-  circle:'<circle cx="12" cy="12" r="8"/>',
-  stamp:'<path d="M12 3l2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.5-4.8 2.5.9-5.4L4.2 8.7l5.4-.8z"/>',
-  cone:'<path d="M12 20L5.5 6.5a13 13 0 0 1 13 0z" fill="currentColor" fill-opacity=".18"/><circle cx="12" cy="20" r="1.6" fill="currentColor" stroke="none"/>',
-  path:'<path d="M4 18L9 9l5 4 6-9" fill="none"/><circle cx="4" cy="18" r="1.7" fill="currentColor" stroke="none"/><circle cx="9" cy="9" r="1.7" fill="currentColor" stroke="none"/><circle cx="14" cy="13" r="1.7" fill="currentColor" stroke="none"/><circle cx="20" cy="4" r="1.7" fill="currentColor" stroke="none"/>',
-  measure:'<path d="M4 8l4-4 12 12-4 4z"/><path d="M8.5 8.5l1.6 1.6M11.5 5.5l1.6 1.6M14.5 8.5l1.6 1.6"/>',
-  range:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1.1" fill="currentColor" stroke="none"/>',
-  pen:'<path d="M4 20l1.2-4L16 5.2l2.8 2.8L8 18.8z"/><path d="M14 7.2l2.8 2.8"/>',
-  marker:'<path d="M12 21s6-5.6 6-10a6 6 0 0 0-12 0c0 4.4 6 10 6 10z"/><circle cx="12" cy="11" r="2.3"/>',
-  text:'<path d="M5 6.5V4.5h14v2M12 4.5v15M9 19.5h6"/>',
-  erase:'<path d="M8.5 20H20"/><path d="M15 5l4 4-7.5 7.5H7L4 13.5z"/>'
+const ST_CLASS_LONG={light:"Char léger",medium:"Char moyen",heavy:"Char lourd",td:"Chasseur de chars",spg:"Artillerie"};
+// Icônes au trait (viewBox 0 0 20 20), les mêmes dessins que l'éditeur 3D quand l'outil existe des deux côtés.
+const ST_IC={
+  select:'<path d="M4 3l6 14 2-6 6-2z"/>',
+  tank:'<path d="M3 12h14v4H3z"/><path d="M5 12V9h8v3"/><path d="M9 9V7h9"/>',
+  arrow:'<path d="M3 16L16 4"/><path d="M9 4h7v7"/>',
+  path:'<path d="M3 16c4 0 3-6 7-6s3-5 7-5"/><circle cx="3" cy="16" r="1.6"/><circle cx="17" cy="5" r="1.6"/>',
+  zone:'<path d="M4 6l6-2 6 3-2 8-8 1z"/>',
+  stamp:'<circle cx="10" cy="10" r="6.5"/><circle cx="10" cy="10" r="2.2"/><path d="M10 1.5v2M10 16.5v2M1.5 10h2M16.5 10h2"/>',
+  text:'<path d="M4 5.5V3.5h12v2M10 3.5v13M7.5 16.5h5"/>',
+  pen:'<path d="M3.5 16.5l1-3.6L13.6 3.8l2.6 2.6-9.1 9.1z"/><path d="M12 5.4l2.6 2.6"/>',
+  measure:'<path d="M3 13l10-10 4 4-10 10z"/><path d="M6 10l1.6 1.6M9 7l1.6 1.6M12 4l1.6 1.6"/>',
+  close:'<path d="M5 5l10 10M15 5L5 15"/>',
+  map:'<path d="M3 5l4.5-1.5 5 2L17 4v11.5L12.5 17l-5-2L3 16.5z"/><path d="M7.5 3.5V15M12.5 5.5V17"/>',
+  undo:'<path d="M7 5L3 9l4 4"/><path d="M3 9h8a5 5 0 0 1 0 10H8"/>',
+  redo:'<path d="M13 5l4 4-4 4"/><path d="M17 9H9a5 5 0 0 0 0 10h3"/>',
+  pointer:'<circle cx="10" cy="10" r="3"/><circle cx="10" cy="10" r="7.5"/>',
+  collab:'<circle cx="7.5" cy="7" r="2.7"/><path d="M2.5 16.5c.6-2.8 2.5-4.4 5-4.4s4.4 1.6 5 4.4"/><circle cx="14.2" cy="7.6" r="2.1"/><path d="M13.6 12.1c2 .2 3.4 1.6 3.9 3.9"/>',
+  play:'<path d="M6 4l10 6-10 6z"/>',
+  pause:'<path d="M7 4.5v11M13 4.5v11"/>',
+  panel:'<rect x="3" y="4" width="14" height="12" rx="1.5"/><path d="M12 4v12"/>',
+  plus:'<path d="M10 4v12M4 10h12"/>',
+  minus:'<path d="M4 10h12"/>',
+  chev:'<path d="M5 8l5 5 5-5"/>',
+  dup:'<rect x="7" y="7" width="10" height="10" rx="1.5"/><path d="M13 7V4.5A1.5 1.5 0 0 0 11.5 3h-7A1.5 1.5 0 0 0 3 4.5v7A1.5 1.5 0 0 0 4.5 13H7"/>',
+  front:'<path d="M10 15V4M5.5 8.5L10 4l4.5 4.5"/><path d="M4 17h12"/>',
+  back:'<path d="M10 5v11M5.5 11.5L10 16l4.5-4.5"/><path d="M4 3h12"/>',
+  trash:'<path d="M4 6h12M8 6V4h4v2M5.5 6l.8 10.5h7.4l.8-10.5"/>',
+  back5:'<path d="M9 5L4 10l5 5M16 5l-5 5 5 5"/>',
+  fwd5:'<path d="M11 5l5 5-5 5M4 5l5 5-5 5"/>',
+  pin:'<path d="M10 17v-5"/><path d="M6.5 3h7l-1 4 2.5 3H5l2.5-3z"/>',
+  ghost:'<circle cx="6.5" cy="13" r="3"/><circle cx="14" cy="6.5" r="3" stroke-dasharray="2 2"/><path d="M8.8 11l2.8-2.4"/>',
+  grid:'<path d="M3 3h14v14H3zM3 7.7h14M3 12.3h14M7.7 3v14M12.3 3v14"/>',
+  anim:'<path d="M3 10h4M13 10h4"/><circle cx="10" cy="10" r="2.5"/><path d="M5 6l2 2M15 6l-2 2M5 14l2-2M15 14l-2-2"/>'
 };
+function stIc(k){ return `<svg viewBox="0 0 20 20" aria-hidden="true" focusable="false">${ST_IC[k]||''}</svg>`; }
 let ST_BASES=null;   // positions officielles des bases (web/maps_bases.json)
 const ST_MODE_FR={ctf:"Standard",domination:"Rencontre",assault:"Assaut",assault2:"Assaut",comp7:"7 vs 7",epic:"Ligne de front"};
 // convertit une position monde (x,z) en coords minimap 0-1000 selon la boundingBox
@@ -9280,97 +9372,176 @@ function renderStrats(){
 }
 function openStratEditor(s, keepReplay){
   if(!stCanEdit(s)){ alert("Réservé aux officiers de combat et aux collaborateurs de cette stratégie."); return; }
+  if(ST_EDIT && ST_DIRTY && !confirm(t("Une stratégie est en cours de modification et n'est pas enregistrée. L'abandonner ?"))) return;
   // Le REPLAY est une fonctionnalité à part (débriefing) : on le retire de l'éditeur
   // sauf si on vient justement de l'ouvrir via « Débriefer dans l'éditeur ».
   if(!keepReplay){ stRpStop(); ST_RP=null; }
-  stChatStop(); stLeaveRoom();
+  stChatStop(); stLeaveRoom(); stInlineClose(); stHideCtxMenu();
   ST_EDIT={ id:(s&&s.id)||null, name:(s&&s.name)||"Nouvelle stratégie", map:(s&&s.map)||"", mode:(s&&s.mode)||"ctf", steps:stStepsOf(s), editors:(s&&Array.isArray(s.editors))?s.editors.map(Number):[],
             // bataille d'origine : c'est ce qui permet de RETROUVER le replay plus tard
             battleId:(s&&s.battle_id!=null)?String(s.battle_id):((keepReplay&&ST_RP)?String(ST_RP.battleId):null) };
   ST_STEP=0; ST_EDIT.els=ST_EDIT.steps[0].els;
-  stSelClear(); ST_UNDO=[]; ST_REDO=[];
+  stSelClear(); ST_UNDO=[]; ST_REDO=[]; ST_DIRTY=false; ST_PATHBUILD=null; ST_DRAW=null; ST_MOVE=null; ST_LASER=false; ST_LASTDOWN=null;
+  // une page blanche appelle un char ; un plan existant ou un débrief, la sélection
+  ST_TOOL=(ST_EDIT.id||keepReplay)?'select':'tank';
   if(!ST_EDIT.map) renderMapPicker(); else renderStratEditor();
   // Débrief enregistré rouvert depuis la liste : le replay n'est plus en mémoire,
   // on le recharge depuis la bataille puis on redessine.
   if(ST_EDIT.map && ST_EDIT.battleId && (!ST_RP || String(ST_RP.battleId)!==String(ST_EDIT.battleId))){
     const bid=ST_EDIT.battleId;
     stRpLoad(bid, ST_EDIT.map, ST_EDIT.name).then(ok=>{
-      if(ok && ST_EDIT && String(ST_EDIT.battleId)===bid) renderStratEditor();
+      if(ok && ST_EDIT && String(ST_EDIT.battleId)===bid && document.getElementById('stSvg')) renderStratEditor();
     });
   }
   if(ST_EDIT.id&&ST_EDIT.map) stJoinRoom(ST_EDIT.id,'edit');
-  document.getElementById("stEditor").scrollIntoView({behavior:"smooth",block:"start"});
 }
+// Ferme l'éditeur. Sans `force`, on DEMANDE avant de jeter des modifications :
+// un clic malheureux sur la croix perdait tout un plan sans un mot.
+function stCloseEditor(force){
+  if(!force && ST_DIRTY && !confirm(t("Fermer sans enregistrer ? Les modifications seront perdues."))) return false;
+  stRpStop(); ST_RP=null; stLeaveRoom(); stHideCtxMenu(); stInlineClose(); stTipHide();
+  const ed=document.getElementById("stEditor"); ed.classList.add("hidden"); ed.innerHTML="";
+  document.body.classList.remove("st-noscroll");
+  ST_EDIT=null; ST_DIRTY=false; ST_PATHBUILD=null; ST_DRAW=null; ST_MOVE=null; ST_LASER=false;
+  return true;
+}
+/* Choix de la carte. Deux cas :
+   - nouvelle stratégie : « Annuler » ferme l'éditeur ;
+   - changement de carte : « Annuler » RAMÈNE à l'éditeur, intact. Avant, il
+     effaçait toute la stratégie en cours et retirait le replay au passage. */
 function renderMapPicker(){
-  const ed=document.getElementById("stEditor"); ed.classList.remove("hidden");
-  document.body.classList.toggle("st-noscroll", ST_FULL);
-  ed.innerHTML=`<div class="card st-shell dashx st-editor${ST_FULL?' st-full':''}"><div class="st-bar"><b style="font-size:16px;font-weight:800;color:#ecebe8;flex:1">Choisis une carte</b><button class="st-x" id="stPickCancel" title="Annuler">✕</button></div>
-    <div class="st-mapgrid">${ST_MAPS.map(m=>`<button type="button" class="st-mapopt" data-map="${m[0]}"><img src="maps/top/${m[0]}.jpg" onerror="this.style.opacity='.12'"><span>${esc(m[1])}</span></button>`).join("")}</div></div>`;
-  document.getElementById("stPickCancel").onclick=()=>{ document.body.classList.remove("st-noscroll"); ed.classList.add("hidden"); ed.innerHTML=""; ST_EDIT=null; };
-  ed.querySelectorAll(".st-mapopt").forEach(b=>b.onclick=()=>{ ST_EDIT.map=b.dataset.map; renderStratEditor(); });
+  const ed=document.getElementById("stEditor"); ed.classList.remove("hidden"); document.body.classList.add("st-noscroll");
+  stInlineClose(); stHideCtxMenu(); stTipHide();
+  const back=!!(ST_EDIT&&ST_EDIT.map);
+  ed.innerHTML=`<div class="se se-pickwrap" id="stShell" role="dialog" aria-modal="true" aria-labelledby="stPickT">
+    <div class="se-pick">
+      <div class="se-pick-h">
+        <div><div class="se-kick">${back?'Changer de carte':'Nouvelle stratégie'}</div><h2 id="stPickT">Choisis une carte</h2></div>
+        <button type="button" class="se-ic se-ic-lg" id="stPickCancel" aria-label="${back?"Revenir à l'éditeur":"Annuler"}">${stIc('close')}</button>
+      </div>
+      <input class="se-in se-pick-q" id="stPickQ" type="search" placeholder="Rechercher une carte…" aria-label="Rechercher une carte" autocomplete="off">
+      ${back?`<p class="se-pick-note">${esc(t('Ce qui est déjà dessiné est conservé.'))}${ST_RP?' '+esc(t('Le replay sera retiré : il appartient à la carte actuelle.')):''}</p>`:''}
+      <div class="se-pick-grid" id="stPickGrid">${ST_MAPS.map(m=>`<button type="button" class="se-map${ST_EDIT&&ST_EDIT.map===m[0]?' on':''}" data-map="${m[0]}" data-q="${esc((m[1]+' '+m[0]).toLowerCase())}"><img src="maps/top/${m[0]}.jpg" alt="" loading="lazy" onerror="this.style.opacity='.12'"><span>${esc(m[1])}</span></button>`).join("")}</div>
+      <p class="se-vide" id="stPickVide" hidden>Aucune carte ne correspond.</p>
+    </div></div>`;
+  const cancel=()=>{ if(back) renderStratEditor(); else stCloseEditor(true); };
+  const sh=document.getElementById("stShell");
+  document.getElementById("stPickCancel").onclick=cancel;
+  sh.addEventListener("keydown",e=>{ if(e.key==="Escape"){ e.preventDefault(); cancel(); } });
+  const q=document.getElementById("stPickQ");
+  q.oninput=()=>{ const v=q.value.trim().toLowerCase(); let n=0;
+    sh.querySelectorAll(".se-map").forEach(b=>{ const ok=!v||b.dataset.q.includes(v); b.hidden=!ok; if(ok) n++; });
+    document.getElementById("stPickVide").hidden=n>0; };
+  sh.querySelectorAll(".se-map").forEach(b=>b.onclick=()=>{
+    const k=b.dataset.map;
+    if(k!==ST_EDIT.map){
+      if(back){ stRpStop(); ST_RP=null; stSetDirty(true); }   // le replay appartient à l'ancienne carte
+      ST_EDIT.map=k;
+    }
+    renderStratEditor(); });
+  try{ q.focus({preventScroll:true}); }catch(_){ q.focus(); }
 }
+// Une section repliable du panneau de droite.
+function stSec(key,title,body,extra){
+  const plie=!!ST_PANEL[key];
+  return `<section class="se-sec${plie?' plie':''}" data-sec="${key}"><button type="button" class="se-sec-h" aria-expanded="${!plie}"><span>${title}</span>${extra||''}${stIc('chev')}</button><div class="se-sec-b">${body}</div></section>`; }
+function stDispHtml(){
+  return `<label class="se-check"><input type="checkbox" id="stGridChk"${ST_GRID?' checked':''}><span>Grille A-K / 1-0</span></label>`
+    +`<label class="se-check"><input type="checkbox" id="stSnapChk"${ST_SNAP?' checked':''}><span>Aimanter les déplacements à la grille</span></label>`
+    +`<label class="se-check"><input type="checkbox" id="stAnimChk"${ST_PRES_ANIM?' checked':''}><span>Animer le passage d'une étape à l'autre en présentation</span></label>`; }
 function renderStratEditor(){
-  const ed=document.getElementById("stEditor"); ed.classList.remove("hidden");
+  const ed=document.getElementById("stEditor"); ed.classList.remove("hidden"); document.body.classList.add("st-noscroll");
+  stInlineClose(); stHideCtxMenu(); stTipHide();
   ST_ZOOM={x:0,y:0,w:1000,h:1000};
-  const KEYOF={}; Object.keys(ST_KEYS).forEach(k=>KEYOF[ST_KEYS[k]]=k.toUpperCase());
-  const tools=ST_TOOLS.map(t=>`<button type="button" class="st-tool${ST_TOOL===t[0]?' on':''}" data-tool="${t[0]}" title="${t[1]}${KEYOF[t[0]]?' ('+KEYOF[t[0]]+')':''}"><span class="st-tool-ic"><svg viewBox="0 0 24 24">${ST_TOOL_ICONS[t[0]]||''}</svg></span><span class="st-tool-l">${t[1]}</span>${KEYOF[t[0]]?`<span class="st-tool-k">${KEYOF[t[0]]}</span>`:''}</button>`).join("");
-  const colors=ST_COLORS.map(c=>`<button type="button" class="st-color${ST_COLOR===c?' on':''}" data-color="${c}" style="background:${c}"></button>`).join("");
+  const mapName=ST_MAPNAME[ST_EDIT.map]||prettyMap(ST_EDIT.map);
   const modes=stModes(ST_EDIT.map); if(modes.length && !modes.includes(ST_EDIT.mode)) ST_EDIT.mode=modes[0];
-  const modeSel=modes.length?`<label class="st-modewrap">Bases <select class="st-modesel" id="stMode" title="Mode de jeu (bases officielles)">${modes.map(mo=>`<option value="${mo}"${ST_EDIT.mode===mo?' selected':''}>${esc(ST_MODE_FR[mo]||mo)}</option>`).join("")}</select></label>`:'';
-  const strokeGrp=`<div class="optgrp opt-stroke"><span class="opt-lbl">Trait</span><button type="button" class="st-sbtn${ST_STROKE.dash?' on':''}" id="stDash" title="Pointillés">┅</button><button type="button" class="st-sbtn opt-curve${ST_STROKE.curve?' on':''}" id="stCurve" title="Flèche courbe">⌒</button><span class="st-wsel">${[["thin",4],["med",7],["thick",12]].map(w=>`<button type="button" class="st-wbtn${ST_STROKE.w===w[1]?' on':''}" data-w="${w[1]}" title="Épaisseur"><i style="height:${Math.round(w[1]/2)+1}px"></i></button>`).join("")}</span></div>`;
-  const colorGrp=`<div class="optgrp opt-colors"><span class="opt-lbl">Couleur</span>${colors}</div>`;
-  const stampGrp=`<div class="optgrp opt-stamp"><span class="opt-lbl">Symbole</span>${ST_STAMP_LIST.map(([k,lbl])=>`<button type="button" class="st-stampb${ST_STAMP.kind===k?' on':''}" data-stamp="${k}" title="${esc(lbl)}"><svg viewBox="-20 -20 40 40" class="st-stamp-ic"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">${ST_STAMPS[k]}</g></svg></button>`).join("")}<span class="st-opt-sep"></span><span class="opt-lbl">Taille</span><span class="st-szsel">${ST_STAMP_SIZES.map(([lbl,v])=>`<button type="button" class="st-szb${ST_STAMP.size===v?' on':''}" data-sz="${v}">${esc(lbl)}</button>`).join("")}</span></div>`;
-  const tankGrp=`<div class="optgrp opt-tank"><div class="st-classsel" style="--tc:${ST_TANK.color}">${ST_CLASSES.map(c=>`<button type="button" class="st-class${ST_TANK.cls===c[0]?' on':''}" data-cls="${c[0]}" title="Char ${c[1]}"><span class="ic" style="-webkit-mask:url(strat/class_${c[0]}.png) center/contain no-repeat;mask:url(strat/class_${c[0]}.png) center/contain no-repeat"></span><span class="lbl">${c[1]}</span></button>`).join("")}</div><div class="st-tank-cols">${ST_TANK_COLORS.map(c=>`<button type="button" class="st-tcol${ST_TANK.color===c[0]?' on':''}" data-tcol="${c[0]}" title="${esc(c[1])}" style="background:${c[0]}"></button>`).join("")}</div><span class="st-opt-sep"></span><span class="opt-lbl">Taille</span><span class="st-szsel">${ST_TANK_SIZES.map(([lbl,v])=>`<button type="button" class="st-tkszb${ST_TANK.size===v?' on':''}" data-sz="${v}">${esc(lbl)}</button>`).join("")}</span><span class="st-opt-sep"></span><span class="opt-lbl">Formation</span><span class="st-szsel">${ST_FORMATIONS.map(([k,lbl])=>`<button type="button" class="st-formb" data-form="${k}" title="Déposer une formation ${esc(lbl)}">${esc(lbl)}</button>`).join("")}</span><div class="st-count" id="stCount"></div></div>`;
-  const coneGrp=`<div class="optgrp opt-cone"><span class="opt-lbl">Ouverture</span><span class="st-szsel">${ST_CONE_SPREADS.map(([lbl,v])=>`<button type="button" class="st-coneb${ST_CONE.spread===v?' on':''}" data-cone="${v}">${esc(lbl)}</button>`).join("")}</span></div>`;
-  const pathGrp=`<div class="optgrp opt-path"><span class="opt-lbl">Trajet</span><span class="st-opt-hint2">Clique pour ajouter des points · double-clic ou Entrée pour terminer</span></div>`;
-  ed.innerHTML=`<div class="card st-shell dashx st-editor${ST_FULL?' st-full':''}">
-    <div class="st-bar">
-      <button class="st-x" id="stCancel" title="Fermer sans enregistrer">✕</button>
-      <input class="st-name" id="stName" value="${esc(ST_EDIT.name)}" maxlength="80" placeholder="Nom de la stratégie">
-      <div class="st-presence" id="stPresence"></div>
-      <div class="st-bar-act">${modeSel}<button class="st-btn" id="stChangeMap" title="Changer de carte">🗺️ <span>Carte</span></button>${STRAT_CANEDIT?`<button class="st-btn" id="stCollab" title="Autoriser des membres à éditer">👥 <span>Collaborateurs</span></button>`:''}<button class="st-btn" id="stFull" title="Plein écran / fenêtré">⛶</button><button class="st-btn st-btn-gold" id="stPresent" title="Dérouler en présentation">▶ <span>Présenter</span></button><button class="st-btn st-btn-save" id="stSave">✓ Enregistrer</button></div>
+  const modeSel=modes.length?`<select class="se-sel" id="stMode" aria-label="Mode de jeu (bases officielles)">${modes.map(mo=>`<option value="${mo}"${ST_EDIT.mode===mo?' selected':''}>${esc(ST_MODE_FR[mo]||mo)}</option>`).join("")}</select>`:'';
+  const rail=ST_TOOLS.map(([k,l,key],i)=>(ST_RAIL_SEP.includes(i)?'<span class="se-rail-sep"></span>':'')
+      +`<button type="button" class="se-tool${ST_TOOL===k?' on':''}" data-tool="${k}" aria-label="${l}" data-key="${key}" aria-pressed="${ST_TOOL===k}">${stIc(k)}<span class="se-key" aria-hidden="true">${key}</span></button>`).join("")
+    +`<span class="se-rail-sep"></span><button type="button" class="se-tool se-camp" id="stCamp" data-key="C"></button>`;
+  const canCollab=STRAT_CANEDIT||isAppAdmin();
+  ed.innerHTML=`<div class="se${ST_PANEL.off?' insp-off':''}" id="stShell">
+    <div class="se-stage" id="stStage">
+      <svg class="se-svg" id="stSvg" data-tool="${ST_TOOL}" viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${esc(t('Carte'))} ${esc(mapName)}">
+        <defs><marker id="st-ah" markerWidth="4.5" markerHeight="4.5" refX="3" refY="2.25" orient="auto"><path d="M0,0 L4.5,2.25 L0,4.5 z" fill="context-stroke"/></marker></defs>
+        <image href="maps/top/${esc(ST_EDIT.map)}.jpg" x="0" y="0" width="1000" height="1000" preserveAspectRatio="none"/>
+        <rect class="se-cadre" x="0" y="0" width="1000" height="1000"/>
+        <g id="stBases" style="pointer-events:none">${stBasesSvg(ST_EDIT.map,ST_EDIT.mode)}</g>
+        <g id="stGrid" style="pointer-events:none">${ST_GRID?stGridInner():''}</g>
+        <g id="stReplay" style="pointer-events:none"></g>
+        <g id="stEls"></g><g id="stLaser" style="pointer-events:none"></g>
+      </svg>
     </div>
-    <div class="st-work">
-      <div class="st-rail">${tools}</div>
-      <div class="st-canvas">
-        <div class="st-opts" id="stOpts" data-tool="${ST_TOOL}">
-          ${colorGrp}${strokeGrp}${tankGrp}${stampGrp}${coneGrp}${pathGrp}
-          <span class="st-opt-hint" id="stOptHint"></span>
-          <div class="st-opt-act"><button class="st-mini2" id="stUndo" title="Annuler (Ctrl+Z)">↶</button><button class="st-mini2" id="stRedo" title="Refaire (Ctrl+Y)">↷</button><button class="st-mini2${ST_GRID?' on':''}" id="stGridBtn" title="Grille A-K / 1-0">▦</button><button class="st-mini2${ST_SNAP?' on':''}" id="stSnapBtn" title="Aimantation à la grille">🧲</button><button class="st-mini2${ST_LASER?' on':''}" id="stLaserBtn" title="Pointeur : montrer sans dessiner (clic = ping). Visible par les collaborateurs.">🔴</button><span class="st-opt-sep"></span><button class="st-mini2" id="stFront" title="Passer au premier plan ( ] )">⬆</button><button class="st-mini2" id="stBack" title="Envoyer à l'arrière-plan ( [ )">⬇</button><button class="st-mini2" id="stDup" title="Dupliquer la sélection (Ctrl+D)">⧉</button><button class="st-mini2" id="stDelSel" title="Supprimer la sélection">🗑</button><button class="st-mini2" id="stClear" title="Tout effacer">Vider</button></div>
-        </div>
-        <div class="st-stage"><svg class="st-svg" id="stSvg" data-tool="${ST_TOOL}" viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg">
-          <defs><marker id="st-ah" markerWidth="4.5" markerHeight="4.5" refX="3" refY="2.25" orient="auto"><path d="M0,0 L4.5,2.25 L0,4.5 z" fill="context-stroke"/></marker></defs>
-          <image href="maps/top/${esc(ST_EDIT.map)}.jpg" x="0" y="0" width="1000" height="1000" preserveAspectRatio="none"/>
-          <g id="stBases" style="pointer-events:none">${stBasesSvg(ST_EDIT.map,ST_EDIT.mode)}</g>
-          <g id="stGrid" style="pointer-events:none">${ST_GRID?stGridInner():''}</g>
-          <g id="stReplay" style="pointer-events:none"></g>
-          <g id="stEls"></g><g id="stLaser" style="pointer-events:none"></g></svg>
-          <div class="st-zoom"><button type="button" id="stZoomOut" title="Dézoomer (−)">−</button><button type="button" class="z-lvl" id="stZoomLvl" title="Réinitialiser le zoom">100%</button><button type="button" id="stZoomIn" title="Zoomer (+)">+</button></div>
-          <div class="st-minimap" id="stMinimap" style="display:none" title="Mini-carte : clique ou glisse pour naviguer"><img src="maps/top/${esc(ST_EDIT.map)}.jpg" alt="" draggable="false"><div class="st-mini-vp" id="stMiniVp"></div></div></div>
+    <div class="se-top">
+      <div class="se-ilot">
+        <button type="button" class="se-ic" id="stCancel" aria-label="Fermer l'éditeur">${stIc('close')}</button>
+        <span class="se-mapname">${esc(mapName)}</span>
+        ${modeSel}
+        <button type="button" class="se-ic" id="stChangeMap" aria-label="Changer de carte">${stIc('map')}</button>
+      </div>
+      <div class="se-pousse"></div>
+      <div class="se-ilot se-ilot-main">
+        <input class="se-name" id="stName" value="${esc(ST_EDIT.name)}" maxlength="80" placeholder="Nom de la stratégie" aria-label="Nom de la stratégie">
+        <span class="se-etat" id="stEtat" aria-live="polite"></span>
+        <span class="st-presence se-presence" id="stPresence"></span>
+        <span class="se-sep"></span>
+        <button type="button" class="se-ic${ST_LASER?' on':''}" id="stLaserBtn" aria-label="Pointeur : montrer sans dessiner">${stIc('pointer')}</button>
+        ${canCollab?`<button type="button" class="se-ic" id="stCollab" aria-label="Collaborateurs">${stIc('collab')}</button>`:''}
+        <span class="se-sep"></span>
+        <button type="button" class="se-ic" id="stUndo" aria-label="Annuler (Ctrl+Z)" disabled>${stIc('undo')}</button>
+        <button type="button" class="se-ic" id="stRedo" aria-label="Rétablir (Ctrl+Y)" disabled>${stIc('redo')}</button>
+        <span class="se-sep"></span>
+        <button type="button" class="se-ic" id="stPanelBtn" aria-label="Afficher ou masquer le panneau">${stIc('panel')}</button>
+        <button type="button" class="se-btn" id="stPresent">${stIc('play')}<span>Présenter</span></button>
+        <button type="button" class="se-btn se-btn-pri" id="stSave">Enregistrer</button>
       </div>
     </div>
-    <div class="st-rp" id="stRpBar" style="display:none">
-      <span class="st-rp-l">Replay</span>
-      <button class="st-mini2" id="stRpPlay" title="Lecture / pause">▶</button>
-      <button class="st-mini2" id="stRpBack" title="Reculer de 5 s">⏴</button>
-      <button class="st-mini2" id="stRpFwd" title="Avancer de 5 s">⏵</button>
-      <input class="st-rp-scrub" id="stRpScrub" type="range" min="0" max="100" step="0.1" value="0">
-      <span class="st-rp-t" id="stRpTime">0:00</span>
-      <select class="st-rp-spd" id="stRpSpeed" title="Vitesse"><option value="1">×1</option><option value="2" selected>×2</option><option value="4">×4</option><option value="8">×8</option></select>
-      <button class="st-mini2 st-rp-pin" id="stRpPin" title="Créer une diapo de débriefing à cet instant">📌 Diapo ici</button>
-      <button class="st-mini2 st-rp-prop" id="stRpProp" title="Proposer une position : clique un char du replay pour créer un fantôme « il aurait fallu être ici »">👥 Proposer</button>
-      <span class="st-rp-name" id="stRpName"></span>
-      <button class="st-mini2" id="stRpClose" title="Retirer le replay">✕</button>
+    <div class="se-rail" role="toolbar" aria-label="Outils" aria-orientation="vertical">${rail}</div>
+    <aside class="se-insp" id="stInsp" aria-label="Panneau de la stratégie">
+      ${stSec('steps','Étapes',`<div class="se-steps" id="stStepTabs"></div><input class="se-in" id="stStepNote" maxlength="140" placeholder="Ce qui se passe à cette étape" aria-label="Note de l'étape (affichée en présentation)"><button type="button" class="se-link" id="stStepDel">Supprimer cette étape</button>`)}
+      ${stSec('props','Propriétés','<div id="stProps"></div>')}
+      ${stSec('els','Éléments','<div class="se-tally" id="stTally"></div><div class="se-list" id="stElList"></div>','<span class="se-count" id="stElCount"></span>')}
+      ${stSec('disp','Affichage',stDispHtml())}
+    </aside>
+    <div class="se-zoom se-ilot">
+      <button type="button" class="se-ic" id="stZoomOut" aria-label="Dézoomer (−)">${stIc('minus')}</button>
+      <button type="button" class="se-zlvl" id="stZoomLvl" aria-label="Revenir à 100 % (0)">100%</button>
+      <button type="button" class="se-ic" id="stZoomIn" aria-label="Zoomer (+)">${stIc('plus')}</button>
     </div>
-    <div class="st-steps2"><span class="st-steps2-l">Étapes</span><div class="st-steptabs" id="stStepTabs"></div><input class="st-stepnote" id="stStepNote" maxlength="140" placeholder="✎ Note de cette étape (affichée en présentation)…"><button class="st-mini2" id="stStepDel" title="Supprimer l'étape courante">🗑 Supprimer l'étape</button></div>
+    <div class="se-mini" id="stMinimap" style="display:none" aria-label="Mini-carte : clique ou glisse pour naviguer"><img src="maps/top/${esc(ST_EDIT.map)}.jpg" alt="" draggable="false"><div class="se-mini-vp" id="stMiniVp"></div></div>
+    <div class="se-hint" id="stHint"></div>
+    <div class="se-rp se-ilot" id="stRpBar" style="display:none">
+      <button type="button" class="se-ic" id="stRpPlay" aria-label="Lecture / pause">${stIc('play')}</button>
+      <button type="button" class="se-ic" id="stRpBack" aria-label="Reculer de 5 s">${stIc('back5')}</button>
+      <button type="button" class="se-ic" id="stRpFwd" aria-label="Avancer de 5 s">${stIc('fwd5')}</button>
+      <input class="se-rp-scrub" id="stRpScrub" type="range" min="0" max="100" step="0.1" value="0" aria-label="Instant du replay">
+      <span class="se-rp-t" id="stRpTime">0:00</span>
+      <select class="se-sel" id="stRpSpeed" aria-label="Vitesse de lecture"><option value="1">×1</option><option value="2" selected>×2</option><option value="4">×4</option><option value="8">×8</option></select>
+      <span class="se-sep"></span>
+      <button type="button" class="se-btn" id="stRpPin" aria-label="Créer une étape de débriefing à cet instant">${stIc('pin')}<span>Étape ici</span></button>
+      <button type="button" class="se-btn" id="stRpProp" aria-pressed="false" aria-label="Proposer une position : clique un char du replay">${stIc('ghost')}<span>Proposer</span></button>
+      <span class="se-rp-name" id="stRpName"></span>
+      <button type="button" class="se-ic" id="stRpClose" aria-label="Retirer le replay">${stIc('close')}</button>
+    </div>
   </div>`;
   stRedraw();
   stWireEditor();
   stRpMount();
   stEnsureBases();   // sans attendre : le calque des bases se remplira au chargement
+  stRenderPresence();
 }
-const ST_HINTS={select:"Clique un élément puis glisse pour le déplacer.",tank:"Choisis une couleur + une classe, puis clique sur la carte. Double-clic = nommer.",arrow:"Glisse pour tracer une flèche.",line:"Glisse pour tracer un trait.",rect:"Glisse pour dessiner une zone à surligner.",circle:"Glisse pour dessiner un cercle.",stamp:"Choisis un symbole tactique + une couleur, puis clique sur la carte.",measure:"Glisse d'un point à un autre : la distance s'affiche en mètres.",range:"Clique-glisse depuis un point : cercle de portée/vision en mètres.",cone:"Clique-glisse depuis un char : cône de tir orienté.",path:"Clique pour poser des points ; double-clic ou Entrée pour terminer le trajet.",pen:"Dessine à main levée.",marker:"Clique pour poser un jeton numéroté.",text:"Clique pour ajouter du texte.",erase:"Clique un élément pour l'effacer."};
-function stSyncOptions(){ const o=document.getElementById("stOpts"); if(o) o.dataset.tool=ST_TOOL; const h=document.getElementById("stOptHint"); if(h) h.textContent=ST_HINTS[ST_TOOL]||""; }
+// Ce que fait l'outil, en une phrase, en bas de l'écran.
+const ST_HINTS={
+  select:"Clique un élément pour le régler, glisse pour le déplacer. Glisse dans le vide pour en prendre plusieurs.",
+  tank:"Clique sur la carte pour poser un char. Double-clic sur un char pour le nommer. C change de camp.",
+  arrow:"Glisse pour tracer une flèche.",
+  path:"Clique pour poser chaque point. Double-clic ou Entrée pour finir, Échap pour annuler.",
+  zone:"Glisse pour délimiter une zone.",
+  stamp:"Clique sur la carte pour poser le symbole choisi à droite.",
+  text:"Clique sur la carte, écris, puis Entrée.",
+  pen:"Dessine à main levée.",
+  measure:"Glisse d'un point à un autre : la distance s'affiche en mètres."
+};
 function stTranslate(el,dx,dy){
   const c=JSON.parse(JSON.stringify(el));
   if(c.type==='arrow'||c.type==='line'||c.type==='rect'||c.type==='circle'||c.type==='measure'){ c.x1+=dx;c.y1+=dy;c.x2+=dx;c.y2+=dy; }
@@ -9387,77 +9558,89 @@ function stElBounds(el){
   if(el.type==='range'||el.type==='cone'){ const r=el.r||0; return [el.x-r,el.y-r,el.x+r,el.y+r]; }
   return [el.x-24,el.y-24,el.x+24,el.y+24];
 }
-function stDeleteSel(){ if(!ST_SELS.size)return; stSnapshot(); [...ST_SELS].sort((a,b)=>b-a).forEach(i=>ST_EDIT.els.splice(i,1)); stSelClear(); stRedraw(); stUpdCount(); }
-function stDupSel(){ if(!ST_SELS.size)return; stSnapshot(); const copies=stSelEls().map(el=>stTranslate(el,30,30)); const start=ST_EDIT.els.length; copies.forEach(c=>ST_EDIT.els.push(c)); stSelClear(); copies.forEach((_,k)=>ST_SELS.add(start+k)); stRedraw(); stUpdCount(); }
+function stDeleteSel(){ if(!ST_SELS.size)return; stSnapshot(); [...ST_SELS].sort((a,b)=>b-a).forEach(i=>ST_EDIT.els.splice(i,1)); stSelClear(); stRedraw(); stMaj(); }
+function stDupSel(){ if(!ST_SELS.size)return; stSnapshot(); const copies=stSelEls().map(el=>stTranslate(el,30,30)); const start=ST_EDIT.els.length; copies.forEach(c=>ST_EDIT.els.push(c)); stSelClear(); copies.forEach((_,k)=>ST_SELS.add(start+k)); stRedraw(); stMaj(); }
 function stZOrder(front){ if(!ST_SELS.size)return; stSnapshot(); const sel=stSelEls(); [...ST_SELS].sort((a,b)=>b-a).forEach(i=>ST_EDIT.els.splice(i,1)); stSelClear();
   if(front){ const start=ST_EDIT.els.length; sel.forEach(el=>ST_EDIT.els.push(el)); sel.forEach((_,k)=>ST_SELS.add(start+k)); }
   else { sel.slice().reverse().forEach(el=>ST_EDIT.els.unshift(el)); sel.forEach((_,k)=>ST_SELS.add(k)); }
   stRedraw(); }
 function stNudge(dx,dy){ if(!ST_SELS.size)return; stSnapshot(); [...ST_SELS].forEach(i=>{ ST_EDIT.els[i]=stTranslate(ST_EDIT.els[i],dx,dy); }); stRedraw(); }
-function stDropFormation(key){ const offs=ST_FORM_SHAPES[key]||ST_FORM_SHAPES.line;
-  const cx=ST_ZOOM.x+ST_ZOOM.w/2, cy=ST_ZOOM.y+ST_ZOOM.h/2; stSnapshot(); stSelClear(); const start=ST_EDIT.els.length;
-  offs.forEach(o=>ST_EDIT.els.push({type:'tank',cls:ST_TANK.cls,color:ST_TANK.color,x:Math.round(cx+o[0]),y:Math.round(cy+o[1]),name:'',size:ST_TANK.size}));
-  offs.forEach((_,k)=>ST_SELS.add(start+k)); stRedraw(); stUpdCount(); }
 function stCopy(){ ST_CLIP=stSelEls().map(el=>JSON.parse(JSON.stringify(el))); }
-function stPaste(){ if(!ST_CLIP.length)return; stSnapshot(); const start=ST_EDIT.els.length; ST_CLIP.forEach(el=>ST_EDIT.els.push(stTranslate(JSON.parse(JSON.stringify(el)),42,42))); stSelClear(); ST_CLIP.forEach((_,k)=>ST_SELS.add(start+k)); stRedraw(); stUpdCount(); }
+function stPaste(){ if(!ST_CLIP.length)return; stSnapshot(); const start=ST_EDIT.els.length; ST_CLIP.forEach(el=>ST_EDIT.els.push(stTranslate(JSON.parse(JSON.stringify(el)),42,42))); stSelClear(); ST_CLIP.forEach((_,k)=>ST_SELS.add(start+k)); stRedraw(); stMaj(); }
 function stSelBoxSvg(){ if(!ST_BOX)return''; const x=Math.min(ST_BOX.x0,ST_BOX.x1),y=Math.min(ST_BOX.y0,ST_BOX.y1),w=Math.abs(ST_BOX.x1-ST_BOX.x0),h=Math.abs(ST_BOX.y1-ST_BOX.y0);
-  return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#d8b25e" fill-opacity=".08" stroke="#d8b25e" stroke-width="2" stroke-dasharray="8 6" style="pointer-events:none"/>`; }
+  return `<rect class="st-selbox" x="${x}" y="${y}" width="${w}" height="${h}" style="pointer-events:none"/>`; }
 // ---- poignées de redimensionnement / rotation ----
 function stScaleEl(el,f,cx,cy){ const c=JSON.parse(JSON.stringify(el)); f=Math.max(0.1,Math.min(6,f));
   const sp=(x,y)=>[cx+(x-cx)*f, cy+(y-cy)*f];
   if(c.x1!=null){ [c.x1,c.y1]=sp(c.x1,c.y1); [c.x2,c.y2]=sp(c.x2,c.y2); }
   else if(c.pts){ c.pts=c.pts.map(p=>sp(p[0],p[1])); }
-  if(c.size!=null) c.size=Math.max(0.3,Math.min(3,(el.size||1)*f));
-  if(c.type==='range'||c.type==='cone'){ c.r=Math.max(2,(el.r||1)*f); if(c.type==='range') c.m=Math.round(c.r/1000*stMapMeters()); }
+  // mêmes bornes que le serveur : au-delà, la taille était ramenée à l'enregistrement
+  if(c.size!=null) c.size=Math.max(0.4,Math.min(2,(el.size||1)*f));
+  if(c.type==='range'||c.type==='cone'){ c.r=Math.max(2,Math.min(1500,(el.r||1)*f)); if(c.type==='range') c.m=Math.round(c.r/1000*stMapMeters()); }
   return c; }
+// Poignées de l'élément sélectionné (outil Sélection, un seul élément).
+// Pas de rotation là où elle ne veut rien dire — une silhouette de char, un
+// jeton, une mesure — : le serveur ne la conservait de toute façon pas pour
+// la mesure et la portée, elle disparaissait à l'enregistrement.
 function stHandlesSvg(){ if(ST_TOOL!=='select'||ST_SELS.size!==1||ST_BOX||ST_MOVE) return '';
   const i=[...ST_SELS][0]; const el=ST_EDIT.els[i]; if(!el) return '';
-  let [x0,y0,x1,y1]=stElBounds(el); const cx=(x0+x1)/2, cy=(y0+y1)/2, pad=10;
+  const k=ST_ZOOM.w/1000;   // les poignées gardent la même taille à l'écran, quel que soit le zoom
+  let [x0,y0,x1,y1]=stElBounds(el); const cx=(x0+x1)/2, cy=(y0+y1)/2, pad=10*k;
   x0-=pad;y0-=pad;x1+=pad;y1+=pad; const rot=el.rot||0;
   const resizable=!['marker','text','measure'].includes(el.type);
-  const ry=y0-40;
-  let s=`<g class="st-handles" transform="rotate(${rot} ${cx} ${cy})" style="pointer-events:none">`;
-  s+=`<rect x="${x0}" y="${y0}" width="${x1-x0}" height="${y1-y0}" fill="none" stroke="#e5b95c" stroke-width="2" stroke-dasharray="6 5" opacity=".85"/>`;
-  if(resizable){ [['nw',x0,y0],['ne',x1,y0],['se',x1,y1],['sw',x0,y1]].forEach(c=>{ s+=`<circle class="st-handle" data-h="${c[0]}" cx="${c[1]}" cy="${c[2]}" r="9" fill="#15161a" stroke="#e5b95c" stroke-width="2.6" style="pointer-events:all;cursor:nwse-resize"/>`; }); }
-  s+=`<line x1="${cx}" y1="${y0}" x2="${cx}" y2="${ry}" stroke="#e5b95c" stroke-width="2" opacity=".8"/><circle class="st-handle" data-h="rot" cx="${cx}" cy="${ry}" r="9" fill="#e5b95c" stroke="#0c0d0f" stroke-width="2.4" style="pointer-events:all;cursor:grab"/>`;
+  const rotatable=!['tank','ghost','marker','measure','range'].includes(el.type);
+  const ry=y0-40*k, r=(9*k).toFixed(1);
+  let s=`<g transform="rotate(${rot} ${cx} ${cy})" style="pointer-events:none">`;
+  s+=`<rect class="st-hbox" x="${x0}" y="${y0}" width="${x1-x0}" height="${y1-y0}"/>`;
+  if(resizable){ [['nw',x0,y0],['ne',x1,y0],['se',x1,y1],['sw',x0,y1]].forEach(c=>{ s+=`<circle class="st-handle" data-h="${c[0]}" cx="${c[1]}" cy="${c[2]}" r="${r}" style="pointer-events:all;cursor:nwse-resize"/>`; }); }
+  if(rotatable) s+=`<line class="st-hline" x1="${cx}" y1="${y0}" x2="${cx}" y2="${ry}"/><circle class="st-handle st-handle-rot" data-h="rot" cx="${cx}" cy="${ry}" r="${r}" style="pointer-events:all;cursor:grab"/>`;
   return s+`</g>`; }
 // ---- menu clic droit ----
-function stHideCtxMenu(){ const m=document.getElementById("stCtxMenu"); if(m) m.remove(); }
-function stShowCtxMenu(cx,cy,eid){
+function stHideCtxMenu(){ const m=document.getElementById("stCtxMenu"); if(m) m.remove(); document.removeEventListener("pointerdown",stCtxOutside,true); }
+function stShowCtxMenu(cx,cy){
   stHideCtxMenu();
-  const n=ST_SELS.size;
+  const n=ST_SELS.size, one=n===1?ST_EDIT.els[[...ST_SELS][0]]:null;
+  const nommable=one&&['tank','ghost','text','marker'].includes(one.type);
   const items = n ? [
-    ["Copier","stCopy",!!n],
+    ...(nommable?[[one.type==='text'?"Modifier le texte":"Renommer","stRename",true],["sep"]]:[]),
+    ["Dupliquer","stDupSel",true],
+    ["Copier","stCopy",true],
     ["Coller","stPaste",ST_CLIP.length>0],
-    ["Dupliquer","stDupSel",!!n],
     ["sep"],
-    ["Premier plan","stFront",!!n],
-    ["Arrière-plan","stBack",!!n],
+    ["Premier plan","stFront",true],
+    ["Arrière-plan","stBack",true],
     ["sep"],
-    ["Supprimer","stDelete",!!n],
+    ["Supprimer","stDelete",true],
   ] : [
     ["Coller","stPaste",ST_CLIP.length>0],
     ["Tout sélectionner","stAll",ST_EDIT.els.length>0],
   ];
-  const m=document.createElement("div"); m.id="stCtxMenu"; m.className="st-ctxmenu";
+  const m=document.createElement("div"); m.id="stCtxMenu"; m.className="st-ctxmenu"; m.setAttribute("role","menu");
   m.innerHTML=items.map(it=> it[0]==="sep"?`<div class="st-ctxsep"></div>`
-    :`<button type="button" class="st-ctxitem${it[2]?'':' off'}" data-act="${it[1]}"${it[2]?'':' disabled'}>${it[0]}</button>`).join("");
+    :`<button type="button" role="menuitem" class="st-ctxitem${it[2]?'':' off'}${it[1]==='stDelete'?' danger':''}" data-act="${it[1]}"${it[2]?'':' disabled'}>${it[0]}</button>`).join("");
   document.body.appendChild(m);
   const vw=innerWidth,vh=innerHeight,mw=m.offsetWidth||180,mh=m.offsetHeight||10;
   m.style.left=Math.min(cx,vw-mw-6)+"px"; m.style.top=Math.min(cy,vh-mh-6)+"px";
   m.querySelectorAll(".st-ctxitem").forEach(b=>b.onclick=()=>{ const a=b.dataset.act; stHideCtxMenu();
-    if(a==='stCopy')stCopy(); else if(a==='stPaste')stPaste(); else if(a==='stDupSel')stDupSel();
+    if(a==='stRename'){ stRename([...ST_SELS][0]); }
+    else if(a==='stCopy')stCopy(); else if(a==='stPaste')stPaste(); else if(a==='stDupSel')stDupSel();
     else if(a==='stFront')stZOrder(true); else if(a==='stBack')stZOrder(false);
-    else if(a==='stDelete')stDeleteSel(); else if(a==='stAll'){ stSelClear(); ST_EDIT.els.forEach((_,i)=>ST_SELS.add(i)); stRedraw(); } });
+    else if(a==='stDelete')stDeleteSel(); else if(a==='stAll'){ stSetTool('select'); ST_EDIT.els.forEach((_,i)=>ST_SELS.add(i)); stRedraw(); } });
   setTimeout(()=>{ document.addEventListener("pointerdown",stCtxOutside,true); },0);
 }
-function stCtxOutside(e){ const m=document.getElementById("stCtxMenu"); if(m&&!m.contains(e.target)){ stHideCtxMenu(); document.removeEventListener("pointerdown",stCtxOutside,true); } }
+function stCtxOutside(e){ const m=document.getElementById("stCtxMenu"); if(m&&!m.contains(e.target)) stHideCtxMenu(); }
 // Centre géométrique d'un élément (pour rotation/poignées).
 function stElCenter(el){ const b=stElBounds(el); return [(b[0]+b[2])/2,(b[1]+b[3])/2]; }
 // Wrapper : applique une rotation `rot` (deg) autour du centre si présente.
-function stElSvg(el,i){ const s=stElInner(el,i); if(el.rot){ const c=stElCenter(el); return `<g transform="rotate(${el.rot} ${c[0]} ${c[1]})">${s}</g>`; } return s; }
-function stElInner(el,i){
-  const sel=ST_SELS.has(i)?' st-sel':'';
+// `pfx` préfixe les identifiants de filtre : l'éditeur, la consultation et la
+// présentation coexistent dans la page, et un identifiant en double faisait
+// prendre au char la couleur d'un AUTRE char (constaté en présentation).
+function stElSvg(el,i,pfx){ const s=stElInner(el,i,pfx||'e'); if(el.rot){ const c=stElCenter(el); return `<g transform="rotate(${el.rot} ${c[0]} ${c[1]})">${s}</g>`; } return s; }
+// Secteur surveillé d'un char : cap (0 = nord, sens horaire) et demi-ouverture.
+function stSectorPath(x,y,cap,sec,R){ const a0=(cap-90-sec)*Math.PI/180, a1=(cap-90+sec)*Math.PI/180;
+  return `M ${x} ${y} L ${(x+R*Math.cos(a0)).toFixed(1)} ${(y+R*Math.sin(a0)).toFixed(1)} A ${R} ${R} 0 ${2*sec>180?1:0} 1 ${(x+R*Math.cos(a1)).toFixed(1)} ${(y+R*Math.sin(a1)).toFixed(1)} Z`; }
+function stElInner(el,i,pfx){
+  const sel=ST_SELS.has(i)&&pfx==='e'?' st-sel':'';
   if(el.type==='arrow'||el.type==='line'){ const w=el.w||7, m=el.type==='arrow'?' marker-end="url(#st-ah)"':'', dash=el.dash?` stroke-dasharray="${w*2.1} ${w*1.6}"`:'';
     if(el.curve) return `<path class="st-el${sel}" data-eid="${i}" d="${stCurvePath(el)}" fill="none" stroke="${esc(el.color)}" stroke-width="${w}" stroke-linecap="round"${dash}${m}/>`;
     return `<line class="st-el${sel}" data-eid="${i}" x1="${el.x1}" y1="${el.y1}" x2="${el.x2}" y2="${el.y2}" stroke="${esc(el.color)}" stroke-width="${w}" stroke-linecap="round"${dash}${m}/>`; }
@@ -9471,20 +9654,21 @@ function stElInner(el,i){
   // POSITION PROPOSÉE (débriefing) : fantôme relié par une flèche pointillée à la
   // position RÉELLE du char dans le replay (x0,y0 ne bougent jamais).
   if(el.type==='ghost'){ const col=el.color||'#d8b566'; const s=Math.round(66*(el.size||0.72)),h=s/2,
-        cls=(ST_CLASSES.find(c=>c[0]===el.cls)?el.cls:'medium'), nm=String(el.name||'').trim();
+        cls=(ST_CLASSES.find(c=>c[0]===el.cls)?el.cls:'medium'), nm=String(el.name||'').trim(), fid=`${pfx}g${i}`;
     const arr=(el.x0!=null&&el.y0!=null)
       ? `<path d="M ${el.x0} ${el.y0} L ${el.x} ${el.y}" stroke="${esc(col)}" stroke-width="4" stroke-dasharray="11 8" fill="none" marker-end="url(#st-ah)" opacity=".9"/>`
         +`<circle cx="${el.x0}" cy="${el.y0}" r="6" fill="none" stroke="${esc(col)}" stroke-width="3" opacity=".75"/>` : '';
     const label=nm?`<text x="${el.x}" y="${el.y+h+11}" font-size="14" font-weight="700" text-anchor="middle" fill="#fff" stroke="#000" stroke-width="3" paint-order="stroke" style="pointer-events:none">${esc(nm)}</text>`:'';
-    return `<g class="st-el st-ghost${sel}" data-eid="${i}">${arr}<filter id="stg${i}" x="-45%" y="-45%" width="190%" height="190%"><feFlood flood-color="${esc(col)}" result="f"/><feComposite in="f" in2="SourceAlpha" operator="in" result="s"/><feDropShadow in="s" dx="0" dy="0" stdDeviation="3" flood-color="#000" flood-opacity=".9"/></filter><image href="strat/class_${cls}.png" x="${el.x-h}" y="${el.y-h}" width="${s}" height="${s}" filter="url(#stg${i})" opacity=".7"/>${label}</g>`; }
-  if(el.type==='tank'){ const col=el.color||'#5dbb46'; const s=Math.round(66*(el.size||0.78)),h=s/2, cls=(ST_CLASSES.find(c=>c[0]===el.cls)?el.cls:'medium');
+    return `<g class="st-el st-ghost${sel}" data-eid="${i}">${arr}<filter id="${fid}" x="-45%" y="-45%" width="190%" height="190%"><feFlood flood-color="${esc(col)}" result="f"/><feComposite in="f" in2="SourceAlpha" operator="in" result="s"/><feDropShadow in="s" dx="0" dy="0" stdDeviation="3" flood-color="#000" flood-opacity=".9"/></filter><image href="strat/class_${cls}.png" x="${el.x-h}" y="${el.y-h}" width="${s}" height="${s}" filter="url(#${fid})" opacity=".7"/>${label}</g>`; }
+  if(el.type==='tank'){ const col=el.color||'#5dbb46'; const s=Math.round(66*(el.size||0.78)),h=s/2, cls=(ST_CLASSES.find(c=>c[0]===el.cls)?el.cls:'medium'), fid=`${pfx}k${i}`;
     const nm=String(el.name||'').trim(); const nw=nm?Math.round(nm.length*8.6+16):0;
     const label=nm?`<g style="pointer-events:none"><rect x="${el.x-nw/2}" y="${el.y+h-6}" width="${nw}" height="21" rx="6" fill="#0c0d0f" fill-opacity=".82"/><text x="${el.x}" y="${el.y+h+9}" font-size="15" font-weight="700" text-anchor="middle" fill="#fff">${esc(nm)}</text></g>`:'';
-    return `<g class="st-el st-tank${sel}" data-eid="${i}"><filter id="stk${i}" x="-45%" y="-45%" width="190%" height="190%"><feFlood flood-color="${esc(col)}" result="f"/><feComposite in="f" in2="SourceAlpha" operator="in" result="s"/><feDropShadow in="s" dx="0" dy="0" stdDeviation="3.4" flood-color="#000" flood-opacity=".92"/></filter><image href="strat/class_${cls}.png" x="${el.x-h}" y="${el.y-h}" width="${s}" height="${s}" filter="url(#stk${i})"/>${label}</g>`; }
-  if(el.type==='stamp'){ const col=el.color||'#e5c84b', inner=ST_STAMPS[el.kind]||ST_STAMPS.focus, sz=el.size||0.75;
+    const sec=el.secteur>0?`<path d="${stSectorPath(el.x,el.y,el.cap||0,el.secteur,150)}" fill="${esc(col)}" fill-opacity=".13" stroke="${esc(col)}" stroke-opacity=".7" stroke-width="2" stroke-dasharray="7 5" style="pointer-events:none"/>`:'';
+    return `<g class="st-el st-tank${sel}" data-eid="${i}">${sec}<filter id="${fid}" x="-45%" y="-45%" width="190%" height="190%"><feFlood flood-color="${esc(col)}" result="f"/><feComposite in="f" in2="SourceAlpha" operator="in" result="s"/><feDropShadow in="s" dx="0" dy="0" stdDeviation="3.4" flood-color="#000" flood-opacity=".92"/></filter><image href="strat/class_${cls}.png" x="${el.x-h}" y="${el.y-h}" width="${s}" height="${s}" filter="url(#${fid})"/>${label}</g>`; }
+  if(el.type==='stamp'){ const col=el.color||'#e5c84b', inner=(Object.prototype.hasOwnProperty.call(ST_STAMPS,el.kind)?ST_STAMPS[el.kind]:ST_STAMPS.focus), sz=el.size||0.75;
     return `<g class="st-el st-stamp${sel}" data-eid="${i}" transform="translate(${el.x},${el.y}) scale(${sz})"><circle r="20" fill="#0c0d0f" fill-opacity=".55" stroke="#0a0a0a" stroke-opacity=".45" stroke-width="2"/><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="color:${esc(col)}">${inner}</g></g>`; }
   if(el.type==='measure'){ const mx=Math.round((el.x1+el.x2)/2),my=Math.round((el.y1+el.y2)/2),tw=(String(el.m).length*9+30);
-    return `<g class="st-el st-measure${sel}" data-eid="${i}"><line x1="${el.x1}" y1="${el.y1}" x2="${el.x2}" y2="${el.y2}" stroke="#f4d78c" stroke-width="3.4" stroke-dasharray="11 7" stroke-linecap="round"/><circle cx="${el.x1}" cy="${el.y1}" r="4.5" fill="#f4d78c"/><circle cx="${el.x2}" cy="${el.y2}" r="4.5" fill="#f4d78c"/><g style="pointer-events:none"><rect x="${mx-tw/2}" y="${my-13}" width="${tw}" height="23" rx="6" fill="#0c0d0f" fill-opacity=".88"/><text x="${mx}" y="${my+4}" font-size="15" font-weight="800" text-anchor="middle" fill="#f4d78c">${el.m} m</text></g></g>`; }
+    return `<g class="st-el st-measure${sel}" data-eid="${i}"><line x1="${el.x1}" y1="${el.y1}" x2="${el.x2}" y2="${el.y2}" stroke="#ecd190" stroke-width="3.4" stroke-dasharray="11 7" stroke-linecap="round"/><circle cx="${el.x1}" cy="${el.y1}" r="4.5" fill="#ecd190"/><circle cx="${el.x2}" cy="${el.y2}" r="4.5" fill="#ecd190"/><g style="pointer-events:none"><rect x="${mx-tw/2}" y="${my-13}" width="${tw}" height="23" rx="6" fill="#0c0d0f" fill-opacity=".88"/><text x="${mx}" y="${my+4}" font-size="15" font-weight="800" text-anchor="middle" fill="#ecd190">${el.m} m</text></g></g>`; }
   if(el.type==='range'){ const col=el.color||'#5bb0e5', tw=(String(el.m).length*9+30);
     return `<g class="st-el st-range${sel}" data-eid="${i}"><circle cx="${el.x}" cy="${el.y}" r="${Math.round(el.r)}" fill="${esc(col)}" fill-opacity=".07" stroke="${esc(col)}" stroke-width="3" stroke-dasharray="10 8" style="pointer-events:none"/><circle cx="${el.x}" cy="${el.y}" r="6" fill="${esc(col)}"/><g style="pointer-events:none"><rect x="${el.x-tw/2}" y="${el.y-Math.round(el.r)-25}" width="${tw}" height="22" rx="6" fill="#0c0d0f" fill-opacity=".88"/><text x="${el.x}" y="${el.y-Math.round(el.r)-9}" font-size="14" font-weight="800" text-anchor="middle" fill="${esc(col)}">${el.m} m</text></g></g>`; }
   if(el.type==='cone'){ const col=el.color||'#e5c84b', r=Math.max(1,el.r||120), sp=Math.max(4,Math.min(160,el.spread||30));
@@ -9500,12 +9684,12 @@ function stElInner(el,i){
 function stDrawPreview(){ let s='';
   if(ST_PATHBUILD){ const b=ST_PATHBUILD, w=b.w||7; const pts=b.cursor?b.pts.concat([b.cursor]):b.pts;
     s+=`<g opacity=".9" style="pointer-events:none"><polyline points="${pts.map(p=>p.map(n=>Math.round(n)).join(',')).join(' ')}" fill="none" stroke="${esc(b.color)}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="2 ${w*1.7}" marker-end="url(#st-ah)"/>${b.pts.map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="${w*0.7+1}" fill="${esc(b.color)}"/>`).join('')}</g>`; }
-  const d=ST_DRAW; if(d && !(d.type==='pen'&&d.pts.length<2)) s+=`<g opacity=".8" style="pointer-events:none">${stElSvg(d,'prev')}</g>`;
+  const d=ST_DRAW; if(d && !(d.type==='pen'&&d.pts.length<2)) s+=`<g opacity=".8" style="pointer-events:none">${stElSvg(d,'prev','e')}</g>`;
   return s; }
 // Termine (ou annule) un trajet multipoint en cours.
 function stFinishPath(commit){ const b=ST_PATHBUILD; ST_PATHBUILD=null;
-  if(commit&&b){ const pts=b.pts.filter((p,i)=> i===0 || Math.hypot(p[0]-b.pts[i-1][0],p[1]-b.pts[i-1][1])>4 );
-    if(pts.length>1){ stSnapshot(); ST_EDIT.els.push({type:'path',color:b.color,w:b.w,dash:b.dash,pts}); } }
+  if(commit&&b){ const pts=b.pts.filter((p,i)=> i===0 || Math.hypot(p[0]-b.pts[i-1][0],p[1]-b.pts[i-1][1])>4 ).slice(0,300);
+    if(pts.length>1){ stSnapshot(); ST_EDIT.els.push({type:'path',color:b.color,w:b.w,dash:b.dash,pts}); stSelOnly(ST_EDIT.els.length-1); } }
   stRedraw(); }
 /* ============================================================
    REPLAY DANS L'ÉDITEUR  (débriefing)
@@ -9614,14 +9798,14 @@ function stRpPick(ev){
   ST_EDIT.els.push({ type:'ghost', x0:Math.round(xy[0]), y0:Math.round(xy[1]),
     x:Math.round(xy[0])+80, y:Math.round(xy[1]), cls:(ST_RP_CLS[v.cls]||'medium'),
     color:'#d8b566', name:stRpLabel(v).slice(0,18), size:0.72 });
-  stRedraw(); if(typeof stUpdCount==='function') stUpdCount();
+  stRedraw(); if(typeof stMaj==='function') stMaj();
 }
 function stRpSync(){
   const sc=document.getElementById("stRpScrub"), tm=document.getElementById("stRpTime"),
         pb=document.getElementById("stRpPlay");
   if(sc) sc.value=ST_RP?ST_RP.t:0;
   if(tm) tm.textContent=ST_RP?(stRpFmt(ST_RP.t)+" / "+stRpFmt(ST_RP.dur)):"0:00";
-  if(pb) pb.textContent=(ST_RP&&ST_RP.playing)?"❚❚":"▶";
+  if(pb){ const on=!!(ST_RP&&ST_RP.playing); if(pb.dataset.etat!==String(on)){ pb.dataset.etat=String(on); pb.innerHTML=stIc(on?'pause':'play'); } }
 }
 function stRpStop(){ if(ST_RP&&ST_RP.raf){ cancelAnimationFrame(ST_RP.raf); ST_RP.raf=null; } if(ST_RP) ST_RP.playing=false; stRpSync(); }
 function stRpLoop(now){
@@ -9653,7 +9837,7 @@ function stRpPinStep(){
   ST_EDIT.steps.sort((a,b)=>((a.t==null?-1:a.t)-(b.t==null?-1:b.t)));
   ST_STEP=Math.max(0,ST_EDIT.steps.indexOf(keep));
   ST_EDIT.els=ST_EDIT.steps[ST_STEP].els;
-  renderStepTabs(); stRedraw(); if(typeof stUpdCount==='function') stUpdCount();
+  renderStepTabs(); stRedraw(); if(typeof stMaj==='function') stMaj();
 }
 /* pendant la lecture : afficher la diapo correspondant à l'instant courant.
    AVANT la première diapo épinglée, aucune annotation ne doit apparaître. */
@@ -9673,6 +9857,8 @@ function stRpFollowSteps(){
 /* (re)branche la barre après chaque rendu de l'éditeur */
 function stRpMount(){
   const bar=document.getElementById("stRpBar"); if(!bar) return;
+  // la carte remonte pour laisser la place à la frise
+  const sh=document.getElementById("stShell"); if(sh) sh.classList.toggle("has-rp",!!ST_RP);
   if(!ST_RP){ bar.style.display="none"; return; }
   bar.style.display="flex";
   const sc=document.getElementById("stRpScrub");
@@ -9691,8 +9877,8 @@ function stRpMount(){
   document.getElementById("stRpSpeed").onchange=e=>{ ST_RP.speed=+e.target.value; };
   document.getElementById("stRpPin").onclick=stRpPinStep;
   const pb2=document.getElementById("stRpProp");
-  pb2.classList.toggle("on", !!ST_RP.propose);
-  pb2.onclick=()=>{ ST_RP.propose=!ST_RP.propose; pb2.classList.toggle("on",ST_RP.propose); stRpDraw(); };
+  pb2.classList.toggle("on", !!ST_RP.propose); pb2.setAttribute("aria-pressed",String(!!ST_RP.propose));
+  pb2.onclick=()=>{ ST_RP.propose=!ST_RP.propose; pb2.classList.toggle("on",ST_RP.propose); pb2.setAttribute("aria-pressed",String(ST_RP.propose)); stRpDraw(); };
   document.getElementById("stRpClose").onclick=()=>{ stRpStop(); ST_RP=null; stRpDraw(); stRpMount(); };
   stRpDraw(); stRpSync();
 }
@@ -9738,14 +9924,16 @@ async function stOpenReplay(battleId, btn){
 }
 function pretty2(s){ try{ return pretty(mapKey(s)); }catch(e){ return String(s||""); } }
 
-function stRedraw(){ const g=document.getElementById("stEls"); if(g) g.innerHTML=ST_EDIT.els.map((e,i)=>stElSvg(e,i)).join("")+stDrawPreview()+stSelBoxSvg()+stHandlesSvg(); }
+function stRedraw(){ const g=document.getElementById("stEls"); if(!g||!ST_EDIT) return; g.innerHTML=ST_EDIT.els.map((e,i)=>stElSvg(e,i,'e')).join("")+stDrawPreview()+stSelBoxSvg()+stHandlesSvg(); stMajLazy(); }
 // Métriques du canvas : le viewBox (carré) est centré dans l'élément SVG (letterbox
 // via preserveAspectRatio "meet"), donc échelle = plus petite dimension / côté du viewBox.
 function stMetrics(svg){ const r=svg.getBoundingClientRect(); const s=Math.min(r.width,r.height)/ST_ZOOM.w||1;
   return {r, s, offX:(r.width-ST_ZOOM.w*s)/2, offY:(r.height-ST_ZOOM.h*s)/2}; }
+// point du repère 0-1000 sous le pointeur, au dixième (assez fin pour dessiner,
+// assez court pour que le plan diffusé en direct reste léger)
 function stPt(e,svg){ const m=stMetrics(svg);
   const vx=ST_ZOOM.x+(e.clientX-m.r.left-m.offX)/m.s, vy=ST_ZOOM.y+(e.clientY-m.r.top-m.offY)/m.s;
-  return [Math.max(0,Math.min(1000,vx)),Math.max(0,Math.min(1000,vy))]; }
+  return [Math.round(Math.max(0,Math.min(1000,vx))*10)/10,Math.round(Math.max(0,Math.min(1000,vy))*10)/10]; }
 /* ============================================================
    POINTEUR (laser) DANS L'ÉDITEUR
    Montrer sans dessiner, hors mode présentation. Purement visuel : rien n'est
@@ -9811,7 +9999,7 @@ function stLaserMove(p){
   ST_LASER_P=p; stTrailPush(ST_LASER_TR,p[0],p[1],Date.now()); stLaserRedraw();
   const now=Date.now();                                  // ~20 envois/s maximum
   if(ST_ROOM && now-ST_PTR_LAST>50){ ST_PTR_LAST=now;
-    try{ ST_ROOM.send({type:'broadcast',event:'ptr',payload:{by:STRAT_ME,name:stMyName(),x:p[0],y:p[1]}}); }catch(_){} }
+    try{ ST_ROOM.send({type:'broadcast',event:'ptr',payload:{by:ST_CID,name:stMyName(),x:p[0],y:p[1]}}); }catch(_){} }
 }
 function stLaserPing(p){
   const g=document.getElementById("stLaser"); if(!g) return;
@@ -9821,11 +10009,11 @@ function stLaserPing(p){
   c.style.transition="all .5s ease-out"; g.appendChild(c);
   requestAnimationFrame(()=>{ c.setAttribute("r","46"); c.style.opacity="0"; });
   setTimeout(()=>c.remove(),520);
-  if(ST_ROOM){ try{ ST_ROOM.send({type:'broadcast',event:'ptr',payload:{by:STRAT_ME,name:stMyName(),x:p[0],y:p[1],ping:true}}); }catch(_){} }
+  if(ST_ROOM){ try{ ST_ROOM.send({type:'broadcast',event:'ptr',payload:{by:ST_CID,name:stMyName(),x:p[0],y:p[1],ping:true}}); }catch(_){} }
 }
 // pointeur reçu d'un collaborateur
 function stPtrRemote(pl){
-  if(!pl||pl.by===STRAT_ME) return;
+  if(!pl||pl.by===ST_CID) return;
   const k=String(pl.by), now=Date.now();
   const cur=ST_PTRS[k] || (ST_PTRS[k]={ x:0, y:0, name:"", ts:now, tr:[] });
   cur.x=Number(pl.x)||0; cur.y=Number(pl.y)||0; cur.name=String(pl.name||pl.by||""); cur.ts=now;
@@ -9849,137 +10037,406 @@ function stLaserToggle(){
 
 function stNextMarkerLabel(){ let n=0; ST_EDIT.els.forEach(e=>{ if(e.type==='marker'){ const v=parseInt(e.label,10); if(!isNaN(v)&&v>n) n=v; } }); return String(n+1); }
 // -- historique annuler / refaire --
-function stSnapshot(){ if(!ST_EDIT) return; ST_UNDO.push(JSON.stringify(ST_EDIT.els)); if(ST_UNDO.length>80) ST_UNDO.shift(); ST_REDO.length=0; stUpdUndoBtns(); }
+// Toute modification passe par stSnapshot : c'est donc aussi là qu'on note
+// qu'il y a quelque chose à enregistrer.
+function stSnapshot(){ if(!ST_EDIT) return; ST_UNDO.push(JSON.stringify(ST_EDIT.els)); if(ST_UNDO.length>80) ST_UNDO.shift(); ST_REDO.length=0; stUpdUndoBtns(); stSetDirty(true); }
 function stSetEls(a){ ST_EDIT.els=a; if(ST_EDIT.steps&&ST_EDIT.steps[ST_STEP]) ST_EDIT.steps[ST_STEP].els=a; }
-function stUndo(){ if(!ST_UNDO.length) return; ST_REDO.push(JSON.stringify(ST_EDIT.els)); stSetEls(JSON.parse(ST_UNDO.pop())); stSelClear(); stRedraw(); stUpdCount(); stUpdUndoBtns(); }
-function stRedo(){ if(!ST_REDO.length) return; ST_UNDO.push(JSON.stringify(ST_EDIT.els)); stSetEls(JSON.parse(ST_REDO.pop())); stSelClear(); stRedraw(); stUpdCount(); stUpdUndoBtns(); }
+function stUndo(){ if(!ST_UNDO.length) return; ST_REDO.push(JSON.stringify(ST_EDIT.els)); stSetEls(JSON.parse(ST_UNDO.pop())); stSelClear(); stSetDirty(true); stRedraw(); stMaj(); }
+function stRedo(){ if(!ST_REDO.length) return; ST_UNDO.push(JSON.stringify(ST_EDIT.els)); stSetEls(JSON.parse(ST_REDO.pop())); stSelClear(); stSetDirty(true); stRedraw(); stMaj(); }
+function stUpdUndoBtns(){ const u=document.getElementById("stUndo"),r=document.getElementById("stRedo"); if(u)u.disabled=!ST_UNDO.length; if(r)r.disabled=!ST_REDO.length; }
 // -- étapes (slideshow) --
-function renderStepTabs(){ const c=document.getElementById("stStepTabs"); if(!c||!ST_EDIT.steps) return;
+function renderStepTabs(){ const c=document.getElementById("stStepTabs"); if(!c||!ST_EDIT||!ST_EDIT.steps) return;
   c.innerHTML=ST_EDIT.steps.map((st,i)=>{
     const t=(st.t!=null)?stRpFmt(st.t):null;    // diapo épinglée à un instant du replay
-    return `<button type="button" class="st-steptab${i===ST_STEP?' on':''}" data-step="${i}" title="Étape ${i+1}${t?" — épinglée à "+t:""}">${i+1}${t?`<span class="tt">${t}</span>`:""}</button>`;
-  }).join("")+(ST_EDIT.steps.length<12?`<button type="button" class="st-stepadd" id="stStepAdd" title="Ajouter une étape (copie l'étape actuelle)">+</button>`:'');
-  c.querySelectorAll(".st-steptab").forEach(b=>b.onclick=()=>stGoStep(+b.dataset.step));
-  const add=c.querySelector("#stStepAdd"); if(add) add.onclick=stAddStep; stSyncNote(); }
+    return `<button type="button" class="se-step${i===ST_STEP?' on':''}" data-step="${i}" aria-pressed="${i===ST_STEP}" aria-label="Étape ${i+1}${t?" — épinglée à "+t:""}">${i+1}${t?`<small>${t}</small>`:""}</button>`;
+  }).join("")+(ST_EDIT.steps.length<12?`<button type="button" class="se-step se-step-add" id="stStepAdd" aria-label="Ajouter une étape (copie de l'étape actuelle)">${stIc('plus')}</button>`:'');
+  c.querySelectorAll(".se-step[data-step]").forEach(b=>b.onclick=()=>stGoStep(+b.dataset.step));
+  const add=c.querySelector("#stStepAdd"); if(add) add.onclick=stAddStep;
+  const del=document.getElementById("stStepDel"); if(del) del.disabled=ST_EDIT.steps.length<=1;
+  stSyncNote(); }
 function stSyncNote(){ const inp=document.getElementById("stStepNote"); if(inp&&ST_EDIT&&ST_EDIT.steps&&ST_EDIT.steps[ST_STEP]) inp.value=ST_EDIT.steps[ST_STEP].note||''; }
-function stGoStep(i){ if(!ST_EDIT.steps||i<0||i>=ST_EDIT.steps.length||i===ST_STEP) return; ST_STEP=i; ST_EDIT.els=ST_EDIT.steps[i].els; stSelClear(); ST_UNDO=[]; ST_REDO=[]; renderStepTabs(); stRedraw(); stUpdCount(); stUpdUndoBtns(); }
-function stAddStep(){ if(ST_EDIT.steps.length>=12){ alert("Maximum 12 étapes."); return; } ST_EDIT.steps.splice(ST_STEP+1,0,{els:JSON.parse(JSON.stringify(ST_EDIT.els))}); ST_STEP++; ST_EDIT.els=ST_EDIT.steps[ST_STEP].els; stSelClear(); ST_UNDO=[]; ST_REDO=[]; renderStepTabs(); stRedraw(); stUpdCount(); stUpdUndoBtns(); }
-function stDelStep(){ if(ST_EDIT.steps.length<=1){ alert("Il faut au moins une étape."); return; } if(!confirm("Supprimer l'étape "+(ST_STEP+1)+" ?")) return; ST_EDIT.steps.splice(ST_STEP,1); if(ST_STEP>=ST_EDIT.steps.length) ST_STEP=ST_EDIT.steps.length-1; ST_EDIT.els=ST_EDIT.steps[ST_STEP].els; stSelClear(); ST_UNDO=[]; ST_REDO=[]; renderStepTabs(); stRedraw(); stUpdCount(); stUpdUndoBtns(); }
-function stUpdUndoBtns(){ const u=document.getElementById("stUndo"),r=document.getElementById("stRedo"); if(u)u.disabled=!ST_UNDO.length; if(r)r.disabled=!ST_REDO.length; }
-// -- compteur de chars par équipe --
-function stUpdCount(){ const el=document.getElementById("stCount"); if(!el||!ST_EDIT) return; const by={},order=[]; ST_EDIT.els.forEach(x=>{ if(x.type==='tank'){ const c=x.color||'#5dbb46'; if(by[c]===undefined){by[c]=0;order.push(c);} by[c]++; } }); el.innerHTML=order.map(c=>`<span class="st-cnt"><i style="background:${c}"></i>${by[c]}</span>`).join(''); }
-function stTankSync(){ const ed=document.getElementById("stEditor"); if(!ed) return;
-  const cs=ed.querySelector(".st-classsel"); if(cs) cs.style.setProperty('--tc',ST_TANK.color);
-  ed.querySelectorAll(".st-class").forEach(b=>b.classList.toggle("on",b.dataset.cls===ST_TANK.cls));
-  ed.querySelectorAll(".st-tcol").forEach(b=>b.classList.toggle("on",b.dataset.tcol===ST_TANK.color));
-}
-function stSetTool(t){ if(ST_PATHBUILD&&t!=='path') stFinishPath(true); ST_TOOL=t; stSelClear(); const ed=document.getElementById("stEditor");
-  ed.querySelectorAll(".st-tool").forEach(x=>x.classList.toggle("on",x.dataset.tool===t));
+function stGoStep(i){ if(!ST_EDIT||!ST_EDIT.steps||i<0||i>=ST_EDIT.steps.length||i===ST_STEP) return; if(ST_PATHBUILD) stFinishPath(true); ST_STEP=i; ST_EDIT.els=ST_EDIT.steps[i].els; stSelClear(); ST_UNDO=[]; ST_REDO=[]; renderStepTabs(); stRedraw(); stMaj(); }
+function stAddStep(){ if(ST_EDIT.steps.length>=12){ alert("Maximum 12 étapes."); return; } if(ST_PATHBUILD) stFinishPath(true);
+  ST_EDIT.steps.splice(ST_STEP+1,0,{els:JSON.parse(JSON.stringify(ST_EDIT.els)),note:'',t:null}); ST_STEP++; ST_EDIT.els=ST_EDIT.steps[ST_STEP].els;
+  stSelClear(); ST_UNDO=[]; ST_REDO=[]; stSetDirty(true); renderStepTabs(); stRedraw(); stMaj(); }
+function stDelStep(){ if(ST_EDIT.steps.length<=1) return; if(!confirm("Supprimer l'étape "+(ST_STEP+1)+" ?")) return;
+  ST_EDIT.steps.splice(ST_STEP,1); if(ST_STEP>=ST_EDIT.steps.length) ST_STEP=ST_EDIT.steps.length-1; ST_EDIT.els=ST_EDIT.steps[ST_STEP].els;
+  stSelClear(); ST_UNDO=[]; ST_REDO=[]; stSetDirty(true); renderStepTabs(); stRedraw(); stMaj(); }
+// -- état « enregistré / non enregistré » --
+function stSetDirty(v){ ST_DIRTY=!!v; stRenderEtat(); }
+function stRenderEtat(){ const e=document.getElementById("stEtat"); if(!e||!ST_EDIT) return;
+  e.classList.toggle("sale",ST_DIRTY); const sv=document.getElementById("stSave"); if(sv) sv.classList.toggle("sale",ST_DIRTY);
+  e.textContent=ST_DIRTY?"Non enregistré":(ST_EDIT.id?"Enregistré":""); }
+
+/* ============================================================
+   LE PANNEAU DE DROITE
+   Il règle ce qui est SÉLECTIONNÉ ; sans sélection, il règle ce que
+   posera l'outil actif. Une seule place pour tous les réglages, au
+   lieu d'une barre d'options qui changeait de contenu à chaque outil.
+   ============================================================ */
+let ST_MAJ_SIG='';
+function stMajSig(){ return ST_STEP+'|'+ST_TOOL+'|'+[...ST_SELS].join(',')+'|'+ST_EDIT.els.length+'|'+ST_EDIT.steps.length; }
+// appelé à chaque dessin : ne reconstruit le panneau que si la sélection,
+// l'outil ou le nombre d'éléments a changé (pas pendant un glisser)
+function stMajLazy(){ if(!ST_EDIT||!document.getElementById('stProps')) return; if(stMajSig()!==ST_MAJ_SIG) stMaj(); }
+function stMaj(){ if(!ST_EDIT||!document.getElementById('stShell')) return; ST_MAJ_SIG=stMajSig();
+  stRenderProps(); stRenderElList(); stUpdUndoBtns(); stRenderCamp(); stRenderHint(); stRenderEtat(); }
+function stSelOnly(i){ stSelClear(); ST_SELS.add(i); }
+function stRenderHint(){ const h=document.getElementById("stHint"); if(!h) return;
+  h.innerHTML=`<span>${esc(ST_HINTS[ST_TOOL]||'')}</span><span class="se-hint-2">Espace + glisser pour se déplacer · molette pour zoomer</span>`; }
+function stRenderCamp(){ const b=document.getElementById('stCamp'); if(!b) return; const c=ST_TANK.color, en=c===ST_ENEMY, al=c===ST_ALLY;
+  b.innerHTML=`<span class="se-camp-d" style="background:${esc(c)}">${en?'E':al?'A':''}</span><span class="se-key" aria-hidden="true">C</span>`;
+  b.setAttribute('aria-label',en?"Camp des prochains chars : ennemis":al?"Camp des prochains chars : alliés":"Couleur des prochains chars : personnalisée"); }
+function stCampToggle(){ const nv=ST_TANK.color===ST_ENEMY?ST_ALLY:ST_ENEMY; ST_TANK.color=nv;
+  // des chars sélectionnés changent de camp avec la touche
+  const idx=[...ST_SELS].filter(i=>ST_EDIT.els[i]&&ST_EDIT.els[i].type==='tank');
+  if(idx.length){ stSnapshot(); idx.forEach(i=>{ ST_EDIT.els[i].color=nv; }); stRedraw(); }
+  stMaj(); }
+function stElLabel(el){
+  switch(el.type){
+    case 'tank': return t(ST_CLASS_LONG[el.cls]||'Char')+(el.name?' · '+el.name:'');
+    case 'ghost': return t('Position proposée')+(el.name?' · '+el.name:'');
+    case 'arrow': return 'Flèche'; case 'line': return 'Trait'; case 'path': return 'Trajet'; case 'pen': return 'Tracé à main levée';
+    case 'rect': return 'Zone'; case 'circle': return 'Zone ronde';
+    case 'stamp': { const k=ST_STAMP_LIST.find(x=>x[0]===el.kind); return t('Symbole')+' · '+(k?t(k[1]):''); }
+    case 'marker': return t('Jeton')+' '+(el.label||'');
+    case 'text': return '« '+(el.text||'')+' »';
+    case 'measure': return 'Mesure · '+el.m+' m'; case 'range': return 'Portée · '+el.m+' m';
+    case 'cone': return 'Cône de tir';
+  } return 'Élément'; }
+function stRenderElList(){ const box=document.getElementById('stElList'); if(!box||!ST_EDIT) return; const els=ST_EDIT.els;
+  const cnt=document.getElementById('stElCount'); if(cnt) cnt.textContent=els.length?String(els.length):'';
+  // Le décompte des chars, en MOTS : la couleur seule ne porte jamais le sens.
+  const al=els.filter(e=>e.type==='tank'&&e.color===ST_ALLY).length, en=els.filter(e=>e.type==='tank'&&e.color===ST_ENEMY).length,
+        au=els.filter(e=>e.type==='tank'&&e.color!==ST_ALLY&&e.color!==ST_ENEMY).length;
+  const ta=document.getElementById('stTally');
+  if(ta) ta.textContent=(al||en||au)?[al?al+' '+t(al>1?'alliés':'allié'):'',en?en+' '+t(en>1?'ennemis':'ennemi'):'',au?au+' '+t(au>1?'autres':'autre'):''].filter(Boolean).join(' · '):'';
+  if(!els.length){ box.innerHTML='<p class="se-vide">Rien sur cette étape. Choisis un outil à gauche, puis clique sur la carte.</p>'; return; }
+  // dans l'ordre des calques : ce qui est dessus en premier
+  box.innerHTML=els.map((el,i)=>({el,i})).reverse().map(({el,i})=>{ const c=el.type==='measure'?'#ecd190':(el.color||'#e5544b');
+    return `<button type="button" class="se-li${ST_SELS.has(i)?' on':''}" data-i="${i}" aria-pressed="${ST_SELS.has(i)}"><i class="se-li-c" style="background:${esc(c)}"></i><span>${esc(stElLabel(el))}</span></button>`; }).join(''); }
+// -- les champs du panneau --
+function stFRow(label,inner,val){ return `<div class="se-f"><div class="se-fl"><span>${label}</span>${val!=null&&val!==''?`<b>${esc(val)}</b>`:''}</div>${inner}</div>`; }
+function stFSeg(p,cur,opts){ return `<div class="se-seg" role="group">${opts.map(([v,l])=>{ const on=cur!==undefined&&String(cur)===String(v); return `<button type="button" class="${on?'on':''}" data-p="${p}" data-v="${v}" aria-pressed="${on}">${l}</button>`; }).join('')}</div>`; }
+function stFColors(p,cur,list){ return `<div class="se-sw">${list.map(([c,n])=>`<button type="button" class="se-swb${cur===c?' on':''}" data-p="${p}" data-v="${c}" style="--c:${c}" aria-label="${esc(n)}" aria-pressed="${cur===c}"></button>`).join('')}</div>`; }
+function stFCls(cur){ return `<div class="se-cls">${ST_CLASSES.map(([k,l])=>`<button type="button" class="${cur===k?'on':''}" data-p="cls" data-v="${k}" aria-pressed="${cur===k}" aria-label="${esc(ST_CLASS_LONG[k])}"><i style="-webkit-mask:url(strat/class_${k}.png) center/contain no-repeat;mask:url(strat/class_${k}.png) center/contain no-repeat"></i><span>${l}</span></button>`).join('')}</div>`; }
+function stFSym(cur){ return `<div class="se-sym">${ST_STAMP_LIST.map(([k,l])=>`<button type="button" class="${cur===k?'on':''}" data-p="kind" data-v="${k}" aria-pressed="${cur===k}" aria-label="${esc(l)}"><svg viewBox="-20 -20 40 40"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">${ST_STAMPS[k]}</g></svg></button>`).join('')}<button type="button" class="${cur==='num'?'on':''}" data-p="kind" data-v="num" aria-pressed="${cur==='num'}" aria-label="Jeton numéroté"><span class="se-num">1</span></button></div>`; }
+function stSymName(k){ if(k==='num') return 'Jeton numéroté'; const s=ST_STAMP_LIST.find(x=>x[0]===k); return s?s[1]:''; }
+function stFSector(el){ const sec=el.secteur||0, cap=el.cap||0;
+  return `<div class="se-f"><div class="se-fl"><span>Secteur surveillé</span><b id="stSecV">${sec?'±'+sec+'°':'Aucun'}</b></div><input type="range" class="se-range" data-p="secteur" min="0" max="90" step="5" value="${sec}" aria-label="Ouverture du secteur surveillé"></div>`
+    +`<div class="se-f" id="stCapRow"${sec?'':' hidden'}><div class="se-fl"><span>Orientation</span><b id="stCapV">${cap}°</b></div><input type="range" class="se-range" data-p="cap" min="0" max="355" step="5" value="${cap}" aria-label="Orientation du secteur, en degrés"></div>`; }
+const ST_W_OPTS=[[4,'Fin'],[7,'Moyen'],[12,'Épais']], ST_DASH_OPTS=[['0','Plein'],['1','Pointillé']];
+function stRenderProps(){
+  const box=document.getElementById('stProps'); if(!box||!ST_EDIT) return;
+  const sel=stSelEls(); let h='';
+  const C=(cur)=>stFRow('Couleur',stFColors('color',cur,ST_COLORS));
+  if(sel.length){
+    const types=[...new Set(sel.map(e=>e.type))], T=types.length===1?types[0]:null, one=sel.length===1?sel[0]:null;
+    const com=k=>{ const v=sel.map(e=>e[k]); return v.every(x=>x===v[0])?v[0]:undefined; };
+    const bo=k=>{ const v=com(k); return v===undefined?undefined:(v?'1':'0'); };
+    h+=`<div class="se-ptitle">${one?esc(stElLabel(one)):`${sel.length} éléments sélectionnés`}</div>`;
+    if(T==='tank'){
+      h+=stFRow('Classe',stFCls(com('cls')))+stFRow('Couleur',stFColors('tcolor',com('color'),ST_TANK_COLORS))
+        +stFRow('Taille',stFSeg('tsize',com('size'),ST_TANK_SIZES.map(([l,v])=>[v,l])));
+      if(one) h+=stFRow('Nom',`<input class="se-in" data-p="name" maxlength="18" value="${esc(one.name||'')}" placeholder="Pseudo ou char" aria-label="Nom affiché sous le char">`)+stFSector(one);
+    } else if(T==='ghost'){
+      if(one) h+=stFRow('Nom',`<input class="se-in" data-p="name" maxlength="18" value="${esc(one.name||'')}" aria-label="Nom affiché sous la position">`);
+      h+=`<p class="se-psub">Position proposée au débriefing : la flèche part de là où le char était vraiment.</p>`;
+    } else if(T==='arrow'||T==='line'){
+      h+=C(com('color'))+stFRow('Trait',stFSeg('dash',bo('dash'),ST_DASH_OPTS))+stFRow('Épaisseur',stFSeg('w',com('w'),ST_W_OPTS))
+        +stFRow('Forme',stFSeg('curve',bo('curve'),[['0','Droite'],['1','Courbe']]))+stFRow('Pointe',stFSeg('head',T==='arrow'?'1':'0',[['1','Avec'],['0','Sans']]));
+    } else if(T==='path'||T==='pen'){
+      h+=C(com('color'))+stFRow('Trait',stFSeg('dash',bo('dash'),ST_DASH_OPTS))+stFRow('Épaisseur',stFSeg('w',com('w'),ST_W_OPTS));
+    } else if(T==='rect'||T==='circle'){
+      h+=C(com('color'))+stFRow('Forme',stFSeg('shape',T==='circle'?'ellipse':'rect',[['rect','Rectangle'],['ellipse','Ellipse']]))+stFRow('Contour',stFSeg('dash',bo('dash'),ST_DASH_OPTS));
+    } else if(types.every(t=>t==='stamp'||t==='marker')){
+      const kind=T==='marker'?'num':(T==='stamp'?com('kind'):undefined);
+      h+=stFRow('Symbole',stFSym(kind),kind?stSymName(kind):'')+C(com('color'));
+      if(T==='stamp') h+=stFRow('Taille',stFSeg('ssize',com('size'),ST_STAMP_SIZES.map(([l,v])=>[v,l])));
+      if(T==='marker'&&one) h+=stFRow('Numéro',`<input class="se-in" data-p="label" maxlength="4" value="${esc(one.label||'')}" aria-label="Numéro du jeton">`);
+    } else if(T==='text'){
+      if(one) h+=stFRow('Texte',`<input class="se-in" data-p="text" maxlength="60" value="${esc(one.text||'')}" aria-label="Texte">`);
+      h+=C(com('color'));
+    } else if(T==='measure'||T==='range'){
+      h+=stFRow('Affichage',stFSeg('meas',T==='range'?'1':'0',[['0','Distance'],['1','Cercle de portée']]));
+      if(T==='range') h+=C(com('color'));
+    } else if(T==='cone'){
+      h+=C(com('color'))+stFRow('Ouverture',stFSeg('spread',com('spread'),[[15,'Étroit'],[30,'Moyen'],[50,'Large']]));
+    } else if(sel.some(e=>e.type!=='measure')) h+=C(com('color'));
+    h+=`<div class="se-acts"><button type="button" class="se-ic" data-act="dup" aria-label="Dupliquer" data-key="Ctrl+D">${stIc('dup')}</button>`
+      +`<button type="button" class="se-ic" data-act="front" aria-label="Premier plan" data-key="]">${stIc('front')}</button>`
+      +`<button type="button" class="se-ic" data-act="back" aria-label="Arrière-plan" data-key="[">${stIc('back')}</button>`
+      +`<span class="se-pousse"></span><button type="button" class="se-btn se-btn-danger" data-act="del">${stIc('trash')}<span>Supprimer</span></button></div>`;
+  } else if(ST_TOOL!=='select'){
+    const tl=(ST_TOOLS.find(x=>x[0]===ST_TOOL)||[])[1]||'';
+    h+=`<div class="se-ptitle">${esc(tl)}</div><p class="se-psub">Réglages des prochains éléments posés.</p>`;
+    if(ST_TOOL==='tank') h+=stFRow('Classe',stFCls(ST_TANK.cls))+stFRow('Couleur',stFColors('tcolor',ST_TANK.color,ST_TANK_COLORS))+stFRow('Taille',stFSeg('tsize',ST_TANK.size,ST_TANK_SIZES.map(([l,v])=>[v,l])));
+    else if(ST_TOOL==='arrow') h+=C(ST_COLOR)+stFRow('Trait',stFSeg('dash',ST_STROKE.dash?'1':'0',ST_DASH_OPTS))+stFRow('Épaisseur',stFSeg('w',ST_STROKE.w,ST_W_OPTS))
+        +stFRow('Forme',stFSeg('curve',ST_STROKE.curve?'1':'0',[['0','Droite'],['1','Courbe']]))+stFRow('Pointe',stFSeg('head',ST_STROKE.head?'1':'0',[['1','Avec'],['0','Sans']]));
+    else if(ST_TOOL==='path'||ST_TOOL==='pen') h+=C(ST_COLOR)+stFRow('Trait',stFSeg('dash',ST_STROKE.dash?'1':'0',ST_DASH_OPTS))+stFRow('Épaisseur',stFSeg('w',ST_STROKE.w,ST_W_OPTS));
+    else if(ST_TOOL==='zone') h+=C(ST_COLOR)+stFRow('Forme',stFSeg('shape',ST_ZONE.shape,[['rect','Rectangle'],['ellipse','Ellipse']]))+stFRow('Contour',stFSeg('dash',ST_ZONE.dash?'1':'0',ST_DASH_OPTS));
+    else if(ST_TOOL==='stamp'){ h+=stFRow('Symbole',stFSym(ST_STAMP.kind),stSymName(ST_STAMP.kind))+C(ST_COLOR); if(ST_STAMP.kind!=='num') h+=stFRow('Taille',stFSeg('ssize',ST_STAMP.size,ST_STAMP_SIZES.map(([l,v])=>[v,l]))); }
+    else if(ST_TOOL==='text') h+=C(ST_COLOR);
+    else if(ST_TOOL==='measure'){ h+=stFRow('Affichage',stFSeg('meas',ST_MEAS.circle?'1':'0',[['0','Distance'],['1','Cercle de portée']])); if(ST_MEAS.circle) h+=C(ST_COLOR); }
+  } else {
+    h=`<p class="se-vide">Clique un élément de la carte pour le régler, ou choisis un outil à gauche.</p>`;
+  }
+  box.innerHTML=h; }
+// Applique un réglage à UN élément ; certains réglages changent son type
+// (pointe d'une flèche, forme d'une zone, distance ou portée, symbole ou jeton).
+function stApplyProp(el,p,v){ const c=JSON.parse(JSON.stringify(el));
+  if(p==='color'){ if(c.type!=='measure') c.color=v; }
+  else if(p==='tcolor'){ if(c.type==='tank') c.color=v; }
+  else if(p==='dash') c.dash=v==='1';
+  else if(p==='w') c.w=+v;
+  else if(p==='curve') c.curve=v==='1';
+  else if(p==='head'){ if(c.type==='arrow'||c.type==='line') c.type=v==='1'?'arrow':'line'; }
+  else if(p==='shape'){ if(c.type==='rect'||c.type==='circle') c.type=v==='ellipse'?'circle':'rect'; }
+  else if(p==='cls') c.cls=v;
+  else if(p==='tsize'||p==='ssize') c.size=+v;
+  else if(p==='spread') c.spread=+v;
+  else if(p==='kind'){
+    if(v==='num'&&c.type==='stamp') return {type:'marker',color:c.color,x:c.x,y:c.y,label:stNextMarkerLabel()};
+    if(v!=='num'&&c.type==='marker') return {type:'stamp',kind:v,color:c.color,x:c.x,y:c.y,size:ST_STAMP.size};
+    if(c.type==='stamp') c.kind=v; }
+  else if(p==='meas'){
+    if(v==='1'&&c.type==='measure'){ const r=Math.hypot(c.x2-c.x1,c.y2-c.y1); return {type:'range',color:ST_COLOR,x:c.x1,y:c.y1,r,m:Math.round(r/1000*stMapMeters())}; }
+    if(v==='0'&&c.type==='range') return {type:'measure',color:'#ecd190',x1:c.x,y1:c.y,x2:Math.min(1000,c.x+c.r),y2:c.y,m:c.m}; }
+  return c; }
+function stSetToolProp(p,v){
+  if(p==='color') ST_COLOR=v; else if(p==='tcolor') ST_TANK.color=v;
+  else if(p==='dash'){ if(ST_TOOL==='zone') ST_ZONE.dash=v==='1'; else ST_STROKE.dash=v==='1'; }
+  else if(p==='w') ST_STROKE.w=+v; else if(p==='curve') ST_STROKE.curve=v==='1'; else if(p==='head') ST_STROKE.head=v==='1';
+  else if(p==='shape') ST_ZONE.shape=v; else if(p==='cls') ST_TANK.cls=v; else if(p==='tsize') ST_TANK.size=+v;
+  else if(p==='kind') ST_STAMP.kind=v; else if(p==='ssize') ST_STAMP.size=+v; else if(p==='meas') ST_MEAS.circle=v==='1'; }
+function stSetProp(p,v){
+  const idx=[...ST_SELS].filter(i=>ST_EDIT.els[i]);
+  if(idx.length){ stSnapshot(); idx.forEach(i=>{ ST_EDIT.els[i]=stApplyProp(ST_EDIT.els[i],p,v); }); stRedraw(); }
+  // « poser puis ajuster » : avec un outil de création en main, le réglage vaut
+  // aussi pour les prochains éléments — sinon le char suivant revenait à l'ancien.
+  if(!idx.length||ST_TOOL!=='select') stSetToolProp(p,v);
+  stMaj(); }
+// Les champs libres (nom, texte, numéro, secteur) : une saisie = une seule entrée d'historique.
+function stSetPropInput(inp){ const p=inp.dataset.p, idx=[...ST_SELS].filter(i=>ST_EDIT.els[i]); if(!idx.length) return;
+  if(!ST_PROP_SNAP){ stSnapshot(); ST_PROP_SNAP=true; }
+  const v=inp.value;
+  idx.forEach(i=>{ const el=ST_EDIT.els[i];
+    if(p==='name') el.name=v.slice(0,18);
+    else if(p==='text') el.text=v.slice(0,60);
+    else if(p==='label') el.label=v.slice(0,4);
+    else if(p==='secteur'){ const n=+v; if(n>0){ el.secteur=n; if(el.cap==null) el.cap=0; } else delete el.secteur; }
+    else if(p==='cap') el.cap=+v; });
+  if(p==='secteur'){ const n=+v, b=document.getElementById('stSecV'), r=document.getElementById('stCapRow'); if(b) b.textContent=n?'±'+n+'°':'Aucun'; if(r) r.hidden=!n; }
+  if(p==='cap'){ const b=document.getElementById('stCapV'); if(b) b.textContent=v+'°'; }
+  stRedraw(); if(p==='name'||p==='text'||p==='label') stRenderElList(); }
+function stSetTool(t){ if(!ST_TOOLS.some(x=>x[0]===t)) t='select';
+  if(ST_PATHBUILD&&t!=='path') stFinishPath(true);
+  ST_TOOL=t; stSelClear();
+  document.querySelectorAll("#stShell .se-tool[data-tool]").forEach(x=>{ const on=x.dataset.tool===t; x.classList.toggle("on",on); x.setAttribute("aria-pressed",String(on)); });
   const svg=document.getElementById("stSvg"); if(svg) svg.dataset.tool=t;
-  stSyncOptions(); stRedraw(); }
-// Champ de texte INLINE sur la carte (remplace prompt). wx,wy = coords 0-1000 ; el = texte existant à éditer, sinon null.
-function stTextInput(wx,wy,el){
+  stRedraw(); stMaj(); }
+// -- bulle d'aide des boutons-icônes (le nom, et la touche s'il y en a une) --
+let ST_TIP_EL=null;
+function stTipHide(){ ST_TIP_EL=null; const t=document.getElementById('stTip'); if(t) t.remove(); }
+function stTipShow(b){ if(b===ST_TIP_EL) return; const lbl=b.getAttribute('aria-label'); if(!lbl){ stTipHide(); return; } ST_TIP_EL=b;
+  let t=document.getElementById('stTip'); if(!t){ t=document.createElement('div'); t.id='stTip'; t.className='se-tip'; t.setAttribute('role','tooltip'); document.body.appendChild(t); }
+  t.innerHTML=esc(lbl)+(b.dataset.key?` <kbd>${esc(b.dataset.key)}</kbd>`:'');
+  const r=b.getBoundingClientRect(), side=!!b.closest('.se-rail')&&innerWidth>760;
+  t.style.left='0px'; t.style.top='0px'; const tw=t.offsetWidth, th=t.offsetHeight; let x,y;
+  if(side){ x=r.right+10; y=r.top+r.height/2-th/2; } else { x=r.left+r.width/2-tw/2; y=r.bottom+8; if(y+th>innerHeight-6) y=r.top-th-8; }
+  t.style.left=Math.round(Math.max(6,Math.min(innerWidth-tw-6,x)))+'px'; t.style.top=Math.round(Math.max(6,y))+'px'; }
+// -- champ de saisie posé SUR la carte (texte, nom d'un char, numéro d'un jeton) --
+function stInlineClose(){ const o=document.getElementById("stTextIn"); if(o) o.remove(); }
+function stInline(wx,wy,o){
   const svg=document.getElementById("stSvg"); if(!svg) return;
-  const m=stMetrics(svg);
+  const m=stMetrics(svg), fs=Math.max(13,Math.round((o.size||34)*m.s));
   const sx=m.r.left+m.offX+(wx-ST_ZOOM.x)*m.s, sy=m.r.top+m.offY+(wy-ST_ZOOM.y)*m.s;
-  const old=document.getElementById("stTextIn"); if(old) old.remove();
+  stInlineClose();
   const inp=document.createElement("input");
-  inp.id="stTextIn"; inp.className="st-textin"; inp.maxLength=60; inp.autocomplete="off";
-  inp.value=el?(el.text||""):"";
-  inp.style.left=Math.round(sx)+"px"; inp.style.top=Math.round(sy-16)+"px";
-  inp.style.color=el?(el.color||"#fff"):ST_COLOR;
-  inp.style.fontSize=Math.max(13,Math.round(34*m.s))+"px";
+  inp.id="stTextIn"; inp.className="se-inline"+(o.center?' centre':''); inp.maxLength=o.max||60; inp.autocomplete="off";
+  inp.value=o.value||""; inp.placeholder=o.ph||""; inp.setAttribute("aria-label",o.ph||"Texte");
+  inp.style.left=Math.round(sx)+"px"; inp.style.top=Math.round(o.center?sy:sy-fs*0.95)+"px";
+  inp.style.color=o.color||"#f6f5f1"; inp.style.fontSize=fs+"px";
   document.body.appendChild(inp); inp.focus(); inp.select();
   let done=false;
-  const commit=save=>{ if(done)return; done=true; const t=inp.value.trim().slice(0,60); inp.remove();
-    if(save&&t){ stSnapshot(); if(el){ el.text=t; } else { ST_EDIT.els.push({type:'text',color:ST_COLOR,x:Math.round(wx),y:Math.round(wy),text:t}); } stRedraw(); }
-    else if(save&&!t&&el){ stSnapshot(); const i=ST_EDIT.els.indexOf(el); if(i>=0) ST_EDIT.els.splice(i,1); stRedraw(); } };
+  const commit=save=>{ if(done) return; done=true; const v=inp.value.trim().slice(0,o.max||60); inp.remove(); if(ST_EDIT) o.onDone(save?v:null); };
   inp.onkeydown=e=>{ e.stopPropagation(); if(e.key==="Enter"){ e.preventDefault(); commit(true); } else if(e.key==="Escape"){ e.preventDefault(); commit(false); } };
   inp.onblur=()=>commit(true);
 }
-function stRename(eid){ const el=ST_EDIT.els[eid]; if(!el) return;
-  if(el.type==='tank'){ const v=prompt("Nom du char (pseudo / véhicule) :", el.name||""); if(v!==null){ stSnapshot(); el.name=v.trim().slice(0,18); stRedraw(); } }
-  else if(el.type==='text'){ stTextInput(el.x, el.y, el); }
-  else if(el.type==='marker'){ const v=prompt("Jeton :", el.label||""); if(v!==null){ stSnapshot(); el.label=v.trim().slice(0,4); stRedraw(); } }
+function stTextNew(p){ stInline(p[0],p[1],{max:60,ph:"Écris ton texte",color:ST_COLOR,size:34,onDone:v=>{ if(!v) return;
+  stSnapshot(); ST_EDIT.els.push({type:'text',color:ST_COLOR,x:p[0],y:p[1],text:v}); stSelOnly(ST_EDIT.els.length-1); stRedraw(); stMaj(); }}); }
+// Nommer un char, réécrire un texte, renuméroter un jeton — sur place, sans boîte de dialogue.
+function stRename(eid){ const el=ST_EDIT&&ST_EDIT.els[eid]; if(!el) return;
+  const fini=()=>{ stRedraw(); stMaj(); };
+  if(el.type==='tank'||el.type==='ghost'){ const h=33*(el.size||0.78);
+    stInline(el.x, el.y+h+4, {value:el.name||'', max:18, ph:"Nom du char", size:15, center:true, onDone:v=>{ if(v===null||v===(el.name||'')) return; stSnapshot(); el.name=v; fini(); }}); }
+  else if(el.type==='text'){
+    stInline(el.x, el.y, {value:el.text||'', max:60, color:el.color, size:34, onDone:v=>{ if(v===null||v===el.text) return; stSnapshot();
+      if(v) el.text=v; else { const i=ST_EDIT.els.indexOf(el); if(i>=0) ST_EDIT.els.splice(i,1); stSelClear(); } fini(); }}); }
+  else if(el.type==='marker'){
+    stInline(el.x, el.y-14, {value:el.label||'', max:4, ph:"N°", size:22, center:true, onDone:v=>{ if(v===null||v===el.label) return; stSnapshot(); el.label=v; fini(); }}); }
+}
+// Simplifie un tracé à main levée (Douglas-Peucker) : le serveur n'en garde que
+// 300 points, et un trait de quelques secondes en comptait bien plus — la fin
+// du trait disparaissait à l'enregistrement, sans un mot.
+function stRdp(pts,eps){ if(pts.length<3) return pts.slice(); const keep=new Uint8Array(pts.length); keep[0]=keep[pts.length-1]=1; const pile=[[0,pts.length-1]];
+  while(pile.length){ const [a,b]=pile.pop(); const [ax,ay]=pts[a],[bx,by]=pts[b], dx=bx-ax, dy=by-ay, L=Math.hypot(dx,dy)||1; let md=0,mi=-1;
+    for(let i=a+1;i<b;i++){ const d=Math.abs(dy*pts[i][0]-dx*pts[i][1]+bx*ay-by*ax)/L; if(d>md){ md=d; mi=i; } }
+    if(mi>0&&md>eps){ keep[mi]=1; pile.push([a,mi],[mi,b]); } }
+  return pts.filter((_,i)=>keep[i]); }
+function stSimplify(pts,max){ let eps=0.8, out=stRdp(pts,eps); while(out.length>max){ eps*=1.6; out=stRdp(pts,eps); } return out; }
+// Avec un outil de pose, cliquer un élément DE LA MÊME FAMILLE le prend en main
+// au lieu d'en poser un second par-dessus.
+function stFamilyHit(tool,el){ if(!el) return false;
+  if(tool==='tank') return el.type==='tank'||el.type==='ghost';
+  if(tool==='stamp') return el.type==='stamp'||el.type==='marker';
+  if(tool==='text') return el.type==='text';
+  return false; }
+function stBeginMove(p,e,svg){ const orig=new Map(); let ax=Infinity,ay=Infinity;
+  ST_SELS.forEach(i=>{ const el=JSON.parse(JSON.stringify(ST_EDIT.els[i])); orig.set(i,el); const b=stElBounds(el); ax=Math.min(ax,b[0]); ay=Math.min(ay,b[1]); });
+  ST_MOVE={ox:p[0],oy:p[1],orig,ax,ay,moved:false}; try{ svg.setPointerCapture(e.pointerId); }catch(_){} }
+// Les raccourcis ne valent QUE quand l'éditeur est à l'écran. Avant, ils
+// restaient actifs dans les autres onglets du site : Suppr effaçait un élément
+// de la stratégie cachée, Ctrl+C et Espace étaient bloqués partout.
+function stEdActif(){ const v=document.getElementById('viewStrats');
+  return !!(ST_EDIT && document.getElementById('stSvg') && v && !v.classList.contains('hidden')
+    && !document.getElementById('stPresentOv') && !document.getElementById('stCollabOv')); }
+let ST_GLOBAL_WIRED=false;
+function stWireGlobal(){ if(ST_GLOBAL_WIRED) return; ST_GLOBAL_WIRED=true;
+  document.addEventListener("keydown",e=>{
+    if(!stEdActif()) return;
+    const tg=e.target; if(tg&&(tg.tagName==='INPUT'||tg.tagName==='TEXTAREA'||tg.tagName==='SELECT'||tg.isContentEditable)) return;
+    const k=(e.key||'').toLowerCase(), mod=e.ctrlKey||e.metaKey;
+    if(mod&&k==='s'){ e.preventDefault(); saveStrat(); return; }
+    if(mod&&k==='z'){ e.preventDefault(); e.shiftKey?stRedo():stUndo(); return; }
+    if(mod&&k==='y'){ e.preventDefault(); stRedo(); return; }
+    if(mod&&k==='c'){ if(ST_SELS.size){ e.preventDefault(); stCopy(); } return; }
+    if(mod&&k==='x'){ if(ST_SELS.size){ e.preventDefault(); stCopy(); stDeleteSel(); } return; }
+    if(mod&&k==='v'){ if(ST_CLIP.length){ e.preventDefault(); stPaste(); } return; }
+    if(mod&&k==='d'){ if(ST_SELS.size){ e.preventDefault(); stDupSel(); } return; }
+    if(mod&&k==='a'){ e.preventDefault(); stSetTool('select'); ST_EDIT.els.forEach((_,i)=>ST_SELS.add(i)); stRedraw(); return; }
+    if(mod||e.altKey) return;
+    if(e.key===' '){ e.preventDefault(); if(!ST_SPACE){ ST_SPACE=true; const s=document.getElementById("stSvg"); if(s) s.classList.add("spacing"); } return; }
+    if(k==='enter'){ if(ST_PATHBUILD){ e.preventDefault(); stFinishPath(true); } return; }
+    if(k==='delete'||k==='backspace'){ if(ST_SELS.size){ e.preventDefault(); stDeleteSel(); } return; }
+    if(k==='escape'){ if(document.getElementById("stCtxMenu")){ stHideCtxMenu(); return; }
+      if(ST_PATHBUILD){ stFinishPath(false); return; }
+      if(ST_SELS.size){ stSelClear(); stRedraw(); return; }
+      if(ST_TOOL!=='select') stSetTool('select'); return; }
+    if(k.startsWith('arrow')){ if(ST_SELS.size){ e.preventDefault(); const st=e.shiftKey?(ST_SNAP?SNAP_STEP:20):(ST_SNAP?SNAP_STEP:4); stNudge(k==='arrowleft'?-st:k==='arrowright'?st:0, k==='arrowup'?-st:k==='arrowdown'?st:0); } return; }
+    if(k===']'){ if(ST_SELS.size){ e.preventDefault(); stZOrder(true); } return; }
+    if(k==='['){ if(ST_SELS.size){ e.preventDefault(); stZOrder(false); } return; }
+    if(k==='+'||k==='='){ e.preventDefault(); stZoomAt(0.8, ST_ZOOM.x+ST_ZOOM.w/2, ST_ZOOM.y+ST_ZOOM.h/2); return; }
+    if(k==='-'){ e.preventDefault(); stZoomAt(1.25, ST_ZOOM.x+ST_ZOOM.w/2, ST_ZOOM.y+ST_ZOOM.h/2); return; }
+    if(k==='0'){ e.preventDefault(); stZoomReset(); return; }
+    if(k==='c'){ e.preventDefault(); stCampToggle(); return; }
+    if(ST_KEYS[k]){ e.preventDefault(); stSetTool(ST_KEYS[k]); } });
+  document.addEventListener("keyup",e=>{ if(e.key===' '){ ST_SPACE=false; const s=document.getElementById("stSvg"); if(s) s.classList.remove("spacing"); } });
+  // quitter la page avec un plan non enregistré : le navigateur demande confirmation
+  window.addEventListener("beforeunload",e=>{ if(ST_EDIT&&ST_DIRTY){ e.preventDefault(); e.returnValue=""; } });
+  window.addEventListener("resize",()=>{ stTipHide(); stInlineClose(); });
 }
 function stWireEditor(){
-  const ed=document.getElementById("stEditor"), svg=document.getElementById("stSvg");
-  ed.querySelector("#stName").oninput=e=>ST_EDIT.name=e.target.value;
-  // changer de carte invalide le replay (il appartient à une bataille précise)
-  ed.querySelector("#stChangeMap").onclick=()=>{ stRpStop(); ST_RP=null; renderMapPicker(); };
-  ed.querySelector("#stCancel").onclick=()=>{ stRpStop(); ST_RP=null; stLeaveRoom(); document.body.classList.remove("st-noscroll"); ed.classList.add("hidden"); ed.innerHTML=""; ST_EDIT=null; };
-  ed.querySelector("#stSave").onclick=saveStrat;
-  ed.querySelector("#stClear").onclick=()=>{ if(!ST_EDIT.els.length) return; if(confirm("Effacer tous les éléments de cette étape ?")){ stSnapshot(); stSetEls([]); stSelClear(); stRedraw(); stUpdCount(); } };
-  ed.querySelector("#stStepDel").onclick=stDelStep;
-  const noteInp=ed.querySelector("#stStepNote"); if(noteInp){ noteInp.oninput=()=>{ if(ST_EDIT.steps&&ST_EDIT.steps[ST_STEP]) ST_EDIT.steps[ST_STEP].note=noteInp.value.slice(0,140); }; }
-  ed.querySelector("#stPresent").onclick=()=>stPresent(ST_EDIT.steps,ST_EDIT.map,ST_EDIT.mode,ST_EDIT.name,ST_STEP);
-  const cbtn=ed.querySelector("#stCollab"); if(cbtn) cbtn.onclick=stCollabPicker;
-  ed.querySelector("#stDelSel").onclick=()=>stDeleteSel();
-  ed.querySelector("#stDup").onclick=()=>stDupSel();
-  ed.querySelector("#stUndo").onclick=stUndo;
-  ed.querySelector("#stRedo").onclick=stRedo;
-  ed.querySelectorAll(".st-tool").forEach(b=>b.onclick=()=>stSetTool(b.dataset.tool));
-  ed.querySelectorAll(".st-color").forEach(b=>b.onclick=()=>{ ST_COLOR=b.dataset.color; ed.querySelectorAll(".st-color").forEach(x=>x.classList.toggle("on",x===b)); });
-  ed.querySelector("#stDash").onclick=e=>{ ST_STROKE.dash=!ST_STROKE.dash; e.currentTarget.classList.toggle("on",ST_STROKE.dash); };
-  ed.querySelector("#stCurve").onclick=e=>{ ST_STROKE.curve=!ST_STROKE.curve; e.currentTarget.classList.toggle("on",ST_STROKE.curve); };
-  ed.querySelectorAll(".st-wbtn").forEach(b=>b.onclick=()=>{ ST_STROKE.w=+b.dataset.w; ed.querySelectorAll(".st-wbtn").forEach(x=>x.classList.toggle("on",x===b)); });
-  ed.querySelector("#stGridBtn").onclick=e=>{ ST_GRID=!ST_GRID; try{localStorage.setItem('cp_stgrid',ST_GRID?'1':'0');}catch(_){}  e.currentTarget.classList.toggle("on",ST_GRID); const g=document.getElementById("stGrid"); if(g) g.innerHTML=ST_GRID?stGridInner():''; };
-  ed.querySelector("#stSnapBtn").onclick=e=>{ ST_SNAP=!ST_SNAP; try{localStorage.setItem('cp_stsnap',ST_SNAP?'1':'0');}catch(_){}  e.currentTarget.classList.toggle("on",ST_SNAP); };
-  ed.querySelector("#stLaserBtn").onclick=stLaserToggle;
-  ed.querySelector("#stFront").onclick=()=>stZOrder(true);
-  ed.querySelector("#stBack").onclick=()=>stZOrder(false);
-  ed.querySelectorAll(".st-tcol").forEach(b=>b.onclick=()=>{ ST_TANK.color=b.dataset.tcol; stSetTool('tank'); stTankSync(); });
-  ed.querySelectorAll(".st-class").forEach(b=>b.onclick=()=>{ ST_TANK.cls=b.dataset.cls; stSetTool('tank'); stTankSync(); });
-  ed.querySelectorAll(".st-stampb").forEach(b=>b.onclick=()=>{ ST_STAMP.kind=b.dataset.stamp; stSetTool('stamp'); ed.querySelectorAll(".st-stampb").forEach(x=>x.classList.toggle("on",x===b)); });
-  ed.querySelectorAll(".st-szb").forEach(b=>b.onclick=()=>{ ST_STAMP.size=+b.dataset.sz; ed.querySelectorAll(".st-szb").forEach(x=>x.classList.toggle("on",x===b)); });
-  ed.querySelectorAll(".st-tkszb").forEach(b=>b.onclick=()=>{ ST_TANK.size=+b.dataset.sz; ed.querySelectorAll(".st-tkszb").forEach(x=>x.classList.toggle("on",x===b)); });
-  ed.querySelectorAll(".st-coneb").forEach(b=>b.onclick=()=>{ ST_CONE.spread=+b.dataset.cone; stSetTool('cone'); ed.querySelectorAll(".st-coneb").forEach(x=>x.classList.toggle("on",x===b)); });
-  ed.querySelectorAll(".st-formb").forEach(b=>b.onclick=()=>stDropFormation(b.dataset.form));
-  const msel=ed.querySelector("#stMode"); if(msel) msel.onchange=()=>{ ST_EDIT.mode=msel.value; const g=document.getElementById("stBases"); if(g) g.innerHTML=stBasesSvg(ST_EDIT.map,ST_EDIT.mode); };
+  stWireGlobal();
+  const sh=document.getElementById("stShell"), svg=document.getElementById("stSvg"), $=id=>document.getElementById(id);
+  // -- barre du haut --
+  $("stName").oninput=e=>{ ST_EDIT.name=e.target.value; stSetDirty(true); };
+  $("stChangeMap").onclick=()=>renderMapPicker();
+  $("stCancel").onclick=()=>stCloseEditor(false);
+  $("stSave").onclick=saveStrat;
+  $("stPresent").onclick=()=>{ if(ST_PATHBUILD) stFinishPath(true); stPresent(ST_EDIT.steps,ST_EDIT.map,ST_EDIT.mode,ST_EDIT.name,ST_STEP); };
+  const cb=$("stCollab"); if(cb) cb.onclick=stCollabPicker;
+  $("stLaserBtn").onclick=stLaserToggle;
+  $("stUndo").onclick=stUndo; $("stRedo").onclick=stRedo;
+  $("stPanelBtn").onclick=()=>{ if(matchMedia("(max-width:760px)").matches){ sh.classList.toggle("insp-open"); return; }
+    ST_PANEL.off=!ST_PANEL.off; sh.classList.toggle("insp-off",!!ST_PANEL.off); stPanelSave(); };
+  const msel=$("stMode"); if(msel) msel.onchange=()=>{ ST_EDIT.mode=msel.value; stSetDirty(true); const g=$("stBases"); if(g) g.innerHTML=stBasesSvg(ST_EDIT.map,ST_EDIT.mode); };
+  // -- rail --
+  sh.querySelectorAll(".se-tool[data-tool]").forEach(b=>b.onclick=()=>stSetTool(b.dataset.tool));
+  $("stCamp").onclick=stCampToggle;
+  // -- bulles d'aide --
+  sh.addEventListener("pointerover",e=>{ if(e.pointerType==='touch') return; const b=e.target.closest(".se-ic,.se-tool,.se-swb,.se-sym button,.se-cls button,.se-btn[aria-label]");
+    if(b&&b.getAttribute("aria-label")) stTipShow(b); else stTipHide(); });
+  sh.addEventListener("pointerleave",stTipHide); sh.addEventListener("pointerdown",stTipHide);
+  // -- panneau : sections repliables --
+  sh.querySelectorAll(".se-sec-h").forEach(h=>h.onclick=()=>{ const sec=h.parentElement, k=sec.dataset.sec, plie=!sec.classList.contains("plie");
+    sec.classList.toggle("plie",plie); h.setAttribute("aria-expanded",String(!plie)); ST_PANEL[k]=plie; stPanelSave(); });
+  // -- étapes --
+  $("stStepDel").onclick=stDelStep;
+  $("stStepNote").oninput=e=>{ if(ST_EDIT.steps[ST_STEP]){ ST_EDIT.steps[ST_STEP].note=e.target.value.slice(0,140); stSetDirty(true); } };
+  // -- propriétés (délégation : le contenu est reconstruit à chaque sélection) --
+  const pr=$("stProps");
+  pr.addEventListener("click",e=>{ const b=e.target.closest("button[data-p],button[data-act]"); if(!b) return;
+    const a=b.dataset.act;
+    if(a==='dup') stDupSel(); else if(a==='front') stZOrder(true); else if(a==='back') stZOrder(false); else if(a==='del') stDeleteSel();
+    else stSetProp(b.dataset.p,b.dataset.v); });
+  pr.addEventListener("input",e=>{ if(e.target.matches("input[data-p]")) stSetPropInput(e.target); });
+  pr.addEventListener("focusin",e=>{ if(e.target.matches("input[data-p]")) ST_PROP_SNAP=false; });
+  pr.addEventListener("change",()=>{ ST_PROP_SNAP=false; });
+  // -- liste des éléments --
+  $("stElList").addEventListener("click",e=>{ const b=e.target.closest(".se-li"); if(!b) return; const i=+b.dataset.i;
+    if(ST_TOOL!=='select') stSetTool('select');
+    if(e.shiftKey){ if(ST_SELS.has(i)) ST_SELS.delete(i); else ST_SELS.add(i); } else stSelOnly(i);
+    stRedraw(); stMaj(); });
+  // -- affichage --
+  $("stGridChk").onchange=e=>{ ST_GRID=e.target.checked; try{localStorage.setItem('cp_stgrid',ST_GRID?'1':'0');}catch(_){} const g=$("stGrid"); if(g) g.innerHTML=ST_GRID?stGridInner():''; };
+  $("stSnapChk").onchange=e=>{ ST_SNAP=e.target.checked; try{localStorage.setItem('cp_stsnap',ST_SNAP?'1':'0');}catch(_){} };
+  $("stAnimChk").onchange=e=>{ ST_PRES_ANIM=e.target.checked; try{localStorage.setItem('cp_stanim',ST_PRES_ANIM?'1':'0');}catch(_){} };
+  // -- zoom + mini-carte --
   const cc=()=>[ST_ZOOM.x+ST_ZOOM.w/2, ST_ZOOM.y+ST_ZOOM.h/2];
-  ed.querySelector("#stZoomIn").onclick=()=>{ const [x,y]=cc(); stZoomAt(0.8,x,y); };
-  ed.querySelector("#stZoomOut").onclick=()=>{ const [x,y]=cc(); stZoomAt(1.25,x,y); };
-  ed.querySelector("#stZoomLvl").onclick=stZoomReset;
-  const mm=ed.querySelector("#stMinimap"); if(mm){ const recenter=ev=>{ const r=mm.getBoundingClientRect(); ST_ZOOM.x=(ev.clientX-r.left)/r.width*1000-ST_ZOOM.w/2; ST_ZOOM.y=(ev.clientY-r.top)/r.height*1000-ST_ZOOM.h/2; stApplyZoom(); };
-    mm.onpointerdown=ev=>{ ev.preventDefault(); mm._drag=true; try{mm.setPointerCapture(ev.pointerId);}catch(_){}  recenter(ev); };
+  $("stZoomIn").onclick=()=>{ const [x,y]=cc(); stZoomAt(0.8,x,y); };
+  $("stZoomOut").onclick=()=>{ const [x,y]=cc(); stZoomAt(1.25,x,y); };
+  $("stZoomLvl").onclick=stZoomReset;
+  const mm=$("stMinimap"); if(mm){ const recenter=ev=>{ const r=mm.getBoundingClientRect(); ST_ZOOM.x=(ev.clientX-r.left)/r.width*1000-ST_ZOOM.w/2; ST_ZOOM.y=(ev.clientY-r.top)/r.height*1000-ST_ZOOM.h/2; stApplyZoom(); };
+    mm.onpointerdown=ev=>{ ev.preventDefault(); mm._drag=true; try{mm.setPointerCapture(ev.pointerId);}catch(_){} recenter(ev); };
     mm.onpointermove=ev=>{ if(mm._drag) recenter(ev); };
     mm.onpointerup=ev=>{ mm._drag=false; try{mm.releasePointerCapture(ev.pointerId);}catch(_){} }; }
-  ed.querySelector("#stFull").onclick=()=>{ ST_FULL=!ST_FULL; ed.querySelector(".st-editor").classList.toggle("st-full",ST_FULL); document.body.classList.toggle("st-noscroll",ST_FULL); if(!ST_FULL) ed.querySelector(".st-editor").scrollIntoView({behavior:"smooth",block:"start"}); };
+  // -- la carte --
   svg.onwheel=e=>{ e.preventDefault(); const p=stPt(e,svg); stZoomAt(e.deltaY<0?0.85:1.18, p[0], p[1]); };
   svg.onpointerdown=e=>{
-    e.preventDefault();
+    if(e.button===2) return;                      // le clic droit ouvre le menu
+    e.preventDefault(); stHideCtxMenu(); stInlineClose();
     // Pointeur actif : on MONTRE, on ne dessine pas. Le clic fait un ping.
     if(ST_LASER && !ST_SPACE && e.button!==1){ stLaserPing(stPt(e,svg)); return; }
     if(ST_SPACE || e.button===1){ ST_PANNING={sx:e.clientX,sy:e.clientY,vx:ST_ZOOM.x,vy:ST_ZOOM.y}; svg.classList.add("panning"); svg.setPointerCapture(e.pointerId); return; }
     const p=stPt(e,svg); const hit=e.target.closest("[data-eid]"); const eid=hit?+hit.dataset.eid:null;
-    if(ST_TOOL==='erase'){ if(eid!=null){ stSnapshot(); ST_EDIT.els.splice(eid,1); stSelClear(); stRedraw(); stUpdCount(); } return; }
-    if(ST_TOOL==='select'){
-      stHideCtxMenu();
-      const hitH=e.target.closest('.st-handle');
+    /* Double-clic MAISON. Le navigateur n'en émet aucun ici : la carte est
+       redessinée dès le premier appui, l'élément cliqué disparaît du DOM et
+       le « click » n'a plus de cible commune. Nommer un char était donc
+       impossible, et l'outil Char posait deux chars en double à la place. */
+    const now=performance.now(), last=ST_LASTDOWN;
+    const dbl=!!last && now-last.t<420 && Math.hypot(e.clientX-last.x,e.clientY-last.y)<8;
+    ST_LASTDOWN={t:now,x:e.clientX,y:e.clientY,eid};
+    if(ST_PATHBUILD){ if(dbl){ ST_LASTDOWN=null; stFinishPath(true); return; }
+      ST_PATHBUILD.pts.push([p[0],p[1]]); ST_PATHBUILD.cursor=[p[0],p[1]]; stRedraw(); return; }
+    const el=eid!=null?ST_EDIT.els[eid]:null;
+    if(dbl && el && last.eid===eid && ['tank','ghost','text','marker'].includes(el.type)){ ST_LASTDOWN=null; stSelOnly(eid); stRedraw(); stRename(eid); return; }
+    if(ST_TOOL==='select' || stFamilyHit(ST_TOOL,el)){
+      const hitH=ST_TOOL==='select'&&e.target.closest('.st-handle');
       if(hitH && ST_SELS.size===1){ const si=[...ST_SELS][0]; const sel=ST_EDIT.els[si]; const c=stElCenter(sel);
         ST_XFORM={ mode:hitH.dataset.h==='rot'?'rotate':'resize', i:si, orig:JSON.parse(JSON.stringify(sel)), cx:c[0], cy:c[1],
           d0:Math.hypot(p[0]-c[0],p[1]-c[1])||1, a0:Math.atan2(p[1]-c[1],p[0]-c[0])*180/Math.PI, rot0:sel.rot||0, snapped:false };
         svg.setPointerCapture(e.pointerId); return; }
       if(eid!=null){
         if(e.shiftKey){ if(ST_SELS.has(eid)) ST_SELS.delete(eid); else ST_SELS.add(eid); }
-        else if(!ST_SELS.has(eid)){ stSelClear(); ST_SELS.add(eid); }
-        if(ST_SELS.size){ const orig=new Map(); let ax=Infinity,ay=Infinity;
-          ST_SELS.forEach(i=>{ const el=JSON.parse(JSON.stringify(ST_EDIT.els[i])); orig.set(i,el); const b=stElBounds(el); ax=Math.min(ax,b[0]); ay=Math.min(ay,b[1]); });
-          ST_MOVE={ox:p[0],oy:p[1],orig,ax,ay,moved:false}; svg.setPointerCapture(e.pointerId); }
-      } else {
-        ST_BOX={x0:p[0],y0:p[1],x1:p[0],y1:p[1],base:e.shiftKey?new Set(ST_SELS):null}; svg.setPointerCapture(e.pointerId);
-      }
+        else if(!ST_SELS.has(eid)) stSelOnly(eid);
+        if(ST_SELS.size) stBeginMove(p,e,svg);
+      } else if(ST_TOOL==='select'){ ST_BOX={x0:p[0],y0:p[1],x1:p[0],y1:p[1],base:e.shiftKey?new Set(ST_SELS):null}; svg.setPointerCapture(e.pointerId); }
       stRedraw(); return;
     }
-    if(ST_TOOL==='tank'){ stSnapshot(); ST_EDIT.els.push({type:'tank',cls:ST_TANK.cls,color:ST_TANK.color,x:Math.round(p[0]),y:Math.round(p[1]),name:'',size:ST_TANK.size}); stRedraw(); stUpdCount(); return; }
-    if(ST_TOOL==='marker'){ stSnapshot(); ST_EDIT.els.push({type:'marker',color:ST_COLOR,x:Math.round(p[0]),y:Math.round(p[1]),label:stNextMarkerLabel()}); stRedraw(); return; }
-    if(ST_TOOL==='text'){ stTextInput(p[0],p[1],null); return; }
-    if(ST_TOOL==='stamp'){ stSnapshot(); ST_EDIT.els.push({type:'stamp',kind:ST_STAMP.kind,color:ST_COLOR,x:Math.round(p[0]),y:Math.round(p[1]),size:ST_STAMP.size}); stRedraw(); return; }
-    if(ST_TOOL==='cone'){ ST_DRAW={type:'cone',color:ST_COLOR,x:p[0],y:p[1],a:0,spread:ST_CONE.spread,r:0}; svg.setPointerCapture(e.pointerId); return; }
-    if(ST_TOOL==='path'){ if(!ST_PATHBUILD){ ST_PATHBUILD={type:'path',color:ST_COLOR,w:ST_STROKE.w,dash:ST_STROKE.dash,pts:[[p[0],p[1]]],cursor:[p[0],p[1]]}; } else { ST_PATHBUILD.pts.push([p[0],p[1]]); ST_PATHBUILD.cursor=[p[0],p[1]]; } stRedraw(); return; }
-    if(ST_TOOL==='range'){ ST_DRAW={type:'range',color:ST_COLOR,x:p[0],y:p[1],r:0,m:0}; svg.setPointerCapture(e.pointerId); return; }
-    if(ST_TOOL==='pen'){ ST_DRAW={type:'pen',color:ST_COLOR,w:ST_STROKE.w,dash:ST_STROKE.dash,pts:[[p[0],p[1]]]}; svg.setPointerCapture(e.pointerId); return; }
-    ST_DRAW={type:ST_TOOL,color:ST_COLOR,w:ST_STROKE.w,dash:ST_STROKE.dash,curve:(ST_TOOL==='arrow'||ST_TOOL==='line')?ST_STROKE.curve:false,x1:p[0],y1:p[1],x2:p[0],y2:p[1],m:0}; svg.setPointerCapture(e.pointerId);
+    // ---- poser un élément : il est aussitôt sélectionné, et on peut le glisser dans la foulée ----
+    const pose=n=>{ stSnapshot(); ST_EDIT.els.push(n); stSelOnly(ST_EDIT.els.length-1); stBeginMove(p,e,svg); ST_MOVE.moved=true; stRedraw(); };
+    if(ST_TOOL==='tank'){ pose({type:'tank',cls:ST_TANK.cls,color:ST_TANK.color,x:p[0],y:p[1],name:'',size:ST_TANK.size}); return; }
+    if(ST_TOOL==='stamp'){ pose(ST_STAMP.kind==='num'?{type:'marker',color:ST_COLOR,x:p[0],y:p[1],label:stNextMarkerLabel()}:{type:'stamp',kind:ST_STAMP.kind,color:ST_COLOR,x:p[0],y:p[1],size:ST_STAMP.size}); return; }
+    if(ST_TOOL==='text'){ stTextNew(p); return; }
+    if(ST_TOOL==='path'){ stSelClear(); ST_PATHBUILD={type:'path',color:ST_COLOR,w:ST_STROKE.w,dash:ST_STROKE.dash,pts:[[p[0],p[1]]],cursor:[p[0],p[1]]}; stRedraw(); return; }
+    if(ST_TOOL==='pen') ST_DRAW={type:'pen',color:ST_COLOR,w:ST_STROKE.w,dash:ST_STROKE.dash,pts:[[p[0],p[1]]]};
+    else if(ST_TOOL==='measure'&&ST_MEAS.circle) ST_DRAW={type:'range',color:ST_COLOR,x:p[0],y:p[1],r:0,m:0};
+    else if(ST_TOOL==='measure') ST_DRAW={type:'measure',color:'#ecd190',x1:p[0],y1:p[1],x2:p[0],y2:p[1],m:0};
+    else if(ST_TOOL==='zone') ST_DRAW={type:ST_ZONE.shape==='ellipse'?'circle':'rect',color:ST_COLOR,w:5,dash:ST_ZONE.dash,x1:p[0],y1:p[1],x2:p[0],y2:p[1]};
+    else if(ST_TOOL==='arrow') ST_DRAW={type:ST_STROKE.head?'arrow':'line',color:ST_COLOR,w:ST_STROKE.w,dash:ST_STROKE.dash,curve:ST_STROKE.curve,x1:p[0],y1:p[1],x2:p[0],y2:p[1]};
+    else return;
+    svg.setPointerCapture(e.pointerId);
   };
   svg.onpointermove=e=>{
     if(ST_LASER && !ST_PANNING){ stLaserMove(stPt(e,svg)); return; }
@@ -9991,82 +10448,72 @@ function stWireEditor(){
     if(ST_BOX){ const p=stPt(e,svg); ST_BOX.x1=p[0]; ST_BOX.y1=p[1]; stRedraw(); return; }
     if(ST_MOVE){ const p=stPt(e,svg); let dx=p[0]-ST_MOVE.ox, dy=p[1]-ST_MOVE.oy;
       if(!ST_MOVE.moved&&(Math.abs(dx)>0.5||Math.abs(dy)>0.5)){ stSnapshot(); ST_MOVE.moved=true; }
+      if(!ST_MOVE.moved) return;
       if(ST_SNAP){ dx=stSnap(ST_MOVE.ax+dx)-ST_MOVE.ax; dy=stSnap(ST_MOVE.ay+dy)-ST_MOVE.ay; }
       ST_MOVE.orig.forEach((el,i)=>{ ST_EDIT.els[i]=stTranslate(el,dx,dy); }); stRedraw(); return; }
     if(ST_PATHBUILD){ const p=stPt(e,svg); ST_PATHBUILD.cursor=[p[0],p[1]]; stRedraw(); return; }
     if(!ST_DRAW) return; const p=stPt(e,svg);
-    if(ST_DRAW.type==='cone'){ const dx=p[0]-ST_DRAW.x, dy=p[1]-ST_DRAW.y; ST_DRAW.a=Math.atan2(dy,dx)*180/Math.PI; ST_DRAW.r=Math.hypot(dx,dy); stRedraw(); return; }
     if(ST_DRAW.type==='range'){ ST_DRAW.r=Math.hypot(p[0]-ST_DRAW.x,p[1]-ST_DRAW.y); ST_DRAW.m=Math.round(ST_DRAW.r/1000*stMapMeters()); stRedraw(); return; }
-    if(ST_DRAW.type==='pen'){ ST_DRAW.pts.push([p[0],p[1]]); }
+    if(ST_DRAW.type==='pen'){ const l=ST_DRAW.pts[ST_DRAW.pts.length-1]; if(Math.hypot(p[0]-l[0],p[1]-l[1])<2.5) return; ST_DRAW.pts.push([p[0],p[1]]); }
     else { ST_DRAW.x2=p[0]; ST_DRAW.y2=p[1]; if(ST_DRAW.type==='measure') ST_DRAW.m=Math.round(Math.hypot(ST_DRAW.x2-ST_DRAW.x1,ST_DRAW.y2-ST_DRAW.y1)/1000*stMapMeters()); }
     stRedraw();
   };
   svg.onpointerup=e=>{
     try{ svg.releasePointerCapture(e.pointerId); }catch(_){}
     if(ST_PANNING){ ST_PANNING=null; svg.classList.remove("panning"); return; }
-    if(ST_XFORM){ ST_XFORM=null; return; }
+    if(ST_XFORM){ ST_XFORM=null; stRedraw(); return; }
     if(ST_BOX){ const b=ST_BOX; ST_BOX=null;
       const x0=Math.min(b.x0,b.x1),y0=Math.min(b.y0,b.y1),x1=Math.max(b.x0,b.x1),y1=Math.max(b.y0,b.y1);
-      if(Math.hypot(x1-x0,y1-y0)>6){ stSelClear(); if(b.base) b.base.forEach(i=>ST_SELS.add(i));
-        ST_EDIT.els.forEach((el,i)=>{ const bb=stElBounds(el); if(bb[0]<=x1&&bb[2]>=x0&&bb[1]<=y1&&bb[3]>=y0) ST_SELS.add(i); }); }
+      stSelClear(); if(b.base) b.base.forEach(i=>ST_SELS.add(i));
+      if(Math.hypot(x1-x0,y1-y0)>6) ST_EDIT.els.forEach((el,i)=>{ const bb=stElBounds(el); if(bb[0]<=x1&&bb[2]>=x0&&bb[1]<=y1&&bb[3]>=y0) ST_SELS.add(i); });
       stRedraw(); return; }
-    if(ST_MOVE){ ST_MOVE=null; return; }
-    if(!ST_DRAW){ return; }
-    const d=ST_DRAW; ST_DRAW=null;
-    if(d.type==='pen'){ if(d.pts.length>1){ stSnapshot(); ST_EDIT.els.push(d); } }
-    else if(d.type==='range'){ if(d.r>12){ stSnapshot(); ST_EDIT.els.push(d); } }
-    else if(d.type==='cone'){ if(d.r>15){ stSnapshot(); ST_EDIT.els.push(d); } }
-    else { if(Math.hypot(d.x2-d.x1,d.y2-d.y1)>12){ stSnapshot(); ST_EDIT.els.push(d); } }
+    if(ST_MOVE){ ST_MOVE=null; stRedraw(); return; }
+    if(!ST_DRAW) return;
+    const d=ST_DRAW; ST_DRAW=null; let ok=false;
+    if(d.type==='pen'){ if(d.pts.length>1){ d.pts=stSimplify(d.pts,300); ok=d.pts.length>1; } }
+    else if(d.type==='range') ok=d.r>12;
+    else ok=Math.hypot(d.x2-d.x1,d.y2-d.y1)>12;
+    if(ok){ stSnapshot(); ST_EDIT.els.push(d); stSelOnly(ST_EDIT.els.length-1); }
     stRedraw();
   };
-  svg.ondblclick=e=>{ if(ST_PATHBUILD){ e.preventDefault(); stFinishPath(true); return; } const hit=e.target.closest("[data-eid]"); if(hit) stRename(+hit.dataset.eid); };
-  svg.oncontextmenu=e=>{ e.preventDefault(); const hit=e.target.closest("[data-eid]"); const eid=hit?+hit.dataset.eid:null;
-    if(eid!=null&&!ST_SELS.has(eid)){ stSelClear(); ST_SELS.add(eid); stRedraw(); }
-    stShowCtxMenu(e.clientX,e.clientY,eid); };
-  if(!ed._stKeys){ ed._stKeys=true;
-    document.addEventListener("keydown",e=>{ if(!ST_EDIT||document.getElementById("stEditor").classList.contains("hidden")||document.getElementById("stPresentOv"))return;
-      const t=e.target.tagName; if(t==='INPUT'||t==='TEXTAREA'||t==='SELECT')return; const k=e.key.toLowerCase();
-      if((e.ctrlKey||e.metaKey)&&k==='z'){ e.preventDefault(); e.shiftKey?stRedo():stUndo(); return; }
-      if((e.ctrlKey||e.metaKey)&&k==='y'){ e.preventDefault(); stRedo(); return; }
-      if((e.ctrlKey||e.metaKey)&&k==='c'){ e.preventDefault(); stCopy(); return; }
-      if((e.ctrlKey||e.metaKey)&&k==='x'){ e.preventDefault(); stCopy(); stDeleteSel(); return; }
-      if((e.ctrlKey||e.metaKey)&&k==='v'){ e.preventDefault(); stPaste(); return; }
-      if((e.ctrlKey||e.metaKey)&&k==='d'){ e.preventDefault(); stDupSel(); return; }
-      if((e.ctrlKey||e.metaKey)&&k==='a'){ e.preventDefault(); stSelClear(); ST_EDIT.els.forEach((_,i)=>ST_SELS.add(i)); stRedraw(); return; }
-      if(e.ctrlKey||e.metaKey||e.altKey) return;
-      if(e.key===' '){ if(!ST_SPACE){ ST_SPACE=true; const s=document.getElementById("stSvg"); if(s)s.classList.add("spacing"); } e.preventDefault(); return; }
-      if(k==='enter'){ if(ST_PATHBUILD){ e.preventDefault(); stFinishPath(true); } return; }
-      if(k==='delete'||k==='backspace'){ if(ST_SELS.size){ e.preventDefault(); stDeleteSel(); } return; }
-      if(k==='escape'){ stHideCtxMenu(); if(ST_PATHBUILD){ stFinishPath(false); return; } if(ST_SELS.size){ stSelClear(); stRedraw(); } return; }
-      if(k==='arrowup'||k==='arrowdown'||k==='arrowleft'||k==='arrowright'){ if(ST_SELS.size){ e.preventDefault(); const st=e.shiftKey?(ST_SNAP?SNAP_STEP:20):(ST_SNAP?SNAP_STEP:4); const dx=k==='arrowleft'?-st:k==='arrowright'?st:0, dy=k==='arrowup'?-st:k==='arrowdown'?st:0; stNudge(dx,dy); } return; }
-      if(k===']'){ if(ST_SELS.size){ e.preventDefault(); stZOrder(true); } return; }
-      if(k==='['){ if(ST_SELS.size){ e.preventDefault(); stZOrder(false); } return; }
-      if(k==='+'||k==='='){ e.preventDefault(); stZoomAt(0.8, ST_ZOOM.x+ST_ZOOM.w/2, ST_ZOOM.y+ST_ZOOM.h/2); return; }
-      if(k==='-'){ e.preventDefault(); stZoomAt(1.25, ST_ZOOM.x+ST_ZOOM.w/2, ST_ZOOM.y+ST_ZOOM.h/2); return; }
-      if(k==='0'){ e.preventDefault(); stZoomReset(); return; }
-      if(ST_KEYS[k]){ e.preventDefault(); stSetTool(ST_KEYS[k]); } });
-    document.addEventListener("keyup",e=>{ if(e.key===' '){ ST_SPACE=false; const s=document.getElementById("stSvg"); if(s)s.classList.remove("spacing"); } }); }
-  document.body.classList.toggle("st-noscroll", ST_FULL);
-  stTankSync(); stUpdCount(); stUpdUndoBtns(); renderStepTabs(); stSyncOptions();
+  svg.oncontextmenu=e=>{ e.preventDefault(); if(ST_PATHBUILD){ stFinishPath(true); return; }
+    const hit=e.target.closest("[data-eid]"); const eid=hit?+hit.dataset.eid:null;
+    if(eid!=null&&!ST_SELS.has(eid)){ stSelOnly(eid); stRedraw(); }
+    stShowCtxMenu(e.clientX,e.clientY); };
+  renderStepTabs(); stMaj();
 }
 async function saveStrat(){
+  if(!ST_EDIT) return;
   if(!ST_EDIT.map){ alert("Choisis une carte."); return; }
+  if(ST_PATHBUILD) stFinishPath(true);
   const steps=ST_EDIT.steps.map(st=>({els:st.els, note:st.note||'', t:(st.t!=null?st.t:null)}));
   const payload={ id:ST_EDIT.id||null, name:(ST_EDIT.name||"Stratégie").trim()||"Stratégie", map:ST_EDIT.map, mode:ST_EDIT.mode||"ctf", steps, elements:steps[0].els, editors:ST_EDIT.editors||[],
                   battle_id:ST_EDIT.battleId||null };   // pour retrouver le replay à la réouverture
-  const btn=document.getElementById("stSave"); if(btn){btn.disabled=true;btn.textContent="Enregistrement…";}
-  const r=await fnCall("strategies",{session:localStorage.getItem(LS_SESSION),action:"save",strategy:payload});
+  const btn=document.getElementById("stSave"); if(btn){ btn.disabled=true; btn.textContent="Enregistrement…"; }
+  let r; try{ r=await fnCall("strategies",{session:localStorage.getItem(LS_SESSION),action:"save",strategy:payload}); }
+  catch(e){ r={ok:false,status:0,j:{error:String(e)}}; }
+  if(btn){ btn.disabled=false; btn.textContent="Enregistrer"; }
   if(!r.ok){
-    if(btn){btn.disabled=false;btn.textContent="✓ Enregistrer";}
     const e=r.j&&r.j.error;
     alert(e==="no_clan" ? "Impossible d'enregistrer : ton compte n'est rattaché à aucun clan. Une stratégie appartient toujours à un clan."
         : e==="forbidden" ? "Enregistrement refusé : il faut être officier de combat (ou collaborateur de cette stratégie)."
+        : e==="not_found" ? t("Cette stratégie n'existe plus : elle a sans doute été supprimée entre-temps. Ton dessin est toujours à l'écran.")
+        : e==="invalid_session"||e==="missing_session" ? t("Ta session a expiré : reconnecte-toi, puis enregistre à nouveau (ne ferme pas cette page).")
         : "Erreur : "+(e||r.status)+((r.j&&r.j.detail)?("\n"+r.j.detail):""));
     return;
   }
-  stLeaveRoom(); document.body.classList.remove("st-noscroll");
-  const ed=document.getElementById("stEditor"); ed.classList.add("hidden"); ed.innerHTML=""; ST_EDIT=null;
-  loadStrats();
+  if(!ST_EDIT) return;   // éditeur fermé pendant l'envoi
+  const id=(r.j&&r.j.id!=null)?Number(r.j.id):(ST_EDIT.id||null);
+  if(!id){
+    // Fonction serveur d'avant : elle ne renvoie pas l'identifiant d'une création.
+    // On referme donc, comme avant — rester ouvert créerait un doublon au clic suivant.
+    stCloseEditor(true); loadStrats(); return;
+  }
+  // L'éditeur RESTE ouvert : enregistrer n'est pas quitter.
+  const nouveau=!ST_EDIT.id; ST_EDIT.id=id; stSetDirty(false);
+  if(nouveau) stJoinRoom(id,'edit');
+  else if(ST_ROOM){ try{ ST_ROOM.send({type:'broadcast',event:'saved',payload:{by:ST_CID,sig:stSig(ST_EDIT.steps)}}); }catch(_){} }
+  loadStrats();   // la liste, derrière, se met à jour
 }
 async function deleteStrat(id){
   if(!confirm("Supprimer cette stratégie ?")) return;
@@ -10097,7 +10544,7 @@ function openStratView(s){
       <g id="stvEls"></g></svg></div>
     <div class="tl-card-by">Par ${esc(s.created_by_name||"?")}</div>
     <div class="st-chat"><div class="st-chat-h">💬 Discussion</div><div class="st-chat-list" id="stChatList"><div class="st-chat-empty">Chargement…</div></div><form class="st-chat-form" id="stChatForm"><input class="st-chat-in" id="stChatIn" maxlength="500" placeholder="Écrire un message au clan…" autocomplete="off"><button class="btn tl-save" type="submit">Envoyer</button></form></div></div>`;
-  function draw(){ document.getElementById("stvEls").innerHTML=steps[idx].els.map((e,i)=>stElSvg(e,i)).join("");
+  function draw(){ document.getElementById("stvEls").innerHTML=steps[idx].els.map((e,i)=>stElSvg(e,i,'v')).join("");
     // DÉBRIEF EN CONSULTATION : on place les chars du replay à l'instant de l'étape.
     // Sans ça on ne voyait que les annotations, donc on ne comprenait rien.
     if(ST_RP && ST_RP.map===s.map){
@@ -10125,6 +10572,13 @@ function openStratView(s){
 // -- Chat par stratégie (sondage léger toutes les 5 s tant que la vue est ouverte) --
 let ST_CHAT_TIMER=null, ST_CHAT_SID=null, ST_CHAT_SEEN=0;
 function stChatStop(){ if(ST_CHAT_TIMER){ clearInterval(ST_CHAT_TIMER); ST_CHAT_TIMER=null; } ST_CHAT_SID=null; }
+// On quitte l'onglet Stratégie : une stratégie CONSULTÉE se referme. Sans cela
+// son chat continuait d'interroger le serveur toutes les 5 s, et l'on restait
+// affiché « regarde » chez les autres. (L'éditeur, lui, couvre tout l'écran :
+// on ne le quitte que par sa croix.)
+function stQuitteVue(){ if(ST_EDIT) return; const ed=document.getElementById("stEditor");
+  stChatStop(); stLeaveRoom();
+  if(ed&&!ed.classList.contains("hidden")){ ed.classList.add("hidden"); ed.innerHTML=""; } }
 async function stChatStart(sid){ stChatStop(); ST_CHAT_SID=sid; ST_CHAT_SEEN=0;
   const form=document.getElementById("stChatForm");
   if(form) form.onsubmit=async e=>{ e.preventDefault(); const inp=document.getElementById("stChatIn"); const t=(inp.value||"").trim(); if(!t) return; inp.value=""; inp.disabled=true;
@@ -10161,7 +10615,7 @@ function stCollabPicker(){
     <div class="st-collab-foot"><span class="st-collab-cnt" id="stcCount"></span><button class="btn tl-save" id="stcDone">Terminé</button></div></div>`;
   document.body.appendChild(ov);
   const upd=()=>{ ov.querySelector('#stcCount').textContent=ST_EDIT.editors.length+' autorisé(s) en plus'; };
-  ov.querySelectorAll('input[data-acc]').forEach(cb=>cb.onchange=()=>{ const id=+cb.dataset.acc; if(cb.checked){ if(!ST_EDIT.editors.includes(id)) ST_EDIT.editors.push(id); } else { ST_EDIT.editors=ST_EDIT.editors.filter(x=>x!==id); } upd(); });
+  ov.querySelectorAll('input[data-acc]').forEach(cb=>cb.onchange=()=>{ const id=+cb.dataset.acc; if(cb.checked){ if(!ST_EDIT.editors.includes(id)) ST_EDIT.editors.push(id); } else { ST_EDIT.editors=ST_EDIT.editors.filter(x=>x!==id); } stSetDirty(true); upd(); });
   ov.querySelector('#stcSearch').oninput=e=>{ const qy=e.target.value.toLowerCase(); ov.querySelectorAll('.st-collab-row').forEach(r=>{ r.style.display=r.textContent.toLowerCase().includes(qy)?'':'none'; }); };
   const close=()=>ov.remove(); ov.querySelector('#stcX').onclick=close; ov.querySelector('#stcDone').onclick=close;
   ov.onclick=e=>{ if(e.target===ov) close(); };
@@ -10185,7 +10639,7 @@ function stPresent(steps,map,mode,name,start){
   // diapo est épinglée — sinon c'est une présentation de stratégie classique.
   const RP=(ST_RP && ST_RP.dur>0 && ST_RP.map===map && steps.some(s=>s.t!=null)) ? ST_RP : null;
   const ov=document.createElement("div"); ov.className="st-present-ov dashx"; ov.id="stPresentOv";
-  ov.innerHTML=`<div class="st-present-top"><b>${esc(name||"Stratégie")}</b><span class="st-present-map">${esc(ST_MAPNAME[map]||prettyMap(map))}</span><button class="st-present-x" id="stpAnimBtn" title="Animer les transitions entre étapes" style="margin-left:auto;width:auto;padding:0 12px">✨</button><button class="st-present-x" id="stpLaserBtn" title="Pointeur laser (L)" style="width:auto;padding:0 12px">🔴</button><button class="st-present-x" id="stpGridBtn" title="Grille A-K / 1-0" style="width:auto;padding:0 12px">▦</button><button class="st-present-x" id="stpX" title="Quitter (Échap)">✕</button></div>
+  ov.innerHTML=`<div class="st-present-top"><b>${esc(name||"Stratégie")}</b><span class="st-present-map">${esc(ST_MAPNAME[map]||prettyMap(map))}</span><button class="st-present-x" id="stpAnimBtn" title="Animer les transitions entre étapes" aria-label="Animer les transitions entre étapes" style="margin-left:auto">${stIc('anim')}</button><button class="st-present-x" id="stpLaserBtn" title="Pointeur laser (L)" aria-label="Pointeur laser (L)">${stIc('pointer')}</button><button class="st-present-x" id="stpGridBtn" title="Grille A-K / 1-0" aria-label="Grille A-K / 1-0">${stIc('grid')}</button><button class="st-present-x" id="stpX" title="Quitter (Échap)" aria-label="Quitter (Échap)">${stIc('close')}</button></div>
     <div class="st-present-stage" id="stpStage"><svg viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg">
       <defs><marker id="st-ah" markerWidth="4.5" markerHeight="4.5" refX="3" refY="2.25" orient="auto"><path d="M0,0 L4.5,2.25 L0,4.5 z" fill="context-stroke"/></marker></defs>
       <image href="maps/top/${esc(map||'')}.jpg" x="0" y="0" width="1000" height="1000" preserveAspectRatio="none"/>
@@ -10194,7 +10648,7 @@ function stPresent(steps,map,mode,name,start){
     <div class="st-present-nav"><button class="st-pbtn" id="stpPrev">‹ Précédent</button><span class="st-present-ind" id="stpInd"></span><button class="st-pbtn" id="stpNext">Suivant ›</button></div>`;
   document.body.appendChild(ov);
   const elsG=ov.querySelector("#stpEls"), noteEl=ov.querySelector("#stpNote");
-  function paint(arr){ elsG.innerHTML=arr.map((e,i)=>stElSvg(e,i)).join(""); }
+  function paint(arr){ elsG.innerHTML=arr.map((e,i)=>stElSvg(e,i,'p')).join(""); }
   function setNote(){ const n=(steps[idx]&&steps[idx].note)?String(steps[idx].note):''; noteEl.textContent=n; noteEl.style.display=n?'block':'none'; }
   function draw(fromIdx){ cancelAnimationFrame(animRAF);
     const to=steps[idx].els;
