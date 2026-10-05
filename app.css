@@ -2741,8 +2741,11 @@ i.pm-eq{width:8px;height:8px;background:var(--accent);opacity:.55;
   .se-tool svg{width:20px;height:20px}
   .se-key{position:absolute;right:3px;bottom:2px;font:600 8.5px/1 "IBM Plex Mono",ui-monospace,monospace;color:var(--muted)}
   .se-tool.on .se-key{color:var(--accent)}
-  .se-camp-d{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font:700 11px/1 "IBM Plex Mono",ui-monospace,monospace;
-    color:#141310;box-shadow:0 0 0 2px rgba(0,0,0,.45),0 0 0 3px rgba(255,255,255,.12)}
+  /* les silhouettes vectorielles sont PLEINES : aucun trait hérité des icônes au trait */
+  .se svg.se-glyph{stroke:none}
+  .se-camp-g{display:flex}
+  .se-camp-g svg{width:19px;height:19px}
+  .se-camp-l{position:absolute;left:4px;bottom:2px;font:700 8.5px/1 "IBM Plex Mono",ui-monospace,monospace;color:var(--ink-2)}
 
   /* ── le panneau de droite ─────────────────────────────────────────── */
   .se-insp{position:absolute;right:12px;top:var(--se-top);bottom:12px;width:292px;z-index:4;display:flex;flex-direction:column;overflow:hidden;
@@ -2789,13 +2792,13 @@ i.pm-eq{width:8px;height:8px;background:var(--accent);opacity:.55;
   .se-seg button.on{background:var(--surface-2);color:var(--accent);box-shadow:inset 0 0 0 1px rgba(216,181,102,.35)}
   .se-sw{display:flex;gap:8px;flex-wrap:wrap;padding:2px}
   .se-swb{width:26px;height:26px;padding:0;border-radius:50%;border:0;background:var(--c);cursor:pointer;
-    box-shadow:inset 0 0 0 1px rgba(0,0,0,.35),0 0 0 1px var(--se-line);transition:box-shadow .15s}
-  .se-swb:hover{box-shadow:inset 0 0 0 1px rgba(0,0,0,.35),0 0 0 2px rgba(255,255,255,.3)}
+    transition:box-shadow .15s}
+  .se-swb:hover{box-shadow:0 0 0 2px var(--plane),0 0 0 3px rgba(255,255,255,.3)}
   .se-swb.on{box-shadow:0 0 0 2px var(--plane),0 0 0 4px var(--accent)}
   .se-cls{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
   .se-cls button{display:flex;flex-direction:column;align-items:center;gap:4px;padding:7px 2px 6px;border:1px solid var(--se-line);border-radius:8px;
     background:rgba(0,0,0,.2);color:var(--ink-2);font-size:10.5px;font-weight:600;cursor:pointer}
-  .se-cls button i{width:22px;height:22px;background:currentColor}
+  .se-cls button svg{width:22px;height:22px}
   .se-cls button:hover{color:var(--ink)}
   .se-cls button.on{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
   .se-sym{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
@@ -2804,7 +2807,10 @@ i.pm-eq{width:8px;height:8px;background:var(--accent);opacity:.55;
   .se-sym button svg{width:24px;height:24px}
   .se-sym button:hover{color:var(--ink)}
   .se-sym button.on{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
-  .se-num{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;border:1.6px solid currentColor;font:700 11px/1 "IBM Plex Mono",ui-monospace,monospace}
+  /* le jeton numéroté : un disque plein, le chiffre en creux */
+  .se-num{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--ink-2);color:var(--plane);font:700 11px/1 "IBM Plex Mono",ui-monospace,monospace}
+  .se-sym button:hover .se-num{background:var(--ink)}
+  .se-sym button.on .se-num{background:var(--accent)}
   .se-range{width:100%;accent-color:var(--accent);margin:2px 0 0}
   .se-acts{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-top:16px;padding-top:12px;border-top:1px solid var(--se-line)}
   .se-sec-b{overflow-x:hidden}
@@ -2820,7 +2826,7 @@ i.pm-eq{width:8px;height:8px;background:var(--accent);opacity:.55;
   .se-li span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .se-li:hover{background:rgba(255,255,255,.05);color:var(--ink)}
   .se-li.on{background:var(--accent-soft);color:var(--ink)}
-  .se-li-c{width:10px;height:10px;flex:0 0 10px;border-radius:50%;box-shadow:0 0 0 1px rgba(0,0,0,.5)}
+  .se-li-c{width:10px;height:10px;flex:0 0 10px;border-radius:50%}
 
   /* ── en bas : zoom, mini-carte, aide, frise du replay ─────────────── */
   .se-zoom{position:absolute;left:12px;bottom:8px;z-index:4;padding:3px}

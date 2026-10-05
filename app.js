@@ -9163,18 +9163,38 @@ let ST_STAMP={kind:'focus',size:0.75};   // kind 'num' = jeton numéroté
 const ST_STAMP_SIZES=[["Petit",0.75],["Moyen",1.05],["Grand",1.4]];
 let ST_MEAS={circle:false};              // mesure : distance, ou cercle de portée
 let ST_PATHBUILD=null;                   // trajet multipoint en cours de construction
-// Symboles tactiques : SVG dessiné dans une boîte ~ -15..15, coloré via currentColor.
+/* ============================================================
+   LES ICÔNES — toutes dessinées en vecteur
+   Plus aucune image du jeu sur la carte : ni l'anneau texturé des
+   bases, ni le losange biseauté des points d'apparition, ni le halo
+   noir que le filtre posait autour des silhouettes, ni le disque
+   sombre sous les symboles. Des formes nettes, sans bordure ni fond,
+   dans la couleur de leur camp ou de leur auteur.
+   ============================================================ */
+// Symboles tactiques : un trait seul, rond aux extrémités, dans une boîte -15..15.
+// Le dessin porte currentColor ; l'épaisseur est donnée par qui l'affiche.
 const ST_STAMPS={
-  focus:'<circle r="13"/><circle r="5"/><path d="M0,-15 V-11 M0,15 V11 M-15,0 H-11 M15,0 H11"/>',
-  spot:'<path d="M-15,0 Q0,-10 15,0 Q0,10 -15,0 Z"/><circle r="4" fill="currentColor" stroke="none"/>',
-  defend:'<path d="M0,-15 L12,-9 V1 Q12,11 0,15 Q-12,11 -12,1 V-9 Z"/><path d="M-5,-1 L-1,4 L6,-6"/>',
-  danger:'<path d="M0,-14 L14,12 H-14 Z"/><path d="M0,-5 V4"/><circle cx="0" cy="8" r="1.5" fill="currentColor" stroke="none"/>',
-  objective:'<path d="M-8,-15 V15 M-8,-14 H11 L6,-8 L11,-2 H-8"/>',
-  push:'<path d="M-12,-11 L0,0 L-12,11 M1,-11 L13,0 L1,11"/>',
-  fallback:'<path d="M9,13 V0 A9,9 0 0 0 -9,0 V5"/><path d="M-9,5 L-13,1 M-9,5 L-5,1"/>',
-  stop:'<circle r="13"/><path d="M-8,0 H8"/>',
-  rally:'<path d="M-14,-14 L-6,-6 M-13,-14 H-6 V-13 M14,-14 L6,-6 M13,-14 H6 V-13 M-14,14 L-6,6 M-13,14 H-6 V13 M14,14 L6,6 M13,14 H6 V13"/><circle r="2.6" fill="currentColor" stroke="none"/>'
+  focus:'<circle r="9"/><path d="M0 -14.5V-6M0 14.5V6M-14.5 0H-6M14.5 0H6"/><circle r="2.3" fill="currentColor" stroke="none"/>',
+  spot:'<path d="M-14 0C-9.5 -7.5 9.5 -7.5 14 0C9.5 7.5 -9.5 7.5 -14 0Z"/><circle r="3.6" fill="currentColor" stroke="none"/>',
+  defend:'<path d="M0 -13.5L11 -9.5V-1.5C11 5.5 6 10.8 0 13.5C-6 10.8 -11 5.5 -11 -1.5V-9.5Z"/>',
+  danger:'<path d="M0 -12.5L13.5 11.5H-13.5Z"/><path d="M0 -3.5V3"/><circle cy="7.2" r="1.7" fill="currentColor" stroke="none"/>',
+  objective:'<path d="M-8 14V-13"/><path d="M-8 -12H10.5L6.5 -6.5L10.5 -1H-8"/>',
+  push:'<path d="M-11.5 -10.5L-1 0L-11.5 10.5M1 -10.5L11.5 0L1 10.5"/>',
+  fallback:'<path d="M8.5 12.5V-1A8 8 0 0 0 -7.5 -1V6.5"/><path d="M-12.5 2L-7.5 7L-2.5 2"/>',
+  stop:'<circle r="12"/><path d="M-7 0H7"/>',
+  rally:'<path d="M-13 -13L-5.5 -5.5M-5.5 -11V-5.5H-11M13 -13L5.5 -5.5M5.5 -11V-5.5H11M-13 13L-5.5 5.5M-5.5 11V5.5H-11M13 13L5.5 5.5M5.5 11V5.5H11"/>'
 };
+/* Les classes de char, comme les repères du jeu mais nets : losange plein
+   (léger), en deux bandes (moyen), en trois (lourd) ; triangle pointe en bas
+   (chasseur) ; carré (artillerie). Formes PLEINES, sans contour, dans une
+   boîte de 24 centrée sur le char. Les bandes du losange se calculent : dans
+   le repère (u,v) où le losange devient un carré, ce sont des tranches de u. */
+function stLosange(n){ const X=7.6, Y=11.4, g=n>1?0.16:0, w=(2-(n-1)*g)/n, P=(u,v)=>(X*(u+v)/2).toFixed(2)+' '+(Y*(v-u)/2).toFixed(2);
+  let d=''; for(let k=0;k<n;k++){ const a=-1+k*(w+g), b=a+w; d+=`M${P(a,-1)}L${P(b,-1)}L${P(b,1)}L${P(a,1)}Z`; } return d; }
+const ST_CLS_D={ light:stLosange(1), medium:stLosange(2), heavy:stLosange(3), td:'M-9.5 -7.2H9.5L0 9.8Z', spg:'M-7.6 -7.6H7.6V7.6H-7.6Z' };
+function stClsPath(cls,fill){ return `<path d="${ST_CLS_D[cls]||ST_CLS_D.medium}" fill="${fill}"/>`; }
+// la même silhouette, en petite icône d'interface (rail, panneau)
+function stClsIcon(cls){ return `<svg class="se-glyph" viewBox="-12 -12 24 24" aria-hidden="true" focusable="false">${stClsPath(cls,'currentColor')}</svg>`; }
 const ST_STAMP_LIST=[["focus","Focus"],["spot","Vision"],["defend","Tenir"],["danger","Danger"],["objective","Objectif"],["push","Pousser"],["fallback","Repli"],["stop","Interdit"],["rally","Regroupement"]];
 // échelle réelle de la carte : côté de la boundingBox officielle = taille en mètres (repli 1000).
 function stMapMeters(){ const b=ST_BASES&&ST_EDIT&&ST_BASES[ST_EDIT.map]&&ST_BASES[ST_EDIT.map].bbox; return b?Math.round(b[2]-b[0]):1000; }
@@ -9265,17 +9285,17 @@ const ST_COLORS=[["#e5544b","Rouge"],["#e5c84b","Jaune"],["#5bb0e5","Bleu"],["#8
 // Le rail : [outil, nom, touche]. Les séparateurs tombent avant les index de ST_RAIL_SEP.
 const ST_TOOLS=[["select","Sélection","V"],["tank","Char","T"],["arrow","Flèche","A"],["path","Trajet","J"],["zone","Zone","Z"],["stamp","Symbole","S"],["text","Texte","N"],["pen","Crayon","P"],["measure","Mesure","M"]];
 const ST_RAIL_SEP=[1,2,8];
-const ST_CLASSES=[["light","Léger"],["medium","Moyen"],["heavy","Lourd"],["td","TD"],["spg","Arto"]];   // classes = silhouettes officielles du jeu (web/strat/class_*.png)
+const ST_CLASSES=[["light","Léger"],["medium","Moyen"],["heavy","Lourd"],["td","TD"],["spg","Arto"]];   // dessins : ST_CLS_D
 const ST_CLASS_LONG={light:"Char léger",medium:"Char moyen",heavy:"Char lourd",td:"Chasseur de chars",spg:"Artillerie"};
 // Icônes au trait (viewBox 0 0 20 20), les mêmes dessins que l'éditeur 3D quand l'outil existe des deux côtés.
 const ST_IC={
   select:'<path d="M4 3l6 14 2-6 6-2z"/>',
-  tank:'<path d="M3 12h14v4H3z"/><path d="M5 12V9h8v3"/><path d="M9 9V7h9"/>',
-  arrow:'<path d="M3 16L16 4"/><path d="M9 4h7v7"/>',
+  tank:'<path d="M10 2.5L15.5 10L10 17.5L4.5 10Z"/><path d="M7.25 6.25L12.75 13.75"/>',
+  arrow:'<path d="M4 16L15.5 4.5"/><path d="M8.5 4.5h7v7"/>',
   path:'<path d="M3 16c4 0 3-6 7-6s3-5 7-5"/><circle cx="3" cy="16" r="1.6"/><circle cx="17" cy="5" r="1.6"/>',
-  zone:'<path d="M4 6l6-2 6 3-2 8-8 1z"/>',
-  stamp:'<circle cx="10" cy="10" r="6.5"/><circle cx="10" cy="10" r="2.2"/><path d="M10 1.5v2M10 16.5v2M1.5 10h2M16.5 10h2"/>',
-  text:'<path d="M4 5.5V3.5h12v2M10 3.5v13M7.5 16.5h5"/>',
+  zone:'<rect x="3" y="4.5" width="14" height="11" rx="2" stroke-dasharray="2.6 2.2"/>',
+  stamp:'<circle cx="10" cy="10" r="5.2"/><path d="M10 2.5V6M10 14v3.5M2.5 10H6M14 10h3.5"/>',
+  text:'<path d="M4.5 5.5V4h11v1.5M10 4v12M7.5 16h5"/>',
   pen:'<path d="M3.5 16.5l1-3.6L13.6 3.8l2.6 2.6-9.1 9.1z"/><path d="M12 5.4l2.6 2.6"/>',
   measure:'<path d="M3 13l10-10 4 4-10 10z"/><path d="M6 10l1.6 1.6M9 7l1.6 1.6M12 4l1.6 1.6"/>',
   close:'<path d="M5 5l10 10M15 5L5 15"/>',
@@ -9296,10 +9316,10 @@ const ST_IC={
   trash:'<path d="M4 6h12M8 6V4h4v2M5.5 6l.8 10.5h7.4l.8-10.5"/>',
   back5:'<path d="M9 5L4 10l5 5M16 5l-5 5 5 5"/>',
   fwd5:'<path d="M11 5l5 5-5 5M4 5l5 5-5 5"/>',
-  pin:'<path d="M10 17v-5"/><path d="M6.5 3h7l-1 4 2.5 3H5l2.5-3z"/>',
-  ghost:'<circle cx="6.5" cy="13" r="3"/><circle cx="14" cy="6.5" r="3" stroke-dasharray="2 2"/><path d="M8.8 11l2.8-2.4"/>',
+  pin:'<path d="M10 17.5V13"/><path d="M7 3h6"/><path d="M8 3v4.2L5.2 10.4V13h9.6v-2.6L12 7.2V3"/>',
+  ghost:'<path d="M5.5 10l3 4-3 4-3-4z"/><path d="M14.5 2l3 4-3 4-3-4z" stroke-dasharray="2 1.7"/><path d="M8.2 11.8L11.6 8.4M9 8.4h2.6V11"/>',
   grid:'<path d="M3 3h14v14H3zM3 7.7h14M3 12.3h14M7.7 3v14M12.3 3v14"/>',
-  anim:'<path d="M3 10h4M13 10h4"/><circle cx="10" cy="10" r="2.5"/><path d="M5 6l2 2M15 6l-2 2M5 14l2-2M15 14l-2-2"/>'
+  anim:'<path d="M13 3.5l4.5 6.5-4.5 6.5-4.5-6.5z"/><path d="M2.5 7h3.5M2 10h4M2.5 13h3.5"/>'
 };
 function stIc(k){ return `<svg viewBox="0 0 20 20" aria-hidden="true" focusable="false">${ST_IC[k]||''}</svg>`; }
 let ST_BASES=null;   // positions officielles des bases (web/maps_bases.json)
@@ -9307,12 +9327,16 @@ const ST_MODE_FR={ctf:"Standard",domination:"Rencontre",assault:"Assaut",assault
 // convertit une position monde (x,z) en coords minimap 0-1000 selon la boundingBox
 function stWorld(map,x,z){ const b=ST_BASES&&ST_BASES[map]&&ST_BASES[map].bbox; if(!b) return [0,0];
   return [ (x-b[0])/((b[2]-b[0])||1)*1000, (b[3]-z)/((b[3]-b[1])||1)*1000 ]; }
-// Marqueurs OFFICIELS extraits du jeu (gui/flash/atlases/battleAtlas -> web/strat/*.png)
-const ST_ICON=56;   // taille du marqueur dans le repère 0-1000
+// Bases et points d'apparition : dessinés, plus d'images du jeu (leur anneau
+// texturé et leur losange biseauté juraient avec tout le reste de la carte).
+const ST_BASE_COL={green:'#5dbb46', red:'#e0483f', neutral:'#f6f5f1'};
 // drapeau de base : kind = 'green' (équipe 1) | 'red' (équipe 2) | 'neutral' (point de contrôle, blanc)
-function stFlag(mx,my,kind){ const f=(kind==='red')?'base_red':(kind==='neutral')?'base_neutral':'base_green'; const h=ST_ICON/2; return `<image class="st-ov" href="strat/${f}.png" x="${Math.round(mx)-h}" y="${Math.round(my)-h}" width="${ST_ICON}" height="${ST_ICON}"/>`; }
-// point d'apparition officiel numéroté : team = 1|2 (couleur), n = numéro 1..4
-function stSpawn(mx,my,team,n){ const c=team===1?'green':'red', k=Math.max(1,Math.min(4,n||1)); const h=ST_ICON/2; return `<image class="st-ov" href="strat/spawn_${c}_${k}.png" x="${Math.round(mx)-h}" y="${Math.round(my)-h}" width="${ST_ICON}" height="${ST_ICON}"/>`; }
+function stFlag(mx,my,kind){ const c=ST_BASE_COL[kind]||ST_BASE_COL.green;
+  return `<g class="st-ov" transform="translate(${Math.round(mx)} ${Math.round(my)}) scale(1.7)"><path d="M-6.4 -11h2.2v22h-2.2zM-4.2 -11H8.6L5.2 -5.8L8.6 -0.6H-4.2z" fill="${c}"/></g>`; }
+// point d'apparition numéroté : un hexagone plein et son numéro. team = 1|2, n = 1..4
+// (pas un losange : on l'aurait confondu avec le char léger)
+function stSpawn(mx,my,team,n){ const c=team===1?ST_BASE_COL.green:ST_BASE_COL.red, k=Math.max(1,Math.min(4,n||1));
+  return `<g class="st-ov" transform="translate(${Math.round(mx)} ${Math.round(my)}) scale(1.65)" opacity=".92"><path d="M0 -11L9.5 -5.5V5.5L0 11L-9.5 5.5V-5.5Z" fill="${c}"/><text y="4.4" font-size="12.5" font-weight="700" text-anchor="middle" fill="#0c0c0b" font-family="IBM Plex Mono,ui-monospace,monospace">${k}</text></g>`; }
 const ST_MODE_ORDER=["ctf","domination"];   // seulement Standard + Rencontre
 function stModes(map){ const md=ST_BASES&&ST_BASES[map]; if(!md||!md.modes) return []; return ST_MODE_ORDER.filter(mo=>md.modes[mo]); }
 /* Charge maps_bases.json à la demande. Nécessaire car il n'était chargé que par
@@ -9639,6 +9663,9 @@ function stElSvg(el,i,pfx){ const s=stElInner(el,i,pfx||'e'); if(el.rot){ const 
 // Secteur surveillé d'un char : cap (0 = nord, sens horaire) et demi-ouverture.
 function stSectorPath(x,y,cap,sec,R){ const a0=(cap-90-sec)*Math.PI/180, a1=(cap-90+sec)*Math.PI/180;
   return `M ${x} ${y} L ${(x+R*Math.cos(a0)).toFixed(1)} ${(y+R*Math.sin(a0)).toFixed(1)} A ${R} ${R} 0 ${2*sec>180?1:0} 1 ${(x+R*Math.cos(a1)).toFixed(1)} ${(y+R*Math.sin(a1)).toFixed(1)} Z`; }
+// Nom sous un char : une petite étiquette sombre, sans bordure.
+function stNameTag(x,y,nm){ if(!nm) return ''; const w=Math.round(nm.length*8.4+14);
+  return `<g style="pointer-events:none"><rect x="${x-w/2}" y="${y+4}" width="${w}" height="20" rx="5" fill="#0c0c0b" fill-opacity=".78"/><text x="${x}" y="${y+18.5}" font-size="14.5" font-weight="600" text-anchor="middle" fill="#f6f5f1">${esc(nm)}</text></g>`; }
 function stElInner(el,i,pfx){
   const sel=ST_SELS.has(i)&&pfx==='e'?' st-sel':'';
   if(el.type==='arrow'||el.type==='line'){ const w=el.w||7, m=el.type==='arrow'?' marker-end="url(#st-ah)"':'', dash=el.dash?` stroke-dasharray="${w*2.1} ${w*1.6}"`:'';
@@ -9649,24 +9676,26 @@ function stElInner(el,i,pfx){
   if(el.type==='circle'){ const cx=(el.x1+el.x2)/2,cy=(el.y1+el.y2)/2,rx=Math.abs(el.x2-el.x1)/2,ry=Math.abs(el.y2-el.y1)/2,sw=el.w||6,dash=el.dash?` stroke-dasharray="${sw*2.4} ${sw*1.8}"`:'';
     return `<ellipse class="st-el${sel}" data-eid="${i}" cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${esc(el.color)}" fill-opacity=".16" stroke="${esc(el.color)}" stroke-width="${sw}"${dash}/>`; }
   if(el.type==='pen'){ const w=el.w||7, dash=el.dash?` stroke-dasharray="${w*2.1} ${w*1.6}"`:''; return `<polyline class="st-el${sel}" data-eid="${i}" points="${el.pts.map(p=>p.map(n=>Math.round(n)).join(',')).join(' ')}" fill="none" stroke="${esc(el.color)}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"${dash}/>`; }
-  if(el.type==='marker'){ return `<g class="st-el st-marker${sel}" data-eid="${i}"><circle cx="${el.x}" cy="${el.y}" r="24" fill="${esc(el.color)}" stroke="#0009" stroke-width="3"/><text x="${el.x}" y="${el.y+9}" font-size="26" font-weight="800" text-anchor="middle" fill="${stTextOn(el.color)}" style="pointer-events:none">${esc(el.label||'')}</text></g>`; }
+  if(el.type==='marker'){ return `<g class="st-el st-marker${sel}" data-eid="${i}"><circle cx="${el.x}" cy="${el.y}" r="20" fill="${esc(el.color)}"/><text x="${el.x}" y="${el.y+7.5}" font-size="21" font-weight="700" text-anchor="middle" font-family="IBM Plex Mono,ui-monospace,monospace" fill="${stTextOn(el.color)}" style="pointer-events:none">${esc(el.label||'')}</text></g>`; }
   if(el.type==='text'){ return `<text class="st-el${sel}" data-eid="${i}" x="${el.x}" y="${el.y}" font-size="34" font-weight="800" fill="${esc(el.color)}" stroke="#000" stroke-width="1" paint-order="stroke">${esc(el.text||'')}</text>`; }
   // POSITION PROPOSÉE (débriefing) : fantôme relié par une flèche pointillée à la
   // position RÉELLE du char dans le replay (x0,y0 ne bougent jamais).
-  if(el.type==='ghost'){ const col=el.color||'#d8b566'; const s=Math.round(66*(el.size||0.72)),h=s/2,
-        cls=(ST_CLASSES.find(c=>c[0]===el.cls)?el.cls:'medium'), nm=String(el.name||'').trim(), fid=`${pfx}g${i}`;
+  if(el.type==='ghost'){ const col=el.color||'#d8b566', k=+(1.8*(el.size||0.72)).toFixed(3), h=Math.round(12*k),
+        cls=(ST_CLASSES.find(c=>c[0]===el.cls)?el.cls:'medium'), nm=String(el.name||'').trim();
+    // la flèche part d'un simple point plein : là où le char était vraiment
+    // la flèche s'arrête AVANT la silhouette : sa pointe ne vient pas se poser dessus
+    const gdx=el.x-el.x0, gdy=el.y-el.y0, gl=Math.hypot(gdx,gdy), gr=h+7;
     const arr=(el.x0!=null&&el.y0!=null)
-      ? `<path d="M ${el.x0} ${el.y0} L ${el.x} ${el.y}" stroke="${esc(col)}" stroke-width="4" stroke-dasharray="11 8" fill="none" marker-end="url(#st-ah)" opacity=".9"/>`
-        +`<circle cx="${el.x0}" cy="${el.y0}" r="6" fill="none" stroke="${esc(col)}" stroke-width="3" opacity=".75"/>` : '';
-    const label=nm?`<text x="${el.x}" y="${el.y+h+11}" font-size="14" font-weight="700" text-anchor="middle" fill="#fff" stroke="#000" stroke-width="3" paint-order="stroke" style="pointer-events:none">${esc(nm)}</text>`:'';
-    return `<g class="st-el st-ghost${sel}" data-eid="${i}">${arr}<filter id="${fid}" x="-45%" y="-45%" width="190%" height="190%"><feFlood flood-color="${esc(col)}" result="f"/><feComposite in="f" in2="SourceAlpha" operator="in" result="s"/><feDropShadow in="s" dx="0" dy="0" stdDeviation="3" flood-color="#000" flood-opacity=".9"/></filter><image href="strat/class_${cls}.png" x="${el.x-h}" y="${el.y-h}" width="${s}" height="${s}" filter="url(#${fid})" opacity=".7"/>${label}</g>`; }
-  if(el.type==='tank'){ const col=el.color||'#5dbb46'; const s=Math.round(66*(el.size||0.78)),h=s/2, cls=(ST_CLASSES.find(c=>c[0]===el.cls)?el.cls:'medium'), fid=`${pfx}k${i}`;
-    const nm=String(el.name||'').trim(); const nw=nm?Math.round(nm.length*8.6+16):0;
-    const label=nm?`<g style="pointer-events:none"><rect x="${el.x-nw/2}" y="${el.y+h-6}" width="${nw}" height="21" rx="6" fill="#0c0d0f" fill-opacity=".82"/><text x="${el.x}" y="${el.y+h+9}" font-size="15" font-weight="700" text-anchor="middle" fill="#fff">${esc(nm)}</text></g>`:'';
+      ? (gl>gr+8?`<path d="M ${el.x0} ${el.y0} L ${(el.x-gdx/gl*gr).toFixed(1)} ${(el.y-gdy/gl*gr).toFixed(1)}" stroke="${esc(col)}" stroke-width="4" stroke-dasharray="11 8" fill="none" marker-end="url(#st-ah)" opacity=".9"/>`:'')
+        +`<circle cx="${el.x0}" cy="${el.y0}" r="5" fill="${esc(col)}" opacity=".8"/>` : '';
+    return `<g class="st-el st-ghost${sel}" data-eid="${i}">${arr}<g transform="translate(${el.x} ${el.y}) scale(${k})" opacity=".62"><circle r="13" fill="transparent"/>${stClsPath(cls,esc(col))}</g>${stNameTag(el.x,el.y+h,nm)}</g>`; }
+  if(el.type==='tank'){ const col=el.color||'#5dbb46', k=+(1.8*(el.size||0.78)).toFixed(3), h=Math.round(12*k), cls=(ST_CLASSES.find(c=>c[0]===el.cls)?el.cls:'medium');
     const sec=el.secteur>0?`<path d="${stSectorPath(el.x,el.y,el.cap||0,el.secteur,150)}" fill="${esc(col)}" fill-opacity=".13" stroke="${esc(col)}" stroke-opacity=".7" stroke-width="2" stroke-dasharray="7 5" style="pointer-events:none"/>`:'';
-    return `<g class="st-el st-tank${sel}" data-eid="${i}">${sec}<filter id="${fid}" x="-45%" y="-45%" width="190%" height="190%"><feFlood flood-color="${esc(col)}" result="f"/><feComposite in="f" in2="SourceAlpha" operator="in" result="s"/><feDropShadow in="s" dx="0" dy="0" stdDeviation="3.4" flood-color="#000" flood-opacity=".92"/></filter><image href="strat/class_${cls}.png" x="${el.x-h}" y="${el.y-h}" width="${s}" height="${s}" filter="url(#${fid})"/>${label}</g>`; }
-  if(el.type==='stamp'){ const col=el.color||'#e5c84b', inner=(Object.prototype.hasOwnProperty.call(ST_STAMPS,el.kind)?ST_STAMPS[el.kind]:ST_STAMPS.focus), sz=el.size||0.75;
-    return `<g class="st-el st-stamp${sel}" data-eid="${i}" transform="translate(${el.x},${el.y}) scale(${sz})"><circle r="20" fill="#0c0d0f" fill-opacity=".55" stroke="#0a0a0a" stroke-opacity=".45" stroke-width="2"/><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="color:${esc(col)}">${inner}</g></g>`; }
+    // la silhouette pleine, sans halo ; un disque invisible élargit seulement la zone de clic
+    return `<g class="st-el st-tank${sel}" data-eid="${i}">${sec}<g transform="translate(${el.x} ${el.y}) scale(${k})"><circle r="13" fill="transparent"/>${stClsPath(cls,esc(col))}</g>${stNameTag(el.x,el.y+h,String(el.name||'').trim())}</g>`; }
+  if(el.type==='stamp'){ const col=el.color||'#e5c84b', inner=(Object.prototype.hasOwnProperty.call(ST_STAMPS,el.kind)?ST_STAMPS[el.kind]:ST_STAMPS.focus), k=+(1.25*(el.size||0.75)).toFixed(3);
+    // le trait seul, sans le disque sombre qui le portait
+    return `<g class="st-el st-stamp${sel}" data-eid="${i}" transform="translate(${el.x},${el.y}) scale(${k})" style="color:${esc(col)}"><circle r="16" fill="transparent"/><g fill="none" stroke="currentColor" stroke-width="2.9" stroke-linecap="round" stroke-linejoin="round">${inner}</g></g>`; }
   if(el.type==='measure'){ const mx=Math.round((el.x1+el.x2)/2),my=Math.round((el.y1+el.y2)/2),tw=(String(el.m).length*9+30);
     return `<g class="st-el st-measure${sel}" data-eid="${i}"><line x1="${el.x1}" y1="${el.y1}" x2="${el.x2}" y2="${el.y2}" stroke="#ecd190" stroke-width="3.4" stroke-dasharray="11 7" stroke-linecap="round"/><circle cx="${el.x1}" cy="${el.y1}" r="4.5" fill="#ecd190"/><circle cx="${el.x2}" cy="${el.y2}" r="4.5" fill="#ecd190"/><g style="pointer-events:none"><rect x="${mx-tw/2}" y="${my-13}" width="${tw}" height="23" rx="6" fill="#0c0d0f" fill-opacity=".88"/><text x="${mx}" y="${my+4}" font-size="15" font-weight="800" text-anchor="middle" fill="#ecd190">${el.m} m</text></g></g>`; }
   if(el.type==='range'){ const col=el.color||'#5bb0e5', tw=(String(el.m).length*9+30);
@@ -9742,18 +9771,9 @@ function stRpPos(v,time){
 function stRpDraw(gid){
   const g=document.getElementById(gid||"stReplay"); if(!g) return;
   if(!ST_RP){ g.innerHTML=""; return; }
-  const t=ST_RP.t, R=ST_RP_ICON, h=R/2, out=[];
-  // Filtres de teinte : la silhouette de l'icône est repeinte aux couleurs de
-  // l'équipe (feFlood + feComposite sur l'alpha), avec une ombre pour rester
-  // lisible sur les cartes claires.
-  // id préfixé par le calque : l'éditeur et la présentation coexistent dans le DOM
-  // et des ids dupliqués feraient résoudre url(#…) sur le mauvais filtre.
-  const FID=(gid||"stReplay")+"_";
-  out.push(`<defs>${[[FID+"rpTintA","#2ec26e"],[FID+"rpTintE","#ec6a6a"]].map(([id,c])=>
-    `<filter id="${id}" x="-40%" y="-40%" width="180%" height="180%">
-       <feFlood flood-color="${c}"/><feComposite in2="SourceAlpha" operator="in"/>
-       <feDropShadow dx="0" dy="0" stdDeviation="1.1" flood-color="#000" flood-opacity="1"/>
-     </filter>`).join("")}</defs>`);
+  const t=ST_RP.t, out=[];
+  // Les chars du replay : la silhouette de classe en vecteur, pleine, aux couleurs
+  // de l'équipe — plus d'image teintée par filtre, plus de halo ni d'anneau.
   // mode « proposer » : uniquement dans l'éditeur, jamais en présentation
   const pick=!!ST_RP.propose && (!gid || gid==="stReplay");
   ST_RP.vehicles.forEach((v,vi)=>{
@@ -9773,11 +9793,9 @@ function stRpDraw(gid){
       const x1=x+Math.cos(a-half)*L, y1=y+Math.sin(a-half)*L, x2=x+Math.cos(a+half)*L, y2=y+Math.sin(a+half)*L;
       s+=`<path d="M${x.toFixed(1)} ${y.toFixed(1)} L${x1.toFixed(1)} ${y1.toFixed(1)} A${L} ${L} 0 0 1 ${x2.toFixed(1)} ${y2.toFixed(1)} Z" fill="${col}" opacity=".16"/>`;
     }
-    const ic=ST_RP_CLS[v.cls];
-    if(ic) s+=`<image href="strat/class_${ic}.png" x="${(x-h).toFixed(1)}" y="${(y-h).toFixed(1)}" width="${R}" height="${R}" filter="url(#${FID}${v.ally?'rpTintA':'rpTintE'})"/>`
-             +`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(h*0.86).toFixed(1)}" fill="none" stroke="${col}" stroke-width="2" opacity=".55"/>`;
-    else s+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="10" fill="${col}" stroke="#000" stroke-width="2"/>`;
-    s+=`<text x="${x.toFixed(1)}" y="${(y+h+13).toFixed(1)}" text-anchor="middle" font-size="15" font-weight="700" fill="#fff" stroke="#000" stroke-width="3" paint-order="stroke" style="pointer-events:none">${esc(stRpLabel(v))}</text>`;
+    const ic=ST_RP_CLS[v.cls], k=1.35, hh=Math.round(12*k);
+    s+=`<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) scale(${k})">${ic?stClsPath(ic,col):`<circle r="6" fill="${col}"/>`}</g>`;
+    s+=stNameTag(x,y+hh,stRpLabel(v));
     out.push(s+`</g>`);
   });
   g.innerHTML=out.join("");
@@ -10085,7 +10103,8 @@ function stSelOnly(i){ stSelClear(); ST_SELS.add(i); }
 function stRenderHint(){ const h=document.getElementById("stHint"); if(!h) return;
   h.innerHTML=`<span>${esc(ST_HINTS[ST_TOOL]||'')}</span><span class="se-hint-2">Espace + glisser pour se déplacer · molette pour zoomer</span>`; }
 function stRenderCamp(){ const b=document.getElementById('stCamp'); if(!b) return; const c=ST_TANK.color, en=c===ST_ENEMY, al=c===ST_ALLY;
-  b.innerHTML=`<span class="se-camp-d" style="background:${esc(c)}">${en?'E':al?'A':''}</span><span class="se-key" aria-hidden="true">C</span>`;
+  // la silhouette du prochain char, dans sa couleur, et la lettre du camp (jamais la couleur seule)
+  b.innerHTML=`<span class="se-camp-g" style="color:${esc(c)}">${stClsIcon(ST_TANK.cls)}</span><b class="se-camp-l">${en?'E':al?'A':''}</b><span class="se-key" aria-hidden="true">C</span>`;
   b.setAttribute('aria-label',en?"Camp des prochains chars : ennemis":al?"Camp des prochains chars : alliés":"Couleur des prochains chars : personnalisée"); }
 function stCampToggle(){ const nv=ST_TANK.color===ST_ENEMY?ST_ALLY:ST_ENEMY; ST_TANK.color=nv;
   // des chars sélectionnés changent de camp avec la touche
@@ -10119,8 +10138,8 @@ function stRenderElList(){ const box=document.getElementById('stElList'); if(!bo
 function stFRow(label,inner,val){ return `<div class="se-f"><div class="se-fl"><span>${label}</span>${val!=null&&val!==''?`<b>${esc(val)}</b>`:''}</div>${inner}</div>`; }
 function stFSeg(p,cur,opts){ return `<div class="se-seg" role="group">${opts.map(([v,l])=>{ const on=cur!==undefined&&String(cur)===String(v); return `<button type="button" class="${on?'on':''}" data-p="${p}" data-v="${v}" aria-pressed="${on}">${l}</button>`; }).join('')}</div>`; }
 function stFColors(p,cur,list){ return `<div class="se-sw">${list.map(([c,n])=>`<button type="button" class="se-swb${cur===c?' on':''}" data-p="${p}" data-v="${c}" style="--c:${c}" aria-label="${esc(n)}" aria-pressed="${cur===c}"></button>`).join('')}</div>`; }
-function stFCls(cur){ return `<div class="se-cls">${ST_CLASSES.map(([k,l])=>`<button type="button" class="${cur===k?'on':''}" data-p="cls" data-v="${k}" aria-pressed="${cur===k}" aria-label="${esc(ST_CLASS_LONG[k])}"><i style="-webkit-mask:url(strat/class_${k}.png) center/contain no-repeat;mask:url(strat/class_${k}.png) center/contain no-repeat"></i><span>${l}</span></button>`).join('')}</div>`; }
-function stFSym(cur){ return `<div class="se-sym">${ST_STAMP_LIST.map(([k,l])=>`<button type="button" class="${cur===k?'on':''}" data-p="kind" data-v="${k}" aria-pressed="${cur===k}" aria-label="${esc(l)}"><svg viewBox="-20 -20 40 40"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">${ST_STAMPS[k]}</g></svg></button>`).join('')}<button type="button" class="${cur==='num'?'on':''}" data-p="kind" data-v="num" aria-pressed="${cur==='num'}" aria-label="Jeton numéroté"><span class="se-num">1</span></button></div>`; }
+function stFCls(cur){ return `<div class="se-cls">${ST_CLASSES.map(([k,l])=>`<button type="button" class="${cur===k?'on':''}" data-p="cls" data-v="${k}" aria-pressed="${cur===k}" aria-label="${esc(ST_CLASS_LONG[k])}">${stClsIcon(k)}<span>${l}</span></button>`).join('')}</div>`; }
+function stFSym(cur){ return `<div class="se-sym">${ST_STAMP_LIST.map(([k,l])=>`<button type="button" class="${cur===k?'on':''}" data-p="kind" data-v="${k}" aria-pressed="${cur===k}" aria-label="${esc(l)}"><svg viewBox="-17 -17 34 34" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">${ST_STAMPS[k]}</g></svg></button>`).join('')}<button type="button" class="${cur==='num'?'on':''}" data-p="kind" data-v="num" aria-pressed="${cur==='num'}" aria-label="Jeton numéroté"><span class="se-num">1</span></button></div>`; }
 function stSymName(k){ if(k==='num') return 'Jeton numéroté'; const s=ST_STAMP_LIST.find(x=>x[0]===k); return s?s[1]:''; }
 function stFSector(el){ const sec=el.secteur||0, cap=el.cap||0;
   return `<div class="se-f"><div class="se-fl"><span>Secteur surveillé</span><b id="stSecV">${sec?'±'+sec+'°':'Aucun'}</b></div><input type="range" class="se-range" data-p="secteur" min="0" max="90" step="5" value="${sec}" aria-label="Ouverture du secteur surveillé"></div>`
