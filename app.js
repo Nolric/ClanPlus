@@ -1196,7 +1196,6 @@ function groupBattles(){
     let ourTeam=teams[0], bestN=-1;
     if(BATTLE_CAMP[g.id]!=null) ourTeam=teams.find(t=>Number(t)===BATTLE_CAMP[g.id]) ?? ourTeam;
     else teams.forEach(t=>{ const n=g.rows.filter(r=>r.team===t && mine(r)).length; if(n>bestN){ bestN=n; ourTeam=t; } });
-    g.ourTeam = ourTeam;
     g.our = g.rows.filter(r=>r.team===ourTeam);
     g.foe = g.rows.filter(r=>r.team!==ourTeam);
     if(!g.our.length){ g.our=g.rows; g.foe=[]; }         // sécurité
@@ -1777,9 +1776,7 @@ async function startReplay(id, host){
     if(r.ok && r.j && r.j.replay && (r.j.replay.vehicles||[]).length)
       rep=g.mine ? convertReplay(r.j.replay,{ myTeam:g.myTeam,
                      members:new Set(g.our.filter(x=>x.isMember||x.isSelf).map(x=>x.accId)) })
-                 // le replay est la trace de son envoyeur, qui jouait peut-être
-                 // en face : on le remet du côté du clan
-                 : convertReplay(r.j.replay, g.ourTeam!=null ? { myTeam:Number(g.ourTeam) } : null);
+                 : convertReplay(r.j.replay);
   }catch(e){}
   if(!rep){ rep=mockReplay(g); demo=true; }
   rep.battleId=String(g.id);
@@ -2233,7 +2230,7 @@ function buildRaw(data){
     bmap[b.battle_id] = { ts: b.ts?Math.floor(new Date(b.ts).getTime()/1000):0, mode:b.mode||"",
       result: b.result, mapName: b.map_name || ("Carte "+(b.map_id||"?")),
       uploadedBy: b.uploaded_by!=null ? Number(b.uploaded_by) : null,
-      foeTag: b.foe_tag || null, camp: (b.camp===1||b.camp===2) ? b.camp : null };
+      foeTag: b.foe_tag || null };
   });
   /* ── Doublons de bataille ────────────────────────────────────────
      Quand DEUX membres du clan ont le mod, les deux envoient la même
@@ -2266,21 +2263,21 @@ function buildRaw(data){
   CE_REF=teamGlobalRef(tous);
 
   /* ── Le camp du clan, bataille par bataille ───────────────────────
-     Une bataille de Bastion appartient aux clans qui ont monté les deux
-     DÉTACHEMENTS, pas à celui des joueurs : un détachement de [1RCB] peut
-     compter six [TIPS_]. Les tags ne disent donc rien. Le serveur range
-     chaque bataille sous les deux clans, chacun avec son camp (colonne
-     camp) et le résultat vu de ce camp. Une copie plus ancienne n'a pas
-     de camp : c'est alors celui de son envoyeur, sous le clan duquel elle
-     avait été rangée. Ni l'un ni l'autre : groupBattles retombe sur
-     l'équipe qui compte le plus de membres du clan. */
+     Une bataille de Bastion appartient au clan qui a monté le DÉTACHEMENT,
+     pas à celui des joueurs : un détachement de [1RCB] peut compter six
+     [TIPS_]. Les tags ne disent donc rien. Le serveur range chaque
+     bataille sous le clan du détachement de son envoyeur (ingest, mod
+     >= 1.0.44 ; les plus anciennes, rattrapées par les replays) : notre
+     camp est l'équipe de l'envoyeur, et le résultat enregistré est le sien.
+     Envoyeur inconnu : groupBattles retombe sur l'équipe qui compte le
+     plus de membres du clan. */
   const TAGU=CLANTAG.toUpperCase();
   const parB={}; tous.forEach(r=>{ (parB[r.battleId]=parB[r.battleId]||[]).push(r); });
   BATTLE_CAMP={}; BATTLE_ENEMY={};
   Object.keys(parB).forEach(bid=>{
     const rows=parB[bid], b=bmap[bid]||{};
     const env=b.uploadedBy!=null ? rows.find(r=>r.accId===b.uploadedBy) : null;
-    const camp=b.camp!=null ? b.camp : (env ? Number(env.team) : null);
+    const camp=env ? Number(env.team) : null;
     if(camp!=null) BATTLE_CAMP[bid]=camp;
     // le clan d'en face : son détachement s'il est connu, sinon le tag le plus porté en face
     if(b.foeTag){ BATTLE_ENEMY[bid]=b.foeTag; return; }
@@ -2576,7 +2573,7 @@ function ceForRow(r,C){
    ============================================================ */
 // Marqueur de version : `srVersion()` dans la console dit si le fichier servi
 // est bien le dernier. Évite de confondre « pas déployé » et « ne marche pas ».
-const SR_SITE_VERSION="sr-4.8-deux-detachements";
+const SR_SITE_VERSION="sr-4.7-detachements";
 function srVersion(){ return SR_SITE_VERSION; }
 let SR_MODEL=null, SR_SKILL=null, SR_ELO_TAG=null, SR_ELO_ID=null, SR_ROWS=null;
 const SR_CLS={heavyTank:"heavy",mediumTank:"medium",lightTank:"light","AT-SPG":"td",SPG:"spg"};
