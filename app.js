@@ -234,8 +234,8 @@ function openBattleFromLink(){
   // Les identifiants dépassent 2^53 : le site les lit arrondis, on compare de même.
   const want=[id,String(Number(id))];
   const hit=RAW.find(r=>want.includes(String(r.battleId)));
-  // ni la période ni le mode choisis ne doivent la cacher
-  state.days=0; state.mode="";
+  // ni la période, ni le mode, ni « Mes batailles » ne doivent la cacher
+  state.days=0; state.mode=""; BL_SCOPE="clan";
   const ms=document.getElementById("modeSel"); if(ms) ms.value="";
   document.querySelectorAll("#periodSeg button").forEach(b=>b.classList.toggle("on",b.dataset.d==="0"));
   if(hit){
@@ -1124,7 +1124,10 @@ function emblemOursHTML(sizeClass){
   return `<span class="${sizeClass} bl-em-ph ours">${esc(ini)}</span>`;
 }
 async function resolveEnemyEmblems(list){
-  const tags=[...new Set(list.map(g=>g.enemyTag).filter(t=>t&&t!=="?"))].filter(t=>!(t in EMBLEM_CACHE));
+  // « Mes batailles » : notre camp porte parfois un autre tag (ancien clan)
+  const ours=String(CLANTAG||"").toUpperCase();
+  const tags=[...new Set(list.flatMap(g=>[g.enemyTag, g.ourTag]).filter(t=>t&&t!=="?"&&String(t).toUpperCase()!==ours))]
+    .filter(t=>!(t in EMBLEM_CACHE));
   for(const tag of tags){
     let url="";
     try{
@@ -1211,35 +1214,63 @@ function groupBattles(){
   list.sort((a,b)=>b.ts-a.ts);
   return list;
 }
-function blTeam(rows, ours, tag, url){
+/* `opt` sert à « Mes batailles » : {mine:true, srOf} — l'équipe est « Mon
+   équipe », la ligne du joueur connecté ressort, et le SR vient du calcul
+   fait sur SES batailles plutôt que sur celles du clan. */
+function blTeam(rows, ours, tag, url, opt){
+  opt=opt||{};
+  const srOf=opt.srOf||srBattle;
   const sorted=rows.slice().sort((a,b)=>b.dmg-a.dmg);
-  const em = ours ? emblemHTML(tag,url,'ours') : emblemFoeHTML(tag);
+  const em = !ours ? emblemFoeHTML(tag)
+           : (opt.mine && String(tag).toUpperCase()!==String(CLANTAG).toUpperCase()) ? emblemFoeHTML(tag,'bl-em ours')
+           : emblemHTML(tag,url,'ours');
   const dmgTot = sorted.reduce((s,r)=>s+(r.dmg||0),0);
-  const head=`<div class="hd">${em} ${ours?'Notre équipe':'Adversaire'} — [${esc(tag)}]<span class="sub">${fmt(dmgTot)} dég.</span></div>`;
+  const qui = ours ? (opt.mine?'Mon équipe':'Notre équipe') : 'Adversaire';
+  const head=`<div class="hd">${em} ${qui} — [${esc(tag)}]<span class="sub">${fmt(dmgTot)} dég.</span></div>`;
   const ceH = ours?`<th class="c">SR</th>`:``;
   const body=sorted.map(r=>{
     let ceCell="";
-    if(ours) ceCell = r.isMember ? `<td class="c">${ceBadge((function(){const v=srBattle(r); return v==null?null:Math.round(v);})())}</td>` : `<td class="c" style="color:var(--muted)">—</td>`;
-    return `<tr class="${r.isMember?'me':''}">
+    if(ours) ceCell = (r.isMember||r.isSelf) ? `<td class="c">${ceBadge((function(){const v=srOf(r); return v==null?null:Math.round(v);})())}</td>` : `<td class="c" style="color:var(--muted)">—</td>`;
+    return `<tr class="${r.isMember?'me':''}${r.isSelf?' self':''}">
       <td>${esc(r.tank||'?')}</td><td>${esc(shortName(r.name))}</td>
       <td>${fmt(r.dmg)}</td><td>${r.kills}</td><td>${fmt(r.assist)}</td><td>${fmt(r.block)}</td>
       <td class="c">${r.surv?'<span class="bl-alive" title="survivant">●</span>':'<span class="bl-dead" title="détruit">✖</span>'}</td>${ceCell}</tr>`;
   }).join("");
   return `<div class="bl-team-card ${ours?'ours':'foe'}">${head}<div class="tw"><table class="bl-tbl"><thead><tr><th>Char</th><th>Joueur</th><th>Dég.</th><th>Frags</th><th>Assist</th><th>Bloc.</th><th class="c">Survie</th>${ceH}</tr></thead><tbody>${body}</tbody></table></div></div>`;
 }
+/* « Mes batailles » : la ligne du joueur, sur la carte même. C'est la
+   question qu'il se pose en premier — qu'est-ce que J'AI fait ? */
+function blMeHTML(g){
+  const m=g.me; if(!m) return "";
+  const dg=fmt(m.dmg)+" dég.", fr=m.kills+" frag"+(m.kills>1?"s":"");
+  return `<div class="bl-me">
+    <span class="bl-me-l">${m.surv?'<span class="bl-alive" aria-hidden="true">●</span> Survécu':'<span class="bl-dead" aria-hidden="true">✖</span> Détruit'}</span>
+    <b class="bl-me-t" title="${esc(m.tank||"")}">${esc(m.tank||"Char inconnu")}</b>
+    <span class="bl-me-n"><span>${dg}</span> · <span>${fr}</span></span>
+  </div>`;
+}
 function blRowHTML(g){
   const cls=g.win?"bl-win":(g.draw?"bl-draw":"bl-loss");
   const rz=g.win?"Victoire":(g.draw?"Match nul":"Défaite");
   const sr=g.ce!=null?srPill(g.ce):"";
-  return `<div class="bl-row ${cls}" data-bid="${esc(String(g.id))}">
+  // notre camp : le clan connecté, ou — dans « Mes batailles » — celui que
+  // le joueur portait ce jour-là
+  const ourTag=g.mine?(g.ourTag||"?"):CLANTAG;
+  const autreClan=g.mine && String(ourTag).toUpperCase()!==String(CLANTAG).toUpperCase();
+  const ourEm=autreClan?emblemFoeHTML(ourTag,'bl-emblem ours'):emblemOursHTML('bl-emblem');
+  const detail=g.mine
+    ? blTeam(g.our,true,ourTag,autreClan?"":ourEmblemUrl(),{mine:true,srOf:mySrOf})+blTeam(g.foe,false,g.enemyTag,'')
+    : blTeam(g.our,true,CLANTAG,ourEmblemUrl())+blTeam(g.foe,false,g.enemyTag,'');
+  return `<div class="bl-row ${cls}${g.mine?" bl-mine":""}" data-bid="${esc(String(g.id))}">
     <div class="bl-head" onclick="this.parentNode.classList.toggle('open')">
       ${mapBgHTML(g.mapName)}
       ${mapInfoHTML(g.mapName,g.mode)}
       <div class="bl-match">
-        <div class="bl-team left"><span class="tag">[${esc(CLANTAG)}]</span>${emblemOursHTML('bl-emblem')}</div>
+        <div class="bl-team left"><span class="tag">[${esc(ourTag)}]</span>${ourEm}</div>
         <div class="bl-scorebox"><div class="sc"><span class="a">${g.ourScore}</span><span class="bl-sep">:</span><span>${g.foeScore}</span></div><div class="rz">${rz}</div><span class="bl-dom" role="img" aria-label="${g.ourScore} chars adverses détruits, ${g.foeScore} des nôtres"><i style="width:${(g.ourScore+g.foeScore)?Math.round(g.ourScore/(g.ourScore+g.foeScore)*100):50}%"></i></span></div>
         <div class="bl-team right">${emblemFoeHTML(g.enemyTag,'bl-emblem')}<span class="tag">[${esc(g.enemyTag)}]</span></div>
       </div>
+      ${g.mine?blMeHTML(g):""}
       <div class="bl-right">
         ${sr}
         <div class="bl-metar"><div>${agoFR(g.ts)} · ${durFR(g.dur)}</div></div>
@@ -1251,10 +1282,30 @@ function blRowHTML(g){
         <button class="bl-tab on" type="button" data-bt="res" onclick="event.stopPropagation();blTab(this,'res','${g.id}')"><span class="bl-tab-ic">▤</span> Résultat</button>
         <button class="bl-tab" type="button" data-bt="rep" onclick="event.stopPropagation();blTab(this,'rep','${g.id}')"><span class="bl-tab-ic">▶</span> Replay</button>
       </div>
-      <div class="bl-pane" data-pane="res"><div class="bl-teams">${blTeam(g.our,true,CLANTAG,ourEmblemUrl())}${blTeam(g.foe,false,g.enemyTag,'')}</div></div>
+      <div class="bl-pane" data-pane="res">${g.byFoe?'<p class="bl-note">Enregistrée par le clan adverse : son mod l\'a envoyée, le résultat est donné de ton côté.</p>':""}<div class="bl-teams">${detail}</div></div>
       <div class="bl-pane" data-pane="rep" hidden><div class="rp-host"></div></div>
     </div></div>
   </div>`;
+}
+/* ── Les adversaires : ce que SEUL cet onglet peut raconter. La Vue
+   clan donne déjà le taux de victoire ; elle ne dit jamais contre qui.
+   Partagé par les deux vues de l'onglet (clan / mes batailles). ── */
+function blAdversaires(list){
+  const par={};
+  list.forEach(g=>{ const t=g.enemyTag||"?"; if(t==="?") return;
+    const a=par[t]=par[t]||{tag:t,n:0,v:0}; a.n++; if(g.win) a.v++; });
+  const adv=Object.values(par).sort((a,b)=>b.n-a.n);
+  const habitues=adv.slice(0,5);
+  const durs=adv.filter(a=>a.n>=3).sort((a,b)=>(a.v/a.n)-(b.v/b.n));
+  const noire=durs[0], facile=durs[durs.length-1];
+  const barres = habitues.map((a,i)=>{
+    const p=Math.round(a.v/a.n*100);
+    return '<div class="bl-adv" style="--i:'+i+'" title="['+esc(a.tag)+'] — '+a.v+' victoire'+(a.v>1?"s":"")+' sur '+a.n+' rencontres">'+
+      '<span class="t">['+esc(a.tag)+']</span>'+
+      '<span class="b"><i style="width:'+p+'%"></i></span>'+
+      '<span class="c">'+a.v+'<span class="s">/'+a.n+'</span></span></div>';
+  }).join("");
+  return {adv, habitues, noire, facile, barres};
 }
 function blSummaryHTML(list){
   const n=list.length, wins=list.filter(g=>g.win).length;
@@ -1264,15 +1315,7 @@ function blSummaryHTML(list){
   const wr=n?Math.round(wins/n*100):0, dmgAvg=dmgN?Math.round(dmgSum/dmgN):0, survAvg=n?survSum/n:0;
   const srMoy=srN?Math.round(srSum/srN):null, srCol=srMoy!=null?ceTier(srMoy).c:"var(--ink)";
 
-  /* ── Les adversaires : ce que SEUL cet onglet peut raconter. La Vue
-     clan donne déjà le taux de victoire ; elle ne dit jamais contre qui. ── */
-  const par={};
-  list.forEach(g=>{ const t=g.enemyTag||"?"; if(t==="?") return;
-    const a=par[t]=par[t]||{tag:t,n:0,v:0}; a.n++; if(g.win) a.v++; });
-  const adv=Object.values(par).sort((a,b)=>b.n-a.n);
-  const habitues=adv.slice(0,5);
-  const durs=adv.filter(a=>a.n>=3).sort((a,b)=>(a.v/a.n)-(b.v/b.n));
-  const noire=durs[0], facile=durs[durs.length-1];
+  const {adv, habitues, noire, facile, barres} = blAdversaires(list);
 
   let titre, ph;
   if(!n){ titre="Aucune confrontation"; ph="Aucune bataille sur cette période."; }
@@ -1288,14 +1331,6 @@ function blSummaryHTML(list){
             ']</span> : <b>'+facile.v+"</b> sur <b>"+facile.n+"</b>.";
   }
 
-  const barres = habitues.map((a,i)=>{
-    const p=Math.round(a.v/a.n*100);
-    return '<div class="bl-adv" style="--i:'+i+'" title="['+esc(a.tag)+'] — '+a.v+' victoire'+(a.v>1?"s":"")+' sur '+a.n+' rencontres">'+
-      '<span class="t">['+esc(a.tag)+']</span>'+
-      '<span class="b"><i style="width:'+p+'%"></i></span>'+
-      '<span class="c">'+a.v+'<span class="s">/'+a.n+'</span></span></div>';
-  }).join("");
-
   return '<section class="bl-verdict">'+
       '<div class="bl-vg"><h2 class="bl-vt">'+titre+'</h2><p class="bl-vp">'+ph+'</p></div>'+
       '<div class="bl-vn"><b data-n="'+wr+'">'+wr+' %</b><i>de victoires</i></div>'+
@@ -1310,6 +1345,9 @@ function blSummaryHTML(list){
 }
 let BL_PAGE=0; const BL_PER_PAGE=50;
 function renderBattles(){
+  blScopeUI();
+  if(BL_SCOPE==="mine") return renderMyBattles();
+  const ch=document.getElementById("blClans"); if(ch) ch.innerHTML="";
   const list=groupBattles();
   const sum=document.getElementById("blSummary"), wrap=document.getElementById("blList"), pg=document.getElementById("blPager");
   if(!list.length){
@@ -1349,6 +1387,216 @@ function renderBlPager(total,pages){
     const p=parseInt(b.dataset.p,10); if(p>=0&&p<pages){ BL_PAGE=p; renderBattles();
       const t=document.getElementById("viewBattles"); if(t) window.scrollTo(0,0); }
   }; });
+}
+
+/* ============================================================
+   « MES BATAILLES » — toutes celles où le joueur connecté a joué,
+   quel que soit le clan qui les a enregistrées : le sien, un ancien
+   clan, ou l'adversaire équipé du mod. Chargées à la demande par la
+   fonction player-battles, au premier passage sur cette vue.
+   Les cartes, le détail et le replay sont ceux des batailles du clan :
+   seul le point de vue change (g.mine).
+   ============================================================ */
+let BL_SCOPE=(lsGet("cp_bl_scope")==="mine")?"mine":"clan";
+let BL_CLANF="";   // « joué sous les couleurs de [TAG] » — vide = tous
+const MY={ etat:"rien", raw:[], fiches:{}, n:0, total:0, sr:null };
+
+function setBlScope(s){
+  s = s==="mine" ? "mine" : "clan";
+  if(s===BL_SCOPE) return;
+  BL_SCOPE=s; lsSet("cp_bl_scope",s); BL_PAGE=0;
+  renderBattles();
+}
+function blScopeUI(){
+  document.querySelectorAll("#blScope [data-scope]").forEach(b=>{
+    const on=b.dataset.scope===BL_SCOPE;
+    b.classList.toggle("on",on); b.setAttribute("aria-selected",on?"true":"false");
+  });
+  const nClan=new Set(RAW.map(r=>r.battleId)).size;
+  const c1=document.getElementById("blScopeNClan"), c2=document.getElementById("blScopeNMine");
+  if(c1) c1.textContent=fmt(nClan);
+  if(c2){ c2.textContent=MY.etat==="ok"?fmt(MY.n):""; c2.hidden=MY.etat!=="ok"; }
+  document.querySelectorAll("#viewBattles [data-scope-txt]").forEach(el=>{
+    el.hidden = el.dataset.scopeTxt!==BL_SCOPE; });
+}
+
+async function loadMyBattles(){
+  if(MY.etat==="charge"||MY.etat==="ok") return;
+  MY.etat="charge";
+  let res=null;
+  for(let n=1;n<=2;n++){
+    res=await fnCall("player-battles",{session:localStorage.getItem(LS_SESSION)});
+    if(res.ok||res.status===401||res.status===404) break;
+    if(n<2) await new Promise(r=>setTimeout(r,1200));
+  }
+  if(res&&res.ok){ buildMyRaw(res.j); MY.etat="ok"; rebuildFilters(); }
+  else{ MY.etat="erreur"; console.warn("[player-battles] échec :", res&&res.status, res&&res.j&&res.j.error); }
+  if(battlesActive()&&BL_SCOPE==="mine") renderBattles(); else blScopeUI();
+}
+function buildMyRaw(data){
+  const fiches={};
+  (data.battles||[]).forEach(b=>{ fiches[String(b.battle_id)]={
+    ts: b.ts?Math.floor(new Date(b.ts).getTime()/1000):0, mode:b.mode||"", result:b.result,
+    mapName: b.map_name||("Carte "+(b.map_id||"?")), team:Number(b.team), tag:String(b.clan_tag||""),
+    clanId:b.clan_id, byFoe:!!b.by_foe }; });
+  const moi = ME_ID!=null ? Number(ME_ID) : (data.me ? Number(data.me.account_id) : null);
+  MY.raw=[];
+  (data.players||[]).forEach(pl=>{
+    const f=fiches[String(pl.battle_id)]; if(!f) return;
+    const r=rowFromPlayer(pl,f);
+    r.isSelf = moi!=null && r.accId===moi;
+    // ses coéquipiers de clan CE JOUR-LÀ : même équipe, même tag que lui
+    r.isMember = !r.isSelf && Number(r.team)===f.team && f.tag!=="" &&
+                 String(r.clan).toUpperCase()===f.tag.toUpperCase();
+    MY.raw.push(r);
+  });
+  MY.fiches=fiches; MY.n=Object.keys(fiches).length; MY.total=Number(data.total)||MY.n; MY.sr=null;
+}
+/* Le SR de SES batailles : le modèle figé de la saison, appliqué avec
+   son équipe et le clan qu'il portait. Calculé une fois, à la demande. */
+function mySr(){
+  if(MY.sr) return MY.sr;
+  MY.sr=new Map();
+  if(srOk()) srBuild(MY.raw, bid=>{ const f=MY.fiches[bid]; return f?{team:f.team, tag:f.tag}:null; })
+    .forEach(x=>MY.sr.set(x.battleId+"|"+x.accId, x.sr));
+  return MY.sr;
+}
+function mySrOf(r){ const v=mySr().get(r.battleId+"|"+r.accId); return v==null?null:v; }
+
+function groupMyBattles(){
+  const now=Date.now()/1000, map={};
+  MY.raw.forEach(r=>{
+    if(state.mode && r.mode!==state.mode) return;
+    if(state.days && r.ts && (now-r.ts)>state.days*86400) return;
+    const f=MY.fiches[r.battleId];
+    let g=map[r.battleId];
+    if(!g) g=map[r.battleId]={ id:r.battleId, ts:r.ts||0, mode:r.mode, result:r.result, mapName:r.mapName,
+      rows:[], mine:true, clanId:f.clanId, myTeam:f.team, ourTag:f.tag||"?", byFoe:f.byFoe };
+    g.rows.push(r);
+  });
+  const list=Object.values(map).map(g=>{
+    g.our=g.rows.filter(r=>Number(r.team)===g.myTeam);
+    g.foe=g.rows.filter(r=>Number(r.team)!==g.myTeam);
+    g.me=g.rows.find(r=>r.isSelf)||null;
+    g.ourScore=g.foe.filter(r=>!r.surv).length;     // ennemis détruits
+    g.foeScore=g.our.filter(r=>!r.surv).length;     // alliés détruits
+    const ct={}; g.foe.forEach(r=>{ if(r.clan) ct[r.clan]=(ct[r.clan]||0)+1; });
+    let best="",bn=0; for(const t in ct) if(ct[t]>bn){ bn=ct[t]; best=t; }
+    g.enemyTag=best||"?";
+    const v=g.me?mySrOf(g.me):null; g.ce=v==null?null:Math.round(v);   // SON SR, pas la moyenne
+    g.win=g.result===1; g.draw=g.result===-1;
+    g.dur=g.rows.reduce((mx,r)=>Math.max(mx,r.life||0),0);
+    return g;
+  });
+  list.sort((a,b)=>b.ts-a.ts);
+  return list;
+}
+
+function blMySummaryHTML(list){
+  const n=list.length, wins=list.filter(g=>g.win).length;
+  const wr=n?Math.round(wins/n*100):0;
+  let dmg=0,dn=0,surv=0,srS=0,srN=0; const chars={}, tags=new Set();
+  list.forEach(g=>{
+    tags.add(String(g.ourTag).toUpperCase());
+    if(g.ce!=null){ srS+=g.ce; srN++; }
+    const m=g.me; if(!m) return;
+    dmg+=m.dmg; dn++; if(m.surv) surv++;
+    if(m.tank) chars[m.tank]=(chars[m.tank]||0)+1;
+  });
+  const srMoy=srN?Math.round(srS/srN):null, srCol=srMoy!=null?ceTier(srMoy).c:"var(--ink)";
+  const fav=Object.entries(chars).sort((a,b)=>b[1]-a[1])[0];
+  const parAdv=list.filter(g=>g.byFoe).length;
+  const {habitues, barres}=blAdversaires(list);
+
+  let titre, ph=[];
+  if(!n){ titre="Aucune bataille"; ph.push("Aucune bataille sur cette période."); }
+  else{
+    titre = wr>=60?"Tu tiens le terrain." : (wr>=50?"Jeu égal." : "Ça résiste en face.");
+    ph.push("Tu en as gagné <b>"+fmt(wins)+"</b> sur <b>"+fmt(n)+"</b>.");
+    if(tags.size>1) ph.push("Sous les couleurs de <b>"+fmt(tags.size)+"</b> clans différents.");
+    if(fav && fav[1]>1) ph.push("Ton char le plus joué : <b>"+esc(fav[0])+"</b>, <b>"+fmt(fav[1])+"</b> fois.");
+    if(parAdv) ph.push("Enregistrées par l'adversaire : <b>"+fmt(parAdv)+"</b>.");
+  }
+  // chaque phrase dans son élément : le traducteur les prend une à une
+  const phrases=ph.map(s=>"<span>"+s+"</span>").join(" ");
+  const pctSurv=dn?Math.round(surv/dn*100):0;
+
+  return '<section class="bl-verdict">'+
+      '<div class="bl-vg"><h2 class="bl-vt">'+titre+'</h2><p class="bl-vp">'+phrases+'</p></div>'+
+      '<div class="bl-vn"><b data-n="'+wr+'">'+wr+' %</b><i>de victoires</i></div>'+
+      (habitues.length?'<div class="bl-advs"><div class="bl-advt">Adversaires les plus fréquents</div>'+barres+'</div>':"")+
+    '</section>'+
+    '<div class="bl-mes">'+
+      '<div class="bl-sc"><div class="l">Batailles</div><div class="v">'+fmt(n)+'</div></div>'+
+      '<div class="bl-sc"><div class="l">Mon SR moyen</div><div class="v" style="color:'+srCol+'">'+(srMoy!=null?fmt(srMoy):"—")+'</div></div>'+
+      '<div class="bl-sc"><div class="l">Mes dégâts moyens</div><div class="v">'+(dn?fmt(Math.round(dmg/dn)):"—")+'</div></div>'+
+      '<div class="bl-sc"><div class="l">Ma survie</div><div class="v">'+(dn?pctSurv:"—")+(dn?'<span class="u"> %</span>':"")+'</div></div>'+
+    '</div>';
+}
+
+/* Les clans sous lesquels il a joué : un filtre, montré seulement quand
+   il y en a plus d'un — c'est tout l'intérêt de la vue. */
+function blClansHTML(all){
+  const par={};
+  all.forEach(g=>{ const t=String(g.ourTag||"?"), k=t.toUpperCase();
+    const a=par[k]=par[k]||{tag:t,n:0}; a.n++; });
+  const L=Object.keys(par).map(k=>({k,...par[k]})).sort((a,b)=>b.n-a.n);
+  if(L.length<2) return "";
+  const chip=(k,lbl,nb)=>`<button type="button" class="bl-chip${BL_CLANF===k?" on":""}" data-clanf="${esc(k)}" aria-pressed="${BL_CLANF===k}">${lbl}<span class="n">${fmt(nb)}</span></button>`;
+  return `<span class="bl-chips-l">Joué sous les couleurs de</span>`+
+    chip("",'Tous les clans',all.length)+
+    L.map(a=>chip(a.k,`<span class="t">[${esc(a.tag)}]</span>`,a.n)).join("");
+}
+
+function renderMyBattles(){
+  const sum=document.getElementById("blSummary"), wrap=document.getElementById("blList"),
+        pg=document.getElementById("blPager"), ch=document.getElementById("blClans");
+  if(MY.etat!=="ok"){
+    sum.innerHTML=""; pg.innerHTML=""; ch.innerHTML="";
+    if(MY.etat==="erreur"){
+      wrap.innerHTML=cpVide('<svg class="ic" aria-hidden="true"><use href="#i-alert"/></svg>',
+        "Impossible de charger tes batailles",
+        "Le serveur n'a pas répondu. Tes batailles du clan restent consultables avec l'autre onglet.",
+        null, '<p style="margin-top:18px"><button type="button" class="btn" id="blMyRetry">Réessayer</button></p>');
+      const b=document.getElementById("blMyRetry");
+      if(b) b.onclick=()=>{ MY.etat="rien"; renderBattles(); };
+      return;
+    }
+    wrap.innerHTML=cpLoader("Recherche de tes batailles dans tous les clans…");
+    if(MY.etat==="rien") loadMyBattles();
+    return;
+  }
+  const all=groupMyBattles();                       // mode + période
+  if(BL_CLANF && !all.some(g=>String(g.ourTag).toUpperCase()===BL_CLANF)) BL_CLANF="";
+  ch.innerHTML=blClansHTML(all);
+  ch.querySelectorAll("[data-clanf]").forEach(b=>b.onclick=()=>{ BL_CLANF=b.dataset.clanf; BL_PAGE=0; renderBattles(); });
+  const list=BL_CLANF ? all.filter(g=>String(g.ourTag).toUpperCase()===BL_CLANF) : all;
+
+  if(!list.length){
+    sum.innerHTML=""; pg.innerHTML="";
+    wrap.innerHTML = !MY.n
+      ? cpVide('<svg class="ic" aria-hidden="true"><use href="#i-swords"/></svg>',
+          "Aucune bataille à ton nom pour l'instant",
+          "Une bataille apparaît ici dès qu'un joueur équipé du mod Clan Plus l'a jouée avec toi — toi-même, "+
+          "un camarade de clan, ou même l'adversaire. Installe le mod pour que les tiennes soient toujours enregistrées.",
+          null, '<p style="margin-top:18px"><a class="btn" href="mod.html">Installer le mod</a></p>')
+      : cpVide('<svg class="ic" aria-hidden="true"><use href="#i-search"/></svg>',
+          "Aucune bataille sur cette période",
+          "Élargis la période avec les boutons <b>7 j / 30 j / 90 j / Tout</b> en haut, ou change de mode.", null, "");
+    return;
+  }
+  BL_BY_ID={}; list.forEach(g=>{ BL_BY_ID[g.id]=g; });
+  sum.innerHTML=blMySummaryHTML(list)+
+    (MY.total>MY.n?'<p class="bl-note">Les <b>'+fmt(MY.n)+'</b> plus récentes sur <b>'+fmt(MY.total)+'</b>.</p>':"");
+  { const nb=sum.querySelector(".bl-vn b");
+    if(nb && typeof animateNum==="function" && !REDUCE_MOTION)
+      animateNum(nb, +nb.dataset.n, v=>Math.round(v)+" %"); }
+  const pages=Math.ceil(list.length/BL_PER_PAGE);
+  if(BL_PAGE>=pages) BL_PAGE=0;
+  const slice=list.slice(BL_PAGE*BL_PER_PAGE,(BL_PAGE+1)*BL_PER_PAGE);
+  wrap.innerHTML=slice.map(blRowHTML).join("");
+  renderBlPager(list.length,pages);
+  resolveEnemyEmblems(slice);
 }
 
 /* ============================================================
@@ -1418,12 +1666,17 @@ function rpTinted(cls, color, size){
   x.fillStyle=color; x.fillRect(0,0,size,size);
   RP_TINT[key]=c; return c;
 }
-function convertReplay(raw){
-  const b=raw.bounds||[-500,-500,500,500], my=raw.myTeam;
+/* `opt` sert à « Mes batailles » : le replay est la trace de l'ENVOYEUR,
+   qui peut avoir joué en face. opt.myTeam remet le joueur du bon côté,
+   opt.members désigne ses coéquipiers de clan de ce jour-là. */
+function convertReplay(raw, opt){
+  opt=opt||{};
+  const b=raw.bounds||[-500,-500,500,500], my=(opt.myTeam!=null? opt.myTeam : raw.myTeam);
+  const membres=opt.members||MEMBERSET;
   const vehicles=(raw.vehicles||[]).map(v=>({
     id: (v.id!=null? Number(v.id) : null),
     ally: v.team===my,
-    member: !!(v.acc && MEMBERSET.has(Number(v.acc))),
+    member: !!(v.acc && membres.has(Number(v.acc))),
     name: v.name||"", tank: v.tank||"",
     cls: (RP_CLASSES.indexOf(v.cls)>=0 ? v.cls : ""),
     maxHp: Number(v.hp||0),
@@ -1489,8 +1742,14 @@ async function startReplay(id, host){
   host.innerHTML=cpLoader("Chargement du replay…");
   let rep=null, demo=false;
   try{
-    const r=await fnCall("replay",{session:localStorage.getItem(LS_SESSION), battle_id:g.id});
-    if(r.ok && r.j && r.j.replay && (r.j.replay.vehicles||[]).length) rep=convertReplay(r.j.replay);
+    // « Mes batailles » : la bataille peut être rangée sous un autre clan
+    const corps={session:localStorage.getItem(LS_SESSION), battle_id:g.id};
+    if(g.mine) corps.clan_id=g.clanId;
+    const r=await fnCall("replay",corps);
+    if(r.ok && r.j && r.j.replay && (r.j.replay.vehicles||[]).length)
+      rep=g.mine ? convertReplay(r.j.replay,{ myTeam:g.myTeam,
+                     members:new Set(g.our.filter(x=>x.isMember||x.isSelf).map(x=>x.accId)) })
+                 : convertReplay(r.j.replay);
   }catch(e){}
   if(!rep){ rep=mockReplay(g); demo=true; }
   rep.battleId=String(g.id);
@@ -1900,6 +2159,26 @@ function renderMembers(){
 }
 
 let VEHMAP={}, MEMBERSET=new Set(), CLANTAG="", BATTLE_ENEMY={}, BATTLE_TIER={};
+/* Une ligne de joueur telle que tout le site la lit. Partagée par les
+   batailles du clan (buildRaw) et « Mes batailles » (buildMyRaw) : mêmes
+   champs, donc mêmes calculs — SR compris. */
+function rowFromPlayer(pl, b){
+  const vm = VEHMAP[Number(pl.veh)] || null;
+  return {
+    battleId: String(pl.battle_id), ts:b.ts, mode:b.mode, result: b.result, mapName:b.mapName,
+    accId: pl.account_id!=null?Number(pl.account_id):null,
+    name: pl.name||"?", clan: pl.player_clan||"", team: pl.team,
+    veh:Number(pl.veh)||0, cls: vm?vm.cls:"", tank: vm?vm.name:"",
+    dmg:+pl.dmg||0, block:+pl.block||0, assist:+pl.assist||0, spot:+pl.spot||0,
+    kills:+pl.kills||0, surv: pl.surv===true||pl.surv==="true", xp:+pl.xp||0,
+    life:+pl.life||0, shots:+pl.shots||0, hits:+pl.hits||0, pierce:+pl.pierce||0,
+    dmgr:+pl.dmgr||0, cap:+pl.cap||0, decap:+pl.decap||0,
+    aradio:+pl.a_radio||0, atrack:+pl.a_track||0, astun:+pl.a_stun||0,
+    pot:+pl.pot_recv||0, hitsr:+pl.hits_recv||0, piercer:+pl.pierce_recv||0, bounce:+pl.bounce||0,
+    maxhp:+pl.max_hp||0, hpleft:+pl.hp_left||0, dist:+pl.dist||0, sniper:+pl.dmg_sniper||0, dmginvis:+pl.dmg_invis||0,
+    isMember: false,
+  };
+}
 function buildRaw(data){
   CLANTAG = (data.clan && data.clan.tag) ? String(data.clan.tag) : "";
   VEHMAP = {}; (data.vehicles||[]).forEach(v=>{ VEHMAP[Number(v.tank_id)]=v; });
@@ -1932,21 +2211,9 @@ function buildRaw(data){
 
   RAW = brut.map(pl=>{
     const b = bmap[pl.battle_id] || {ts:0,mode:"",result:null,mapName:""};
-    const vm = VEHMAP[Number(pl.veh)] || null;
-    return {
-      battleId: String(pl.battle_id), ts:b.ts, mode:b.mode, result: b.result, mapName:b.mapName,
-      accId: pl.account_id!=null?Number(pl.account_id):null,
-      name: pl.name||"?", clan: pl.player_clan||"", team: pl.team,
-      veh:Number(pl.veh)||0, cls: vm?vm.cls:"", tank: vm?vm.name:"",
-      dmg:+pl.dmg||0, block:+pl.block||0, assist:+pl.assist||0, spot:+pl.spot||0,
-      kills:+pl.kills||0, surv: pl.surv===true||pl.surv==="true", xp:+pl.xp||0,
-      life:+pl.life||0, shots:+pl.shots||0, hits:+pl.hits||0, pierce:+pl.pierce||0,
-      dmgr:+pl.dmgr||0, cap:+pl.cap||0, decap:+pl.decap||0,
-      aradio:+pl.a_radio||0, atrack:+pl.a_track||0, astun:+pl.a_stun||0,
-      pot:+pl.pot_recv||0, hitsr:+pl.hits_recv||0, piercer:+pl.pierce_recv||0, bounce:+pl.bounce||0,
-      maxhp:+pl.max_hp||0, hpleft:+pl.hp_left||0, dist:+pl.dist||0, sniper:+pl.dmg_sniper||0, dmginvis:+pl.dmg_invis||0,
-      isMember: pl.account_id!=null && MEMBERSET.has(Number(pl.account_id)),
-    };
+    const r = rowFromPlayer(pl, b);
+    r.isMember = r.accId!=null && MEMBERSET.has(r.accId);
+    return r;
   });
   // référence GLOBALE de la Cote d'Équipe : tous les joueurs enregistrés (nous + tous les adversaires)
   CE_REF=teamGlobalRef(RAW);
@@ -2245,7 +2512,7 @@ function ceForRow(r,C){
    ============================================================ */
 // Marqueur de version : `srVersion()` dans la console dit si le fichier servi
 // est bien le dernier. Évite de confondre « pas déployé » et « ne marche pas ».
-const SR_SITE_VERSION="sr-4.4-vides";
+const SR_SITE_VERSION="sr-4.5-mes-batailles";
 function srVersion(){ return SR_SITE_VERSION; }
 let SR_MODEL=null, SR_SKILL=null, SR_ELO_TAG=null, SR_ELO_ID=null, SR_ROWS=null;
 const SR_CLS={heavyTank:"heavy",mediumTank:"medium",lightTank:"light","AT-SPG":"td",SPG:"spg"};
@@ -2294,16 +2561,25 @@ function srContrib(side,M){
 }
 /* Une ligne de SR par (joueur, bataille). C'est la granularité qui permet
    ensuite toutes les analyses : par période, par carte, par classe de char. */
-function srBuild(){
+/* `src` et `camp` servent à « Mes batailles » : d'autres lignes que celles
+   du clan, et un camp désigné par bataille ({team, tag} : l'équipe du
+   joueur et le clan qu'il portait ce jour-là). Sans eux, rien ne change. */
+function srBuild(src, camp){
   if(!srOk()) return [];
-  const byB={}; (RAW||[]).forEach(r=>{ (byB[r.battleId]=byB[r.battleId]||[]).push(r); });
-  const TAG=String(CLANTAG||"").toUpperCase(), out=[];
+  const byB={}; (src||RAW||[]).forEach(r=>{ (byB[r.battleId]=byB[r.battleId]||[]).push(r); });
+  const TAG0=String(CLANTAG||"").toUpperCase(), out=[];
   Object.keys(byB).forEach(bid=>{
     const rows=byB[bid]; if(rows.length<4) return;
     const res=rows[0].result; if(res!==1&&res!==0) return;
-    // notre camp = équipe où notre tag est majoritaire
-    const cnt={}; rows.forEach(r=>{ if(String(r.clan||"").toUpperCase()===TAG) cnt[r.team]=(cnt[r.team]||0)+1; });
-    let mine=null,best=0; for(const t in cnt) if(cnt[t]>best){best=cnt[t];mine=+t;}
+    let TAG=TAG0, mine=null;
+    if(camp){
+      const c=camp(bid); if(!c) return;
+      mine=Number(c.team); TAG=String(c.tag||"").toUpperCase();
+    } else {
+      // notre camp = équipe où notre tag est majoritaire
+      const cnt={}; rows.forEach(r=>{ if(String(r.clan||"").toUpperCase()===TAG) cnt[r.team]=(cnt[r.team]||0)+1; });
+      let best=0; for(const t in cnt) if(cnt[t]>best){best=cnt[t];mine=+t;}
+    }
     if(mine==null) return;
     const ours=rows.filter(r=>+r.team===mine), theirs=rows.filter(r=>+r.team!==mine);
     if(!ours.length||!theirs.length) return;
@@ -2775,8 +3051,11 @@ function renderTable(agg){
    UI
    ============================================================ */
 function rebuildFilters(){
-  const mm=new Set(); RAW.forEach(r=>{ if(r.mode) mm.add(r.mode); });
-  document.getElementById("modeSel").innerHTML=`<option value="">Tous</option>`+[...mm].sort().map(m=>`<option>${esc(m)}</option>`).join("");
+  // les modes du clan, plus ceux de « Mes batailles » une fois chargées
+  const mm=new Set(); RAW.forEach(r=>{ if(r.mode) mm.add(r.mode); }); MY.raw.forEach(r=>{ if(r.mode) mm.add(r.mode); });
+  const sel=document.getElementById("modeSel");
+  sel.innerHTML=`<option value="">Tous</option>`+[...mm].sort().map(m=>`<option>${esc(m)}</option>`).join("");
+  sel.value=state.mode||"";
 }
 /* Sur index.html la vue joueur n'existe plus ; sur progression.html elle
    est la seule et toujours affichée. Le test vaut pour les deux pages. */
@@ -2793,6 +3072,7 @@ function wireUI(){
     b.classList.add("on"); state.days=parseInt(b.dataset.d,10); rerender();
   });
   document.querySelectorAll("#nav .tab").forEach(t=>t.onclick=()=>switchView(t.dataset.v));
+  document.querySelectorAll("#blScope [data-scope]").forEach(b=>b.onclick=()=>setBlScope(b.dataset.scope));
   document.getElementById("playerSel").onchange=e=>{ SELP=Number(e.target.value); renderPlayerView(); };
   document.getElementById("clanSearchBtn").onclick=searchClans;
   document.getElementById("clanQuery").addEventListener("keydown",e=>{ if(e.key==="Enter") searchClans(); });

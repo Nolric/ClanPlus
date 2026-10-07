@@ -16,12 +16,12 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20240%20240%22%3E%3Crect%20width%3D%22240%22%20height%3D%22240%22%20rx%3D%2254%22%20fill%3D%22%23141310%22%2F%3E%3Cg%20transform%3D%22translate%2830%2030%29%20scale%280.75%29%22%20fill%3D%22%23d8b566%22%3E%3Ccircle%20cx%3D%22120%22%20cy%3D%22120%22%20r%3D%22100%22%20fill%3D%22none%22%20stroke%3D%22%23d8b566%22%20stroke-width%3D%227%22%2F%3E%3Crect%20x%3D%2281%22%20y%3D%228%22%20width%3D%2218%22%20height%3D%2218%22%2F%3E%3Crect%20x%3D%22111%22%20y%3D%224%22%20width%3D%2218%22%20height%3D%2218%22%2F%3E%3Crect%20x%3D%22141%22%20y%3D%228%22%20width%3D%2218%22%20height%3D%2218%22%2F%3E%3Cpath%20d%3D%22M161%2C155%20A54%2C54%200%201%201%20161%2C85%22%20fill%3D%22none%22%20stroke%3D%22%23d8b566%22%20stroke-width%3D%2220%22%20stroke-linecap%3D%22round%22%2F%3E%3Crect%20x%3D%22112%22%20y%3D%2294%22%20width%3D%2216%22%20height%3D%2252%22%20rx%3D%225%22%2F%3E%3Crect%20x%3D%2294%22%20y%3D%22112%22%20width%3D%2252%22%20height%3D%2216%22%20rx%3D%225%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
 <script src="i18n/index.fr.js?v=c0085edf"></script>
-<script src="i18n/index.en.js?v=6cb68e69"></script>
+<script src="i18n/index.en.js?v=348ec214"></script>
 <script src="i18n.js?v=ed3f8a4f"></script>
 <link rel="stylesheet" href="fonts/fonts.css?v=d81c6085">
 <!-- La charte vit dans app.css : progression.html la partage, et le
        navigateur la garde en cache d'une visite à l'autre. -->
-  <link rel="stylesheet" href="app.css?v=13bf81f8">
+  <link rel="stylesheet" href="app.css?v=cdf5e41a">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" defer></script>
 </head>
 <body>
@@ -49,6 +49,7 @@
   <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14 0 18M12 3c-3 3.5-3 14 0 18"/></symbol>
   <symbol id="i-fort" viewBox="0 0 24 24"><path d="M4 21V8l3 2 3-4 2 2 2-2 3 4 3-2v13z"/><path d="M9 21v-4h6v4"/></symbol>
   <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0M16 6a3 3 0 0 1 0 6M21 20a6 6 0 0 0-4-5"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4.5 21a7.5 7.5 0 0 1 15 0"/></symbol>
   <symbol id="i-doc" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/></symbol>
   <symbol id="i-cal" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 9h16M8 3v4M16 3v4"/></symbol>
   <!-- Line-ups : navigation et actions (les icônes des postes sont celles du jeu, dans img/lineup/roles/) -->
@@ -583,8 +584,18 @@
   </div><!-- /viewClan -->
 
   <div id="viewBattles" class="hidden">
-    <div class="sec-h">Nos confrontations Bastion</div>
-    <p class="sec-desc">Chaque <b>bataille de clan</b> enregistrée par le mod, présentée comme une <b>confrontation</b> : notre clan contre le clan adverse. Clique sur une ligne pour dérouler le <b>détail des deux équipes</b>.</p>
+    <!-- Deux points de vue sur les mêmes cartes de bataille : celles du
+         clan, ou toutes celles où le joueur a joué, quel que soit le clan
+         qui les a enregistrées (fonction player-battles). -->
+    <div class="bl-scope" id="blScope" role="tablist" aria-label="Quelles batailles afficher">
+      <button type="button" class="bl-scope-b on" role="tab" aria-selected="true" data-scope="clan"><svg class="ic" aria-hidden="true"><use href="#i-shield"/></svg><span>Batailles du clan</span><span class="n" id="blScopeNClan"></span></button>
+      <button type="button" class="bl-scope-b" role="tab" aria-selected="false" data-scope="mine"><svg class="ic" aria-hidden="true"><use href="#i-user"/></svg><span>Mes batailles</span><span class="n" id="blScopeNMine" hidden></span></button>
+    </div>
+    <div class="sec-h" data-scope-txt="clan">Nos confrontations Bastion</div>
+    <p class="sec-desc" data-scope-txt="clan">Chaque <b>bataille de clan</b> enregistrée par le mod, présentée comme une <b>confrontation</b> : notre clan contre le clan adverse. Clique sur une ligne pour dérouler le <b>détail des deux équipes</b>.</p>
+    <div class="sec-h" data-scope-txt="mine" hidden>Mes batailles, tous clans confondus</div>
+    <p class="sec-desc" data-scope-txt="mine" hidden>Toutes les batailles de clan <b>où tu as joué</b>, quel que soit le clan que tu portais : celui-ci, un ancien clan, et même celles enregistrées par l'adversaire. Le résultat est toujours donné <b>de ton côté</b>.</p>
+    <div class="bl-chips" id="blClans"></div>
     <div class="bl-sum" id="blSummary"></div>
     <div class="bl-list" id="blList"></div>
     <div class="bl-pager" id="blPager"></div>
@@ -741,7 +752,7 @@
 <!-- Le code de l'application vit dans app.js : progression.html le
      partage, pour qu'il n'existe jamais deux versions des mêmes
      calculs. « defer » l'exécute après lecture complète de la page. -->
-  <script src="app.js?v=cd6d24d4" defer></script>
+  <script src="app.js?v=cfa70abd" defer></script>
 <script src="app-fin.js?v=4e570ee3" defer></script>
 </body>
 </html>
