@@ -2025,5 +2025,9 @@ Object.assign(window.CP_EN, {
   "Aucune bataille à ton nom pour l'instant": "No battles under your name yet",
   "Une bataille apparaît ici dès qu'un joueur équipé du mod Clan Plus l'a jouée avec toi — toi-même, un camarade de clan, ou même l'adversaire. Installe le mod pour que les tiennes soient toujours enregistrées.": "A battle shows up here as soon as a player with the Clan Plus mod played it with you — yourself, a clanmate, or even the opponent. Install the mod so yours are always recorded.",
   "Installer le mod": "Install the mod",
+  "Légionnaire": "Legionnaire",
+  "En légionnaire : <b>{n}</b>.": "As a legionnaire: <b>{n}</b>.",
+  "Tu jouais en <b>légionnaire</b> pour <b>{t}</b>, avec le tag <b>{t}</b>.": "You played as a <b>legionnaire</b> for <b>{t}</b>, wearing the <b>{t}</b> tag.",
+  "Tu jouais pour {t} avec le tag {t}": "You played for {t} wearing the {t} tag",
   "Cette stratégie n'existe plus : elle a sans doute été supprimée entre-temps. Ton dessin est toujours à l'écran.": "This strategy no longer exists: it was probably deleted in the meantime. Your drawing is still on screen.",
 });

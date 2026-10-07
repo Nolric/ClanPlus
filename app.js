@@ -1190,10 +1190,12 @@ function groupBattles(){
   const tagU=CLANTAG.toUpperCase();
   const mine=r=>r.isMember || (r.clan && r.clan.toUpperCase()===tagU);
   const list=Object.values(map).map(g=>{
-    // notre équipe = celle qui compte le PLUS de joueurs du clan (robuste aux équipes mixtes)
+    // notre équipe : décidée une fois dans buildRaw, d'après les tags portés
+    // (BATTLE_CAMP). À défaut, celle qui compte le plus de joueurs du clan.
     const teams=[...new Set(g.rows.map(r=>r.team))];
     let ourTeam=teams[0], bestN=-1;
-    teams.forEach(t=>{ const n=g.rows.filter(r=>r.team===t && mine(r)).length; if(n>bestN){ bestN=n; ourTeam=t; } });
+    if(BATTLE_CAMP[g.id]!=null) ourTeam=teams.find(t=>Number(t)===BATTLE_CAMP[g.id]) ?? ourTeam;
+    else teams.forEach(t=>{ const n=g.rows.filter(r=>r.team===t && mine(r)).length; if(n>bestN){ bestN=n; ourTeam=t; } });
     g.our = g.rows.filter(r=>r.team===ourTeam);
     g.foe = g.rows.filter(r=>r.team!==ourTeam);
     if(!g.our.length){ g.our=g.rows; g.foe=[]; }         // sécurité
@@ -1244,7 +1246,7 @@ function blMeHTML(g){
   const m=g.me; if(!m) return "";
   const dg=fmt(m.dmg)+" dég.", fr=m.kills+" frag"+(m.kills>1?"s":"");
   return `<div class="bl-me">
-    <span class="bl-me-l">${m.surv?'<span class="bl-alive" aria-hidden="true">●</span> Survécu':'<span class="bl-dead" aria-hidden="true">✖</span> Détruit'}</span>
+    <span class="bl-me-l"><span class="bl-me-s">${m.surv?'<span class="bl-alive" aria-hidden="true">●</span> Survécu':'<span class="bl-dead" aria-hidden="true">✖</span> Détruit'}</span>${g.legion?'<span class="bl-me-leg" title="Tu jouais pour ['+esc(g.ourTag)+'] avec le tag ['+esc(g.selfTag)+']">Légionnaire</span>':""}</span>
     <b class="bl-me-t" title="${esc(m.tank||"")}">${esc(m.tank||"Char inconnu")}</b>
     <span class="bl-me-n"><span>${dg}</span> · <span>${fr}</span></span>
   </div>`;
@@ -1282,7 +1284,7 @@ function blRowHTML(g){
         <button class="bl-tab on" type="button" data-bt="res" onclick="event.stopPropagation();blTab(this,'res','${g.id}')"><span class="bl-tab-ic">▤</span> Résultat</button>
         <button class="bl-tab" type="button" data-bt="rep" onclick="event.stopPropagation();blTab(this,'rep','${g.id}')"><span class="bl-tab-ic">▶</span> Replay</button>
       </div>
-      <div class="bl-pane" data-pane="res">${g.byFoe?'<p class="bl-note">Enregistrée par le clan adverse : son mod l\'a envoyée, le résultat est donné de ton côté.</p>':""}<div class="bl-teams">${detail}</div></div>
+      <div class="bl-pane" data-pane="res">${g.legion?'<p class="bl-note">Tu jouais en <b>légionnaire</b> pour <b>['+esc(g.ourTag)+']</b>, avec le tag <b>['+esc(g.selfTag)+']</b>.</p>':""}${g.byFoe?'<p class="bl-note">Enregistrée par le clan adverse : son mod l\'a envoyée, le résultat est donné de ton côté.</p>':""}<div class="bl-teams">${detail}</div></div>
       <div class="bl-pane" data-pane="rep" hidden><div class="rp-host"></div></div>
     </div></div>
   </div>`;
@@ -1441,15 +1443,28 @@ function buildMyRaw(data){
     clanId:b.clan_id, byFoe:!!b.by_foe }; });
   const moi = ME_ID!=null ? Number(ME_ID) : (data.me ? Number(data.me.account_id) : null);
   MY.raw=[];
+  const parB={};
   (data.players||[]).forEach(pl=>{
     const f=fiches[String(pl.battle_id)]; if(!f) return;
     const r=rowFromPlayer(pl,f);
     r.isSelf = moi!=null && r.accId===moi;
-    // ses coéquipiers de clan CE JOUR-LÀ : même équipe, même tag que lui
-    r.isMember = !r.isSelf && Number(r.team)===f.team && f.tag!=="" &&
-                 String(r.clan).toUpperCase()===f.tag.toUpperCase();
     MY.raw.push(r);
+    (parB[r.battleId]=parB[r.battleId]||[]).push(r);
   });
+  /* Pour quel clan il jouait : le tag le plus porté dans SON équipe, pas
+     le sien. En légionnaire, il garde le tag de son clan alors qu'il joue
+     pour un autre — c'est ce qui faisait passer toutes ses batailles pour
+     des batailles de son clan. */
+  Object.keys(fiches).forEach(bid=>{
+    const f=fiches[bid], e=equipesDe(parB[bid]||[])[f.team];
+    f.selfTag=f.tag;
+    if(e && e.top) f.tag=e.top;
+    f.legion=!!(f.selfTag && f.tag && f.selfTag.toUpperCase()!==f.tag.toUpperCase());
+  });
+  // les joueurs du clan pour lequel il jouait : même équipe, même tag que l'équipe
+  MY.raw.forEach(r=>{ const f=fiches[r.battleId];
+    r.isMember = !r.isSelf && Number(r.team)===f.team && f.tag!=="" &&
+                 String(r.clan).toUpperCase()===f.tag.toUpperCase(); });
   MY.fiches=fiches; MY.n=Object.keys(fiches).length; MY.total=Number(data.total)||MY.n; MY.sr=null;
 }
 /* Le SR de SES batailles : le modèle figé de la saison, appliqué avec
@@ -1471,7 +1486,8 @@ function groupMyBattles(){
     const f=MY.fiches[r.battleId];
     let g=map[r.battleId];
     if(!g) g=map[r.battleId]={ id:r.battleId, ts:r.ts||0, mode:r.mode, result:r.result, mapName:r.mapName,
-      rows:[], mine:true, clanId:f.clanId, myTeam:f.team, ourTag:f.tag||"?", byFoe:f.byFoe };
+      rows:[], mine:true, clanId:f.clanId, myTeam:f.team, ourTag:f.tag||"?", byFoe:f.byFoe,
+      legion:f.legion, selfTag:f.selfTag };
     g.rows.push(r);
   });
   const list=Object.values(map).map(g=>{
@@ -1505,7 +1521,7 @@ function blMySummaryHTML(list){
   });
   const srMoy=srN?Math.round(srS/srN):null, srCol=srMoy!=null?ceTier(srMoy).c:"var(--ink)";
   const fav=Object.entries(chars).sort((a,b)=>b[1]-a[1])[0];
-  const parAdv=list.filter(g=>g.byFoe).length;
+  const parAdv=list.filter(g=>g.byFoe).length, legion=list.filter(g=>g.legion).length;
   const {habitues, barres}=blAdversaires(list);
 
   let titre, ph=[];
@@ -1515,6 +1531,7 @@ function blMySummaryHTML(list){
     ph.push("Tu en as gagné <b>"+fmt(wins)+"</b> sur <b>"+fmt(n)+"</b>.");
     if(tags.size>1) ph.push("Sous les couleurs de <b>"+fmt(tags.size)+"</b> clans différents.");
     if(fav && fav[1]>1) ph.push("Ton char le plus joué : <b>"+esc(fav[0])+"</b>, <b>"+fmt(fav[1])+"</b> fois.");
+    if(legion) ph.push("En légionnaire : <b>"+fmt(legion)+"</b>.");
     if(parAdv) ph.push("Enregistrées par l'adversaire : <b>"+fmt(parAdv)+"</b>.");
   }
   // chaque phrase dans son élément : le traducteur les prend une à une
@@ -2158,7 +2175,22 @@ function renderMembers(){
   if(more){ if(list.length>12){ more.classList.remove("hidden"); more.textContent=MEM_EXPANDED?"Réduire ▴":("Afficher les "+list.length+" membres ↓"); more.onclick=()=>{MEM_EXPANDED=!MEM_EXPANDED; renderMembers();}; } else more.classList.add("hidden"); }
 }
 
-let VEHMAP={}, MEMBERSET=new Set(), CLANTAG="", BATTLE_ENEMY={}, BATTLE_TIER={};
+let VEHMAP={}, MEMBERSET=new Set(), CLANTAG="", BATTLE_ENEMY={}, BATTLE_TIER={}, BATTLE_CAMP={};
+/* Les tags portés dans chaque équipe d'une bataille. Le clan d'une
+   équipe, c'est le tag que portent la plupart de ses joueurs : un
+   légionnaire garde celui de SON clan, il ne dit donc rien de l'équipe.
+   → {équipe: {tags:{TAG:nb}, noms:{TAG:tel qu'écrit}, top:"TAG"}} */
+function equipesDe(rows){
+  const eq={};
+  rows.forEach(r=>{
+    const e=eq[Number(r.team)]=eq[Number(r.team)]||{tags:{},noms:{},top:""};
+    const g=String(r.clan||"").toUpperCase();
+    if(g){ e.tags[g]=(e.tags[g]||0)+1; e.noms[g]=e.noms[g]||String(r.clan); }
+  });
+  Object.values(eq).forEach(e=>{ let n=0;
+    for(const g in e.tags) if(e.tags[g]>n){ n=e.tags[g]; e.top=e.noms[g]; } });
+  return eq;
+}
 /* Une ligne de joueur telle que tout le site la lit. Partagée par les
    batailles du clan (buildRaw) et « Mes batailles » (buildMyRaw) : mêmes
    champs, donc mêmes calculs — SR compris. */
@@ -2186,7 +2218,8 @@ function buildRaw(data){
   const bmap = {};
   (data.battles||[]).forEach(b=>{
     bmap[b.battle_id] = { ts: b.ts?Math.floor(new Date(b.ts).getTime()/1000):0, mode:b.mode||"",
-      result: b.result, mapName: b.map_name || ("Carte "+(b.map_id||"?")) };
+      result: b.result, mapName: b.map_name || ("Carte "+(b.map_id||"?")),
+      uploadedBy: b.uploaded_by!=null ? Number(b.uploaded_by) : null };
   });
   /* ── Doublons de bataille ────────────────────────────────────────
      Quand DEUX membres du clan ont le mod, les deux envoient la même
@@ -2209,23 +2242,62 @@ function buildRaw(data){
   });
   if(doublons) console.warn("[données] "+doublons+" ligne(s) de joueur en double, ignorée(s)");
 
-  RAW = brut.map(pl=>{
+  const tous = brut.map(pl=>{
     const b = bmap[pl.battle_id] || {ts:0,mode:"",result:null,mapName:""};
     const r = rowFromPlayer(pl, b);
     r.isMember = r.accId!=null && MEMBERSET.has(r.accId);
     return r;
   });
   // référence GLOBALE de la Cote d'Équipe : tous les joueurs enregistrés (nous + tous les adversaires)
-  CE_REF=teamGlobalRef(RAW);
-  // clan adverse par bataille : le tag (hors le nôtre) le plus fréquent
-  BATTLE_ENEMY={}; const cnt={};
-  RAW.forEach(r=>{
-    if(r.clan && r.clan.toUpperCase()!==CLANTAG.toUpperCase()){
-      (cnt[r.battleId]=cnt[r.battleId]||{}); cnt[r.battleId][r.clan]=(cnt[r.battleId][r.clan]||0)+1;
+  CE_REF=teamGlobalRef(tous);
+
+  /* ── Le camp du clan, bataille par bataille ───────────────────────
+     Le serveur range une bataille sous le clan de son ENVOYEUR, tel qu'il
+     est au moment de l'envoi. Ce n'est pas forcément le clan qui l'a
+     jouée : un membre parti en légionnaire chez un autre clan l'envoie
+     sous notre nom, et une bataille restée en file d'attente part parfois
+     après un changement de clan. On se fie donc à la composition : notre
+     camp est l'équipe où notre tag est le plus porté. Une bataille où
+     aucune équipe n'est à nous sort du registre du clan — elle reste
+     visible dans « Mes batailles » de celui qui l'a jouée.
+     Le résultat enregistré est celui de l'envoyeur : s'il jouait en face
+     de notre camp, on le retourne. */
+  const TAGU=CLANTAG.toUpperCase();
+  const parB={}; tous.forEach(r=>{ (parB[r.battleId]=parB[r.battleId]||[]).push(r); });
+  BATTLE_CAMP={}; BATTLE_ENEMY={};
+  const etrangeres=new Set(); let retournees=0;
+  Object.keys(parB).forEach(bid=>{
+    const rows=parB[bid], b=bmap[bid]||{};
+    const eq=equipesDe(rows), avecTags=rows.some(r=>r.clan);
+    const env=b.uploadedBy!=null ? rows.find(r=>r.accId===b.uploadedBy) : null;
+    const campEnv=env ? Number(env.team) : null;
+    let camp=null, best=0;
+    for(const t in eq){
+      const nous=rows.filter(r=>Number(r.team)===+t &&
+        (String(r.clan||"").toUpperCase()===TAGU || (!r.clan && r.isMember))).length;
+      let autre=0; for(const g in eq[t].tags) if(g!==TAGU && eq[t].tags[g]>autre) autre=eq[t].tags[g];
+      if(!nous || (avecTags && nous<autre)) continue;
+      // deux équipes à nous (entraînement interne) : celle de l'envoyeur
+      if(nous>best || (nous===best && +t===campEnv)){ best=nous; camp=+t; }
     }
+    if(camp==null){
+      // sans aucun tag (très anciens envois), on ne peut rien conclure : on garde
+      if(avecTags){ etrangeres.add(bid); return; }
+      camp = campEnv!=null ? campEnv : Number(rows[0].team);
+    }
+    BATTLE_CAMP[bid]=camp;
+    if(campEnv!=null && campEnv!==camp && (b.result===1||b.result===0)){
+      const res=b.result===1?0:1; rows.forEach(r=>{ r.result=res; }); retournees++;
+    }
+    // le clan adverse : le tag le plus porté en face
+    let adv="",an=0;
+    for(const t in eq){ if(+t===camp) continue;
+      for(const g in eq[t].tags) if(g!==TAGU && eq[t].tags[g]>an){ an=eq[t].tags[g]; adv=eq[t].noms[g]; } }
+    if(adv) BATTLE_ENEMY[bid]=adv;
   });
-  Object.keys(cnt).forEach(bid=>{ let best="",bn=0;
-    for(const t in cnt[bid]){ if(cnt[bid][t]>bn){bn=cnt[bid][t];best=t;} } BATTLE_ENEMY[bid]=best; });
+  if(etrangeres.size||retournees) console.info("[données] "+etrangeres.size+
+    " bataille(s) jouée(s) pour un autre clan, hors du registre ; "+retournees+" résultat(s) retourné(s)");
+  RAW = etrangeres.size ? tous.filter(r=>!etrangeres.has(r.battleId)) : tous;
   // Rang de Bastion par bataille, décidé UNE fois pour toutes.
   // ⚠️ Même règle que srBuild : le tier MÉDIAN des chars présents, pas celui d'une
   // ligne isolée. Un char absent de la table des véhicules ferait autrement
@@ -2512,7 +2584,7 @@ function ceForRow(r,C){
    ============================================================ */
 // Marqueur de version : `srVersion()` dans la console dit si le fichier servi
 // est bien le dernier. Évite de confondre « pas déployé » et « ne marche pas ».
-const SR_SITE_VERSION="sr-4.5-mes-batailles";
+const SR_SITE_VERSION="sr-4.6-camp-du-clan";
 function srVersion(){ return SR_SITE_VERSION; }
 let SR_MODEL=null, SR_SKILL=null, SR_ELO_TAG=null, SR_ELO_ID=null, SR_ROWS=null;
 const SR_CLS={heavyTank:"heavy",mediumTank:"medium",lightTank:"light","AT-SPG":"td",SPG:"spg"};
@@ -2575,6 +2647,8 @@ function srBuild(src, camp){
     if(camp){
       const c=camp(bid); if(!c) return;
       mine=Number(c.team); TAG=String(c.tag||"").toUpperCase();
+    } else if(BATTLE_CAMP[bid]!=null){
+      mine=BATTLE_CAMP[bid];   // le même camp que la liste des batailles (buildRaw)
     } else {
       // notre camp = équipe où notre tag est majoritaire
       const cnt={}; rows.forEach(r=>{ if(String(r.clan||"").toUpperCase()===TAG) cnt[r.team]=(cnt[r.team]||0)+1; });
