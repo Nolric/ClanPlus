@@ -125,7 +125,7 @@ window.CP_FR = Object.assign(window.CP_FR || {}, {
   "view the repository": "voir le dépôt",
   /* mise à jour 1.0.44 */
   "The right clan for every battle": "Le bon clan pour chaque bataille",
-  "At the start of each clan battle, the mod notes which clan each detachment belongs to — what the loading screen shows. A battle you play as a legionnaire now shows up for the clan you played for, and for the clan you faced.": "Au début de chaque bataille de clan, le mod note à quel clan appartient chaque détachement — ce qu'affiche l'écran de chargement. Une bataille jouée en légionnaire apparaît désormais chez le clan pour lequel tu as joué, et chez celui que tu as affronté.",
+  "At the start of each clan battle, the mod notes which clan each detachment belongs to — what the loading screen shows. A battle you play as a legionnaire now shows up for the clan you played for.": "Au début de chaque bataille de clan, le mod note à quel clan appartient chaque détachement — ce qu'affiche l'écran de chargement. Une bataille jouée en légionnaire apparaît désormais chez le clan pour lequel tu as joué.",
   /* mise à jour 1.0.43 */
   "<i>03</i><span>Checks each tank against the clan's plan: tonight's slot, setup, ammo, crew</span>": "<i>03</i><span>Vérifie chaque char par rapport au plan du clan : poste du soir, setup, obus, équipage</span>",
   "<i>04</i><span>Reads the numbers <strong>after</strong> the fight and sends them to the site</span>": "<i>04</i><span>Relève les chiffres <strong>après</strong> le combat et les envoie au site</span>",
