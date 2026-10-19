@@ -6936,36 +6936,15 @@ function pretty(k){ const L=LABELS[k];
 })();
 </script>
 <script>
-/* Page en chantier : ouverte a tous, contenu reserve au mode test (?dev).
-   On recouvre la page plutot que de rediriger, pour garder le lien partageable. */
+/* La page est PUBLIQUE : plus de rideau « en chantier » pour qui n'est
+   pas en mode test. Reste la mémorisation du mode test, comme sur le
+   reste du site : ?dev l'active (persiste), ?dev=0 le coupe. */
 (function(){
-  /* Deux sources, comme partout ailleurs : le paramètre d'URL ET le mode
-     test mémorisé. Un testeur qui l'a activé sur une autre page était
-     bloqué ici.
-     ⚠ Ce motif contenait un VRAI caractère backspace (0x08) à la place
-     de la séquence \\b : il ne correspondait à rien, et la page restait
-     fermée à tout le monde. */
-  var urlDev = /[?&]dev(=|&|$)/.test(location.search);
-  var memDev = false;
-  try{ memDev = localStorage.getItem("cp_dev") === "1"; }catch(e){}
   if(/[?&]dev=0(&|$)/.test(location.search)){
     try{ localStorage.removeItem("cp_dev"); }catch(e){}
-  } else if(urlDev){
+  } else if(/[?&]dev(=|&|$)/.test(location.search)){
     try{ localStorage.setItem("cp_dev","1"); }catch(e){}
-    return;
-  } else if(memDev) return;
-  var d=document.createElement("div");
-  d.setAttribute("style","position:fixed;inset:0;z-index:99999;background:#0a0a09;color:#f7f6f2;"+
-    "display:flex;align-items:center;justify-content:center;padding:24px;"+
-    "font-family:var(--d-sans)");
-  d.innerHTML="<div style='max-width:520px;text-align:center'>"+
-    "<div style='font-size:38px;margin-bottom:14px'>🚧</div>"+
-    "<h1 style='font-size:22px;margin:0 0 10px;font-weight:800'>3D maps — under construction</h1>"+
-    "<p style='margin:0 0 18px;color:#c2beb4;line-height:1.6'>The real map elevation is still being built. "+
-    "It will open to the whole clan as soon as it is ready.</p>"+
-    "<a href='/' style='color:#d8b566;font-weight:700'>← Back to the site</a></div>";
-  document.addEventListener("DOMContentLoaded",function(){ document.body.appendChild(d); });
-  if(document.body) document.body.appendChild(d);
+  }
 })();
 </script>
 </body>
