@@ -1151,7 +1151,20 @@ async function resolveEnemyEmblems(list){
 }
 const MODE_FR={SORTIE_2:"Bastion",SORTIE:"Bastion",FORT_BATTLE_2:"Bastion",FORT_BATTLE:"Bastion",EPIC_BATTLE:"Assaut"};
 function modeFR(m){ return MODE_FR[m] || (m?capFirst(String(m).toLowerCase().replace(/_/g," ")):"Bastion"); }
+/* Le nom d'une carte, depuis le nom de fichier du jeu (« 212_epic_random_valley »)
+   ou sa clé (« epicrandomvalley ») : les noms de LU_MAPS d'abord, puis ceux de
+   l'éditeur 2D, qui couvre toutes les cartes de la 3D. null si la carte est
+   inconnue — chaque appelant garde alors son repli. Les deux tables sont
+   déclarées plus bas dans le script : atteignables au moment d'un rendu, mais
+   un nom de carte n'a pas à faire tomber la page, d'où le try/catch. */
+function nomDeCarte(s){
+  try{ const k=String(s||"").toLowerCase().replace(/[^a-z]/g,""); if(!k) return null;
+       const e=LU_MAPS.find(x=>x[0]===k); if(e && e[1]) return e[1];
+       if(ST_MAPNAME[k]) return ST_MAPNAME[k]; }catch(_){}
+  return null;
+}
 function cleanMap(s){
+  const n=nomDeCarte(s); if(n) return n;
   s=String(s||"").replace(/^\d+[_\-\s]*/,"").replace(/[_\-]+/g," ").trim();
   return s?s.replace(/\b\w/g,c=>c.toUpperCase()):"Carte ?";
 }
@@ -3158,14 +3171,9 @@ function wireUI(){
    ============================================================ */
 function fmtTime(sec){ sec=Math.round(sec||0); const m=Math.floor(sec/60),s=sec%60; return m+":"+(s<10?"0":"")+s; }
 function prettyMap(s){ s=String(s||""); if(!s) return "?";
-  /* La table du jeu d'abord : « prohorovka » est un nom de fichier,
-     « Prokhorovka » est le nom de la carte. Onze cartes y ont en plus
-     leur nom français — Toundra, Falaise, Carélie.
-     Le try/catch n'est pas de la superstition : LU_MAPS est déclaré plus
-     bas dans le même script. Il est atteignable au moment où l'on rend
-     une vue, mais un nom de carte n'a pas à faire tomber la page. */
-  try{ const k=s.toLowerCase().replace(/[^a-z]/g,"");
-       const e=LU_MAPS.find(x=>x[0]===k); if(e && e[1]) return e[1]; }catch(_){}
+  /* La table du jeu d'abord (nomDeCarte) : « prohorovka » est un nom de
+     fichier, « Prokhorovka » est le nom de la carte. */
+  const n=nomDeCarte(s); if(n) return n;
   s=s.replace(/^\d+_/,"").replace(/_/g," ");
   return s.replace(/\b\w/g,c=>c.toUpperCase()); }
 /* La forme minuscule, insérée dans une phrase : elle doit être traduite
@@ -9597,15 +9605,26 @@ function stClean(arr){
 function stStepsOf(s){ if(s&&Array.isArray(s.steps)&&s.steps.length) return s.steps.slice(0,12).map(st=>{ st=st||{}; const t=Number(st.t);
     return {els:stClean(st.els), note:st.note?String(st.note).slice(0,140):'', t:(st.t!=null&&Number.isFinite(t)&&t>=0?Math.round(t*10)/10:null)}; });
   return [{els:stClean(s&&s.elements),note:'',t:null}]; }
+/* Les cartes de l'éditeur 2D : les MÊMES que la carte 3D (web/maps3d/index.json),
+   sous le nom que le jeu leur donne (catalogue arenas.mo, jeu 2.4.1), triées par
+   nom. La clé est celle de maps/top/<clé>.jpg. Une carte ajoutée à la 3D doit
+   l'être ici aussi — c'est l'oubli qui laissait Nebelburg sans éditeur 2D et
+   huit cartes sous un nom faux (« Live Oaks » pour Mines, « Kleinberg » pour
+   Glacier…). */
 const ST_MAPS=[
-  ["himmelsdorf","Himmelsdorf"],["ensk","Ensk"],["lakeville","Lakeville"],["redshire","Redshire"],
-  ["prohorovka","Prokhorovka"],["murovanka","Murovanka"],["malinovka","Malinovka"],["ruinberg","Ruinberg"],
-  ["siegfriedline","Ligne Siegfried"],["steppes","Steppes"],["tundra","Toundra"],["cliff","Falaise"],
-  ["fjord","Fjords"],["fishingbay","Baie du pêcheur"],["erlenberg","Erlenberg"],["elhallouf","El Halluf"],
-  ["karelia","Carélie"],["mannerheimline","Ligne Mannerheim"],["westfeld","Westfield"],["airfield","Aérodrome"],
-  ["monastery","Abbaye"],["desert","Rivière de sable"],["hills","Live Oaks"],["caucasus","Caucase"],
-  ["czech","Pilsen"],["poland","Studzianki"],["germany","Ruhrland"],["munchen","Munich"],
-  ["japort","Baie de la nacre"],["northamerica","Highway"],["asiagreatwall","Frontière de l’empire"],["sweden","Kleinberg"]
+  ["monastery","Abbaye"],["airfield","Aérodrome"],["highway","Autoroute"],["lastfrontierv","Avant-poste"],
+  ["lostparadisev","Baie aux Huîtres"],["fishingbay","Baie du pêcheur"],["germany","Berlin"],["karelia","Carélie"],
+  ["caucasus","Col de montagne"],["elhallouf","El Halluf"],["ensk","Ensk"],["erlenberg","Erlenberg"],
+  ["cliff","Falaise"],["germanysm","Fallenstadt"],["fjord","Fjords"],["asiagreatwall","Frontière de l’Empire"],
+  ["sweden","Glacier"],["munchen","Grand Parc"],["himmelsdorf","Himmelsdorf"],["eralaska","Klondike"],
+  ["lakeville","Lakeville"],["ruinbergsm","Lauerberg"],["mannerheimline","Ligne Mannerheim"],
+  ["siegfriedline","Ligne Siegfried"],["northamerica","Live Oaks"],["malinovka","Malinovka"],["hills","Mines"],
+  ["murovanka","Murovanka"],["epicrandomvalley","Nebelburg"],["grafzeppelin","Nordskar"],
+  ["grafzeppelinscc","Nordskar (SCC)"],["ddaysm","Omaha Beach"],["dday","Overlord"],["eiffeltowerctf","Paris"],
+  ["czech","Pilsen"],["canadaa","Plage sereine"],["prohorovka","Prokhorovka"],["campaniabig","Province"],
+  ["redshire","Redshire"],["japort","Refuge"],["enskbig","Région d’Ensk"],["asiamiao","Rivière de perles"],
+  ["desert","Rivière de sable"],["ruinberg","Ruinberg"],["steppes","Steppes"],["poland","Studzianki"],
+  ["tundra","Toundra"],["lostcityctf","Ville fantôme"],["westfeld","Westfield"]
 ];
 const ST_MAPNAME=Object.fromEntries(ST_MAPS.map(m=>[m[0],m[1]]));
 // Six couleurs de dessin : assez pour distinguer deux pelotons et l'ennemi,
@@ -9676,7 +9695,7 @@ async function stEnsureBases(){
 }
 function stBasesSvg(map,mode){
   // En débrief, les bases viennent du REPLAY : ce sont les positions réelles de la
-  // bataille, et cela marche sur toutes les cartes (maps_bases.json n'en couvre que 32).
+  // bataille, et cela marche sur toutes les cartes, même hors de maps_bases.json.
   if(ST_RP && ST_RP.map===map && Array.isArray(ST_RP.bases) && ST_RP.bases.length){
     return ST_RP.bases.map(b=>{ const p=stRpXY(b.x,b.z);
       return stFlag(p[0],p[1], b.team==="ally"?'green':(b.team==="enemy"?'red':'neutral')); }).join('');
@@ -10273,7 +10292,10 @@ async function stOpenReplay(battleId, btn){
   try{ switchView("strats"); }catch(e){}
   openStratEditor({ name:"Débrief — "+ST_RP.name, map:mapKey(g.mapName), mode:"ctf" }, true);
 }
-function pretty2(s){ try{ return pretty(mapKey(s)); }catch(e){ return String(s||""); } }
+/* `pretty` n'existe que dans carte3d.html : ici l'appel tombait TOUJOURS dans
+   le catch, et le nom brut du jeu (« 212_epic_random_valley ») partait tel
+   quel dans les liens de débriefing 3D. */
+function pretty2(s){ return prettyMap(s); }
 
 function stRedraw(){ const g=document.getElementById("stEls"); if(!g||!ST_EDIT) return; g.innerHTML=ST_EDIT.els.map((e,i)=>stElSvg(e,i,'e')).join("")+stDrawPreview()+stSelBoxSvg()+stHandlesSvg(); stMajLazy(); }
 // Métriques du canvas : le viewBox (carré) est centré dans l'élément SVG (letterbox

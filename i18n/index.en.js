@@ -2029,5 +2029,16 @@ Object.assign(window.CP_EN, {
   "En légionnaire : <b>{n}</b>.": "As a legionnaire: <b>{n}</b>.",
   "Tu jouais en <b>légionnaire</b> pour <b>{t}</b>, avec le tag <b>{t}</b>.": "You played as a <b>legionnaire</b> for <b>{t}</b>, wearing the <b>{t}</b> tag.",
   "Tu jouais pour {t} avec le tag {t}": "You played for {t} wearing the {t} tag",
+  /* ── Cartes : les noms du jeu (catalogue 2.4.1) qui diffèrent en anglais ── */
+  "Autoroute": "Highway",
+  "Avant-poste": "Outpost",
+  "Baie aux Huîtres": "Oyster Bay",
+  "Col de montagne": "Mountain Pass",
+  "Frontière de l’Empire": "Empire's Border",
+  "Grand Parc": "Widepark",
+  "Plage sereine": "Serene Coast",
+  "Refuge": "Safe Haven",
+  "Rivière de perles": "Pearl River",
+  "Ville fantôme": "Ghost Town",
   "Cette stratégie n'existe plus : elle a sans doute été supprimée entre-temps. Ton dessin est toujours à l'écran.": "This strategy no longer exists: it was probably deleted in the meantime. Your drawing is still on screen.",
 });
