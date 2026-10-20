@@ -10466,9 +10466,21 @@ function stRpMount(){
    forcément été chargé : on ne peut donc PAS dépendre de BL_BY_ID). */
 async function stRpLoad(battleId, mapK, label){
   let rep=null;
+  /* « Mes batailles » range une bataille sous le clan qui l'a envoyée :
+     sans ce clan, le serveur cherchait chez le clan ACTUEL et répondait
+     « rien » — « Aucun replay enregistré » pour qui a changé de clan. On
+     fait comme startReplay : le clan pour le serveur, le camp du joueur
+     pour les couleurs. Si la liste n'est pas chargée, on reste à l'appel
+     d'avant. */
+  const g=BL_BY_ID[battleId], mien=!!(g&&g.mine);
   try{
-    const r=await fnCall("replay",{session:localStorage.getItem(LS_SESSION), battle_id:battleId});
-    if(r.ok && r.j && r.j.replay && (r.j.replay.vehicles||[]).length) rep=convertReplay(r.j.replay);
+    const corps={session:localStorage.getItem(LS_SESSION), battle_id:battleId};
+    if(mien) corps.clan_id=g.clanId;
+    const r=await fnCall("replay",corps);
+    if(r.ok && r.j && r.j.replay && (r.j.replay.vehicles||[]).length)
+      rep=mien ? convertReplay(r.j.replay,{ myTeam:g.myTeam,
+                   members:new Set(g.our.filter(x=>x.isMember||x.isSelf).map(x=>x.accId)) })
+               : convertReplay(r.j.replay);
   }catch(e){}
   if(!rep) return false;
   ST_RP={ battleId:String(battleId), name:label||"", map:mapK,
@@ -10485,8 +10497,15 @@ async function stRpLoad(battleId, mapK, label){
 function stOpen3D(battleId){
   const g=BL_BY_ID[battleId]; if(!g) return;
   const k=mapKey(g.mapName);
+  /* « Mes batailles » range une bataille sous le clan qui l'a envoyée
+     (ancien clan, légionnaire, adversaire équipé du mod). Sans ce clan, le
+     serveur cherchait le replay chez le clan ACTUEL et répondait « rien » :
+     aucun débrief 3D ne s'ouvrait pour qui a changé de clan. Le camp suit,
+     pour qu'une bataille envoyée par l'adversaire ne montre pas ses chars
+     comme les nôtres — comme startReplay le fait en 2D. */
   const u="carte3d.html?battle="+encodeURIComponent(g.id)+"&carte="+encodeURIComponent(k)+
-          "&nom="+encodeURIComponent(pretty2(g.mapName));
+          "&nom="+encodeURIComponent(pretty2(g.mapName))+
+          (g.mine?"&clan="+encodeURIComponent(g.clanId)+(g.myTeam!=null?"&camp="+encodeURIComponent(g.myTeam):""):"");
   window.open(u,"_blank","noopener");
 }
 async function stOpenReplay(battleId, btn){

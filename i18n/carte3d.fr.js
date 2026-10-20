@@ -280,6 +280,7 @@ window.CP_FR = Object.assign(window.CP_FR || {}, {
   "World of Tanks 3D maps — real terrain elevation | Clan Plus": "Cartes 3D World of Tanks — relief réel des maps | Clan Plus",
   "World of Tanks · 3D map": "World of Tanks · Carte 3D",
   "Your browser couldn't start 3D (WebGL required).": "Ton navigateur n'a pas pu démarrer la 3D (WebGL requis).",
+  "Turn on graphics acceleration in your browser settings (Chrome, Edge: Settings → System), then restart the browser.": "Active l'accélération graphique dans les paramètres de ton navigateur (Chrome, Edge : Paramètres → Système), puis redémarre-le.",
   "Copy a link to this view": "Copier un lien vers cette vue",
   "Link copied.": "Lien copié.",
   "Copy the link below.": "Copie le lien ci-dessous.",

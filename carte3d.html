@@ -14,7 +14,7 @@
 <meta property="og:description" content="The game's real map elevation in 3D: rotate, zoom, read the ground.">
 <meta property="og:image" content="https://clanplus.eu/og.jpg">
 <meta name="twitter:card" content="summary_large_image">
-<script src="i18n/carte3d.fr.js?v=7c691513"></script>
+<script src="i18n/carte3d.fr.js?v=c38d2f75"></script>
 <script src="i18n.js?v=ed3f8a4f"></script>
 <!-- Le client Supabase, UNIQUEMENT pour le temps réel : les appels de
      données passent par `fetch` et n'en ont pas besoin. Il est chargé en
@@ -1001,8 +1001,22 @@ function pretty(k){ const L=LABELS[k];
   let cvRect={left:0,top:0,width:1,height:1};
   function majCvRect(){ cvRect=cv.getBoundingClientRect(); }
 
+  /* Une panne AVANT le choix d'une carte s'écrivait dans #err, qui vit
+     dans #wrap — caché tant qu'aucune carte n'est ouverte. Dans un Edge
+     dont l'accélération graphique était coupée, Robert voyait donc un
+     accueil vide, sans un mot. On l'écrit aussi à la place de la grille. */
+  function panne(msg, conseil){
+    const e=document.getElementById("err"); e.style.display="flex"; e.textContent=msg;
+    document.getElementById("load").classList.remove("on");
+    document.querySelector(".acFiltres").style.display="none";
+    const g=document.getElementById("acGrille");
+    g.innerHTML='<div class="acRien"><h3></h3><p></p></div>';
+    g.querySelector("h3").textContent=msg;
+    g.querySelector("p").textContent=conseil||"";
+  }
   const gl=cv.getContext("webgl",{antialias:true,alpha:false})||cv.getContext("experimental-webgl");
-  if(!gl){ document.getElementById("err").style.display="flex"; document.getElementById("load").classList.remove("on"); return; }
+  if(!gl){ panne(t("Your browser couldn't start 3D (WebGL required)."),
+    t("Turn on graphics acceleration in your browser settings (Chrome, Edge: Settings → System), then restart the browser.")); return; }
   const uintExt=gl.getExtension("OES_element_index_uint");
   const derivExt=gl.getExtension("OES_standard_derivatives");
 
@@ -6734,7 +6748,7 @@ function pretty(k){ const L=LABELS[k];
   }
 
   // ---- init : liste des cartes ----
-  if(!uintExt){ document.getElementById("err").style.display="flex"; document.getElementById("err").textContent=t("This browser doesn't support the 32-bit mesh required."); loadEl.classList.remove("on"); return; }
+  if(!uintExt){ panne(t("This browser doesn't support the 32-bit mesh required.")); return; }
   /* On garde l'index sous la main : c'est lui qui dit quelles cartes
      possèdent une géométrie, et donc ce qu'il est inutile de demander. */
   let MAPS3D={};
@@ -6850,12 +6864,17 @@ function pretty(k){ const L=LABELS[k];
       const ident=p.get("strat");
       if(ident) ST.ouvrirId=String(ident);
       if(!bat) return;
+      /* Le clan sous lequel la bataille est rangée quand ce n'est pas
+         celui du joueur, et son camp (voir stOpen3D dans app.js). Sans le
+         clan, le serveur cherchait chez le clan actuel et ne trouvait rien. */
+      const clan=p.get("clan"), camp=Number(p.get("camp"));
       stDit(t("Loading the replay…"));
-      fnAppel("replay",{battle_id:bat}).then(async(r)=>{
+      fnAppel("replay",Object.assign({battle_id:bat},clan?{clan_id:clan}:{})).then(async(r)=>{
         const brut=r.ok&&r.j&&r.j.replay;
-        const rep=brut?litReplay(Object.assign({battleId:bat},brut),ck,p.get("nom")||""):null;
+        const rep=brut?litReplay(Object.assign({battleId:bat},brut,camp>0?{myTeam:camp}:{}),ck,p.get("nom")||""):null;
         if(!rep){ stDit(t("No replay saved for this battle.")); return; }
         RP=rep;
+        RP.clan=clan; RP.camp=camp>0?camp:null;
         ST.battleId=String(bat);
         document.body.classList.add("replay");
         ST.ouvert=1; ST.edition=1;
@@ -6887,7 +6906,8 @@ function pretty(k){ const L=LABELS[k];
       const q=u.searchParams;
       if(curKey) q.set("carte",curKey);
       q.set("vue",vueVersTexte(vueActuelle()));
-      if(RP&&ST.battleId){ q.set("battle",ST.battleId); q.set("t",RP.t.toFixed(1)); }
+      if(RP&&ST.battleId){ q.set("battle",ST.battleId); q.set("t",RP.t.toFixed(1));
+        if(RP.clan) q.set("clan",RP.clan); if(RP.camp) q.set("camp",String(RP.camp)); }
       else if(ST.id) q.set("strat",String(ST.id));
       return u.toString();
     }
@@ -6933,7 +6953,7 @@ function pretty(k){ const L=LABELS[k];
         else stDit(t("That plan is no longer there."));
       }
     }).catch(()=>{});
-  }).catch(()=>{ document.getElementById("err").style.display="flex"; document.getElementById("err").textContent=t("Couldn't load the map list (maps3d/index.json)."); loadEl.classList.remove("on"); });
+  }).catch(()=>panne(t("Couldn't load the map list (maps3d/index.json).")));
 })();
 </script>
 <script>
