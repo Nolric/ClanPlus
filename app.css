@@ -953,11 +953,94 @@
   #clanRecruit .rc-pgo,#clanRecruit .rc-pbtn{display:flex;align-items:center;justify-content:center;height:38px;border-radius:10px;font-size:13px;font-weight:800}
   #clanRecruit .rc-pgo{background:linear-gradient(180deg,var(--gold-2),var(--gold));color:#19150b}
   #clanRecruit .rc-pbtn{border:1px solid var(--border);background:var(--card);color:var(--ink-2);font-weight:600}
+  /* ---- Outil n°2 : les sorties de clan, en direct ----
+     Le voyant vert dit que la liste vit (relevé toutes les 15 min) ; il
+     passe à l'orange si la tâche planifiée a pris du retard. */
+  #clanRecruit .rc-dot{width:8px;height:8px;flex:none;border-radius:50%;background:var(--good);box-shadow:0 0 0 0 rgba(76,192,119,.5);animation:rcLive 2.4s ease-out infinite}
+  @keyframes rcLive{0%{box-shadow:0 0 0 0 rgba(76,192,119,.45)}70%,100%{box-shadow:0 0 0 7px rgba(76,192,119,0)}}
+  #clanRecruit .rc-tabs .n.neuf{background:rgba(76,192,119,.14);color:var(--good)}
+  #clanRecruit .rc-live{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 12px;font-size:13px;font-weight:600;color:var(--ink-2)}
+  #clanRecruit .rc-live-m{margin-left:auto;font-size:12px;font-weight:400;color:var(--muted)}
+  #clanRecruit .rc-live.retard .rc-dot{background:var(--or);animation:none}
+  #clanRecruit .rc-live.retard .rc-live-t{color:var(--or)}
+  #clanRecruit .rc-filtres{display:flex;flex-direction:column;gap:14px;margin:0 0 14px;padding:14px 16px}
+  #clanRecruit .rc-frow{display:flex;flex-wrap:wrap;gap:12px 22px;align-items:flex-end}
+  #clanRecruit .rc-filtres>*+*{padding-top:13px;border-top:1px solid var(--line-2)}
+  #clanRecruit .rc-filtres .rc-f{margin:0}
+  #clanRecruit .rc-more>summary{display:none}
+  #clanRecruit .rc-more>summary b{display:inline-grid;place-items:center;min-width:18px;height:18px;margin-left:6px;padding:0 5px;border-radius:999px;
+    background:var(--gold-soft);color:var(--gold-2);font-size:11px;letter-spacing:0}
+  #clanRecruit .rc-seg{display:inline-flex;flex-wrap:wrap;gap:2px;padding:3px;border:1px solid var(--border);border-radius:9px;background:var(--surface-2)}
+  #clanRecruit .rc-seg button{appearance:none;margin:0;padding:6px 11px;border:0;border-radius:7px;background:transparent;color:var(--ink-2);
+    font:inherit;font-size:12.5px;font-weight:600;white-space:nowrap;cursor:pointer;transition:color .15s,background-color .15s}
+  #clanRecruit .rc-seg button:hover{color:var(--ink)}
+  #clanRecruit .rc-seg button[aria-pressed="true"]{background:var(--gold-soft);color:var(--gold-2);box-shadow:inset 0 0 0 1px var(--gold-line)}
+  #clanRecruit .rc-nums{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;align-items:end}
+  #clanRecruit .rc-fnum>span:first-child{display:block;line-height:1.3}
+  #clanRecruit .rc-in{position:relative;display:block}
+  #clanRecruit .rc-in input{padding:8px 10px;font-size:14px;font-variant-numeric:tabular-nums}
+  #clanRecruit .rc-in i{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-style:normal;font-size:12.5px;color:var(--muted);pointer-events:none}
+  #clanRecruit .rc-in input[name="wr"]{padding-right:28px}
+  #clanRecruit .rc-tog{align-items:center}
+  #clanRecruit .rc-check{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--ink-2);cursor:pointer}
+  #clanRecruit .rc-check input{width:16px;height:16px;margin:0;accent-color:var(--gold)}
+  #clanRecruit .rc-preset{flex:0 1 280px}
+  #clanRecruit .rc-preset select{padding:7px 10px;font-size:13px}
+  #clanRecruit .rc-raz{appearance:none;margin:0 0 0 auto;padding:7px 2px;border:0;background:none;color:var(--muted);font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
+  #clanRecruit .rc-raz:hover{color:var(--ink)}
+  #clanRecruit .rc-deps-h{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:0 0 10px}
+  #clanRecruit .rc-deps-h p{margin:0;font-size:13px;color:var(--ink-2)}
+  #clanRecruit .rc-deps-h b{color:var(--ink);font-variant-numeric:tabular-nums}
+  #clanRecruit .rc-plein{color:var(--muted)}
+  #rcSorties{transition:opacity .15s}
+  #rcSorties[aria-busy="true"]{opacity:.55}
+  #clanRecruit .rc-deps{display:flex;flex-direction:column;gap:8px}
+  #clanRecruit .rc-deps>.rc-sk{height:96px;margin:0;border-radius:12px}
+  #clanRecruit .rc-dep{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 16px;padding:13px 16px;border:1px solid var(--line);border-radius:12px;
+    background:linear-gradient(180deg,var(--panel),var(--panel-2))}
+  #clanRecruit .rc-dep.neuf{border-color:rgba(76,192,119,.35);box-shadow:inset 3px 0 0 var(--good)}
+  #clanRecruit .rc-dep-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0}
+  #clanRecruit .rc-dep-n{font:700 16px/1.2 var(--fx);letter-spacing:.2px;color:var(--ink);text-decoration:none;overflow-wrap:anywhere}
+  #clanRecruit .rc-dep-n:hover{color:var(--gold-2);text-decoration:underline;text-underline-offset:3px}
+  #clanRecruit .rc-pill.libre{border-color:var(--gold-line);background:var(--gold-soft);color:var(--gold-2)}
+  #clanRecruit .rc-pill b{color:var(--ink)}
+  #clanRecruit .rc-dep-t{margin-left:auto;font-size:12px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+  #clanRecruit .rc-dep-m{grid-column:1;margin:0;font-size:12.5px;color:var(--ink-2)}
+  #clanRecruit .rc-dep-m b{color:var(--ink)}
+  #clanRecruit .rc-dep-m span{color:var(--muted)}
+  #clanRecruit .rc-stats{grid-column:1;display:flex;flex-wrap:wrap;gap:6px;margin-top:2px}
+  #clanRecruit .rc-stat{display:inline-flex;align-items:baseline;gap:6px;padding:4px 9px;border:1px solid var(--line);border-radius:8px;background:var(--surface-1);font-size:12px}
+  #clanRecruit .rc-stat i{font-style:normal;font-size:10.5px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--muted)}
+  #clanRecruit .rc-stat b{font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+  #clanRecruit .rc-stat b.t{font-weight:600;color:var(--ink-2)}
+  #clanRecruit .rc-stat small{font-size:11px;color:var(--muted)}
+  #clanRecruit .rc-stat.f{border-color:var(--gold-line);background:var(--gold-soft)}
+  #clanRecruit .rc-stat b.w0{color:#ec6a6a} #clanRecruit .rc-stat b.w1{color:#e0904a} #clanRecruit .rc-stat b.w2{color:#d8c35a}
+  #clanRecruit .rc-stat b.w3{color:#7dd694} #clanRecruit .rc-stat b.w4{color:#5fb4e0} #clanRecruit .rc-stat b.w5{color:#ac8cf0} #clanRecruit .rc-stat b.w6{color:#d58cf2}
+  #clanRecruit .rc-wait{font-size:12.5px;font-style:italic;color:var(--muted)}
+  #clanRecruit .rc-dep-a{grid-column:2;grid-row:1 / span 3;display:flex;flex-direction:column;justify-content:center;gap:6px}
+  #clanRecruit .rc-dep-a .btn{justify-content:center;text-decoration:none;font-size:12.5px;white-space:nowrap}
+  @media (max-width:1100px){ #clanRecruit .rc-nums{grid-template-columns:repeat(3,minmax(0,1fr))} }
   @media (max-width:980px){
     #clanRecruit .rc-two{grid-template-columns:minmax(0,1fr)}
     #clanRecruit .rc-side{position:static;order:-1}
   }
   @media (max-width:640px){
+    #clanRecruit .rc-filtres{padding:12px 13px}
+    #clanRecruit .rc-frow:first-child{flex-direction:column;align-items:stretch}
+    #clanRecruit .rc-frow:first-child .rc-seg{display:flex}
+    #clanRecruit .rc-frow:first-child .rc-seg button{flex:1 1 0;padding:7px 4px}
+    #clanRecruit .rc-nums{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
+    #clanRecruit .rc-more>summary{display:flex;align-items:center;cursor:pointer;list-style:none;font-size:11px;font-weight:700;letter-spacing:.5px;
+      text-transform:uppercase;color:var(--ink-2)}
+    #clanRecruit .rc-more>summary::-webkit-details-marker{display:none}
+    #clanRecruit .rc-more>summary::after{content:"";width:7px;height:7px;margin-left:auto;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg) translateY(-2px);transition:transform .15s}
+    #clanRecruit .rc-more[open]>summary::after{transform:rotate(225deg) translateY(-2px)}
+    #clanRecruit .rc-preset{flex:1 1 100%}
+    #clanRecruit .rc-live-m{margin-left:0;flex-basis:100%}
+    #clanRecruit .rc-dep{grid-template-columns:minmax(0,1fr);padding:12px 13px}
+    #clanRecruit .rc-dep-a{grid-column:1;grid-row:auto;flex-direction:row}
+    #clanRecruit .rc-dep-a .btn{flex:1 1 0}
     #clanRecruit .rc-items{grid-template-columns:minmax(0,1fr)}
     #clanRecruit .rc-item-a .rc-del{margin-left:0}
     #clanRecruit .rc-form fieldset{padding:4px 14px 2px}
@@ -965,7 +1048,7 @@
     #clanRecruit .rc-bar{padding:10px 14px}
     #clanRecruit .rc-bar .btn,#clanRecruit .rc-go{flex:1 1 auto;justify-content:center}
   }
-  @media (prefers-reduced-motion:reduce){ #clanRecruit .rc-sk{animation:none} }
+  @media (prefers-reduced-motion:reduce){ #clanRecruit .rc-sk,#clanRecruit .rc-dot{animation:none} }
   /* ---- Classements des clans — refonte du 20/10/2026 ----
      Aux codes des vues de l'appli : #viewRanking porte .dashx comme la
      Vue clan, et la page réemploie ce qui existe déjà — .sec-h / .sec-desc
