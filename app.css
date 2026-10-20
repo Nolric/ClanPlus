@@ -321,13 +321,6 @@
   .rank{color:var(--muted);width:22px;display:inline-block;text-align:right;margin-right:10px}
   .pos{color:var(--good)} .neg{color:var(--bad)}
   .empty{padding:44px;text-align:center;color:var(--muted);font-size:14px}
-  .members{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}
-  .mem{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 11px;
-    background:var(--surface-2);border:1px solid var(--border);border-radius:9px;transition:.12s}
-  .mem:hover{border-color:var(--accent)}
-  .mem .mn{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .mem .mr{font-size:11px;color:var(--muted);white-space:nowrap}
-  .mem.me{border-color:var(--accent);background:var(--accent-soft)}
   .phead{margin-bottom:18px;font-size:14px;color:var(--ink-2)}
   .phead b{font-size:20px;color:var(--ink);letter-spacing:-.3px}
   .pcard{display:flex;align-items:center;gap:16px;background:var(--card);border:1px solid var(--border);
@@ -815,8 +808,6 @@
   .sec-h::after{content:"";flex:1;height:1px;background:var(--border)}
   .sec-desc{font-size:13px;color:var(--ink-2);margin:-6px 2px 15px;line-height:1.55;max-width:860px}
   .sec-desc b{color:var(--ink)} .sec-desc a{color:var(--series-1)}
-  .rat-grouplabel{font-size:12.5px;font-weight:700;color:var(--ink);margin:16px 2px 9px}
-  .rat .rmean{font-size:11px;color:var(--muted);margin-top:6px;line-height:1.35}
   .clan-hero{display:flex;gap:18px;align-items:center;flex-wrap:wrap;
     background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:22px;margin-bottom:14px;
     box-shadow:var(--shadow);position:relative;overflow:hidden}
@@ -825,8 +816,6 @@
     background:var(--clan-color,var(--accent));display:grid;place-items:center;
     color:#fff;font-weight:800;font-size:19px;text-shadow:0 1px 3px rgba(0,0,0,.45);box-shadow:var(--shadow-sm)}
   .clan-hero .em-img{background:var(--surface-2);object-fit:contain;padding:6px}
-  .res-em{width:30px;height:30px;border-radius:7px;object-fit:contain;background:var(--surface-2);flex:0 0 auto}
-  .res-em-ph{display:grid;place-items:center;font-size:11px;font-weight:700;color:var(--muted)}
   .clan-hero .ci{flex:1 1 260px;min-width:0}
   .clan-hero h2{font-size:22px;margin:0 0 3px;letter-spacing:-.4px}
   .clan-hero .motto{font-style:italic;color:var(--ink-2);margin:0 0 10px;font-size:14px}
@@ -835,13 +824,6 @@
   .clan-desc{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;margin-bottom:14px;
     font-size:14px;line-height:1.6;white-space:pre-line;color:var(--ink-2);box-shadow:var(--shadow-sm)}
   .clan-desc b{color:var(--ink);font-weight:650}
-  .rat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:12px;margin-bottom:6px}
-  .rat{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 15px;box-shadow:var(--shadow-sm);transition:.18s}
-  .rat:hover{box-shadow:var(--shadow);transform:translateY(-2px)}
-  .rat .rl{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-weight:700}
-  .rat .rv{font-size:24px;font-weight:750;margin-top:6px;letter-spacing:-.5px;line-height:1}
-  .rat .rr{font-size:12px;color:var(--ink-2);margin-top:6px;display:flex;gap:6px;align-items:center}
-  .rat .up{color:var(--good);font-weight:700} .rat .down{color:var(--bad);font-weight:700}
   .searchbar{display:flex;gap:10px;margin-bottom:6px}
   .searchbar input{flex:1}
   .searchbar .btn{background:var(--accent-soft);border-color:var(--accent);color:var(--ink)}
@@ -1067,11 +1049,177 @@
     #clanRanking .cr-tile,#clanRanking .cr-table td.c-rank::before{transition:none}
     #clanRanking .cr-tile:hover{transform:none}
   }
-  .res-row{display:flex;align-items:center;gap:14px;padding:12px 10px;border-top:1px solid var(--grid);cursor:pointer;transition:.12s;border-radius:8px}
-  .res-row:hover{background:var(--accent-soft)}
-  .res-row .rt{font-weight:750;min-width:76px;color:var(--accent)}
-  .res-row .rn{color:var(--ink);font-size:14px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
-  .res-row .rm{color:var(--muted);font-size:12px}
+  /* ---- Chercher un clan — refonte du 20/10/2026 ----
+     Même monde que la Vue clan et les Classements (#viewSearch porte
+     .dashx) : bandeau .hero2, verdict .vd, cartes .d2card, .btn. L'or
+     marque ton clan et l'action principale ; rien d'autre. */
+  #clanScout{color:var(--ink)}
+  #clanScout [hidden]{display:none !important}
+  #clanScout .ic{width:15px;height:15px;flex:none}
+  #clanScout .up{color:var(--good)} #clanScout .dn{color:var(--bad)} #clanScout .z{color:var(--muted)}
+  #clanScout>.sec-h{margin-top:4px}
+  #clanScout .cs-sk{display:inline-block;max-width:100%;height:12px;vertical-align:middle;border-radius:4px;background:var(--raised);
+    animation:csPulse 1.3s ease-in-out infinite}
+  @keyframes csPulse{50%{opacity:.45}}
+
+  /* La barre de recherche */
+  #clanScout .cs-bar{display:flex;gap:10px;margin:0 0 12px;padding:12px;border:1px solid var(--line);border-radius:13px;
+    background:linear-gradient(180deg,var(--panel),var(--panel-2))}
+  #clanScout .cs-field{position:relative;display:flex;align-items:center;flex:1;min-width:0;margin:0}
+  #clanScout .cs-field .ic{position:absolute;left:14px;width:17px;height:17px;color:var(--muted);pointer-events:none}
+  #clanScout .cs-field input{width:100%;height:46px;margin:0;padding:0 14px 0 42px;border:1px solid var(--border);border-radius:10px;
+    background:var(--surface-2);color:var(--ink);font:inherit;font-size:15px;outline:0;transition:border-color .15s,background-color .15s,box-shadow .15s}
+  #clanScout .cs-field input::placeholder{color:var(--muted)}
+  #clanScout .cs-field input:focus{border-color:var(--accent);background:var(--card);box-shadow:0 0 0 3px var(--gold-soft)}
+  #clanScout .cs-go{appearance:none;flex:none;height:46px;margin:0;padding:0 22px;border:0;border-radius:10px;cursor:pointer;
+    background:linear-gradient(180deg,var(--gold-2),var(--gold));color:#19150b;font:inherit;font-size:14px;font-weight:800;
+    transition:filter .15s,transform .15s cubic-bezier(.16,1,.3,1)}
+  #clanScout .cs-go:hover{filter:brightness(1.06);transform:translateY(-1px)}
+  #clanScout .cs-go:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
+
+  /* Récemment consultés */
+  #clanScout .cs-recent{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 2px 16px}
+  #clanScout .cs-recent-l{margin-right:4px;font-size:10.5px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted)}
+  #clanScout .cs-chip{appearance:none;display:inline-flex;align-items:center;gap:7px;margin:0;padding:5px 11px 5px 6px;border:1px solid var(--line);
+    border-radius:999px;background:var(--surface-1);color:var(--ink);font:inherit;font-size:12.5px;cursor:pointer;transition:border-color .15s,background-color .15s}
+  #clanScout .cs-chip:hover{border-color:var(--gold-line);background:var(--raised)}
+  #clanScout .cs-chip b{font-weight:600}
+  #clanScout .cs-chip-em{width:20px;height:20px;border-radius:5px;object-fit:contain}
+  #clanScout .cs-chip-em.ph{display:grid;place-items:center;background:var(--raised);font-size:8.5px;font-weight:700;color:var(--muted)}
+
+  /* Les résultats, en cartes */
+  #clanScout .cs-hint,#clanScout .cs-count{margin:2px 2px 12px;font-size:13px;color:var(--ink-2)}
+  #clanScout .cs-count b{color:var(--ink)}
+  #clanScout .cs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px}
+  #clanScout .cs-res{appearance:none;display:grid;grid-template-columns:40px minmax(0,1fr) auto 14px;align-items:center;gap:12px;min-width:0;margin:0;
+    padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface-1);color:var(--ink-2);font:inherit;text-align:left;
+    cursor:pointer;transition:transform .22s cubic-bezier(.16,1,.3,1),border-color .22s ease,background-color .22s ease}
+  #clanScout .cs-res:hover{transform:translateY(-2px);border-color:var(--ring)}
+  #clanScout .cs-res:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
+  #clanScout .cs-res.mine{border-color:var(--gold-line);background:linear-gradient(165deg,rgba(229,185,92,.12),rgba(229,185,92,.02))}
+  #clanScout .cs-res.sk{cursor:default;grid-template-columns:40px minmax(0,1fr)}
+  #clanScout .cs-res.sk:hover{transform:none;border-color:var(--line)}
+  #clanScout .cs-res.sk .cs-sk:first-child{height:40px;border-radius:9px}
+  #clanScout .cs-res-em{width:40px;height:40px;border-radius:9px;object-fit:contain}
+  #clanScout .cs-res-em.ph{display:grid;place-items:center;background:var(--raised);font-size:11px;font-weight:700;color:var(--muted)}
+  #clanScout .cs-res-t{display:flex;flex-direction:column;gap:3px;min-width:0}
+  #clanScout .cs-res-t b{font-family:var(--fx);font-size:16px;font-weight:700;letter-spacing:.4px;color:var(--ink)}
+  #clanScout .cs-res-t span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12.5px;color:var(--muted)}
+  #clanScout .cs-res.mine .cs-res-t b{color:var(--gold-2)}
+  #clanScout .cs-res-m{font-size:11.5px;color:var(--ink-2);white-space:nowrap;font-variant-numeric:tabular-nums}
+  #clanScout .cs-res-go{width:14px;height:14px;color:var(--muted);transition:color .15s,transform .15s}
+  #clanScout .cs-res:hover .cs-res-go{color:var(--gold);transform:translateX(2px)}
+  #clanScout .cs-you{display:inline-block;padding:2px 7px;border-radius:999px;background:var(--gold-soft);border:1px solid var(--gold-line);
+    color:var(--gold-2);font-size:9.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;white-space:nowrap;vertical-align:1px}
+  #clanScout .cs-msg{padding:34px 20px;border:1px dashed var(--line);border-radius:13px;text-align:center}
+  #clanScout .cs-msg p{margin:0 auto;max-width:520px;font-size:14px;line-height:1.55;color:var(--ink-2)}
+  #clanScout .cs-msg p.s{margin-top:6px;font-size:12.5px;color:var(--muted)}
+  #clanScout .cs-msg .btn{margin-top:14px}
+
+  /* La fiche : le bandeau d'identité de la Vue clan */
+  #clanScout .cs-hero{margin-bottom:16px}
+  #clanScout .cs-hero>.cs-sk:first-child{position:relative;z-index:1;height:100px;border-radius:15px}
+  #clanScout .cs-hero-name{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 0}
+  #clanScout .cs-meta{display:inline-flex;align-items:center;gap:7px}
+  #clanScout .cs-meta .ic{width:14px;height:14px;color:var(--gold)}
+  #clanScout .cs-hero-act{position:relative;z-index:1;display:flex;flex-direction:column;align-items:stretch;gap:8px;flex:none}
+  #clanScout .cs-hero-act .btn{justify-content:center;background:rgba(13,13,11,.6);text-decoration:none}
+  #clanScout .cs-vd .vd-t span{white-space:nowrap}
+  #clanScout .cs-vd .vd-n i{max-width:220px;margin-left:auto}
+  #clanScout .cs-vd .vd-t .cs-sk{height:30px} #clanScout .cs-vd .vd-p .cs-sk{height:14px}
+  #clanScout .cs-vd-btn{margin-top:14px}
+
+  /* Face à ton clan */
+  #clanScout .cs-card{background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--line);border-radius:13px;min-width:0}
+  #clanScout .cs-ttl{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 16px 6px}
+  #clanScout .cs-ttl h3{display:flex;align-items:center;gap:8px;margin:0;font:600 13px/1.2 var(--fx);letter-spacing:.5px;color:var(--ink)}
+  #clanScout .cs-ttl h3 .ic{color:var(--gold)}
+  #clanScout .cs-ttl .cnt{font:400 12px/1 system-ui,-apple-system,"Segoe UI",sans-serif;letter-spacing:0;color:var(--muted)}
+  #clanScout .cs-ttl .hint{font-size:11px;color:var(--muted)}
+  #clanScout .cs-scroll{overflow-x:auto;padding:2px 8px 8px}
+  #clanScout .cs-tbl{width:100%;border-collapse:collapse;table-layout:fixed;font-variant-numeric:tabular-nums}
+  #clanScout .cs-tbl thead th{padding:7px 12px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap;
+    font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted)}
+  #clanScout .cs-tbl thead th:first-child{width:38%;text-align:left}
+  #clanScout .cs-tbl thead th.me{color:var(--gold-2)}
+  #clanScout .cs-tbl thead th .cs-you{margin-left:4px}
+  #clanScout .cs-tbl.solo thead th:first-child{width:60%}
+  #clanScout .cs-tbl tr.cs-g th{padding:14px 12px 6px;border-bottom:1px solid var(--line-2);text-align:left;font-size:10.5px;font-weight:700;
+    letter-spacing:.8px;text-transform:uppercase;color:var(--ink-2)}
+  #clanScout .cs-tbl tbody th[scope=row],#clanScout .cs-tbl td{padding:8px 12px;border-bottom:1px solid var(--line-2);vertical-align:middle}
+  #clanScout .cs-tbl tbody th[scope=row]{text-align:left;font-weight:600;font-size:12.5px;color:var(--ink)}
+  #clanScout .cs-k{display:flex;align-items:center;gap:9px;min-width:0}
+  #clanScout .cs-k>span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #clanScout .cs-ic{width:24px;height:24px;flex:none;display:grid;place-items:center;border-radius:6px;background:var(--gold-soft);
+    border:1px solid var(--gold-line);color:var(--gold)}
+  #clanScout .cs-ic svg{width:13px;height:13px}
+  #clanScout .cs-v{text-align:right}
+  #clanScout .cs-v b{display:block;font-family:var(--fx);font-size:15px;font-weight:400;color:var(--ink)}
+  #clanScout .cs-v small{display:block;margin-top:2px;font-size:10.5px;color:var(--muted)}
+  #clanScout .cs-v small .up,#clanScout .cs-v small .dn{font-weight:700}
+  #clanScout .cs-v.me{background:rgba(229,185,92,.04)}
+  #clanScout .cs-v.me b{color:var(--gold-2)}
+  #clanScout .cs-w{text-align:right}
+  #clanScout .cs-w small{display:block;margin-top:3px;font-size:10.5px;color:var(--muted)}
+  #clanScout .cs-adv{display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:2px 8px;border-radius:999px;
+    background:var(--raised);border:1px solid var(--line);font-size:10.5px;font-weight:700;color:var(--ink-2)}
+  #clanScout .cs-adv.us{background:var(--gold-soft);border-color:var(--gold-line);color:var(--gold-2)}
+  #clanScout .cs-adv.them{color:var(--ink)}
+
+  /* Membres et présentation */
+  #clanScout .cs-two{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:12px;margin-top:12px;align-items:start}
+  #clanScout .cs-two.one{grid-template-columns:minmax(0,1fr)}
+  #clanScout .cs-mem{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:0 14px;margin:0;padding:2px 16px 8px;list-style:none}
+  #clanScout .cs-mem li{display:flex;align-items:center;gap:9px;min-width:0;padding:7px 0;border-bottom:1px solid var(--line-2);font-size:12.5px}
+  #clanScout .cs-rav{width:22px;height:22px;flex:none;object-fit:contain}
+  #clanScout .cs-rav.ph{display:grid;place-items:center;border-radius:50%;background:var(--raised);font-size:10px;font-weight:600;color:var(--ink-2)}
+  #clanScout .cs-mem .n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;color:var(--ink)}
+  #clanScout .cs-mem .grade{flex:none;font-size:11px}
+  #clanScout .grade.g-cmd{color:var(--gold-2)} #clanScout .grade.g-off{color:#c4bda9} #clanScout .grade.g-sol{color:var(--muted)}
+  #clanScout .cs-more{appearance:none;display:block;width:100%;margin:0;padding:11px;border:0;border-top:1px solid var(--line-2);
+    border-radius:0 0 13px 13px;background:none;color:var(--gold-2);font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
+  #clanScout .cs-more:hover{background:rgba(255,255,255,.02)}
+  #clanScout .cs-desc{padding:4px 16px 14px;font-size:13px;line-height:1.6;color:var(--ink-2);white-space:pre-line;overflow-wrap:anywhere}
+  #clanScout .cs-desc a{color:var(--gold-2)}
+  #clanScout .cs-desc b{color:var(--ink)}
+  #clanScout .cs-desc.cut{max-height:220px;overflow:hidden;-webkit-mask-image:linear-gradient(180deg,#000 70%,transparent);mask-image:linear-gradient(180deg,#000 70%,transparent)}
+
+  @media (max-width:900px){
+    #clanScout .cs-hero-act{flex-direction:row;width:100%}
+    #clanScout .cs-two{grid-template-columns:minmax(0,1fr)}
+  }
+  @media (max-width:640px){
+    #clanScout .cs-bar{flex-wrap:wrap;padding:10px}
+    #clanScout .cs-go{width:100%}
+    #clanScout .cs-grid{grid-template-columns:minmax(0,1fr)}
+    #clanScout .cs-res{grid-template-columns:36px minmax(0,1fr) auto;padding:11px 12px}
+    #clanScout .cs-res-em{width:36px;height:36px}
+    #clanScout .cs-res-go{display:none}
+    #clanScout .cs-hero .h2-em{width:72px;height:72px}
+    #clanScout .cs-hero-act .btn{flex:1}
+    #clanScout .cs-vd .vd-n i{margin-left:0}
+    #clanScout .cs-scroll{padding:2px 2px 6px}
+    #clanScout .cs-tbl thead th,#clanScout .cs-tbl tbody th[scope=row],#clanScout .cs-tbl td{padding-left:6px;padding-right:6px}
+    #clanScout .cs-tbl thead th .cs-you,#clanScout .cs-ic{display:none}
+    #clanScout .cs-v b{font-size:13.5px}
+    #clanScout .cs-adv{padding:2px 6px}
+    #clanScout .cs-mem{grid-template-columns:minmax(0,1fr);padding:2px 12px 6px}
+    /* le bandeau en colonne : le nom du clan garde toute la largeur */
+    #clanScout .cs-hero{flex-direction:column;align-items:flex-start;gap:14px;padding:18px}
+    #clanScout .cs-hero .h2-em{width:64px;height:64px;padding:6px;border-radius:12px}
+    #clanScout .cs-hero .h2-name{display:block;margin:4px 0 0}
+    #clanScout .cs-hero .h2-meta{flex-direction:column;align-items:flex-start;gap:8px}
+    /* trois colonnes : le verdict dit déjà qui mène, la colonne de ton clan reste en or */
+    #clanScout .cs-tbl .cs-w,#clanScout .cs-tbl .cs-wh{width:0;padding:0;overflow:hidden;visibility:hidden;font-size:0}
+    #clanScout .cs-tbl .cs-w>*{display:none}
+    #clanScout .cs-tbl thead th:first-child{width:40%}
+    #clanScout .cs-v small{font-size:10px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    #clanScout .cs-sk{animation:none}
+    #clanScout .cs-res,#clanScout .cs-go{transition:none}
+    #clanScout .cs-res:hover,#clanScout .cs-go:hover{transform:none}
+  }
   .banner{display:flex;align-items:center;gap:10px;padding:12px 16px;margin-bottom:18px;
     border-radius:12px;background:var(--accent-soft);border:1px solid var(--accent);font-size:13px;color:var(--ink)}
   footer{margin-top:32px;padding-top:20px;border-top:1px solid var(--border);color:var(--muted);font-size:12px;text-align:center}

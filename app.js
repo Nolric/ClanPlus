@@ -261,18 +261,6 @@ function fmtDesc(s){
   t=t.replace(/\*(.+?)\*/g,"<b>$1</b>");   // *gras*
   return t;
 }
-function ratCard(label,obj,meaning,isPct){
-  if(!obj || obj.value==null) return "";
-  const val = isPct ? (fmt(obj.value,2)+" %") : fmt(obj.value);
-  let rank="";
-  if(obj.rank!=null){
-    let d="";
-    if(obj.rank_delta){ const up=obj.rank_delta>0;
-      d=`<span class="${up?"up":"down"}" title="évolution du classement">${up?"▲":"▼"}${Math.abs(obj.rank_delta)}</span>`; }
-    rank=`<div class="rr">Rang ${fmt(obj.rank)} ${d}</div>`;
-  }
-  return `<div class="rat"><div class="rl">${esc(label)}</div><div class="rv">${val}</div>${rank}${meaning?`<div class="rmean">${esc(meaning)}</div>`:""}</div>`;
-}
 function renderClanInfo(){
   renderDashHero();
   const de=document.getElementById("dashDesc");
@@ -285,31 +273,6 @@ function renderClanInfo(){
   const b=document.getElementById("descExp");
   if(b) b.onclick=()=>{ const body=document.getElementById("descBody"); const nowHidden=body.classList.toggle("hidden"); b.textContent=nowHidden?"Déplier ▾":"Replier ▴"; };
 }
-function clanBlockHTML(info, rt){
-  let h="";
-  if(rt){
-    h+=`<div class="sec-h">Le niveau officiel du clan</div>
-      <p class="sec-desc">Ces chiffres viennent <b>directement de Wargaming</b> et situent le clan <b>parmi tous les clans</b>.
-      Le « <b>Rang</b> » est la position au classement (<b>rang 1 = le meilleur</b>) ;
-      <span class="tagpos">▲</span> = le clan monte, <span class="tagneg">▼</span> = il descend.</p>`;
-    h+=`<div class="rat-grouplabel">🛡️ En Bastion / Forteresse <span class="hint" style="font-weight:400">(l'Elo global et le classement sont déjà en haut)</span></div><div class="rat-grid">`;
-    h+=ratCard("Bastion tier 10", rt.fb_elo_rating_10, "parties en tier 10");
-    h+=ratCard("Bastion tier 8", rt.fb_elo_rating_8, "parties en tier 8");
-    h+=ratCard("Bastion tier 6", rt.fb_elo_rating_6, "parties en tier 6");
-    h+=ratCard("Score Forteresse", rt.rating_fort, "activité de la forteresse");
-    h+=`</div>`;
-    h+=`<div class="rat-grouplabel">🌍 En Clan Wars (carte globale)</div><div class="rat-grid">`;
-    h+=ratCard("Niveau Carte Globale", rt.gm_elo_rating, "force en campagne mondiale");
-    h+=`</div>`;
-    h+=`<div class="rat-grouplabel">📊 Général</div><div class="rat-grid">`;
-    h+=ratCard("Efficacité", rt.efficiency, "efficacité globale du clan");
-    h+=ratCard("% de victoires moyen", rt.wins_ratio_avg, "moyenne de tous les joueurs", true);
-    h+=ratCard("Niveau moyen des joueurs", rt.global_rating_avg, "indice de perf. global (type WN8)");
-    h+=`</div>`;
-  }
-  return h;
-}
-
 /* ============================================================
    DASHBOARD "MON CLAN" — hero, profil éditable (nationalité +
    prochaine opération), KPIs animés, évolution, à la une.
@@ -2106,42 +2069,238 @@ function renderReplay(host, rep, mkey, demo){
   requestAnimationFrame(frame);
 }
 
-async function searchClans(){
-  const query=document.getElementById("clanQuery").value.trim();
-  const res=document.getElementById("clanResults");
-  document.getElementById("searchedClan").innerHTML="";
-  if(query.length<2){ res.innerHTML='<div class="empty">Tape au moins 2 caractères.</div>'; return; }
-  res.innerHTML=cpLoader('Recherche…');
-  const r=await fnCall("clan-lookup",{session:localStorage.getItem(LS_SESSION),query});
-  if(!r.ok){ res.innerHTML='<div class="empty">Erreur : '+esc(r.j.error||String(r.status))+'</div>'; return; }
-  const list=r.j.results||[];
-  if(!list.length){ res.innerHTML='<div class="empty">Aucun clan trouvé.</div>'; return; }
-  res.innerHTML=list.map(c=>{
-    const em=(c.emblems&&c.emblems.x32&&c.emblems.x32.portal)||"";
-    const emHtml=em?`<img class="res-em" src="${esc(em)}" alt="" loading="lazy">`:`<span class="res-em res-em-ph">${esc((c.tag||"?").slice(0,2))}</span>`;
-    return `<div class="res-row" data-id="${c.clan_id}">${emHtml}
-    <span class="rt">[${esc(c.tag||"")}]</span><span class="rn">${esc(c.name||"")}</span>
-    <span class="rm">${fmt(c.members_count||0)} membres</span></div>`;}).join("");
-  res.querySelectorAll(".res-row").forEach(row=>row.onclick=()=>openSearchedClan(Number(row.dataset.id)));
+/* ============================================================
+   CHERCHER UN CLAN — refonte du 20/10/2026
+   On cherche un clan pour JAUGER UN ADVERSAIRE (choix de Robert) :
+   la fiche dit d'abord s'il est devant ou derrière ton clan, et de
+   combien, puis le détail classement par classement, ses membres et
+   sa présentation. Habillage de la Vue clan : bandeau .hero2, verdict
+   .vd, cartes .d2card. Les données passent par la fonction
+   clan-lookup, réservée aux joueurs connectés.
+   ============================================================ */
+const CS={ q:"", req:0, ficheReq:0, results:null, clan:null, timer:0, memAll:false, descAll:false };
+const CS_RECENT="cp_scout_recent";
+// les classements comparés ; les icônes sont celles des tuiles de la Vue clan
+const CS_GROUPS=[
+  ["Bastion",[["fb_elo_rating_10","Bastion rang X","i-fort"],["fb_elo_rating_8","Bastion rang VIII","i-fort"],
+    ["fb_elo_rating_6","Bastion rang VI","i-fort"],["fb_elo_rating","Bastion, cote globale","i-shield"],["rating_fort","Forteresse","i-fort"]]],
+  ["Général",[["gm_elo_rating","Carte globale","i-globe"],["efficiency","Efficacité","i-bolt"],
+    ["wins_ratio_avg","Taux de victoires","i-flag",2],["global_rating_avg","Niveau moyen des joueurs","i-award"]]],
+];
+const CS_BASTION=["fb_elo_rating_10","fb_elo_rating_8","fb_elo_rating_6","fb_elo_rating"];
+const CS_LABEL={}, CS_DEC={};
+CS_GROUPS.forEach(g=>g[1].forEach(m=>{ CS_LABEL[m[0]]=m[1]; CS_DEC[m[0]]=m[3]||0; }));
+const CS_EXCLU={ inactivity:"Motif donné par Wargaming : inactivité.",
+  limits:"Motif donné par Wargaming : conditions minimales non remplies." };
+
+const csEl=id=>document.getElementById(id);
+const csSk=w=>`<span class="cs-sk" style="width:${w}"></span>`;
+function csEmblemUrl(e){ e=e||{}; return (e.x64&&(e.x64.portal||e.x64.wot))||(e.x32&&e.x32.portal)||(e.x195&&e.x195.portal)||""; }
+function csEm(url, tag, cls){ return url ? `<img class="${cls}" src="${esc(url)}" alt="" loading="lazy" decoding="async">`
+  : `<span class="${cls} ph" aria-hidden="true">${esc(String(tag||"?").slice(0,3))}</span>`; }
+function csMyId(){ return Number(localStorage.getItem("cp_clan")) || (CLANINFO&&CLANINFO.clan_id) || 0; }
+function csMyTag(){ return (CLANINFO&&CLANINFO.tag) || CLANTAG || ""; }
+function csVal(f,v){ return v==null ? "—" : fmt(v,CS_DEC[f])+(f==="wins_ratio_avg"?(window.CP_LANG==="en"?"%":" %"):""); }
+function csPts(f,g){ const s=fmt(g,CS_DEC[f]); return Math.abs(g)<=1 ? s+" pt" : s+" pts"; }
+function csRanked(o,f){ return o && o[f] && o[f].rank!=null && o[f].value!=null ? o[f] : null; }
+
+/* Les clans déjà consultés, gardés dans CE navigateur seulement. */
+function csRecent(){ try{ const v=JSON.parse(localStorage.getItem(CS_RECENT)||"[]"); return Array.isArray(v)?v:[]; }catch(e){ return []; } }
+function csRemember(c){ try{ const L=csRecent().filter(x=>x.id!==c.id); L.unshift(c);
+  localStorage.setItem(CS_RECENT, JSON.stringify(L.slice(0,8))); }catch(e){} }
+
+function csShow(view){   // "idle" | "results" | "fiche"
+  csEl("clanResults").hidden = view==="fiche";
+  csEl("searchedClan").hidden = view!=="fiche";
+  const L=csRecent(), r=csEl("csRecent");
+  r.hidden = view!=="idle" || !L.length;
+  r.innerHTML = L.length ? `<span class="cs-recent-l">Récemment consultés</span>`+L.map(c=>
+    `<button type="button" class="cs-chip" data-cs-open="${c.id}" data-tag="${esc(c.tag)}">${csEm(c.em,c.tag,"cs-chip-em")}<b data-i18n-skip>[${esc(c.tag)}]</b></button>`).join("") : "";
 }
-async function openSearchedClan(clanId){
-  const sc=document.getElementById("searchedClan");
-  sc.innerHTML='<div class="card">'+cpLoader()+'</div>';
-  const r=await fnCall("clan-lookup",{session:localStorage.getItem(LS_SESSION),clan_id:clanId});
-  if(!r.ok || (!r.j.info && !r.j.ratings)){ sc.innerHTML='<div class="card"><div class="empty">Impossible de charger ce clan.</div></div>'; return; }
-  let h=clanBlockHTML(r.j.info, r.j.ratings);
-  const members=r.j.members||[];
-  if(members.length){
-    const sorted=members.slice().sort((a,b)=>{
-      const ra=ROLE_ORDER[normRole(a.role_i18n)]!=null?ROLE_ORDER[normRole(a.role_i18n)]:9;
-      const rb=ROLE_ORDER[normRole(b.role_i18n)]!=null?ROLE_ORDER[normRole(b.role_i18n)]:9;
-      if(ra!==rb) return ra-rb; return String(a.account_name||"").localeCompare(String(b.account_name||""));
-    });
-    h+=`<div class="card" style="margin-top:14px"><h2>Membres <span class="hint">(${members.length})</span></h2><div class="members">`+
-      sorted.map(m=>`<div class="mem"><span class="mn">${esc(m.account_name||"?")}</span><span class="mr">${esc(ROLE_FR[normRole(m.role_i18n)]||m.role_i18n||"")}</span></div>`).join("")+
-      `</div></div>`;
+
+/* ── La recherche : elle répond pendant la frappe ── */
+async function searchClans(){
+  clearTimeout(CS.timer);
+  const q=csEl("clanQuery").value.trim(), res=csEl("clanResults");
+  if(q.length<2){
+    CS.req++; CS.results=null; CS.q=q;
+    res.innerHTML = q ? `<p class="cs-hint">Tape au moins 2 caractères.</p>` : "";
+    csShow("idle"); return;
   }
-  sc.innerHTML=h;
+  if(CS.results && CS.q===q){ csRenderResults(); return; }
+  const req=++CS.req; CS.q=q;
+  csShow("results");
+  res.innerHTML=`<div class="cs-grid">${Array.from({length:6},()=>`<div class="cs-res sk">${csSk("40px")}<span class="cs-res-t">${csSk("70px")}${csSk("120px")}</span></div>`).join("")}</div>`;
+  const r=await fnCall("clan-lookup",{ session:localStorage.getItem(LS_SESSION), query:q });
+  if(req!==CS.req) return;
+  if(!r.ok){
+    CS.results=null;
+    res.innerHTML=`<div class="cs-msg"><p>La recherche n'a pas abouti.</p><p class="s">${esc((r.j&&r.j.error)||String(r.status))}</p>
+      <button type="button" class="btn" data-cs-retry>Réessayer</button></div>`;
+    return;
+  }
+  CS.results=r.j.results||[];
+  csRenderResults();
+}
+function csRenderResults(){
+  const res=csEl("clanResults"), L=CS.results||[], my=csMyId();
+  csShow("results");
+  if(!L.length){
+    res.innerHTML=`<div class="cs-msg"><p>Aucun clan ne correspond à « <b>${esc(CS.q)}</b> ».</p>
+      <p class="s">Wargaming cherche dans les tags et les noms des clans du serveur EU.</p></div>`;
+    return;
+  }
+  const head = L.length>=15
+    ? `<p class="cs-count">Les <b>15</b> premiers clans pour « <b>${esc(CS.q)}</b> » — précise ta recherche pour en voir d'autres.</p>`
+    : `<p class="cs-count"><b>${L.length}</b> ${L.length>1?"clans":"clan"} pour « <b>${esc(CS.q)}</b> »</p>`;
+  res.innerHTML=head+`<div class="cs-grid">${L.map(c=>{ const id=Number(c.clan_id), mine=id===my;
+    return `<button type="button" class="cs-res${mine?" mine":""}" data-cs-open="${id}" data-tag="${esc(c.tag||"")}">
+      ${csEm(csEmblemUrl(c.emblems),c.tag,"cs-res-em")}
+      <span class="cs-res-t"><b data-i18n-skip>[${esc(c.tag||"?")}]</b><span data-i18n-skip>${esc(c.name||"")}</span></span>
+      <span class="cs-res-m">${mine?'<span class="cs-you">ton clan</span>':`<span>${fmt(c.members_count||0)} membres</span>`}</span>
+      <svg class="ic cs-res-go" aria-hidden="true"><use href="#i-chev"/></svg></button>`; }).join("")}</div>`;
+}
+
+/* ── La fiche d'un clan ── */
+async function openSearchedClan(clanId){
+  const id=Number(clanId); if(!id) return;
+  const req=++CS.ficheReq, sc=csEl("searchedClan");
+  csShow("fiche");
+  sc.innerHTML=`<div class="hero2 cs-hero">${csSk("100px")}<div class="h2-ci">${csSk("220px")}<br>${csSk("160px")}</div></div>
+    <section class="vd cs-vd"><div class="vd-haut"><div class="vd-g"><p class="vd-t">${csSk("60%")}</p><p class="vd-p">${csSk("85%")}</p></div></div></section>`;
+  const r=await fnCall("clan-lookup",{ session:localStorage.getItem(LS_SESSION), clan_id:id });
+  if(req!==CS.ficheReq) return;
+  if(!r.ok || (!r.j.info && !r.j.ratings)){
+    sc.innerHTML=`<div class="cs-msg"><p>La fiche de ce clan n'a pas pu être chargée.</p><p class="s">C'est en général passager.</p>
+      <button type="button" class="btn" data-cs-open="${id}">Réessayer</button>${CS.results?` <button type="button" class="btn" data-cs-back>‹ Résultats</button>`:""}</div>`;
+    return;
+  }
+  const info=r.j.info||{};
+  CS.clan={ id, info, rt:r.j.ratings||null, members:Array.isArray(r.j.members)?r.j.members:[] };
+  CS.memAll=false; CS.descAll=false;
+  csRemember({ id, tag:info.tag||"", name:info.name||"", em:csEmblemUrl(info.emblems) });
+  csRenderFiche();
+  window.scrollTo({ top:0 });
+}
+function csRenderFiche(){
+  const c=CS.clan, info=c.info, rt=c.rt, tag=info.tag||"?", T=`[${esc(tag)}]`;
+  const my=csMyId(), mine=!!my && c.id===my, own=(!mine && CLANRATINGS) ? CLANRATINGS : null, myT=`[${esc(csMyTag()||"—")}]`;
+
+  /* le bandeau d'identité, celui de la Vue clan */
+  const created=info.created_at ? new Date(info.created_at*1000).toLocaleDateString(window.CP_LOC,{day:"numeric",month:"long",year:"numeric"}) : "";
+  const em=csEmblemUrl(info.emblems);
+  const hero=`<div class="hero2 cs-hero">
+    ${em?`<img class="h2-em" src="${esc(em)}" alt="">`:`<div class="h2-em h2-em-ph">${esc(tag)}</div>`}
+    <div class="h2-ci">
+      <div class="cs-hero-name"><span class="h2-tag" data-i18n-skip>${T}</span>${info.name?`<span class="h2-name" data-i18n-skip>${esc(info.name)}</span>`:""}</div>
+      ${info.motto?`<div class="h2-motto" data-i18n-skip>« ${esc(info.motto)} »</div>`:""}
+      <div class="h2-meta">
+        <span class="cs-meta"><svg class="ic" aria-hidden="true"><use href="#i-users"/></svg><span><b>${fmt(info.members_count||c.members.length)}</b> membres</span></span>
+        ${created?`<span class="cs-meta"><svg class="ic" aria-hidden="true"><use href="#i-cal"/></svg><span>Créé le <b>${esc(created)}</b></span></span>`:""}
+        ${info.leader_name?`<span class="cs-meta"><svg class="ic" aria-hidden="true"><use href="#i-star"/></svg><span>Commandant : <b>${esc(info.leader_name)}</b></span></span>`:""}
+      </div>
+    </div>
+    <div class="cs-hero-act">
+      ${CS.results?`<button type="button" class="btn" data-cs-back>‹ Résultats</button>`:""}
+      <a class="btn" href="https://eu.wargaming.net/clans/wot/${c.id}/" target="_blank" rel="noopener">Fiche Wargaming ↗</a>
+    </div>
+  </div>`;
+
+  /* le verdict : devant ou derrière ton clan, et de combien */
+  const ref=own ? CS_BASTION.find(f=>csRanked(rt,f) && csRanked(own,f)) : null;
+  const refT=CS_BASTION.find(f=>csRanked(rt,f));
+  let vd;
+  if(mine){
+    vd=`<div class="vd-haut"><div class="vd-g"><h3 class="vd-t">C'est <em>ton clan</em>.</h3>
+      <p class="vd-p">Ses chiffres détaillés, ses batailles et ses joueurs sont dans la Vue clan.</p>
+      <button type="button" class="btn cs-vd-btn" data-cs-home>Ouvrir la Vue clan</button></div></div>`;
+  }else if(ref){
+    const a=rt[ref], b=own[ref], gap=Math.abs(a.value-b.value);
+    const titre = a.rank===b.rank ? `${T} est <em>à égalité</em> avec ton clan en <span>${CS_LABEL[ref]}</span>.`
+      : a.rank<b.rank ? `${T} est <em>devant</em> ton clan en <span>${CS_LABEL[ref]}</span>.`
+      : `${T} est <em>derrière</em> ton clan en <span>${CS_LABEL[ref]}</span>.`;
+    const ph=[ gap>0
+      ? `<b>#${fmt(a.rank)}</b> contre <b>#${fmt(b.rank)}</b> pour ton clan, avec <b>${csPts(ref,gap)}</b> d'écart.`
+      : `<b>#${fmt(a.rank)}</b> contre <b>#${fmt(b.rank)}</b> pour ton clan, à égalité de points.` ];
+    const both=CS_GROUPS.flatMap(g=>g[1]).map(m=>m[0]).filter(f=>csRanked(rt,f) && csRanked(own,f));
+    const k=both.filter(f=>rt[f].rank<own[f].rank).length, n=both.length;
+    if(n>1){
+      ph.push(k===n ? `Il devance ton clan dans les <b>${n}</b> classements où les deux figurent.`
+        : k===0 ? `Ton clan le devance dans les <b>${n}</b> classements où les deux figurent.`
+        : `Il devance ton clan dans <b>${k}</b> ${k>1?"classements":"classement"} sur <b>${n}</b>.`);
+    }
+    vd=`<div class="vd-haut"><div class="vd-g"><h3 class="vd-t">${titre}</h3><p class="vd-p">${ph.map(x=>`<span>${x}</span>`).join(" ")}</p></div>
+      <div class="vd-n"><b>#${fmt(a.rank)}</b><i>${CS_LABEL[ref]}</i></div></div>`;
+  }else if(refT){
+    vd=`<div class="vd-haut"><div class="vd-g"><h3 class="vd-t">${T} est classé <em>#${fmt(rt[refT].rank)}</em> en <span>${CS_LABEL[refT]}</span>.</h3>
+      <p class="vd-p">${own?"Ton clan n'est pas classé dans les mêmes rangs de Bastion : pas de comparaison directe."
+        :"La position de ton clan n'est pas disponible : pas de comparaison directe."}</p></div>
+      <div class="vd-n"><b>#${fmt(rt[refT].rank)}</b><i>${CS_LABEL[refT]}</i></div></div>`;
+  }else{
+    const why=CS_EXCLU[rt&&rt.exclude_reasons&&rt.exclude_reasons.fort_elo_rating_10] || "";
+    vd=`<div class="vd-haut"><div class="vd-g"><h3 class="vd-t">${T} n'est <em>classé dans aucun</em> rang de Bastion.</h3>
+      ${why?`<p class="vd-p">${why}</p>`:""}</div></div>`;
+  }
+
+  /* classement par classement */
+  const cmp=!!own;
+  // une valeur 0 sans rang (Carte globale hors campagne) ne dit rien : on affiche « — »
+  const cell=(o,f)=>{ const s=o&&o[f]; if(!s || s.value==null || (!s.value && s.rank==null)) return `<span class="z">—</span>`;
+    const d=Number(s.rank_delta||0);
+    const rk = s.rank!=null ? `#${fmt(s.rank)}${d?` <span class="${d>0?"up":"dn"}">${d>0?"▲":"▼"}${fmt(Math.abs(d))}</span>`:""}` : "non classé";
+    return `<b>${csVal(f,s.value)}</b><small>${rk}</small>`; };
+  const adv=f=>{ const a=csRanked(rt,f), b=csRanked(own,f); if(!a||!b) return `<span class="z">—</span>`;
+    if(a.rank===b.rank) return `<span class="cs-adv">Égalité</span>`;
+    const g=Math.abs(a.value-b.value);
+    return a.rank<b.rank ? `<span class="cs-adv them" data-i18n-skip>${T}</span><small>${csPts(f,g)}</small>`
+      : `<span class="cs-adv us">Ton clan</span><small>${csPts(f,g)}</small>`; };
+  const rows=CS_GROUPS.map(([g,ms])=>`<tr class="cs-g"><th colspan="${cmp?4:2}" scope="colgroup">${g}</th></tr>`+ms.map(([f,l,ic])=>
+    `<tr><th scope="row"><span class="cs-k"><span class="cs-ic" aria-hidden="true"><svg class="ic"><use href="#${ic}"/></svg></span><span>${l}</span></span></th>
+      <td class="cs-v">${cell(rt,f)}</td>${cmp?`<td class="cs-v me">${cell(own,f)}</td><td class="cs-w">${adv(f)}</td>`:""}</tr>`).join("")).join("");
+  const table=`<section class="d2card cs-card">
+    <div class="cs-ttl"><h3><svg class="ic" aria-hidden="true"><use href="#i-swords"/></svg><span>${cmp?"Face à ton clan":"Niveau officiel Wargaming"}</span></h3>
+      <span class="hint">rang 1 = le meilleur</span></div>
+    <div class="cs-scroll"><table class="cs-tbl${cmp?"":" solo"}"><thead><tr><th scope="col">Classement</th>
+      <th scope="col" data-i18n-skip>${T}</th>${cmp?`<th scope="col" class="me"><span data-i18n-skip>${myT}</span> <span class="cs-you">ton clan</span></th><th scope="col" class="cs-wh">Avantage</th>`:""}
+    </tr></thead><tbody>${rows}</tbody></table></div></section>`;
+
+  /* les membres, par grade */
+  const ms=c.members.map(m=>{ const k=normRole(m.role_i18n), o=ROLE_ORDER[k]!=null?ROLE_ORDER[k]:9;
+    return { name:m.account_name||"?", role:ROLE_FR[k]||m.role_i18n||"", o, icon:roleIcon(m.role_i18n) }; })
+    .sort((a,b)=>a.o-b.o || String(a.name).localeCompare(String(b.name)));
+  const shown=CS.memAll ? ms : ms.slice(0,15);
+  const gCls=o=>o<=1?"g-cmd":o<=3?"g-off":"g-sol";
+  const members=ms.length ? `<section class="d2card cs-card">
+    <div class="cs-ttl"><h3><svg class="ic" aria-hidden="true"><use href="#i-users"/></svg><span>Membres</span><span class="cnt">${ms.length}</span></h3><span class="hint">par grade</span></div>
+    <ul class="cs-mem">${shown.map(m=>`<li>${m.icon?`<img class="cs-rav" src="${m.icon}" alt="" title="${esc(m.role)}">`:`<span class="cs-rav ph">${esc(String(m.name)[0].toUpperCase())}</span>`}
+      <span class="n" data-i18n-skip>${esc(m.name)}</span><span class="grade ${gCls(m.o)}">${esc(m.role)}</span></li>`).join("")}</ul>
+    ${ms.length>15?`<button type="button" class="cs-more" data-cs-mem>${CS.memAll?"Réduire ▴":`Afficher les ${ms.length} membres ↓`}</button>`:""}</section>` : "";
+
+  /* la présentation écrite par le clan */
+  const longDesc=String(info.description||"").length>420;
+  const desc=info.description ? `<section class="d2card cs-card">
+    <div class="cs-ttl"><h3><svg class="ic" aria-hidden="true"><use href="#i-doc"/></svg><span>Présentation du clan</span></h3></div>
+    <div class="cs-desc${longDesc&&!CS.descAll?" cut":""}" data-i18n-skip>${fmtDesc(info.description)}</div>
+    ${longDesc?`<button type="button" class="cs-more" data-cs-desc>${CS.descAll?"Réduire ▴":"Lire la suite ↓"}</button>`:""}</section>` : "";
+
+  csEl("searchedClan").innerHTML=hero+`<section class="vd cs-vd">${vd}</section>`+table
+    +((members||desc)?`<div class="cs-two${members&&desc?"":" one"}">${members}${desc}</div>`:"");
+}
+
+/* ── Branchements ── */
+function csInit(){
+  const root=csEl("clanScout"); if(!root) return;
+  csEl("csForm").addEventListener("submit",e=>{ e.preventDefault(); searchClans(); });
+  csEl("clanQuery").addEventListener("input",()=>{ clearTimeout(CS.timer); CS.timer=setTimeout(searchClans,450); });
+  root.addEventListener("click",e=>{
+    const o=e.target.closest("[data-cs-open]"); if(o){ openSearchedClan(Number(o.dataset.csOpen)); return; }
+    if(e.target.closest("[data-cs-back]")){ CS.ficheReq++; csRenderResults(); return; }
+    if(e.target.closest("[data-cs-retry]")){ CS.results=null; searchClans(); return; }
+    if(e.target.closest("[data-cs-home]")){ switchView("clan"); window.scrollTo({ top:0 }); return; }
+    if(e.target.closest("[data-cs-mem]")){ CS.memAll=!CS.memAll; csRenderFiche(); return; }
+    if(e.target.closest("[data-cs-desc]")){ CS.descAll=!CS.descAll; csRenderFiche(); return; }
+  });
+  csShow("idle");
 }
 
 let MEM_EXPANDED=false;
@@ -3150,8 +3309,7 @@ function wireUI(){
   document.querySelectorAll("#nav .tab").forEach(t=>t.onclick=()=>switchView(t.dataset.v));
   document.querySelectorAll("#blScope [data-scope]").forEach(b=>b.onclick=()=>setBlScope(b.dataset.scope));
   document.getElementById("playerSel").onchange=e=>{ SELP=Number(e.target.value); renderPlayerView(); };
-  document.getElementById("clanSearchBtn").onclick=searchClans;
-  document.getElementById("clanQuery").addEventListener("keydown",e=>{ if(e.key==="Enter") searchClans(); });
+  csInit();   // Chercher un clan : recherche pendant la frappe, fiche, récents
   document.getElementById("luNewBtn").onclick=()=>luCreate();
   document.getElementById("loNewBtn").onclick=()=>openLoadoutEditor(null);
   document.getElementById("tlNewBtn").onclick=()=>openTierlistEditor(null);
@@ -11483,7 +11641,7 @@ function initClanRanking(clanIdIn, clanTagIn){
     if(!id || typeof openSearchedClan!=="function") return;
     switchView("search");
     const q=document.getElementById("clanQuery"); if(q) q.value=tag||"";
-    const res=document.getElementById("clanResults"); if(res) res.innerHTML="";
+    CS.results=null; CS.q=tag||"";
     window.scrollTo({ top:0 });
     openSearchedClan(id);
   }
