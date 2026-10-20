@@ -975,6 +975,7 @@ function switchView(v){
   if(v==="loadouts") loadLoadouts();
   if(v==="strats") loadStrats();
   if(v==="ranking") loadRanking();
+  if(v==="search") csEnter();
   if(v==="recruit") loadRecruit();
 }
 
@@ -2112,10 +2113,91 @@ function csRemember(c){ try{ const L=csRecent().filter(x=>x.id!==c.id); L.unshif
 function csShow(view){   // "idle" | "results" | "fiche"
   csEl("clanResults").hidden = view==="fiche";
   csEl("searchedClan").hidden = view!=="fiche";
-  const L=csRecent(), r=csEl("csRecent");
-  r.hidden = view!=="idle" || !L.length;
-  r.innerHTML = L.length ? `<span class="cs-recent-l">Récemment consultés</span>`+L.map(c=>
-    `<button type="button" class="cs-chip" data-cs-open="${c.id}" data-tag="${esc(c.tag)}">${csEm(c.em,c.tag,"cs-chip-em")}<b data-i18n-skip>[${esc(c.tag)}]</b></button>`).join("") : "";
+  const r=csEl("csRecent");
+  r.hidden = view!=="idle";
+  r.innerHTML = view==="idle" ? csRenderSuggest() : "";
+}
+
+/* ── Les suggestions, quand la barre est vide ──
+   Trois sources, de la plus utile pour jauger un adversaire à la moins :
+   les clans affrontés (batailles enregistrées par le mod), les clans
+   juste autour du tien au classement, et ceux déjà consultés. */
+const CS_NEAR={ state:"", list:[], label:"" };
+function csFoes(){
+  if(typeof BATTLE_ENEMY==="undefined" || !Array.isArray(RAW)) return [];
+  const last={}, my=String(csMyTag()).toUpperCase(), par={};
+  RAW.forEach(r=>{ if(r.battleId!=null && r.ts) last[r.battleId]=Math.max(last[r.battleId]||0, r.ts); });
+  Object.keys(BATTLE_ENEMY).forEach(bid=>{
+    const tag=String(BATTLE_ENEMY[bid]||"").replace(/^\[|\]$/g,"");
+    if(!tag || tag==="?" || tag.toUpperCase()===my) return;
+    const k=tag.toUpperCase(), o=par[k]=par[k]||{ tag, n:0, ts:0 };
+    o.n++; o.ts=Math.max(o.ts, last[bid]||0);
+  });
+  return Object.values(par).sort((a,b)=>b.ts-a.ts || b.n-a.n).slice(0,8);
+}
+function csAgo(ts){
+  if(!ts) return "";
+  const j=Math.floor((Date.now()/1000-ts)/86400);
+  return j<=0 ? "aujourd'hui" : j===1 ? "hier" : `il y a ${j} j`;
+}
+async function csWg(path, params){
+  const q=new URLSearchParams({ application_id:WG_APP_ID, ...params });
+  for(let n=1;;n++){
+    try{ const j=await (await fetch(`${WG_API}${path}?${q}`)).json(); if(j.status==="ok") return j; throw new Error(j.error?.message||"wg"); }
+    catch(e){ if(n>=3) throw e; await new Promise(r=>setTimeout(r, n*900)); }
+  }
+}
+// tes voisins au classement : une seule fois par session, dans le premier rang de Bastion où ton clan figure
+async function csLoadNear(){
+  const my=csMyId(), rt=CLANRATINGS;
+  if(CS_NEAR.state || !my || !rt) return;
+  const f=CS_BASTION.find(x=>rt[x] && rt[x].rank!=null);
+  if(!f){ CS_NEAR.state="none"; return; }
+  CS_NEAR.state="loading";
+  const rankField={ fb_elo_rating_10:"fort_elo_rating_10", fb_elo_rating_8:"fort_elo_rating_8",
+    fb_elo_rating_6:"fort_elo_rating_6", fb_elo_rating:"fort_elo_rating" }[f];
+  try{
+    const j=await csWg("/wot/clanratings/neighbors/",{ clan_id:my, rank_field:rankField, limit:2, fields:"clan_id,clan_tag,clan_name,"+f });
+    const L=(j.data||[]).filter(c=>c && c[f] && c[f].rank!=null && Number(c.clan_id)!==my)
+      .map(c=>({ id:Number(c.clan_id), tag:c.clan_tag||"", name:c.clan_name||"", rank:c[f].rank, value:c[f].value }))
+      .sort((a,b)=>a.rank-b.rank);
+    if(L.length){
+      try{ const e=await csWg("/wgn/clans/info/",{ clan_id:L.map(c=>c.id).join(","), fields:"clan_id,emblems" });
+        L.forEach(c=>{ c.em=csEmblemUrl(e.data?.[String(c.id)]?.emblems); }); }catch(e){ /* sans emblème, tant pis */ }
+    }
+    CS_NEAR.list=L; CS_NEAR.label=CS_LABEL[f]; CS_NEAR.state="ok";
+  }catch(e){ CS_NEAR.state="err"; }
+  if(!csEl("clanQuery").value.trim() && csEl("searchedClan").hidden) csShow("idle");
+}
+function csRenderSuggest(){
+  const foes=csFoes(), near=CS_NEAR.list, rec=csRecent(), chip=(attr,em,tag,meta)=>
+    `<button type="button" class="cs-chip" ${attr}>${em}<b data-i18n-skip>[${esc(tag)}]</b>${meta?`<small>${meta}</small>`:""}</button>`;
+  const grp=(ic,titre,corps)=>`<div class="cs-sug"><p class="cs-sug-l"><svg class="ic" aria-hidden="true"><use href="#${ic}"/></svg>${titre}</p><div class="cs-sug-row">${corps}</div></div>`;
+  let h="";
+  if(foes.length) h+=grp("i-swords","<span>Tes derniers adversaires</span>",foes.map(o=>chip(`data-cs-tag="${esc(o.tag)}"`,
+    `<span class="cs-chip-em ph" aria-hidden="true"><svg class="ic"><use href="#i-swords"/></svg></span>`, o.tag,
+    `<span>${o.n>1?`${o.n} batailles`:"1 bataille"}</span>${o.ts?` · <span>${csAgo(o.ts)}</span>`:""}`)).join(""));
+  if(CS_NEAR.state==="loading") h+=grp("i-trophy","<span>Proches de ton clan au classement</span>",`<span class="cs-sk" style="width:60%"></span>`);
+  else if(near.length) h+=grp("i-trophy",`<span>Proches de ton clan</span><span class="cs-sug-m">${CS_NEAR.label}</span>`,near.map(c=>chip(`data-cs-open="${c.id}" data-tag="${esc(c.tag)}"`,
+    csEm(c.em,c.tag,"cs-chip-em"), c.tag, `#${fmt(c.rank)}`)).join(""));
+  if(rec.length) h+=grp("i-cal","<span>Récemment consultés</span>",rec.map(c=>chip(`data-cs-open="${c.id}" data-tag="${esc(c.tag)}"`,
+    csEm(c.em,c.tag,"cs-chip-em"), c.tag, "")).join(""));
+  if(!h) h=`<p class="cs-sug-vide">Tes adversaires apparaîtront ici dès que le mod aura enregistré des batailles de clan.</p>`;
+  return h;
+}
+// un adversaire n'est connu que par son tag : on le cherche, puis on ouvre le clan qui porte exactement ce tag
+async function csOpenTag(tag){
+  const q=csEl("clanQuery"); q.value=tag;
+  CS.results=null;
+  await searchClans();
+  const t=String(tag).toUpperCase(), hit=(CS.results||[]).find(c=>String(c.tag||"").toUpperCase()===t);
+  if(hit && csEl("clanQuery").value===tag) openSearchedClan(Number(hit.clan_id));
+}
+// à chaque ouverture de la fenêtre : les suggestions si la barre est vide
+function csEnter(){
+  if(!csEl("clanScout")) return;
+  if(!csEl("clanQuery").value.trim() && csEl("searchedClan").hidden) csShow("idle");
+  csLoadNear();
 }
 
 /* ── La recherche : elle répond pendant la frappe ── */
@@ -2293,6 +2375,7 @@ function csInit(){
   csEl("csForm").addEventListener("submit",e=>{ e.preventDefault(); searchClans(); });
   csEl("clanQuery").addEventListener("input",()=>{ clearTimeout(CS.timer); CS.timer=setTimeout(searchClans,450); });
   root.addEventListener("click",e=>{
+    const t=e.target.closest("[data-cs-tag]"); if(t){ csOpenTag(t.dataset.csTag); return; }
     const o=e.target.closest("[data-cs-open]"); if(o){ openSearchedClan(Number(o.dataset.csOpen)); return; }
     if(e.target.closest("[data-cs-back]")){ CS.ficheReq++; csRenderResults(); return; }
     if(e.target.closest("[data-cs-retry]")){ CS.results=null; searchClans(); return; }
@@ -11307,7 +11390,8 @@ function initClanRanking(clanIdIn, clanTagIn){
 
   const S={ metric:"fort_elo_rating_10", page:1, query:"", sortKey:"rank", sortDir:"asc",
     rows:[], capped:false, loading:true, error:null, req:0, flash:false,
-    mine:null, mineState:MY?"loading":"none", neigh:null, date:null,
+    mine:null, mineState:MY?"loading":"none", mineFetched:false, neigh:null, date:null, dateP:null,
+    day:"", stale:false, updating:false, retrying:null, retryT:0,
     cache:new Map(), neighCache:new Map(), emblems:new Map() };
   const $=id=>root.querySelector("#"+id);
   const ui={ board:$("crBoard"), status:$("crStatus"), me:$("crMe"), rows:$("crRows"), count:$("crCount"),
@@ -11323,52 +11407,91 @@ function initClanRanking(clanIdIn, clanTagIn){
   const myTag=()=>S.mine?.clan_tag || clanTagIn || "";
   const sk=w=>`<span class="cr-sk" style="width:${w}"></span>`;
 
-  /* ── Wargaming ───────────────────────────────────────────────────
-     « SOURCE_NOT_AVAILABLE » arrive au hasard et passe à l'essai
-     suivant (constaté) : deux nouvelles tentatives, 0,5 s puis 2 s,
-     avant d'afficher une erreur. */
-  async function api(path, params, essais=3){
+  /* ── Wargaming, et la copie gardée dans le navigateur ────────────
+     Le service des classements de Wargaming tombe par épisodes :
+     « top » et « neighbors » renvoient SOURCE_NOT_AVAILABLE pendant que
+     « clans » répond (constaté par Robert, et mesuré le 20/10/2026).
+     Trois parades :
+       · chaque requête est retentée quatre fois en ~6 s ;
+       · le classement arrive par pages de 500, chacune retentée seule ;
+       · le dernier classement reçu est GARDÉ dans le navigateur.
+         Wargaming ne le recalcule qu'une fois par jour : tant que sa
+         date n'a pas changé, la copie suffit et rien n'est redemandé.
+         Si Wargaming ne répond plus, la page montre la copie au lieu
+         d'une erreur, et retente seule tant qu'elle reste ouverte. */
+  const CK="cp_rank1:";
+  const store={
+    get(k){ try{ return JSON.parse(localStorage.getItem(CK+k)||"null"); }catch(e){ return null; } },
+    set(k,v){ const s=JSON.stringify(v);
+      try{ localStorage.setItem(CK+k,s); }
+      catch(e){ // plein : on libère les autres copies de classement, puis un second essai
+        try{ Object.keys(localStorage).filter(x=>x.startsWith(CK) && x!==CK+k).forEach(x=>localStorage.removeItem(x));
+          localStorage.setItem(CK+k,s); }catch(e2){ /* tant pis : la page marche sans copie */ } } }
+  };
+  const dayKey=d=>d ? d.toISOString().slice(0,10) : "";
+  const PASSAGER=/SOURCE_NOT_AVAILABLE|REQUEST_LIMIT_EXCEEDED|SOURCE_SHUTDOWN|BACKEND_ERROR|HTTP 5\d\d/;
+  async function api(path, params, essais=4, onRetry){
     const q=new URLSearchParams({ application_id:WG_APP_ID, ...params });
+    const pauses=[600,1500,3500];
     for(let n=1;;n++){
       try{
         const r=await fetch(`${API}${path}?${q}`);
         const j=await r.json();
         if(r.ok && j.status==="ok") return j;
-        throw new Error(j.error?.message || ("HTTP "+r.status));
+        const e=new Error(j.error?.message || ("HTTP "+r.status));
+        e.definitif=!PASSAGER.test(e.message);   // un paramètre refusé ne se répare pas en réessayant
+        throw e;
       }catch(e){
-        if(n>=essais) throw e;
-        await new Promise(res=>setTimeout(res, 500*n*n));
+        if(n>=essais || e.definitif) throw e;
+        if(onRetry) onRetry(n+1, essais);
+        await new Promise(res=>setTimeout(res, pauses[n-1]||3500));
       }
     }
   }
-  async function fetchRanking(key){
-    if(S.cache.has(key)) return S.cache.get(key);
+  const PG=500;
+  async function fetchRanking(key, onRetry){
     const m=METRICS[key], fields=["clan_id","clan_tag","clan_name",m.field,"battles_count_avg_daily"].join(",");
-    const page=async n=>{ const j=await api("/wot/clanratings/top/",{ rank_field:key, limit:1000, page_no:n, fields });
+    const page=async n=>{ const j=await api("/wot/clanratings/top/",{ rank_field:key, limit:PG, page_no:n, fields },4,onRetry);
       return Array.isArray(j.data) ? j.data : []; };
-    let raw=[], capped=false;
-    if(m.full){
-      for(let n=1; n<=10; n++){ const d=await page(n); raw.push(...d); if(d.length<1000) break; }
-    }else{
-      const [a,b]=await Promise.all([page(1), page(2)]);
-      raw=a.concat(b); capped=b.length===1000;
+    // trois pages à la fois : le Bastion tient en 1 500 clans, donc en une seule vague
+    const max=m.full ? 20 : 4;
+    let raw=[], n=1, fin=false;
+    while(!fin && n<=max){
+      const lot=[]; for(let k=0; k<3 && n<=max; k++, n++) lot.push(page(n));
+      for(const p of await Promise.all(lot)){ raw.push(...p); if(p.length<PG) fin=true; }
     }
+    const vus=new Set();
     const rows=raw.map(c=>{ const st=c?.[m.field]||{};
       return { id:Number(c.clan_id), tag:c.clan_tag||"", name:c.clan_name||"", rank:st.rank, value:st.value,
                delta:st.rank_delta, act:c.battles_count_avg_daily?.value }; })
-      .filter(r=>r.rank!=null && r.value!=null).sort((a,b)=>a.rank-b.rank);
-    const out={ rows, capped };
-    S.cache.set(key,out);
-    return out;
+      .filter(r=>r.rank!=null && r.value!=null && !vus.has(r.id) && vus.add(r.id)).sort((a,b)=>a.rank-b.rank);
+    return { rows, capped:!m.full && !fin };
   }
+  // la copie : des tableaux plutôt que des objets, deux fois moins de place
+  function save(key,data){ store.set(key,{ d:data.d, t:Date.now(), c:data.capped?1:0,
+    r:data.rows.map(r=>[r.id,r.tag,r.name,r.rank,r.value,r.delta??null,r.act??null]) }); }
+  function restore(key){ const s=store.get(key); if(!s || !Array.isArray(s.r)) return null;
+    return { d:s.d||"", t:s.t||0, capped:!!s.c,
+      rows:s.r.map(a=>({ id:a[0], tag:a[1], name:a[2], rank:a[3], value:a[4], delta:a[5], act:a[6] })) }; }
+  // ta position dans tous les classements : une petite requête, gardée elle aussi
   async function fetchMine(){
-    if(!MY || S.mineState==="ok") return;
+    if(!MY || S.mineFetched) return;
+    S.mineFetched=true;
     try{
       const j=await api("/wot/clanratings/clans/",{ clan_id:MY });
       S.mine=j.data?.[String(MY)] || null; S.mineState="ok";
-    }catch(e){ S.mineState="err"; }
+      store.set("mine:"+MY,{ t:Date.now(), v:S.mine });
+    }catch(e){ if(S.mineState!=="ok") S.mineState="err"; S.mineFetched=false; }
   }
-  // Ton clan et ses voisins immédiats : deux devant, deux derrière quand c'est possible.
+  // Tes voisins : pris dans le classement déjà chargé ; l'API seulement
+  // quand ton clan est au-delà des 2 000 premiers.
+  function localNeigh(key){
+    if(!MY || myStat(key)?.rank==null || !S.rows.length) return null;
+    const L=S.rows, i=L.findIndex(r=>r.id===MY);
+    if(i<0) return null;
+    const start=Math.max(0, Math.min(i-2, L.length-5));
+    return { list:L.slice(start,start+5), me:L[i], above:L[i-1]||null, below:L[i+1]||null };
+  }
   async function fetchNeigh(key){
     if(S.neighCache.has(key)) return S.neighCache.get(key);
     const m=METRICS[key];
@@ -11385,9 +11508,9 @@ function initClanRanking(clanIdIn, clanTagIn){
     return out;
   }
   async function fetchDate(){
-    try{ const j=await api("/wot/clanratings/dates/",{},1);
+    try{ const j=await api("/wot/clanratings/dates/",{},2);
       const d=j.data?.all?.dates||[]; if(d.length) S.date=new Date(Math.max(...d)*1000);
-    }catch(e){ /* la date n'est qu'un repère : on s'en passe */ }
+    }catch(e){ /* sans la date, la copie vaut six heures */ }
   }
   /* Les emblèmes arrivent après le tableau : on les pose en place, sans
      redessiner, pour ne pas faire sauter la page sous la souris. */
@@ -11573,7 +11696,7 @@ function initClanRanking(clanIdIn, clanTagIn){
     if(S.error){
       ui.count.textContent="";
       ui.rows.innerHTML=`<tr><td colspan="5" class="cr-msg"><p>Wargaming n'a pas répondu.</p>
-        <p class="s">Le classement n'a pas pu être chargé (${esc(S.error)}). C'est en général passager.</p>
+        <p class="s">Le classement n'a pas pu être chargé (${esc(S.error)}). C'est en général passager : la page réessaie toute seule dans 20 secondes.</p>
         <button type="button" class="btn" data-cr-retry>Réessayer</button></td></tr>`;
       ui.mineBtn.disabled=true; renderPager(0); renderPin(new Set()); return;
     }
@@ -11601,28 +11724,58 @@ function initClanRanking(clanIdIn, clanTagIn){
   }
   // la date et l'état de la source, à la fin de la phrase d'en-tête
   function renderStatus(){
-    const st=ui.status;
-    st.classList.toggle("err", !!S.error);
-    st.textContent = S.loading ? "Chargement des données Wargaming…"
-      : S.error ? "Données Wargaming indisponibles."
-      : S.date ? `Données du ${S.date.toLocaleDateString(window.CP_LOC,{day:"numeric",month:"long",year:"numeric"})}.`
+    const st=ui.status, jour=S.day ? new Date(S.day+"T12:00:00Z") : S.date;
+    const du=jour ? jour.toLocaleDateString(window.CP_LOC,{day:"numeric",month:"long",year:"numeric"}) : "";
+    st.classList.toggle("err", !!S.error || S.stale);
+    st.textContent = S.retrying && (S.loading || S.updating) ? `Wargaming tarde à répondre — nouvel essai (${S.retrying[0]}/${S.retrying[1]})…`
+      : S.loading ? "Chargement des données Wargaming…"
+      : S.error ? "Données Wargaming indisponibles — nouvel essai automatique dans un instant."
+      : S.stale && du ? `Données du ${du}, gardées en mémoire : Wargaming ne répond pas, nouvel essai automatique.`
+      : S.updating && du ? `Données du ${du} · mise à jour…`
+      : du ? `Données du ${du}.`
       : "Données officielles Wargaming.";
   }
   function render(){ renderStatus(); renderBoard(); renderMe(); renderTable(); loadEmblems(); }
+  const visible=()=>!document.getElementById("viewRanking")?.classList.contains("hidden");
 
-  async function load(){
+  /* Afficher tout de suite ce qu'on a (la copie), ne redemander que ce
+     qui a changé, et ne jamais remplacer une copie par une erreur. */
+  async function load(force){
     const key=S.metric, req=++S.req;
-    S.error=null; S.loading=!S.cache.has(key); S.neigh=S.neighCache.get(key)||null;
-    if(S.loading) render();
-    try{
-      const [data, neigh]=await Promise.all([ fetchRanking(key),
-        (async()=>{ await fetchMine(); return fetchNeigh(key).catch(()=>null); })() ]);
-      if(req!==S.req) return;
-      S.rows=data.rows; S.capped=data.capped; S.neigh=neigh; S.loading=false;
-    }catch(e){
-      if(req!==S.req) return;
-      S.loading=false; S.error=e?.message||String(e);
+    clearTimeout(S.retryT);
+    S.error=null; S.stale=false; S.retrying=null; S.updating=false;
+    const mem=S.cache.get(key), copy=mem || restore(key);
+    S.rows=copy ? copy.rows : []; S.capped=copy ? copy.capped : false; S.day=copy ? copy.d : "";
+    S.loading=!copy; S.neigh=localNeigh(key);
+    render();
+
+    await S.dateP;
+    if(req!==S.req) return;
+    const today=dayKey(S.date);
+    const aJour=!force && copy && (mem || (today ? copy.d===today : Date.now()-copy.t<6*3600e3));
+    const taches=[ fetchMine() ];
+    if(!aJour){
+      S.updating=!!copy; renderStatus();
+      taches.push((async()=>{
+        try{
+          const data=await fetchRanking(key,(n,t)=>{ if(req===S.req){ S.retrying=[n,t]; renderStatus(); } });
+          if(req!==S.req) return;
+          data.d=today || dayKey(new Date());
+          S.cache.set(key,data); save(key,data);
+          S.rows=data.rows; S.capped=data.capped; S.day=data.d;
+        }catch(e){
+          if(req!==S.req) return;
+          if(copy) S.stale=true; else S.error=e?.message||String(e);
+          // nouvel essai tout seul, tant que la page reste ouverte
+          S.retryT=setTimeout(()=>{ if(req===S.req && visible()) load(); }, copy ? 90000 : 20000);
+        }
+      })());
     }
+    await Promise.all(taches);
+    if(req!==S.req) return;
+    S.loading=false; S.updating=false; S.retrying=null;
+    S.neigh=localNeigh(key) || await fetchNeigh(key).catch(()=>null);
+    if(req!==S.req) return;
     render();
   }
   function selectMetric(key){
@@ -11658,7 +11811,7 @@ function initClanRanking(clanIdIn, clanTagIn){
   });
   root.addEventListener("click",e=>{
     const c=e.target.closest("[data-clan]"); if(c){ openClan(Number(c.dataset.clan), c.dataset.tag); return; }
-    if(e.target.closest("[data-cr-retry]")){ S.cache.delete(S.metric); S.neighCache.delete(S.metric); if(S.mineState==="err") S.mineState="loading"; load(); return; }
+    if(e.target.closest("[data-cr-retry]")){ if(S.mineState==="err"){ S.mineState="loading"; S.mineFetched=false; } load(true); return; }
     if(e.target.closest("[data-cr-jump]")){ focusMyClan(); return; }
     const mt=e.target.closest(".cr-msg [data-cr-metric]"); if(mt){ selectMetric(mt.dataset.crMetric); return; }
     const pg=e.target.closest("#crPagination button[data-page]");
@@ -11672,7 +11825,9 @@ function initClanRanking(clanIdIn, clanTagIn){
   ui.search.addEventListener("input",()=>{ S.query=ui.search.value; S.page=1; renderTable(); loadEmblems(); });
   ui.mineBtn.addEventListener("click", focusMyClan);
 
-  fetchDate().then(()=>{ if(!S.loading) renderStatus(); });
+  // la copie de ta position s'affiche tout de suite, la vraie la remplace en arrivant
+  if(MY){ const c=store.get("mine:"+MY); if(c && c.v){ S.mine=c.v; S.mineState="ok"; } }
+  S.dateP=fetchDate();
   load();
 }
 

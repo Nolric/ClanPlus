@@ -2057,7 +2057,6 @@ window.CP_EN = Object.assign(window.CP_EN || {}, {
   "Page suivante": "Next page",
   "Plus de 2 000 clans figurent dans ce classement : la liste s'arrête aux 2 000 premiers. La place de ton clan, plus haut, reste exacte.": "More than 2,000 clans appear in this ranking: the list stops at the top 2,000. Your clan's position, above, stays exact.",
   "Wargaming n'a pas répondu.": "Wargaming didn't respond.",
-  "Le classement n'a pas pu être chargé ({s}). C'est en général passager.": "The ranking couldn't be loaded ({s}). It's usually temporary.",
   "{n} résultat": "{n} result",
   "{n} résultats": "{n} results",
   "2 000 premiers clans": "Top 2,000 clans",
@@ -2080,7 +2079,6 @@ window.CP_EN = Object.assign(window.CP_EN || {}, {
   "<span class=\"dn\">▼ {n} place</span> depuis le calcul précédent.": "<span class=\"dn\">▼ {n} place</span> since the previous calculation.",
   "Activité moyenne : <b>{n}</b> batailles par jour.": "Average activity: <b>{n}</b> battles a day.",
   "Données du {s}.": "Data from {s}.",
-  "Données Wargaming indisponibles.": "Wargaming data unavailable.",
   "Données officielles Wargaming.": "Official Wargaming data.",
 });
 
@@ -2127,4 +2125,21 @@ window.CP_EN = Object.assign(window.CP_EN || {}, {
   "Membres": "Members",
   "par grade": "by rank",
   "Lire la suite ↓": "Read more ↓",
+});
+
+/* Classements plus solides face aux pannes de Wargaming, et suggestions
+   de « Chercher un clan » (20/10/2026). */
+window.CP_EN = Object.assign(window.CP_EN || {}, {
+  "Wargaming tarde à répondre — nouvel essai ({n}/{n})…": "Wargaming is slow to respond — retrying ({n}/{n})…",
+  "Données Wargaming indisponibles — nouvel essai automatique dans un instant.": "Wargaming data unavailable — retrying automatically in a moment.",
+  "Données du {s}, gardées en mémoire : Wargaming ne répond pas, nouvel essai automatique.": "Data from {s}, kept in memory: Wargaming isn't responding, retrying automatically.",
+  "Données du {s} · mise à jour…": "Data from {s} · updating…",
+  "Le classement n'a pas pu être chargé ({s}). C'est en général passager : la page réessaie toute seule dans 20 secondes.": "The ranking couldn't be loaded ({s}). It's usually temporary: the page will retry on its own in 20 seconds.",
+  "Tes derniers adversaires": "Your latest opponents",
+  "Proches de ton clan au classement": "Close to your clan in the ranking",
+  "Proches de ton clan": "Close to your clan",
+  "1 bataille": "1 battle",
+  "hier": "yesterday",
+  "il y a {n} j": "{n} d ago",
+  "Tes adversaires apparaîtront ici dès que le mod aura enregistré des batailles de clan.": "Your opponents will show up here once the mod has recorded clan battles.",
 });
