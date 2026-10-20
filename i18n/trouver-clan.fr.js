@@ -49,8 +49,6 @@ window.CP_FR = Object.assign(window.CP_FR || {}, {
 
   /* les annonces */
   "Recruiting on Clan Plus": "Ils recrutent sur Clan Plus",
-  "No clan has posted a recruitment ad on Clan Plus yet. <b>Your clan is recruiting?</b> Post yours from the Recruitment tab: it will show up here, first.": "Aucun clan n'a encore publié d'annonce sur Clan Plus. <b>Ton clan recrute ?</b> Publie la sienne depuis l'onglet Recrutement : elle apparaîtra ici, en tête.",
-  "Open Clan Plus →": "Ouvrir Clan Plus →",
   "Clan Wars": "Clan Wars",
   "Skirmishes": "Escarmouches",
   "Random battles": "Batailles aléatoires",
@@ -153,4 +151,15 @@ window.CP_FR = Object.assign(window.CP_FR || {}, {
   /* le pied de page */
   "Clan Plus · official Wargaming data (EU) · not affiliated with Wargaming": "Clan Plus · données officielles Wargaming (EU) · non affilié à Wargaming",
   "Back to Clan Plus →": "Retour à Clan Plus →",
+  /* l'Espace recruteur (20/10/2026) */
+  "Recruiter space": "Espace recruteur",
+  "No clan has posted a recruitment ad on Clan Plus yet. <b>Your clan is recruiting?</b> Post yours from the recruiter space: it will show up here, first.": "Aucun clan n'a encore publié d'annonce sur Clan Plus. <b>Ton clan recrute ?</b> Publie la sienne depuis l'Espace recruteur : elle apparaîtra ici, en tête.",
+  "Open the recruiter space →": "Ouvrir l'Espace recruteur →",
+  "Its recruitment ads": "Ses annonces de recrutement",
+  "Recruit with <em>Clan Plus</em>.": "Recrute avec <em>Clan Plus</em>.",
+  "Your session has expired: sign in again to manage your clan's ads.": "Ta session a expiré : reconnecte-toi pour gérer les annonces de ton clan.",
+  "Post your clan's recruitment ads: they show first on this page, before every other clan. Open to the commander, the executive officer, the personnel officer and the recruiters, for any EU clan — no mod needed.": "Publie les annonces de recrutement de ton clan : elles passent en tête de cette page, avant tous les autres clans. Ouvert au commandant, à l'officier exécutif, à l'officier du personnel et aux recruteurs, pour n'importe quel clan EU — sans le mod.",
+  "Sign in with Wargaming": "Se connecter avec Wargaming",
+  "Wargaming confirms who you are and your rank in the clan. Clan Plus never sees your password.": "Wargaming confirme qui tu es et ton grade dans le clan. Clan Plus ne voit jamais ton mot de passe.",
+  "The recruiter space couldn't be loaded.": "L'Espace recruteur n'a pas pu être chargé.",
 });

@@ -16,12 +16,13 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20240%20240%22%3E%3Crect%20width%3D%22240%22%20height%3D%22240%22%20rx%3D%2254%22%20fill%3D%22%23141310%22%2F%3E%3Cg%20transform%3D%22translate%2830%2030%29%20scale%280.75%29%22%20fill%3D%22%23d8b566%22%3E%3Ccircle%20cx%3D%22120%22%20cy%3D%22120%22%20r%3D%22100%22%20fill%3D%22none%22%20stroke%3D%22%23d8b566%22%20stroke-width%3D%227%22%2F%3E%3Crect%20x%3D%2281%22%20y%3D%228%22%20width%3D%2218%22%20height%3D%2218%22%2F%3E%3Crect%20x%3D%22111%22%20y%3D%224%22%20width%3D%2218%22%20height%3D%2218%22%2F%3E%3Crect%20x%3D%22141%22%20y%3D%228%22%20width%3D%2218%22%20height%3D%2218%22%2F%3E%3Cpath%20d%3D%22M161%2C155%20A54%2C54%200%201%201%20161%2C85%22%20fill%3D%22none%22%20stroke%3D%22%23d8b566%22%20stroke-width%3D%2220%22%20stroke-linecap%3D%22round%22%2F%3E%3Crect%20x%3D%22112%22%20y%3D%2294%22%20width%3D%2216%22%20height%3D%2252%22%20rx%3D%225%22%2F%3E%3Crect%20x%3D%2294%22%20y%3D%22112%22%20width%3D%2252%22%20height%3D%2216%22%20rx%3D%225%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
 <script src="i18n/index.fr.js?v=c0085edf"></script>
-<script src="i18n/index.en.js?v=93760f48"></script>
+<script src="i18n/recruteur.en.js?v=8e76b676"></script>
+<script src="i18n/index.en.js?v=f9a18512"></script>
 <script src="i18n.js?v=ed3f8a4f"></script>
 <link rel="stylesheet" href="fonts/fonts.css?v=d81c6085">
 <!-- La charte vit dans app.css : progression.html la partage, et le
        navigateur la garde en cache d'une visite à l'autre. -->
-  <link rel="stylesheet" href="app.css?v=2da8ab90">
+  <link rel="stylesheet" href="app.css?v=fa8d4136">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" defer></script>
 </head>
 <body>
@@ -487,7 +488,7 @@
         <a class="side-item" href="carte3d.html" title="Cartes 3D — relief réel du jeu" style="text-decoration:none"><span class="si-ic"><svg class="ic" viewBox="0 0 24 24"><path d="M3 18l6-12 5 8 3-4 4 8z"/><path d="M3 18h20" opacity=".5"/></svg></span><span class="si-lbl">Carte 3D</span><span class="si-new" style="margin-left:auto;font-size:9px;font-weight:800;letter-spacing:.5px;color:#12110d;background:#e5b95c;border-radius:5px;padding:2px 5px">NEW</span></a>
         <button class="tab side-item" data-v="ranking"><span class="si-ic"><svg class="ic"><use href="#i-trophy"/></svg></span><span class="si-lbl">Classements</span></button>
         <button class="tab side-item" data-v="search"><span class="si-ic"><svg class="ic"><use href="#i-search"/></svg></span><span class="si-lbl">Chercher un clan</span></button>
-        <button class="tab side-item" data-v="recruit"><span class="si-ic"><svg class="ic" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg></span><span class="si-lbl">Recrutement</span><span class="si-new" style="margin-left:auto;font-size:9px;font-weight:800;letter-spacing:.5px;color:#12110d;background:#e5b95c;border-radius:5px;padding:2px 5px">NEW</span></button>
+        <button class="tab side-item" data-v="recruit"><span class="si-ic"><svg class="ic" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg></span><span class="si-lbl">Espace recruteur</span><span class="si-new" style="margin-left:auto;font-size:9px;font-weight:800;letter-spacing:.5px;color:#12110d;background:#e5b95c;border-radius:5px;padding:2px 5px">NEW</span></button>
         <a class="side-item" href="trouver-clan.html" title="Trouver un clan à rejoindre" style="text-decoration:none"><span class="si-ic"><svg class="ic" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span class="si-lbl">Trouver un clan</span><span class="si-new" style="margin-left:auto;font-size:9px;font-weight:800;letter-spacing:.5px;color:#12110d;background:#e5b95c;border-radius:5px;padding:2px 5px">NEW</span></a>
         <a class="side-item side-support" href="soutenir.html" title="Ce que coûte le projet"><span class="si-ic"><span class="si-heart">♥</span></span><span class="si-lbl">Soutenir</span></a>
       </nav>
@@ -768,15 +769,11 @@
   </div>
 
   <div id="viewRecruit" class="hidden dashx">
-   <!-- RECRUTEMENT — refonte du 20/10/2026. Réservé (décision de Robert) au
+   <!-- ESPACE RECRUTEUR (ex-« Recrutement ») — 20/10/2026. Rempli par
+        recruteur.js, le même module que sur « Trouver un clan ». Réservé au
         commandant, à l'officier exécutif, à l'officier du personnel et aux
-        recruteurs ; le serveur (clan-offers) applique la même règle.
-        À gauche le formulaire, à droite l'aperçu exact de la carte publique. -->
-   <section id="clanRecruit" class="rc" aria-labelledby="rcTitleH">
-    <h2 class="sec-h" id="rcTitleH">Recrutement</h2>
-    <p class="sec-desc">L'annonce de ton clan sur la page publique « Trouver un clan ». Une annonce par clan, vue par tous les joueurs qui cherchent un clan.</p>
-    <div id="rcHost"></div>
-   </section>
+        recruteurs ; le serveur (clan-offers) applique la même règle. -->
+   <section id="clanRecruit" class="rc" aria-label="Espace recruteur"></section>
   </div>
 
   <footer>Clan Plus • connexion Wargaming • données post-combat &nbsp;·&nbsp; <span id="footCount"></span></footer>
@@ -788,7 +785,8 @@
 <!-- Le code de l'application vit dans app.js : progression.html le
      partage, pour qu'il n'existe jamais deux versions des mêmes
      calculs. « defer » l'exécute après lecture complète de la page. -->
-  <script src="app.js?v=900dfe8f" defer></script>
+  <script src="recruteur.js?v=3ea38a34" defer></script>
+  <script src="app.js?v=4cb8d6dd" defer></script>
 <script src="app-fin.js?v=4e570ee3" defer></script>
 </body>
 </html>

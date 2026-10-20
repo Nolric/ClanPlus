@@ -15,12 +15,13 @@
 <meta property="og:image" content="https://clanplus.eu/og.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20240%20240%22%3E%3Crect%20width%3D%22240%22%20height%3D%22240%22%20rx%3D%2254%22%20fill%3D%22%23141310%22%2F%3E%3Cg%20transform%3D%22translate%2830%2030%29%20scale%280.75%29%22%20fill%3D%22%23d8b566%22%3E%3Ccircle%20cx%3D%22120%22%20cy%3D%22120%22%20r%3D%22100%22%20fill%3D%22none%22%20stroke%3D%22%23d8b566%22%20stroke-width%3D%227%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
-<script src="i18n/trouver-clan.fr.js?v=432cf4af"></script>
+<script src="i18n/trouver-clan.fr.js?v=3b399837"></script>
+<script src="i18n/recruteur.en.js?v=8e76b676"></script>
 <script src="i18n.js?v=ed3f8a4f"></script>
 <!-- La charte de l'appli : une seule définition des jetons et des composants
      (bandeau .hero2, verdict .vd, .btn, .sec-h). Choix de Robert : cette page
      publique a l'allure de l'appli, pas celle de l'accueil. -->
-<link rel="stylesheet" href="app.css?v=2da8ab90">
+<link rel="stylesheet" href="app.css?v=fa8d4136">
 <style>
   /* TROUVER UN CLAN — contrat de conception (refonte du 20/10/2026)
      THESIS : un joueur sans clan doit trouver, en une page, des clans
@@ -54,6 +55,10 @@
   .nav-r{display:flex;align-items:center;gap:6px}
   .tc-link{padding:8px 11px;border-radius:8px;color:var(--ink-2);font-size:13px;font-weight:600;text-decoration:none;transition:color .15s,background-color .15s}
   .tc-link:hover{color:var(--ink);background:var(--raised)}
+  .tc-rec{color:var(--gold-2);box-shadow:inset 0 0 0 1px var(--gold-line)}
+  .tc-rec:hover{color:var(--gold-2);background:var(--gold-soft)}
+  .tc-rec-go{margin-top:16px}
+  #tcRecruteur #clanRecruit>.sec-h{margin-top:0}
 
   .tc-wrap{max-width:1180px;margin:0 auto;padding:22px 22px 40px}
 
@@ -209,6 +214,9 @@
   @media (max-width:640px){
     .tc-top{padding:10px 14px}
     .tc-brand b{display:none}
+    .nav-r{gap:2px}
+    .nav-r>.tc-link:first-child{display:none}
+    .tc-link{padding:8px 8px;white-space:nowrap}
     .tc-wrap{padding:16px 14px 32px}
     .tc-vd .vd-n i{margin-left:0}
     .tc-search{flex-wrap:wrap}
@@ -240,6 +248,7 @@
     </a>
     <nav class="nav-r" aria-label="Clan Plus">
       <a class="tc-link" href="index.html">Clan Plus</a>
+      <a class="tc-link tc-rec" href="#recruteur">Recruiter space</a>
       <a class="tc-link" id="authLink" href="index.html">Sign in</a>
     </nav>
   </header>
@@ -306,6 +315,13 @@
 
     <!-- LA FICHE D'UN CLAN -->
     <div id="tcClan" hidden></div>
+
+    <!-- L'ESPACE RECRUTEUR : le même module que l'onglet de l'appli (recruteur.js) -->
+    <div id="tcRecruteur" hidden>
+      <button type="button" class="tc-back" data-back><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg><span>All clans</span></button>
+      <div id="tcRecLogin" hidden></div>
+      <section id="clanRecruit" class="rc" aria-label="Recruiter space"></section>
+    </div>
   </main>
 
   <div class="tc-foot">
@@ -313,6 +329,7 @@
     <a href="index.html">Back to Clan Plus →</a>
   </div>
 
+<script src="recruteur.js?v=3ea38a34"></script>
 <script>
 "use strict";
 /* ═══════════════════════════════════════════════════════════════════
@@ -581,8 +598,8 @@ function renderOffers(){
   $("#tcOffersN").textContent = L.length ? T("· {n}",L.length) : "";
   if(S.offers==null) return;
   box.innerHTML = L.length ? L.map(o=>offerHTML(o,false)).join("")
-    : `<div class="tc-cta"><span>${t("No clan has posted a recruitment ad on Clan Plus yet. <b>Your clan is recruiting?</b> Post yours from the Recruitment tab: it will show up here, first.")}</span>
-       <a href="index.html">${t("Open Clan Plus →")}</a></div>`;
+    : `<div class="tc-cta"><span>${t("No clan has posted a recruitment ad on Clan Plus yet. <b>Your clan is recruiting?</b> Post yours from the recruiter space: it will show up here, first.")}</span>
+       <a href="#recruteur">${t("Open the recruiter space →")}</a></div>`;
 }
 
 /* ── La fiche d'un clan (adresse partageable : #clan-<id>) ── */
@@ -601,7 +618,7 @@ const FICHE={ id:0, seq:0, memAll:false, descAll:false, data:null, fromList:fals
 async function openFiche(id){
   const seq=++FICHE.seq, box=$("#tcClan");
   FICHE.id=id; FICHE.memAll=false; FICHE.descAll=false;
-  $("#tcList").hidden=true; box.hidden=false; window.scrollTo({ top:0 });
+  $("#tcList").hidden=true; $("#tcRecruteur").hidden=true; box.hidden=false; window.scrollTo({ top:0 });
   box.innerHTML=`<button type="button" class="tc-back" data-back>${svg("back")}<span>${t("All clans")}</span></button>
     <div class="hero2 tc-hero">${sk("100px")}<div class="h2-ci">${sk("220px")}<br>${sk("160px")}</div></div>
     <section class="vd"><div class="vd-haut"><div class="vd-g"><p class="vd-t">${sk("60%")}</p><p class="vd-p">${sk("85%")}</p></div></div></section>`;
@@ -623,7 +640,7 @@ async function openFiche(id){
 }
 function renderFiche(){
   const id=FICHE.id, { info, rt }=FICHE.data, tag=info.tag||"?", m=info.members_count, free=m!=null ? CLAN_MAX-m : null;
-  const offer=(S.offers||[]).find(o=>Number(o.clan_id)===id);
+  const offers=(S.offers||[]).filter(o=>Number(o.clan_id)===id);
   const portal=`https://eu.wargaming.net/clans/wot/${id}/`, emU=emblemUrl(info.emblems);
   const created=info.created_at ? new Date(info.created_at*1000).toLocaleDateString(window.CP_LOC||"en-GB",{ month:"long", year:"numeric" }) : "";
   const hero=`<div class="hero2 tc-hero">
@@ -656,7 +673,7 @@ function renderFiche(){
       <p class="vd-p">${ph.map(x=>`<span>${x}</span>`).join(" ")}</p></div>
       ${free!=null?`<div class="vd-n"><b>${nf(Math.max(0,free))}</b><i>${free>1?t("free slots"):t("free slot")}</i></div>`:""}</div></section>`;
 
-  const ad = offer ? `<h2 class="sec-h"><span>${t("Its recruitment ad")}</span></h2>${offerHTML(offer,true)}` : "";
+  const ad = offers.length ? `<h2 class="sec-h"><span>${offers.length>1?t("Its recruitment ads"):t("Its recruitment ad")}</span></h2><div class="tc-offers">${offers.map(o=>offerHTML(o,true)).join("")}</div>` : "";
 
   const lv=`<section class="tc-card2" style="margin-top:12px"><div class="tc-ttl"><h2>${svg("shield")}<span>${t("Official Wargaming level")}</span></h2><span class="hint">${t("rank 1 = the best")}</span></div>
     <div class="tc-lv">${LEVEL.map(([f,l,ic])=>{ const s=rt&&rt[f], ok=s && s.value!=null && !(s.value===0 && s.rank==null), d=Number(s?.rank_delta||0);
@@ -680,12 +697,52 @@ function renderFiche(){
     +hero+vd+ad+lv+((members||desc)?`<div class="tc-two${members&&desc?"":" one"}">${members}${desc}</div>`:"")
     +`<p class="tc-apply">${t("Applications are made on the clan's official Wargaming page, or in the game. Clan Plus helps you find the clan; it doesn't take part in recruitment.")}</p>`;
 }
-function showList(){ FICHE.seq++; const back=!$("#tcClan").hidden; $("#tcClan").hidden=true; $("#tcList").hidden=false;
+function showList(){ FICHE.seq++; const back=!$("#tcClan").hidden || !$("#tcRecruteur").hidden; $("#tcClan").hidden=true; $("#tcRecruteur").hidden=true; $("#tcList").hidden=false;
   if(back && S.listY) window.scrollTo({ top:S.listY }); }
 function route(){
   const m=location.hash.match(/^#clan-(\d+)$/);
-  if(m) openFiche(Number(m[1]));
+  if(m){ $("#tcRecruteur").hidden=true; openFiche(Number(m[1])); }
+  else if(location.hash==="#recruteur") openRecruteur();
   else{ showList(); if(location.hash==="#offres") $("#tcOffersSec").scrollIntoView(); }
+}
+
+/* ── L'Espace recruteur (#recruteur) ──
+   Le même module que l'onglet de l'appli. Sans session : on propose la
+   connexion Wargaming, qui passe par l'appli (index.html?wg=1) et revient
+   ici toute seule (cp_retour). Le grade est vérifié par le serveur. */
+let REC=null;
+function recLogin(expire){
+  const box=$("#tcRecLogin");
+  box.innerHTML=`<section class="vd"><div class="vd-haut"><div class="vd-g">
+      <h1 class="vd-t">${t("Recruit with <em>Clan Plus</em>.")}</h1>
+      <p class="vd-p">${expire ? t("Your session has expired: sign in again to manage your clan's ads.")
+        : t("Post your clan's recruitment ads: they show first on this page, before every other clan. Open to the commander, the executive officer, the personnel officer and the recruiters, for any EU clan — no mod needed.")}</p>
+      <button type="button" class="tc-go tc-rec-go" data-wglogin>${t("Sign in with Wargaming")}</button>
+      <p class="tc-apply">${t("Wargaming confirms who you are and your rank in the clan. Clan Plus never sees your password.")}</p>
+    </div></div></section>`;
+  box.hidden=false; $("#clanRecruit").hidden=true;
+}
+function openRecruteur(){
+  FICHE.seq++;
+  $("#tcList").hidden=true; $("#tcClan").hidden=true; $("#tcRecruteur").hidden=false; window.scrollTo({ top:0 });
+  const session=lsGet("cp_session");
+  if(!session){ recLogin(false); return; }
+  $("#tcRecLogin").hidden=true; $("#clanRecruit").hidden=false;
+  if(REC){ REC.reload(); return; }
+  REC=window.CPRecruteur ? CPRecruteur.mount($("#clanRecruit"),{
+    session,
+    call:(name,body)=>fnCall(name, lsGet("cp_dev")==="1" ? { ...body, dev:true } : body),
+    // l'emblème, les membres et les cotes du clan, pour l'aperçu de la carte
+    loadClan:async id=>{
+      const [i,r]=await Promise.all([ wg("/wgn/clans/info/",{ clan_id:id, fields:"members_count,emblems" },2),
+        wg("/wot/clanratings/clans/",{ clan_id:id },2).catch(()=>({ data:{} })) ]);
+      const c=i.data?.[String(id)]||{};
+      return { em:emblemUrl(c.emblems), m:c.members_count??null, ratings:r.data?.[String(id)]||null };
+    },
+    onSignedOut:()=>{ ["cp_session","cp_clan","cp_nick"].forEach(k=>{ try{ localStorage.removeItem(k); }catch(_){} }); REC=null; recLogin(true);
+      const l=$("#authLink"); l.textContent=t("Sign in"); l.href="index.html"; l.onclick=null; }
+  }) : null;
+  if(!REC) $("#clanRecruit").innerHTML=`<div class="tc-msg"><p>${t("The recruiter space couldn't be loaded.")}</p></div>`;
 }
 
 /* ── Branchements ── */
@@ -712,6 +769,7 @@ document.addEventListener("click",e=>{
     if(FICHE.fromList){ FICHE.fromList=false; history.back(); }
     else { history.pushState(null,"",location.pathname+location.search); route(); }
     return; }
+  if(e.target.closest("[data-wglogin]")){ try{ localStorage.setItem("cp_retour","recruteur"); }catch(_){} location.href="index.html?wg=1"; return; }
   if(e.target.closest("[data-retry]")){ loadActive(true); return; }
   if(e.target.closest("[data-mem]")){ FICHE.memAll=!FICHE.memAll; renderFiche(); return; }
   if(e.target.closest("[data-desc]")){ FICHE.descAll=!FICHE.descAll; renderFiche(); return; }
