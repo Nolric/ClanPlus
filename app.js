@@ -11105,26 +11105,14 @@ function toggleSidebar(){
 }
 
 /* ============================================================
-   CLASSEMENTS DES CLANS (mondial EU, par mesure)
+   CLASSEMENTS DES CLANS — refonte du 20/10/2026
+   On ouvre cette page pour SITUER SON CLAN : la bande d'onglets donne
+   sa place dans chaque classement d'un coup d'œil, la carte « ta
+   position » dit l'écart avec le clan juste devant, et le classement
+   complet suit. Tout vient de l'API publique de Wargaming, appelée
+   depuis le navigateur. Le module est encapsulé : aucune variable ne
+   déborde dans le reste de l'application.
    ============================================================ */
-const RK_METRICS=[
-  ["fort_elo_rating","Niveau Bastion (global)"],
-  ["fort_elo_rating_10","Bastion — tier 10"],
-  ["fort_elo_rating_8","Bastion — tier 8"],
-  ["fort_elo_rating_6","Bastion — tier 6"],
-  ["gm_elo_rating","Carte Globale (Clan Wars)"],
-  ["efficiency","Efficacité"],
-  ["wins_ratio_avg","% de victoires"],
-  ["global_rating_avg","Niveau moyen des joueurs"],
-];
-let RK_METRIC="fort_elo_rating";
-const RK_MINE_FIELD={fort_elo_rating:"fb_elo_rating",fort_elo_rating_10:"fb_elo_rating_10",
-  fort_elo_rating_8:"fb_elo_rating_8",fort_elo_rating_6:"fb_elo_rating_6",gm_elo_rating:"gm_elo_rating",
-  efficiency:"efficiency",wins_ratio_avg:"wins_ratio_avg",global_rating_avg:"global_rating_avg"};
-function rkFmt(metric,v){ return metric==="wins_ratio_avg" ? fmt(v,2)+" %" : fmt(v); }
-/* Classement des clans — module complet (chargement de tout le classement,
-   podium, carte "ton clan", tri/recherche/pagination). Encapsulé pour ne
-   pas entrer en collision avec les variables globales de l'app. */
 let CR_INITED=false;
 function loadRanking(){
   const clanId = Number(localStorage.getItem("cp_clan")) || (CLANINFO&&CLANINFO.clan_id) || 0;
@@ -11136,184 +11124,398 @@ function initClanRanking(clanIdIn, clanTagIn){
   if(!root || CR_INITED) return;
   CR_INITED = true;
 
-  const ownCountries = (typeof CLANPROFILE!=="undefined" && CLANPROFILE && Array.isArray(CLANPROFILE.langs) && CLANPROFILE.langs.length && clanIdIn)
-    ? { [String(clanIdIn)]: CLANPROFILE.langs } : {};
-  const CONFIG = { api:"https://api.worldoftanks.eu", applicationId: WG_APP_ID,
-    clanId: Number(clanIdIn)||0, clanTag: clanTagIn||"", pageSize:20, declaredCountries: ownCountries };
+  const API="https://api.worldoftanks.eu", MY=Number(clanIdIn)||0, PAGE=25;
+  /* Les classements Bastion tiennent en 1 500 clans au plus : on les
+     charge en entier (1 à 2 s). Les autres dépassent 5 000, voire
+     15 000 clans, et Wargaming échoue en cours de route (mesuré le
+     20/10/2026) : on s'arrête aux 2 000 premiers. La place de TON clan,
+     elle, vient d'une requête à part et reste exacte au-delà. */
+  // icônes : celles des tuiles « Niveau officiel Wargaming » de la Vue clan
+  const METRICS={
+    fort_elo_rating_10:{short:"Rang X",         long:"Bastion rang X",           field:"fb_elo_rating_10", full:true, ic:"i-fort"},
+    fort_elo_rating_8: {short:"Rang VIII",      long:"Bastion rang VIII",        field:"fb_elo_rating_8",  full:true, ic:"i-fort"},
+    fort_elo_rating_6: {short:"Rang VI",        long:"Bastion rang VI",          field:"fb_elo_rating_6",  full:true, ic:"i-fort"},
+    fort_elo_rating:   {short:"Cote globale",   long:"Bastion, cote globale",    field:"fb_elo_rating",    full:true, ic:"i-shield"},
+    efficiency:        {short:"Efficacité",     long:"Efficacité",               field:"efficiency", ic:"i-bolt"},
+    wins_ratio_avg:    {short:"% victoires",    long:"Taux de victoires",         field:"wins_ratio_avg", dec:2, unit:window.CP_LANG==="en"?"%":" %", ic:"i-flag"},
+    global_rating_avg: {short:"Niveau joueurs", long:"Niveau moyen des joueurs", field:"global_rating_avg", ic:"i-award"},
+    gm_elo_rating:     {short:"Carte globale",  long:"Carte globale",            field:"gm_elo_rating", ic:"i-globe"},
+  };
+  const GROUPS=[["Bastion",["fort_elo_rating_10","fort_elo_rating_8","fort_elo_rating_6","fort_elo_rating"]],
+                ["Autres classements",["efficiency","wins_ratio_avg","global_rating_avg","gm_elo_rating"]]];
+  // motifs d'exclusion renvoyés par Wargaming (exclude_reasons)
+  const EXCLU={ inactivity:"Motif donné par Wargaming : inactivité.",
+                limits:"Motif donné par Wargaming : conditions minimales non remplies." };
 
-  const METRICS = [
-    ["fort_elo_rating_10","Bastion — tier 10"],["fort_elo_rating_8","Bastion — tier 8"],
-    ["fort_elo_rating_6","Bastion — tier 6"],["fort_elo_rating","Niveau Bastion global"],
-    ["gm_elo_rating","Carte Globale"],["efficiency","Efficacité"],
-    ["wins_ratio_avg","% de victoires"],["global_rating_avg","Niveau moyen des joueurs"]
-  ];
-  const RESPONSE_FIELD = { fort_elo_rating:"fb_elo_rating", fort_elo_rating_10:"fb_elo_rating_10",
-    fort_elo_rating_8:"fb_elo_rating_8", fort_elo_rating_6:"fb_elo_rating_6", gm_elo_rating:"gm_elo_rating",
-    efficiency:"efficiency", wins_ratio_avg:"wins_ratio_avg", global_rating_avg:"global_rating_avg" };
-  const COUNTRIES = { fr:["🇫🇷","France"],be:["🇧🇪","Belgique"],ch:["🇨🇭","Suisse"],ca:["🇨🇦","Canada"],
-    lu:["🇱🇺","Luxembourg"],de:["🇩🇪","Allemagne"],gb:["🇬🇧","Royaume-Uni"],es:["🇪🇸","Espagne"],
-    it:["🇮🇹","Italie"],pt:["🇵🇹","Portugal"],nl:["🇳🇱","Pays-Bas"],pl:["🇵🇱","Pologne"],cz:["🇨🇿","Tchéquie"],
-    sk:["🇸🇰","Slovaquie"],hu:["🇭🇺","Hongrie"],ro:["🇷🇴","Roumanie"],gr:["🇬🇷","Grèce"],se:["🇸🇪","Suède"],
-    no:["🇳🇴","Norvège"],fi:["🇫🇮","Finlande"],dk:["🇩🇰","Danemark"],ua:["🇺🇦","Ukraine"],tr:["🇹🇷","Turquie"],
-    ma:["🇲🇦","Maroc"],dz:["🇩🇿","Algérie"],tn:["🇹🇳","Tunisie"] };
+  const S={ metric:"fort_elo_rating_10", page:1, query:"", sortKey:"rank", sortDir:"asc",
+    rows:[], capped:false, loading:true, error:null, req:0, flash:false,
+    mine:null, mineState:MY?"loading":"none", neigh:null, date:null,
+    cache:new Map(), neighCache:new Map(), emblems:new Map() };
+  const $=id=>root.querySelector("#"+id);
+  const ui={ board:$("crBoard"), status:$("crStatus"), me:$("crMe"), rows:$("crRows"), count:$("crCount"),
+    title:$("crListTitle"), cap:$("crCap"), pin:$("crPin"), pager:$("crPagination"),
+    search:$("crSearch"), mineBtn:$("crMyClan") };
 
-  const state = { metric:"fort_elo_rating_10", page:1, query:"", sortKey:"rank", sortDir:"asc",
-    rows:[], ratings:null, focusMine:false, cache:new Map(), emblems:new Map() };
-  const ui = { metric:root.querySelector("#crMetric"), search:root.querySelector("#crSearch"),
-    status:root.querySelector("#crStatus"), own:root.querySelector("#crOwn"), podium:root.querySelector("#crPodium"),
-    rows:root.querySelector("#crRows"), count:root.querySelector("#crCount"), pager:root.querySelector("#crPagination"),
-    side:root.querySelector("#crSide"), mine:root.querySelector("#crMyClan") };
+  const esc=v=>String(v ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const nf=(v,d=0)=>{ const n=Number(v); return Number.isFinite(n) ? n.toLocaleString(window.CP_LOC,{minimumFractionDigits:d,maximumFractionDigits:d}) : "—"; };
+  const M=()=>METRICS[S.metric];
+  const val=(v,key=S.metric)=>{ const m=METRICS[key]; return v==null ? "—" : nf(v,m.dec||0)+(m.unit||""); };
+  const pts=(g,key=S.metric)=>{ const m=METRICS[key], s=nf(g,m.dec||0); return Math.abs(g)<=1 ? s+" pt" : s+" pts"; };
+  const myStat=(key=S.metric)=>S.mine?.[METRICS[key].field] || null;
+  const myTag=()=>S.mine?.clan_tag || clanTagIn || "";
+  const sk=w=>`<span class="cr-sk" style="width:${w}"></span>`;
 
-  const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-  const fmt = (v,d=0) => { const n=Number(v); return Number.isFinite(n) ? n.toLocaleString(window.CP_LOC,{minimumFractionDigits:d,maximumFractionDigits:d}) : "—"; };
-  const metricLabel = () => METRICS.find(([k])=>k===state.metric)?.[1] || "Classement";
-  const score = v => state.metric==="wins_ratio_avg" ? `${fmt(v,2)} %` : fmt(v);
-
-  async function api(path, params){
-    const query = new URLSearchParams({ application_id:CONFIG.applicationId, language:"fr", ...params });
-    const response = await fetch(`${CONFIG.api}${path}?${query}`);
-    const json = await response.json();
-    if(!response.ok || json.status!=="ok") throw new Error(json.error?.message || "API Wargaming indisponible");
-    return json;
-  }
-  function normalizeRows(rows, field){
-    return (Array.isArray(rows)?rows:[]).map(clan=>{ const stat=clan?.[field]||{};
-      return { clanId:Number(clan.clan_id), tag:clan.clan_tag||"", name:clan.clan_name||"", rank:stat.rank,
-        value:stat.value, rankDelta:stat.rank_delta, activity:clan.battles_count_avg_daily?.value,
-        countries:CONFIG.declaredCountries[String(clan.clan_id)]||[] };
-    }).filter(clan=>clan.rank!=null && clan.value!=null);
-  }
-  async function fetchAllRanking(){
-    if(state.cache.has(state.metric)) return state.cache.get(state.metric);
-    const field = RESPONSE_FIELD[state.metric];
-    const fields = ["clan_id","clan_tag","clan_name",field,"battles_count_avg_daily"].join(",");
-    const all=[];
-    for(let page=1; page<=50; page+=1){
-      const json = await api("/wot/clanratings/top/", { rank_field:state.metric, limit:1000, page_no:page, fields });
-      all.push(...normalizeRows(json.data, field));
-      if(!Array.isArray(json.data) || json.data.length<1000) break;
+  /* ── Wargaming ───────────────────────────────────────────────────
+     « SOURCE_NOT_AVAILABLE » arrive au hasard et passe à l'essai
+     suivant (constaté) : deux nouvelles tentatives, 0,5 s puis 2 s,
+     avant d'afficher une erreur. */
+  async function api(path, params, essais=3){
+    const q=new URLSearchParams({ application_id:WG_APP_ID, ...params });
+    for(let n=1;;n++){
+      try{
+        const r=await fetch(`${API}${path}?${q}`);
+        const j=await r.json();
+        if(r.ok && j.status==="ok") return j;
+        throw new Error(j.error?.message || ("HTTP "+r.status));
+      }catch(e){
+        if(n>=essais) throw e;
+        await new Promise(res=>setTimeout(res, 500*n*n));
+      }
     }
-    state.cache.set(state.metric, all);
-    return all;
   }
-  async function fetchOwnRatings(){
-    if(!CONFIG.clanId){ state.ratings=null; return; }
-    const json = await api("/wot/clanratings/clans/", { clan_id:CONFIG.clanId });
-    state.ratings = json.data?.[String(CONFIG.clanId)] || null;
+  async function fetchRanking(key){
+    if(S.cache.has(key)) return S.cache.get(key);
+    const m=METRICS[key], fields=["clan_id","clan_tag","clan_name",m.field,"battles_count_avg_daily"].join(",");
+    const page=async n=>{ const j=await api("/wot/clanratings/top/",{ rank_field:key, limit:1000, page_no:n, fields });
+      return Array.isArray(j.data) ? j.data : []; };
+    let raw=[], capped=false;
+    if(m.full){
+      for(let n=1; n<=10; n++){ const d=await page(n); raw.push(...d); if(d.length<1000) break; }
+    }else{
+      const [a,b]=await Promise.all([page(1), page(2)]);
+      raw=a.concat(b); capped=b.length===1000;
+    }
+    const rows=raw.map(c=>{ const st=c?.[m.field]||{};
+      return { id:Number(c.clan_id), tag:c.clan_tag||"", name:c.clan_name||"", rank:st.rank, value:st.value,
+               delta:st.rank_delta, act:c.battles_count_avg_daily?.value }; })
+      .filter(r=>r.rank!=null && r.value!=null).sort((a,b)=>a.rank-b.rank);
+    const out={ rows, capped };
+    S.cache.set(key,out);
+    return out;
   }
-  async function fetchVisibleEmblems(rows){
-    const missing = [...new Set(rows.map(r=>String(r.clanId)).filter(id=>id && !state.emblems.has(id)))];
-    if(!missing.length) return false;
-    missing.forEach(id=>state.emblems.set(id,null));
-    const json = await api("/wgn/clans/info/", { clan_id:missing.join(","), fields:"clan_id,tag,emblems" });
-    Object.entries(json.data||{}).forEach(([id,clan])=>{ const e=clan?.emblems||{};
-      state.emblems.set(id, e.x32?.portal || e.x64?.portal || e.x64?.wot || null); });
-    return true;
+  async function fetchMine(){
+    if(!MY || S.mineState==="ok") return;
+    try{
+      const j=await api("/wot/clanratings/clans/",{ clan_id:MY });
+      S.mine=j.data?.[String(MY)] || null; S.mineState="ok";
+    }catch(e){ S.mineState="err"; }
   }
-  function getSortValue(row){ if(state.sortKey==="activity")return row.activity; if(state.sortKey==="evolution")return row.rankDelta; if(state.sortKey==="score")return row.value; return row.rank; }
+  // Ton clan et ses voisins immédiats : deux devant, deux derrière quand c'est possible.
+  async function fetchNeigh(key){
+    if(S.neighCache.has(key)) return S.neighCache.get(key);
+    const m=METRICS[key];
+    if(!MY || myStat(key)?.rank==null) return null;
+    const j=await api("/wot/clanratings/neighbors/",{ clan_id:MY, rank_field:key, limit:4,
+      fields:["clan_id","clan_tag","clan_name",m.field].join(",") });
+    const L=(j.data||[]).map(c=>({ id:Number(c.clan_id), tag:c.clan_tag||"", name:c.clan_name||"",
+      rank:c?.[m.field]?.rank, value:c?.[m.field]?.value })).filter(r=>r.rank!=null && r.value!=null).sort((a,b)=>a.rank-b.rank);
+    const i=L.findIndex(r=>r.id===MY);
+    if(i<0) return null;
+    const start=Math.max(0, Math.min(i-2, L.length-5));
+    const out={ list:L.slice(start,start+5), me:L[i], above:L[i-1]||null, below:L[i+1]||null };
+    S.neighCache.set(key,out);
+    return out;
+  }
+  async function fetchDate(){
+    try{ const j=await api("/wot/clanratings/dates/",{},1);
+      const d=j.data?.all?.dates||[]; if(d.length) S.date=new Date(Math.max(...d)*1000);
+    }catch(e){ /* la date n'est qu'un repère : on s'en passe */ }
+  }
+  /* Les emblèmes arrivent après le tableau : on les pose en place, sans
+     redessiner, pour ne pas faire sauter la page sous la souris. */
+  async function fetchEmblems(ids){
+    const miss=[...new Set(ids.filter(id=>id && !S.emblems.has(id)))];
+    miss.forEach(id=>S.emblems.set(id,null));
+    for(let i=0; i<miss.length; i+=100){
+      const j=await api("/wgn/clans/info/",{ clan_id:miss.slice(i,i+100).join(","), fields:"clan_id,emblems" },2);
+      Object.entries(j.data||{}).forEach(([id,c])=>{ const e=c?.emblems||{};
+        S.emblems.set(Number(id), e.x64?.portal || e.x32?.portal || e.x64?.wot || null); });
+    }
+  }
+  function emblemHTML(id,tag){
+    const u=S.emblems.get(id);
+    return `<span class="cr-em${u?" has":""}" data-em="${id}" aria-hidden="true">${u?`<img src="${esc(u)}" alt="" loading="lazy" decoding="async">`:esc((tag||"?").slice(0,2))}</span>`;
+  }
+  function paintEmblems(){
+    root.querySelectorAll(".cr-em[data-em]:not(.has)").forEach(el=>{ const u=S.emblems.get(Number(el.dataset.em));
+      if(u){ el.classList.add("has"); el.innerHTML=`<img src="${esc(u)}" alt="" loading="lazy" decoding="async">`; } });
+  }
+  function loadEmblems(){
+    const ids=[...root.querySelectorAll(".cr-em[data-em]")].map(el=>Number(el.dataset.em));
+    fetchEmblems(ids).then(paintEmblems).catch(()=>{});
+  }
+
+  /* ── Les tuiles : une par classement, la place du clan dessous ──
+     Même composition que « Niveau officiel Wargaming » dans la Vue
+     clan (pastille d'icône, étiquette, chiffre, ligne de rang) ; la
+     tuile choisie prend le liseré doré de la tuile « SR moyen ». */
+  function tileHTML(key){
+    const m=METRICS[key], on=key===S.metric, st=myStat(key);
+    let v="", r="";
+    if(MY){
+      if(S.mineState==="loading"){ v=sk("52px"); r=sk("70px"); }
+      else if(st?.rank!=null){ v=`#${nf(st.rank)}`; r=val(st.value,key); }
+      else if(S.mineState==="ok"){ v=`<span class="z">—</span>`; r="non classé"; }
+      else { v=`<span class="z">—</span>`; r="&nbsp;"; }
+    }
+    return `<button type="button" role="tab" class="cr-tile${on?" on":""}" aria-selected="${on}" tabindex="${on?0:-1}" data-cr-metric="${key}">
+      <span class="cr-tile-h"><span class="cr-ic" aria-hidden="true"><svg class="ic"><use href="#${m.ic}"/></svg></span><span class="l">${esc(m.short)}</span></span>
+      ${MY?`<span class="v">${v}</span><span class="r">${r}</span>`:""}</button>`;
+  }
+  function renderBoard(){
+    ui.board.innerHTML=GROUPS.map(([g,keys])=>`<div class="cr-grp" role="presentation"><span class="cr-grp-l">${esc(g)}</span>
+      <div class="cr-tiles" role="presentation">${keys.map(tileHTML).join("")}</div></div>`).join("");
+    ui.board.classList.toggle("no-clan", !MY);
+  }
+
+  /* ── Le verdict : la classe .vd de la Vue clan et des Batailles ──
+     Une phrase, le rang en grand, puis les voisins à la place de la
+     courbe. Le rang n'est écrit qu'une fois en grand ; la phrase dit
+     ce que le chiffre ne dit pas (le mouvement, l'écart). */
+  function renderMe(){
+    if(!MY){ ui.me.hidden=true; ui.me.innerHTML=""; return; }
+    ui.me.hidden=false;
+    const m=M(), st=myStat();
+
+    if(S.mineState==="loading" || (S.loading && st?.rank!=null)){
+      ui.me.innerHTML=`<div class="vd-haut"><div class="vd-g"><p class="vd-t">${sk("62%")}</p><p class="vd-p">${sk("88%")}<br>${sk("54%")}</p></div>
+        <div class="vd-n"><b>${sk("150px")}</b></div></div>
+        <div class="vd-c cr-near"><div class="cr-rungs-sk">${sk("100%").repeat(5)}</div></div>`;
+      return;
+    }
+    if(S.mineState==="err"){
+      ui.me.innerHTML=`<div class="vd-haut"><div class="vd-g"><p class="vd-p">La position de ton clan n'a pas pu être chargée.</p>
+        <button type="button" class="btn cr-retry" data-cr-retry>Réessayer</button></div></div>`;
+      return;
+    }
+    if(st?.rank==null){
+      const why=EXCLU[S.mine?.exclude_reasons?.[S.metric]] || "";
+      ui.me.innerHTML=`<div class="vd-haut"><div class="vd-g"><h3 class="vd-t">Ton clan <em>n'est pas classé</em> ici.</h3>
+        <p class="vd-p"><span>Ton clan n'apparaît pas dans ce classement pour le moment.</span>${why?` <span>${why}</span>`:""}</p></div></div>`;
+      return;
+    }
+
+    const total=m.full ? S.rows.length : 0, d=Number(st.rank_delta||0), N=S.neigh;
+    const titre = st.rank===1 ? "Ton clan <em>mène l'Europe</em>."
+      : d>0 ? "Ton clan <em>gagne du terrain</em>."
+      : d<0 ? "Ton clan <em>perd du terrain</em>."
+      : "Ton clan <em>tient sa place</em>.";
+    const ph=[];
+    if(total && st.rank<=total){
+      const p=st.rank/total*100, top=p<1 ? nf(Math.max(.1,Math.ceil(p*10)/10),1) : nf(Math.ceil(p));
+      ph.push(`Top <b>${top} %</b> des <b>${nf(total)}</b> clans classés.`);
+    }
+    if(st.rank_delta!=null){
+      const n=Math.abs(d);
+      ph.push(!d ? "Aucun changement depuis le calcul précédent."
+        : `<span class="${d>0?"up":"dn"}">${d>0?"▲":"▼"} ${nf(n)} ${n>1?"places":"place"}</span> depuis le calcul précédent.`);
+    }
+    if(N){
+      const me=N.me, a=N.above, b=N.below;
+      if(!a){ if(b) ph.push(`Ton clan est <b>en tête</b>, avec <b>${pts(me.value-b.value)}</b> d'avance sur <b>[${esc(b.tag)}]</b>.`); }
+      else if(a.value-me.value<=0) ph.push(`À <b>égalité de points</b> avec <b>[${esc(a.tag)}]</b>, classé juste devant.`);
+      else ph.push(`<b>${pts(a.value-me.value)}</b> ${Math.abs(a.value-me.value)<=1?"sépare":"séparent"} ton clan de <b>[${esc(a.tag)}]</b>, à la place <b>#${nf(a.rank)}</b>.`);
+      if(a && b) ph.push(`Derrière : <b>[${esc(b.tag)}]</b>, à ${pts(me.value-b.value)}.`);
+    }
+    const act=S.mine?.battles_count_avg_daily?.value;
+    if(act!=null) ph.push(`Activité moyenne : <b>${nf(act,2)}</b> batailles par jour.`);
+
+    let near="";
+    if(N){
+      near=`<figure class="vd-c cr-near"><div class="vd-ch"><figcaption>Autour de ton clan</figcaption></div><ol class="cr-rungs">${N.list.map(r=>{
+        const mine=r.id===MY, g=r.value-N.me.value;
+        return `<li${mine?' class="me"':""}><button type="button" class="cr-rung" data-clan="${r.id}" data-tag="${esc(r.tag)}">
+          <span class="r">#${nf(r.rank)}</span>${emblemHTML(r.id,r.tag)}
+          <span class="nm"><b data-i18n-skip>[${esc(r.tag)}]</b><span data-i18n-skip>${esc(r.name)}</span></span>
+          <span class="v">${val(r.value)}</span>
+          <span class="g">${mine?'<span class="cr-you">ton clan</span>':(g>0?"+":g<0?"−":"±")+nf(Math.abs(g),M().dec||0)}</span></button></li>`; }).join("")}</ol></figure>`;
+    }else{
+      ph.push("Les clans voisins n'ont pas pu être chargés.");
+    }
+    ui.me.innerHTML=`<div class="vd-haut"><div class="vd-g"><h3 class="vd-t">${titre}</h3>
+        <p class="vd-p">${ph.map(x=>`<span>${x}</span>`).join(" ")}</p></div>
+      <div class="vd-n"><b>#${nf(st.rank)}</b><i>${esc(m.long)}</i></div></div>${near}`;
+  }
+
+  /* ── Le classement complet ── */
+  function getSort(r){ return S.sortKey==="activity" ? r.act : S.sortKey==="evolution" ? r.delta : S.sortKey==="score" ? r.value : r.rank; }
   function sortedRows(){
-    const query = state.query.trim().toLowerCase();
-    return state.rows.filter(row=>!query || row.tag.toLowerCase().includes(query) || row.name.toLowerCase().includes(query)).slice()
-      .sort((a,b)=>{ const av=Number(getSortValue(a)), bv=Number(getSortValue(b));
-        if(!Number.isFinite(av)&&!Number.isFinite(bv))return 0; if(!Number.isFinite(av))return 1; if(!Number.isFinite(bv))return -1;
-        return state.sortDir==="asc" ? av-bv : bv-av; });
+    const q=S.query.trim().toLowerCase();
+    return S.rows.filter(r=>!q || r.tag.toLowerCase().includes(q) || r.name.toLowerCase().includes(q)).slice()
+      .sort((a,b)=>{ const av=Number(getSort(a)), bv=Number(getSort(b));
+        if(!Number.isFinite(av) && !Number.isFinite(bv)) return a.rank-b.rank;
+        if(!Number.isFinite(av)) return 1; if(!Number.isFinite(bv)) return -1;
+        return (S.sortDir==="asc" ? av-bv : bv-av) || a.rank-b.rank; });
   }
-  function countryHTML(row){
-    const countries = row.countries.map(c=>COUNTRIES[c]).filter(Boolean);
-    if(!countries.length) return '<span class="cr-country unknown"><span>🌐</span><span>Non renseigné</span></span>';
-    return `<span class="cr-country" title="Pays déclaré par le staff"><span>${countries.map(i=>i[0]).join(" ")}</span><span>${esc(countries.map(i=>i[1]).join(", "))}</span></span>`;
+  // les trois premiers portent les pastilles or, argent, bronze du top 5 de la Vue clan
+  function rankHTML(rank){ return rank<=3 ? `<span class="cr-rk r${rank}">${rank}</span>` : nf(rank); }
+  function rowHTML(r){
+    const mine=r.id===MY, d=Number(r.delta||0);
+    const delta = !d ? `<span class="z">—</span>`
+      : `<span class="${d>0?"up":"dn"}" title="${nf(Math.abs(d))} ${Math.abs(d)>1?(d>0?"places gagnées":"places perdues"):(d>0?"place gagnée":"place perdue")}">${d>0?"▲":"▼"}${nf(Math.abs(d))}</span>`;
+    return `<tr class="${mine?"mine":""}">
+      <td class="c-rank">${rankHTML(r.rank)}</td>
+      <td class="c-clan"><button type="button" class="cr-clan" data-clan="${r.id}" data-tag="${esc(r.tag)}">${emblemHTML(r.id,r.tag)}<b class="t" data-i18n-skip>[${esc(r.tag)}]</b><span class="n" data-i18n-skip>${esc(r.name)}</span>${mine?'<span class="cr-you">ton clan</span>':""}</button></td>
+      <td class="c-delta">${delta}</td>
+      <td class="c-act">${r.act!=null?nf(r.act,2):"—"}</td>
+      <td class="c-score">${val(r.value)}</td></tr>`;
   }
-  function emblemHTML(row){ const url=state.emblems.get(String(row.clanId)); return url ? `<img src="${esc(url)}" alt="Emblème ${esc(row.tag)}">` : esc(row.tag.slice(0,3)||"?"); }
-  function renderOwn(){
-    const field=RESPONSE_FIELD[state.metric], stat=state.ratings?.[field], activity=state.ratings?.battles_count_avg_daily?.value;
-    const delta=Number(stat?.rank_delta||0), up=delta>=0;
-    ui.mine.disabled = stat?.rank==null;
-    ui.own.innerHTML = `
-      <div class="cr-card-label">Position de ton clan · ${esc(metricLabel())}</div>
-      <div class="cr-own-main"><span class="cr-mark">${esc(CONFIG.clanTag||"—")}</span><div>
-        <div class="cr-rank">#${stat?.rank!=null?fmt(stat.rank):"—"}</div>
-        <div class="cr-clan-name"><b>[${esc(CONFIG.clanTag||"—")}]</b> ${esc(state.ratings?.clan_name||"Votre clan")}</div>
-        ${delta?`<span class="cr-delta ${up?"up":"down"}">${up?"▲":"▼"} ${Math.abs(delta)} place${Math.abs(delta)>1?"s":""}</span>`:""}
-      </div></div>
-      <div class="cr-own-foot">
-        <span>Score actuel<b>${stat?.value!=null?score(stat.value):"—"}</b></span>
-        <span>Variation officielle<b>${delta?`${up?"+":"−"}${Math.abs(delta)} place${Math.abs(delta)>1?"s":""}`:"Stable"}</b></span>
-        <span>Activité / jour<b>${activity!=null?fmt(activity,2):"—"}</b></span>
-      </div>`;
+  function renderPin(visible){
+    const st=myStat(), show=MY && st?.rank!=null && !S.loading && !S.error && !S.query.trim() && !visible.has(MY);
+    ui.pin.hidden=!show;
+    if(!show){ ui.pin.innerHTML=""; return; }
+    const inList=S.rows.some(r=>r.id===MY), tag=myTag();
+    ui.pin.innerHTML=`<span class="cr-pin-k">Ton clan</span><span class="r">#${nf(st.rank)}</span>${emblemHTML(MY,tag)}
+      <span class="nm"><b data-i18n-skip>[${esc(tag)}]</b><span data-i18n-skip>${esc(S.mine?.clan_name||"")}</span></span>
+      <span class="v">${val(st.value)}</span>
+      ${inList?`<button type="button" class="btn" data-cr-jump>Voir sa place</button>`:`<span class="cr-pin-x">au-delà des 2 000 premiers</span>`}`;
   }
-  function renderPodium(){
-    const podium = state.rows.slice().sort((a,b)=>a.rank-b.rank).slice(0,3);
-    const byRank = r => podium.find(row=>row.rank===r) || {};
-    const card = (row,rank) => `<div class="cr-podium-card ${rank===1?"first":""}"><span class="cr-medal">${rank}</span><strong>[${esc(row.tag||"—")}]</strong><small>${esc(row.name||"Aucun clan")}</small><em>${row.value!=null?score(row.value):"—"}</em></div>`;
-    ui.podium.innerHTML = `<header><b>Podium européen</b><span>${esc(metricLabel())}</span></header><div class="cr-podium-grid">${card(byRank(2),2)}${card(byRank(1),1)}${card(byRank(3),3)}</div>`;
-  }
-  function renderSide(){
-    const best = state.rows.slice().sort((a,b)=>a.rank-b.rank)[0];
-    const rating = k => state.ratings?.[k];
-    const tier = (label,stat) => { const width=stat?.value?Math.max(8,Math.min(100,Number(stat.value)/1300*100)):0;
-      return `<div class="cr-tier"><span>${label}</span><span class="cr-track"><i class="cr-fill" style="width:${width}%"></i></span><b>${stat?.value!=null?fmt(stat.value):"—"}</b></div>`; };
-    ui.side.innerHTML = `
-      <section class="cr-side-card"><h3>Meilleur score</h3><p>Meilleure cote actuelle pour ${esc(metricLabel())}.</p>
-        <div class="cr-best">${best?score(best.value):"—"}</div><p>${best?`Détenue par <b>[${esc(best.tag)}]</b> ${esc(best.name)}.`:"Donnée indisponible."}</p></section>
-      <section class="cr-side-card"><h3>Cotes Bastion officielles</h3>
-        ${tier("Tier X",rating("fb_elo_rating_10"))}${tier("Tier VIII",rating("fb_elo_rating_8"))}${tier("Tier VI",rating("fb_elo_rating_6"))}</section>`;
-  }
-  function renderPagination(total){
-    const totalPages = Math.max(1, Math.ceil(total/CONFIG.pageSize));
-    if(state.page>totalPages) state.page=totalPages;
-    const pages=[];
-    if(state.page>3) pages.push(1,"…");
-    for(let page=Math.max(1,state.page-2); page<=Math.min(totalPages,state.page+2); page+=1) pages.push(page);
-    if(totalPages>state.page+2) pages.push("…",totalPages);
-    const buttons=[...new Set(pages)].map(page=>page==="…"?"<span>…</span>":`<button type="button" data-page="${page}" class="${page===state.page?"active":""}">${page}</button>`).join("");
-    ui.pager.innerHTML = `<button type="button" data-page="${state.page-1}" ${state.page===1?"disabled":""}>‹ Précédent</button>${buttons}<button type="button" data-page="${state.page+1}" ${state.page===totalPages?"disabled":""}>Suivant ›</button><span>${fmt(total)} clans · ${CONFIG.pageSize} par page</span>`;
-    ui.pager.querySelectorAll("button[data-page]").forEach(button=>{
-      button.addEventListener("click",()=>{ const page=Number(button.dataset.page); if(!page||page===state.page)return;
-        state.page=page; renderTable(); root.querySelector(".cr-table-card").scrollIntoView({behavior:"smooth",block:"start"}); });
-    });
+  // la pagination des Batailles (.bl-pager / .bl-pg), à l'identique
+  function renderPager(total){
+    const pages=Math.max(1,Math.ceil(total/PAGE));
+    if(S.page>pages) S.page=pages;
+    if(!total){ ui.pager.hidden=true; ui.pager.innerHTML=""; return; }
+    ui.pager.hidden=false;
+    const a=(S.page-1)*PAGE+1, b=Math.min(total,S.page*PAGE);
+    const set=new Set([1,pages,S.page-1,S.page,S.page+1]);
+    if(S.page<=3) [2,3,4].forEach(p=>set.add(p));
+    if(S.page>=pages-2) [pages-1,pages-2,pages-3].forEach(p=>set.add(p));
+    let prev=0, nums="";
+    [...set].filter(p=>p>=1 && p<=pages).sort((x,y)=>x-y).forEach(p=>{
+      if(p-prev>1) nums+=`<span class="bl-pg-dot" aria-hidden="true">…</span>`;
+      nums+=`<button type="button" class="bl-pg${p===S.page?" on":""}" data-page="${p}"${p===S.page?' aria-current="page"':""}>${p}</button>`; prev=p; });
+    ui.pager.innerHTML=`<button type="button" class="bl-pg" data-page="${S.page-1}" aria-label="Page précédente"${S.page===1?" disabled":""}>‹</button>${nums}<button type="button" class="bl-pg" data-page="${S.page+1}" aria-label="Page suivante"${S.page===pages?" disabled":""}>›</button>
+      <span class="bl-pg-info"><b>${nf(a)}–${nf(b)}</b> sur ${nf(total)}</span>`;
   }
   function renderTable(){
-    const all=sortedRows(), start=(state.page-1)*CONFIG.pageSize, visible=all.slice(start,start+CONFIG.pageSize);
-    ui.count.textContent = `Page ${state.page} · ${fmt(all.length)} clan${all.length>1?"s":""}`;
-    ui.rows.innerHTML = visible.length ? visible.map(row=>{ const mine=row.clanId===CONFIG.clanId, delta=Number(row.rankDelta||0);
-      return `<tr class="${mine?"mine":""}" data-clan-id="${row.clanId}"><td>#${fmt(row.rank)}</td>
-        <td><div class="cr-clan"><span class="cr-emblem">${emblemHTML(row)}</span><span><b>[${esc(row.tag)}]</b><small>${esc(row.name)}</small></span></div></td>
-        <td>${countryHTML(row)}</td><td>${row.activity!=null?fmt(row.activity,2):"—"}</td>
-        <td class="${delta>0?"cr-positive":delta<0?"cr-negative":""}">${delta?`${delta>0?"▲":"▼"}${Math.abs(delta)}`:"—"}</td>
-        <td class="cr-score">${score(row.value)}</td></tr>`; }).join("")
-      : '<tr><td colspan="6" class="cr-empty">Aucun clan ne correspond à cette recherche.</td></tr>';
-    root.querySelectorAll("[data-cr-sort]").forEach(button=>{ const active=button.dataset.crSort===state.sortKey;
-      button.classList.toggle("active",active); button.querySelector("i").textContent = active?(state.sortDir==="asc"?"▲":"▼"):"↕"; });
-    renderPagination(all.length);
-    if(state.focusMine){ const row=ui.rows.querySelector(`[data-clan-id="${CONFIG.clanId}"]`);
-      if(row){ row.classList.add("focus"); requestAnimationFrame(()=>row.scrollIntoView({behavior:"smooth",block:"center"})); setTimeout(()=>row.classList.remove("focus"),2400); }
-      state.focusMine=false; }
-    fetchVisibleEmblems(visible).then(changed=>{ if(changed) renderTable(); }).catch(()=>{});
+    const m=M();
+    ui.title.textContent=m.long;
+    ui.cap.hidden=!(S.capped && !S.loading && !S.error);
+    ui.cap.textContent="Plus de 2 000 clans figurent dans ce classement : la liste s'arrête aux 2 000 premiers. La place de ton clan, plus haut, reste exacte.";
+    root.querySelectorAll("[data-cr-sort]").forEach(b=>{ const th=b.closest("th"), on=b.dataset.crSort===S.sortKey;
+      if(on) th.setAttribute("aria-sort", S.sortDir==="asc"?"ascending":"descending"); else th.removeAttribute("aria-sort"); });
+
+    if(S.loading){
+      ui.count.textContent="";
+      ui.rows.innerHTML=Array.from({length:10},(_,i)=>`<tr class="cr-skrow"><td class="c-rank">${sk("20px")}</td>
+        <td class="c-clan"><span class="cr-sk-clan">${sk("24px")}${sk(60+(i*37)%90+"px")}</span></td><td class="c-delta">${sk("24px")}</td>
+        <td class="c-act">${sk("36px")}</td><td class="c-score">${sk("44px")}</td></tr>`).join("");
+      ui.mineBtn.disabled=true; renderPager(0); renderPin(new Set()); return;
+    }
+    if(S.error){
+      ui.count.textContent="";
+      ui.rows.innerHTML=`<tr><td colspan="5" class="cr-msg"><p>Wargaming n'a pas répondu.</p>
+        <p class="s">Le classement n'a pas pu être chargé (${esc(S.error)}). C'est en général passager.</p>
+        <button type="button" class="btn" data-cr-retry>Réessayer</button></td></tr>`;
+      ui.mineBtn.disabled=true; renderPager(0); renderPin(new Set()); return;
+    }
+    const all=sortedRows(), start=(S.page-1)*PAGE, vis=all.slice(start,start+PAGE), q=S.query.trim();
+    ui.count.textContent = q ? `${nf(all.length)} résultat${all.length>1?"s":""}`
+      : S.capped ? "2 000 premiers clans" : `${nf(S.rows.length)} clans classés`;
+    ui.mineBtn.disabled=!S.rows.some(r=>r.id===MY);
+    if(!S.rows.length){
+      ui.rows.innerHTML=`<tr><td colspan="5" class="cr-msg"><p>Wargaming ne publie aucun clan classé pour « <b>${esc(m.long)}</b> » en ce moment.</p>
+        <button type="button" class="btn" data-cr-metric="fort_elo_rating_10">Voir le Bastion rang X</button></td></tr>`;
+    }else if(!vis.length){
+      ui.rows.innerHTML=`<tr><td colspan="5" class="cr-msg"><p>Aucun clan ne correspond à « <b>${esc(q)}</b> » dans ce classement.</p>
+        ${S.capped?`<p class="s">Seuls les 2 000 premiers clans sont chargés ici.</p>`:""}</td></tr>`;
+    }else{
+      ui.rows.innerHTML=vis.map(rowHTML).join("");
+    }
+    renderPager(all.length);
+    renderPin(new Set(vis.map(r=>r.id)));
+    if(S.flash){
+      S.flash=false;
+      const tr=ui.rows.querySelector("tr.mine");
+      if(tr){ tr.classList.add("flash"); requestAnimationFrame(()=>tr.scrollIntoView({behavior:"smooth",block:"center"}));
+        setTimeout(()=>tr.classList.remove("flash"),1600); }
+    }
   }
-  function render(){ root.querySelectorAll("[data-cr-metric]").forEach(b=>b.classList.toggle("active",b.dataset.crMetric===state.metric)); renderOwn(); renderPodium(); renderSide(); renderTable(); }
-  async function loadMetric(){
-    ui.status.textContent="Chargement des données officielles…";
-    ui.rows.innerHTML='<tr><td colspan="6" class="cr-empty">Chargement du classement…</td></tr>';
-    try{ const [rows]=await Promise.all([fetchAllRanking(), fetchOwnRatings()]); state.rows=rows;
-      ui.status.textContent="Données officielles Wargaming · actualisées"; render();
-    }catch(error){ ui.status.textContent="Données officielles indisponibles"; ui.rows.innerHTML=`<tr><td colspan="6" class="cr-empty">${esc(error.message)}</td></tr>`; }
+  // la date et l'état de la source, à la fin de la phrase d'en-tête
+  function renderStatus(){
+    const st=ui.status;
+    st.classList.toggle("err", !!S.error);
+    st.textContent = S.loading ? "Chargement des données Wargaming…"
+      : S.error ? "Données Wargaming indisponibles."
+      : S.date ? `Données du ${S.date.toLocaleDateString(window.CP_LOC,{day:"numeric",month:"long",year:"numeric"})}.`
+      : "Données officielles Wargaming.";
+  }
+  function render(){ renderStatus(); renderBoard(); renderMe(); renderTable(); loadEmblems(); }
+
+  async function load(){
+    const key=S.metric, req=++S.req;
+    S.error=null; S.loading=!S.cache.has(key); S.neigh=S.neighCache.get(key)||null;
+    if(S.loading) render();
+    try{
+      const [data, neigh]=await Promise.all([ fetchRanking(key),
+        (async()=>{ await fetchMine(); return fetchNeigh(key).catch(()=>null); })() ]);
+      if(req!==S.req) return;
+      S.rows=data.rows; S.capped=data.capped; S.neigh=neigh; S.loading=false;
+    }catch(e){
+      if(req!==S.req) return;
+      S.loading=false; S.error=e?.message||String(e);
+    }
+    render();
+  }
+  function selectMetric(key){
+    if(!METRICS[key]) return;
+    S.metric=key; S.page=1; S.query=""; ui.search.value=""; S.sortKey="rank"; S.sortDir="asc";
+    load();
   }
   function focusMyClan(){
-    const mineIndex = state.rows.slice().sort((a,b)=>a.rank-b.rank).findIndex(row=>row.clanId===CONFIG.clanId);
-    if(mineIndex<0) return;
-    state.query=""; state.sortKey="rank"; state.sortDir="asc"; state.page=Math.floor(mineIndex/CONFIG.pageSize)+1; state.focusMine=true; ui.search.value=""; renderTable();
+    const i=S.rows.findIndex(r=>r.id===MY);   // S.rows est trié par rang
+    if(i<0) return;
+    S.query=""; ui.search.value=""; S.sortKey="rank"; S.sortDir="asc";
+    S.page=Math.floor(i/PAGE)+1; S.flash=true; renderTable(); loadEmblems();
+  }
+  // La fiche d'un clan vit dans « Chercher un clan » : on y passe directement.
+  function openClan(id, tag){
+    if(!id || typeof openSearchedClan!=="function") return;
+    switchView("search");
+    const q=document.getElementById("clanQuery"); if(q) q.value=tag||"";
+    const res=document.getElementById("clanResults"); if(res) res.innerHTML="";
+    window.scrollTo({ top:0 });
+    openSearchedClan(id);
   }
 
-  ui.metric.innerHTML = METRICS.map(([k,l])=>`<option value="${k}">${esc(l)}</option>`).join("");
-  ui.metric.value = state.metric;
-  ui.metric.addEventListener("change",()=>{ state.metric=ui.metric.value; state.page=1; state.query=""; state.sortKey="rank"; state.sortDir="asc"; ui.search.value=""; loadMetric(); });
-  root.querySelectorAll("[data-cr-metric]").forEach(button=>{ button.addEventListener("click",()=>{ state.metric=button.dataset.crMetric; ui.metric.value=state.metric; state.page=1; state.query=""; state.sortKey="rank"; state.sortDir="asc"; ui.search.value=""; loadMetric(); }); });
-  ui.search.addEventListener("input",()=>{ state.query=ui.search.value; state.page=1; renderTable(); });
-  root.querySelectorAll("[data-cr-sort]").forEach(button=>{ button.addEventListener("click",()=>{ const key=button.dataset.crSort;
-    if(state.sortKey===key) state.sortDir=state.sortDir==="asc"?"desc":"asc"; else { state.sortKey=key; state.sortDir="desc"; }
-    state.page=1; renderTable(); }); });
-  ui.mine.addEventListener("click", focusMyClan);
-  loadMetric();
+  ui.board.addEventListener("click",e=>{ const b=e.target.closest("[data-cr-metric]"); if(b && b.dataset.crMetric!==S.metric) selectMetric(b.dataset.crMetric); });
+  // flèches gauche/droite entre les onglets, comme tout groupe d'onglets
+  ui.board.addEventListener("keydown",e=>{
+    if(!["ArrowLeft","ArrowRight","Home","End"].includes(e.key)) return;
+    const tabs=[...ui.board.querySelectorAll("[role=tab]")], i=tabs.indexOf(document.activeElement);
+    if(i<0) return;
+    e.preventDefault();
+    const j=e.key==="Home"?0:e.key==="End"?tabs.length-1:(i+(e.key==="ArrowRight"?1:-1)+tabs.length)%tabs.length;
+    tabs[j].focus();
+  });
+  root.addEventListener("click",e=>{
+    const c=e.target.closest("[data-clan]"); if(c){ openClan(Number(c.dataset.clan), c.dataset.tag); return; }
+    if(e.target.closest("[data-cr-retry]")){ S.cache.delete(S.metric); S.neighCache.delete(S.metric); if(S.mineState==="err") S.mineState="loading"; load(); return; }
+    if(e.target.closest("[data-cr-jump]")){ focusMyClan(); return; }
+    const mt=e.target.closest(".cr-msg [data-cr-metric]"); if(mt){ selectMetric(mt.dataset.crMetric); return; }
+    const pg=e.target.closest("#crPagination button[data-page]");
+    if(pg && !pg.disabled){ const p=Number(pg.dataset.page); if(p && p!==S.page){ S.page=p; renderTable(); loadEmblems();
+      root.querySelector(".cr-list").scrollIntoView({ behavior:"smooth", block:"start" }); } return; }
+    const so=e.target.closest("[data-cr-sort]");
+    if(so){ const k=so.dataset.crSort;
+      if(S.sortKey===k) S.sortDir=S.sortDir==="asc"?"desc":"asc"; else { S.sortKey=k; S.sortDir=k==="rank"?"asc":"desc"; }
+      S.page=1; renderTable(); loadEmblems(); }
+  });
+  ui.search.addEventListener("input",()=>{ S.query=ui.search.value; S.page=1; renderTable(); loadEmblems(); });
+  ui.mineBtn.addEventListener("click", focusMyClan);
+
+  fetchDate().then(()=>{ if(!S.loading) renderStatus(); });
+  load();
 }
 
 /* boot() pilote le CADRE de l'application : page d'accueil publique,

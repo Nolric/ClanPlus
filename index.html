@@ -16,12 +16,12 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20240%20240%22%3E%3Crect%20width%3D%22240%22%20height%3D%22240%22%20rx%3D%2254%22%20fill%3D%22%23141310%22%2F%3E%3Cg%20transform%3D%22translate%2830%2030%29%20scale%280.75%29%22%20fill%3D%22%23d8b566%22%3E%3Ccircle%20cx%3D%22120%22%20cy%3D%22120%22%20r%3D%22100%22%20fill%3D%22none%22%20stroke%3D%22%23d8b566%22%20stroke-width%3D%227%22%2F%3E%3Crect%20x%3D%2281%22%20y%3D%228%22%20width%3D%2218%22%20height%3D%2218%22%2F%3E%3Crect%20x%3D%22111%22%20y%3D%224%22%20width%3D%2218%22%20height%3D%2218%22%2F%3E%3Crect%20x%3D%22141%22%20y%3D%228%22%20width%3D%2218%22%20height%3D%2218%22%2F%3E%3Cpath%20d%3D%22M161%2C155%20A54%2C54%200%201%201%20161%2C85%22%20fill%3D%22none%22%20stroke%3D%22%23d8b566%22%20stroke-width%3D%2220%22%20stroke-linecap%3D%22round%22%2F%3E%3Crect%20x%3D%22112%22%20y%3D%2294%22%20width%3D%2216%22%20height%3D%2252%22%20rx%3D%225%22%2F%3E%3Crect%20x%3D%2294%22%20y%3D%22112%22%20width%3D%2252%22%20height%3D%2216%22%20rx%3D%225%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
 <script src="i18n/index.fr.js?v=c0085edf"></script>
-<script src="i18n/index.en.js?v=0ce840b2"></script>
+<script src="i18n/index.en.js?v=35b28502"></script>
 <script src="i18n.js?v=ed3f8a4f"></script>
 <link rel="stylesheet" href="fonts/fonts.css?v=d81c6085">
 <!-- La charte vit dans app.css : progression.html la partage, et le
        navigateur la garde en cache d'une visite à l'autre. -->
-  <link rel="stylesheet" href="app.css?v=20c3df53">
+  <link rel="stylesheet" href="app.css?v=3151aa6c">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" defer></script>
 </head>
 <body>
@@ -681,48 +681,60 @@
     <div id="stList"></div>
   </div>
 
-  <div id="viewRanking" class="hidden">
-   <section id="clanRanking" class="cr-page">
-    <header class="cr-header">
-      <div>
-        <span class="cr-eyebrow">Compétition européenne</span>
-        <h2>Classement des clans</h2>
-        <p>Classements officiels World of Tanks du serveur EU.</p>
-      </div>
-      <span class="cr-status" id="crStatus">Connexion à Wargaming…</span>
-    </header>
-    <div class="cr-toolbar">
-      <label><span>Classer par</span><select id="crMetric"></select></label>
-      <div class="cr-quick" aria-label="Accès rapide">
-        <button type="button" data-cr-metric="fort_elo_rating_10">Tier X</button>
-        <button type="button" data-cr-metric="fort_elo_rating_8">Tier VIII</button>
-        <button type="button" data-cr-metric="fort_elo_rating_6">Tier VI</button>
-      </div>
-      <button type="button" class="cr-my-clan" id="crMyClan" disabled>◎ Voir mon clan</button>
-      <input id="crSearch" type="search" placeholder="Tag ou nom du clan…">
-    </div>
-    <div class="cr-overview">
-      <section class="cr-own" id="crOwn"></section>
-      <section class="cr-podium" id="crPodium"></section>
-    </div>
-    <div class="cr-layout">
-      <section class="cr-table-card">
-        <header><b>Classement général</b><span id="crCount">—</span></header>
-        <div class="cr-table-scroll">
-          <table class="cr-table">
-            <thead><tr>
-              <th>Rang</th><th>Clan</th><th>Pays déclaré</th>
-              <th><button type="button" data-cr-sort="activity">Activité / jour <i>↕</i></button></th>
-              <th><button type="button" data-cr-sort="evolution">Évolution <i>↕</i></button></th>
-              <th><button type="button" data-cr-sort="score">Score <i>↕</i></button></th>
-            </tr></thead>
-            <tbody id="crRows"></tbody>
-          </table>
+  <div id="viewRanking" class="hidden dashx">
+   <!-- CLASSEMENTS — contrat de conception (refonte du 20/10/2026)
+        THESIS : on ouvre cette page pour SITUER SON CLAN, puis pour regarder
+          les autres. Ni podium décoratif, ni tableau seul.
+        OWN-WORLD : le monde .dashx des vues de l'appli (Vue clan, Batailles) —
+          panneaux acier, filets, l'or pour la sélection et pour ton clan ;
+          titres et chiffres en --fx ; verdict .vd, tuiles façon « Niveau
+          officiel Wargaming », pastilles 1-2-3, pagination .bl-pager.
+        STORY : les tuiles donnent la place du clan dans chaque classement et
+          servent d'onglets ; le verdict dit où il en est et l'écart avec le
+          clan juste devant ; le classement complet suit.
+        FIRST VIEWPORT : en-tête de section et date ; deux groupes de quatre
+          tuiles ; verdict (phrase, grand rang, voisins) ; le haut du tableau.
+        FORM : structure choisie par Robert (« situer son clan »), habillée
+          aux codes de la Vue clan à sa demande. -->
+   <section id="clanRanking" class="cr" aria-labelledby="crTitle">
+    <h2 class="sec-h" id="crTitle">Classement des clans</h2>
+    <p class="sec-desc">Les classements officiels de Wargaming pour le serveur EU, recalculés chaque jour. <span class="cr-src" id="crStatus" role="status" aria-live="polite">Connexion à Wargaming…</span></p>
+
+    <div class="cr-board" id="crBoard" role="tablist" aria-label="Choisir un classement"></div>
+
+    <section class="vd cr-vd" id="crMe" aria-label="Position de ton clan" hidden></section>
+
+    <section class="cr-list" aria-labelledby="crListTitle">
+      <header class="cr-list-head">
+        <div class="cr-list-title">
+          <h3><svg class="ic" aria-hidden="true"><use href="#i-chart"/></svg><span id="crListTitle">Classement</span></h3>
+          <span class="hint" id="crCount"></span>
         </div>
-        <nav class="cr-pagination" id="crPagination" aria-label="Pages du classement"></nav>
-      </section>
-      <aside class="cr-side" id="crSide"></aside>
-    </div>
+        <div class="cr-tools">
+          <label class="cr-search">
+            <svg class="ic" aria-hidden="true"><use href="#i-search"/></svg>
+            <input id="crSearch" type="search" placeholder="Tag ou nom du clan" aria-label="Chercher un clan dans ce classement" autocomplete="off" spellcheck="false">
+          </label>
+          <button type="button" class="btn" id="crMyClan" disabled><svg class="ic" aria-hidden="true"><use href="#i-target"/></svg><span>Mon clan</span></button>
+        </div>
+      </header>
+      <p class="cr-cap" id="crCap" hidden></p>
+      <div class="cr-scroll">
+        <table class="cr-table">
+          <thead><tr>
+            <th scope="col" class="c-rank"><button type="button" data-cr-sort="rank">Rang</button></th>
+            <th scope="col" class="c-clan">Clan</th>
+            <th scope="col" class="c-delta"><button type="button" data-cr-sort="evolution" title="Places gagnées ou perdues depuis le calcul précédent">Évol.</button></th>
+            <th scope="col" class="c-act"><button type="button" data-cr-sort="activity" title="Batailles par jour, en moyenne, selon Wargaming">Activité / jour</button></th>
+            <th scope="col" class="c-score"><button type="button" data-cr-sort="score">Score</button></th>
+          </tr></thead>
+          <tbody id="crRows"></tbody>
+        </table>
+      </div>
+      <div class="cr-pin" id="crPin" hidden></div>
+      <nav class="bl-pager cr-pager" id="crPagination" aria-label="Pages du classement"></nav>
+    </section>
+    <p class="cr-note">Source : API publique de Wargaming, serveur EU. L'évolution compte les places gagnées ou perdues depuis le calcul précédent. Clique sur un clan pour ouvrir sa fiche.</p>
    </section>
   </div>
 
@@ -752,7 +764,7 @@
 <!-- Le code de l'application vit dans app.js : progression.html le
      partage, pour qu'il n'existe jamais deux versions des mêmes
      calculs. « defer » l'exécute après lecture complète de la page. -->
-  <script src="app.js?v=034fbf04" defer></script>
+  <script src="app.js?v=dba77670" defer></script>
 <script src="app-fin.js?v=4e570ee3" defer></script>
 </body>
 </html>

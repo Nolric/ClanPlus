@@ -868,110 +868,205 @@
   #viewRecruit .rc-notice{background:var(--accent-soft);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--ink-2);margin-bottom:14px}
   #viewRecruit .rc-disabled{opacity:.55;pointer-events:none}
   #viewRecruit .btn.primary{background:linear-gradient(180deg,var(--accent-2),var(--accent));border-color:transparent;color:#1a1608}
-  /* ---- Classement des clans (module, thème sombre via tokens) ---- */
-  #clanRanking{ --cr-panel:var(--card); --cr-panel-2:var(--surface-2); --cr-line:var(--border);
-    --cr-line-gold:color-mix(in srgb,var(--accent) 45%,transparent); --cr-text:var(--ink); --cr-text-2:var(--ink-2);
-    --cr-muted:var(--muted); --cr-gold:var(--accent); --cr-gold-2:var(--accent-2); --cr-good:var(--good); --cr-bad:var(--bad);
-    --cr-font:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; --cr-title:"Bahnschrift","Segoe UI Semibold",system-ui,sans-serif; }
-  .cr-page{box-sizing:border-box;max-width:1220px;margin:0 auto;color:var(--cr-text);font-family:var(--cr-font)}
-  .cr-page *,.cr-page *::before,.cr-page *::after{box-sizing:border-box}
-  .cr-header{display:flex;align-items:end;justify-content:space-between;gap:18px;margin-bottom:16px}
-  .cr-header h2{margin:5px 0 3px;font:800 26px/1.15 var(--cr-title)}
-  .cr-header p{margin:0;color:var(--cr-text-2);font-size:12px}
-  .cr-eyebrow{color:var(--cr-gold);font-size:10px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase}
-  .cr-status{color:var(--cr-text-2);font-size:11px;white-space:nowrap}
-  .cr-status::before{content:"";display:inline-block;width:7px;height:7px;margin-right:7px;border-radius:50%;background:var(--cr-good);box-shadow:0 0 8px rgba(76,192,119,.7)}
-  .cr-toolbar{display:flex;align-items:end;gap:10px;padding:11px 12px;margin-bottom:14px;border:1px solid var(--cr-line);border-radius:12px;background:var(--cr-panel);flex-wrap:wrap}
-  .cr-toolbar label{display:flex;flex-direction:column;gap:5px}
-  .cr-toolbar label>span{color:var(--cr-muted);font-size:9px;font-weight:800;letter-spacing:.7px;text-transform:uppercase}
-  .cr-toolbar select,.cr-toolbar input{height:36px;border:1px solid var(--cr-line);border-radius:8px;background:var(--cr-panel-2);color:var(--cr-text);padding:0 11px;outline:0;font:inherit;font-size:13px}
-  .cr-toolbar select{min-width:220px}
-  .cr-toolbar input{width:215px;margin-left:auto}
-  .cr-toolbar select:focus,.cr-toolbar input:focus{border-color:var(--cr-line-gold);box-shadow:0 0 0 3px rgba(229,185,92,.08)}
-  .cr-quick{display:flex;height:36px;overflow:hidden;border:1px solid var(--cr-line);border-radius:8px}
-  .cr-quick button{padding:0 13px;border:0;border-right:1px solid var(--cr-line);background:transparent;color:var(--cr-text-2);cursor:pointer;font:inherit}
-  .cr-quick button:last-child{border-right:0}
-  .cr-quick button.active{color:var(--cr-gold-2);background:rgba(229,185,92,.12)}
-  .cr-my-clan{height:36px;padding:0 14px;border:1px solid var(--cr-line-gold);border-radius:8px;background:rgba(229,185,92,.11);color:var(--cr-gold-2);font-weight:800;cursor:pointer;font:inherit}
-  .cr-my-clan:disabled{opacity:.4;cursor:not-allowed}
-  .cr-overview{display:grid;grid-template-columns:.9fr 1.55fr;gap:12px;margin-bottom:12px}
-  .cr-own,.cr-podium{min-height:190px;border-radius:13px;background:var(--cr-panel)}
-  .cr-own{position:relative;overflow:hidden;padding:18px;border:1px solid var(--cr-line-gold);background:linear-gradient(145deg,rgba(229,185,92,.13),rgba(20,23,27,.55) 58%),var(--cr-panel)}
-  .cr-card-label{color:var(--cr-gold);font-size:9px;font-weight:800;letter-spacing:.9px;text-transform:uppercase}
-  .cr-own-main{display:flex;align-items:center;gap:14px;margin-top:15px}
-  .cr-mark{width:52px;height:52px;display:grid;place-items:center;flex:0 0 auto;border:1px solid var(--cr-line-gold);border-radius:12px;background:rgba(0,0,0,.28);color:var(--cr-gold-2);font:700 15px var(--cr-title)}
-  .cr-rank{color:var(--cr-text);font:800 38px/1 var(--cr-title)}
-  .cr-clan-name{margin-top:6px;color:var(--cr-text-2);font-size:13px}
-  .cr-delta{display:inline-block;margin-top:6px;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:800}
-  .cr-delta.up{color:var(--cr-good);background:rgba(76,192,119,.12)}
-  .cr-delta.down{color:var(--cr-bad);background:rgba(239,90,104,.12)}
-  .cr-own-foot{display:flex;justify-content:space-between;gap:12px;margin-top:17px;padding-top:12px;border-top:1px solid var(--cr-line)}
-  .cr-own-foot span{color:var(--cr-muted);font-size:10px}
-  .cr-own-foot b{display:block;margin-top:3px;color:var(--cr-text);font:700 15px var(--cr-title)}
-  .cr-podium{padding:15px 16px;border:1px solid var(--cr-line);background:linear-gradient(180deg,var(--cr-panel),var(--cr-panel-2))}
-  .cr-podium>header{display:flex;justify-content:space-between;margin-bottom:12px}
-  .cr-podium>header b{font:700 13px var(--cr-title)}
-  .cr-podium>header span{color:var(--cr-muted);font-size:10px}
-  .cr-podium-grid{display:grid;grid-template-columns:1fr 1.08fr 1fr;align-items:end;gap:8px}
-  .cr-podium-card{min-width:0;padding:13px 8px 11px;border:1px solid var(--cr-line);border-radius:10px;background:var(--cr-panel-2);text-align:center}
-  .cr-podium-card.first{padding-top:20px;border-color:var(--cr-line-gold);background:linear-gradient(180deg,rgba(229,185,92,.13),var(--cr-panel-2))}
-  .cr-medal{width:25px;height:25px;display:grid;place-items:center;margin:0 auto 7px;border-radius:7px;background:var(--cr-panel-2);border:1px solid var(--cr-line);color:var(--cr-text-2)}
-  .cr-podium-card.first .cr-medal{color:#18150e;background:linear-gradient(#f0d17c,#c89538);border-color:transparent}
-  .cr-podium-card strong,.cr-podium-card small,.cr-podium-card em{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .cr-podium-card strong{font-size:13px}
-  .cr-podium-card small{margin:3px 0 8px;color:var(--cr-muted);font-size:10px}
-  .cr-podium-card em{color:var(--cr-gold-2);font:800 18px var(--cr-title);font-style:normal}
-  .cr-layout{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:12px}
-  .cr-table-card,.cr-side-card{border:1px solid var(--cr-line);border-radius:13px;background:var(--cr-panel)}
-  .cr-table-card{overflow:hidden}
-  .cr-table-card>header{display:flex;justify-content:space-between;padding:13px 15px;border-bottom:1px solid var(--cr-line)}
-  .cr-table-card>header b{font:700 13px var(--cr-title)}
-  .cr-table-card>header span{color:var(--cr-muted);font-size:10px}
-  .cr-table-scroll{overflow-x:auto}
-  .cr-table{width:100%;min-width:760px;border-collapse:collapse;table-layout:fixed}
-  .cr-table th,.cr-table td{padding:9px 12px;border-bottom:1px solid var(--cr-line);text-align:left}
-  .cr-table th{color:var(--cr-muted);font-size:9px;letter-spacing:.7px;text-transform:uppercase}
-  .cr-table td{color:var(--cr-text-2);font-size:12px}
-  .cr-table th:nth-child(1),.cr-table td:nth-child(1){width:70px;text-align:center}
-  .cr-table th:nth-child(3),.cr-table td:nth-child(3){width:128px}
-  .cr-table th:nth-child(4),.cr-table td:nth-child(4){width:112px}
-  .cr-table th:nth-child(5),.cr-table td:nth-child(5){width:92px;text-align:right}
-  .cr-table th:nth-child(6),.cr-table td:nth-child(6){width:96px;text-align:right}
-  .cr-table th button{display:inline-flex;align-items:center;gap:5px;width:100%;padding:0;border:0;background:none;color:inherit;font:inherit;text-transform:inherit;cursor:pointer}
-  .cr-table th:nth-child(5) button,.cr-table th:nth-child(6) button{justify-content:end}
-  .cr-table th button.active,.cr-table th button:hover{color:var(--cr-gold-2)}
-  .cr-table th button i{color:var(--cr-gold-2);font-style:normal}
-  .cr-table tr.mine td{background:linear-gradient(90deg,rgba(229,185,92,.14),rgba(229,185,92,.035));border-color:var(--cr-line-gold)}
-  .cr-clan{display:grid;grid-template-columns:30px minmax(0,1fr);align-items:center;gap:9px}
-  .cr-emblem{width:30px;height:30px;display:grid;place-items:center;border:1px solid var(--cr-line);border-radius:8px;color:var(--cr-gold);background:var(--cr-panel-2);font-size:9px;font-weight:800}
-  .cr-emblem img{display:block;width:26px;height:26px;object-fit:contain}
-  .cr-clan b,.cr-clan small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .cr-clan b{color:var(--cr-text)}
-  .cr-clan small{margin-top:2px;color:var(--cr-muted);font-size:10px}
-  .cr-country{display:flex;align-items:center;gap:6px;min-width:0;font-size:10px}
-  .cr-country span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .cr-country.unknown{color:var(--cr-muted)}
-  .cr-score{color:var(--cr-text) !important;font:800 14px var(--cr-title)}
-  .cr-positive{color:var(--cr-good) !important}
-  .cr-negative{color:var(--cr-bad) !important}
-  @keyframes crFocus{0%,100%{box-shadow:inset 0 0 0 1px rgba(229,185,92,.45)}45%{box-shadow:inset 0 0 0 2px #f0c75e,0 0 18px rgba(229,185,92,.28)}}
-  .cr-table tr.focus td{background:rgba(229,185,92,.22) !important;animation:crFocus 1.1s ease-in-out 2}
-  .cr-pagination{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px;padding:14px}
-  .cr-pagination button{min-width:34px;height:34px;padding:0 10px;border:1px solid var(--cr-line);border-radius:8px;color:var(--cr-text-2);background:var(--cr-panel-2);cursor:pointer;font:inherit}
-  .cr-pagination button.active{color:var(--cr-gold-2);border-color:var(--cr-line-gold);background:rgba(229,185,92,.11)}
-  .cr-pagination button:disabled{opacity:.4;cursor:default}
-  .cr-pagination span{color:var(--cr-muted);font-size:12px}
-  .cr-side{display:flex;flex-direction:column;gap:12px}
-  .cr-side-card{padding:14px}
-  .cr-side-card h3{margin:0 0 12px;font:700 12px var(--cr-title)}
-  .cr-side-card p{margin:0;color:var(--cr-text-2);font-size:11px;line-height:1.55}
-  .cr-best{margin:16px 0 6px;color:var(--cr-text);font:800 38px/1 var(--cr-title)}
-  .cr-tier{display:grid;grid-template-columns:55px 1fr 42px;align-items:center;gap:8px;margin:10px 0;color:var(--cr-text-2);font-size:11px}
-  .cr-track{height:5px;overflow:hidden;border-radius:10px;background:color-mix(in srgb,var(--cr-text) 10%,transparent)}
-  .cr-fill{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#bf8d36,var(--cr-gold-2))}
-  .cr-empty{padding:32px;color:var(--cr-muted);text-align:center}
-  @media (max-width:920px){.cr-toolbar{flex-wrap:wrap}.cr-toolbar input{width:100%;margin-left:0}.cr-overview,.cr-layout{grid-template-columns:1fr}}
-  @media (max-width:600px){.cr-header{align-items:start;flex-direction:column}.cr-toolbar select{min-width:0;width:100%}.cr-quick{width:100%}.cr-quick button{flex:1}.cr-own-foot{flex-wrap:wrap}}
+  /* ---- Classements des clans — refonte du 20/10/2026 ----
+     Aux codes des vues de l'appli : #viewRanking porte .dashx comme la
+     Vue clan, et la page réemploie ce qui existe déjà — .sec-h / .sec-desc
+     (Batailles), le verdict .vd, .btn, la pagination .bl-pager. Le reste
+     recopie les mesures de la Vue clan : tuiles .off, carte .d2card,
+     tableau .pl, pastilles .t5rk. L'or marque la sélection et ton clan. */
+  #clanRanking{color:var(--ink)}
+  #clanRanking [hidden]{display:none !important}
+  #clanRanking .ic{width:15px;height:15px;flex:none}
+  #clanRanking .up{color:var(--good)} #clanRanking .dn{color:var(--bad)} #clanRanking .z{color:var(--muted)}
+  #clanRanking>.sec-h{margin-top:4px}
+  #clanRanking .cr-src{color:var(--muted)}
+  #clanRanking .cr-src.err{color:var(--or)}
+  #clanRanking .cr-sk{display:inline-block;max-width:100%;height:12px;vertical-align:middle;border-radius:4px;background:var(--raised);
+    animation:crPulse 1.3s ease-in-out infinite}
+  @keyframes crPulse{50%{opacity:.45}}
+
+  /* Les tuiles-onglets — mesures des tuiles « Niveau officiel Wargaming » */
+  #clanRanking .cr-board{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;margin:0 0 16px}
+  #clanRanking .cr-grp{min-width:0}
+  #clanRanking .cr-grp-l{display:block;margin:0 2px 8px;font-size:10.5px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--ink-2)}
+  #clanRanking .cr-tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+  #clanRanking .cr-tile{appearance:none;display:flex;flex-direction:column;align-items:flex-start;min-width:0;margin:0;padding:12px 13px;
+    border:1px solid var(--line);border-radius:11px;background:var(--surface-1);color:var(--ink-2);font:inherit;text-align:left;cursor:pointer;
+    transition:transform .22s cubic-bezier(.16,1,.3,1),border-color .22s ease,background-color .22s ease}
+  #clanRanking .cr-tile:hover{transform:translateY(-2px);border-color:var(--ring)}
+  #clanRanking .cr-tile:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
+  #clanRanking .cr-tile.on{border-color:var(--gold-line);background:linear-gradient(165deg,rgba(229,185,92,.12),rgba(229,185,92,.02))}
+  #clanRanking .cr-tile-h{display:flex;align-items:center;gap:8px;max-width:100%;margin-bottom:6px}
+  #clanRanking .cr-ic{width:24px;height:24px;flex:none;display:grid;place-items:center;border-radius:6px;background:var(--gold-soft);
+    border:1px solid var(--gold-line);color:var(--gold)}
+  #clanRanking .cr-ic svg{width:13px;height:13px}
+  #clanRanking .cr-tile .l{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:9.5px;font-weight:700;
+    letter-spacing:.6px;text-transform:uppercase;color:var(--muted)}
+  #clanRanking .cr-tile.on .l{color:var(--gold-2)}
+  #clanRanking .cr-tile .v{margin-top:2px;font-family:var(--fx);font-size:20px;line-height:1.1;color:var(--ink);font-variant-numeric:tabular-nums}
+  #clanRanking .cr-tile.on .v{color:var(--gold-2)}
+  #clanRanking .cr-tile .r{max-width:100%;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10.5px;
+    color:var(--ink-2);font-variant-numeric:tabular-nums}
+  #clanRanking .cr-tile .v .cr-sk{height:18px}
+  #clanRanking .cr-board.no-clan .cr-tile-h{margin-bottom:0}
+
+  /* Le verdict : la classe globale .vd ; les voisins tiennent la place de la courbe */
+  #clanRanking .cr-vd .vd-t{margin:0 0 10px}
+  #clanRanking .cr-vd .vd-n b{font-variant-numeric:tabular-nums}
+  #clanRanking .cr-vd .vd-n i{max-width:220px;margin-left:auto}
+  #clanRanking .cr-vd .vd-p .cr-sk,#clanRanking .cr-vd .vd-t .cr-sk{height:14px;margin:4px 0}
+  #clanRanking .cr-vd .vd-t .cr-sk{height:30px}
+  #clanRanking .cr-vd .vd-n .cr-sk{height:64px;border-radius:10px}
+  #clanRanking .cr-retry{margin-top:12px}
+  #clanRanking .cr-near .vd-ch{margin-bottom:6px}
+  #clanRanking .cr-rungs{list-style:none;margin:0;padding:0}
+  #clanRanking .cr-rungs li+li{border-top:1px solid var(--line-2)}
+  #clanRanking .cr-rung{appearance:none;display:grid;grid-template-columns:54px 24px minmax(0,1fr) auto 76px;align-items:center;gap:10px;
+    width:100%;margin:0;padding:7px 10px;border:0;border-radius:8px;background:none;color:var(--ink-2);font:inherit;font-size:12.5px;
+    text-align:left;cursor:pointer;transition:background-color .15s}
+  #clanRanking .cr-rung:hover{background:rgba(255,255,255,.03)}
+  #clanRanking .cr-rung .r{font-family:var(--fx);font-size:13.5px;color:var(--ink-2);text-align:right;font-variant-numeric:tabular-nums}
+  #clanRanking .cr-rung .nm{display:flex;align-items:baseline;gap:8px;min-width:0}
+  #clanRanking .cr-rung .nm b{flex:none;font-weight:600;color:var(--ink)}
+  #clanRanking .cr-rung .nm span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)}
+  #clanRanking .cr-rung .v{font-family:var(--fx);font-size:14px;color:var(--ink);text-align:right;font-variant-numeric:tabular-nums}
+  #clanRanking .cr-rung .g{font-size:11.5px;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+  #clanRanking .cr-rungs li.me .cr-rung{background:var(--gold-soft);box-shadow:inset 0 0 0 1px var(--gold-line)}
+  #clanRanking .cr-rungs li.me .r,#clanRanking .cr-rungs li.me .nm b{color:var(--gold-2)}
+  #clanRanking .cr-rungs-sk{display:grid;gap:12px}
+  #clanRanking .cr-rungs-sk .cr-sk{height:16px}
+
+  /* Repères communs */
+  #clanRanking .cr-em{flex:none;display:grid;place-items:center;width:24px;height:24px;overflow:hidden;border-radius:6px;background:var(--raised);
+    font-size:9.5px;font-weight:700;text-transform:uppercase;color:var(--muted)}
+  #clanRanking .cr-em.has{background:none}
+  #clanRanking .cr-em img{display:block;width:100%;height:100%;object-fit:contain}
+  #clanRanking .cr-you{flex:none;padding:2px 7px;border-radius:999px;background:var(--gold-soft);border:1px solid var(--gold-line);color:var(--gold-2);
+    font-size:9.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;white-space:nowrap}
+  #clanRanking .cr-rk{display:inline-grid;place-items:center;width:23px;height:23px;border-radius:6px;font-family:var(--fx);font-size:12px;color:#141310}
+  #clanRanking .cr-rk.r1{background:linear-gradient(180deg,#f4d78c,#e5b95c)}
+  #clanRanking .cr-rk.r2{background:linear-gradient(180deg,#dfe4ea,#a9b1ba)}
+  #clanRanking .cr-rk.r3{background:linear-gradient(180deg,#e3ac7d,#bf7942)}
+
+  /* La carte du classement — mesures de .d2card, .d2ttl et du tableau .pl */
+  #clanRanking .cr-list{background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--line);border-radius:13px}
+  #clanRanking .cr-list-head{display:flex;align-items:center;justify-content:space-between;gap:10px 16px;flex-wrap:wrap;padding:13px 16px 8px}
+  #clanRanking .cr-list-title{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;min-width:0}
+  #clanRanking .cr-list-title h3{display:flex;align-items:center;gap:8px;margin:0;font:600 13px/1.2 var(--fx);letter-spacing:.5px;color:var(--ink)}
+  #clanRanking .cr-list-title h3 .ic{color:var(--gold)}
+  #clanRanking .cr-list-title .hint{font-size:11px;color:var(--muted)}
+  #clanRanking .cr-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  #clanRanking .cr-search{position:relative;display:flex;align-items:center;margin:0}
+  #clanRanking .cr-search .ic{position:absolute;left:10px;width:14px;height:14px;color:var(--muted);pointer-events:none}
+  #clanRanking .cr-search input{width:230px;margin:0;padding:8px 11px 8px 31px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);
+    color:var(--ink);font:inherit;font-size:13px;outline:0;transition:.15s}
+  #clanRanking .cr-search input::placeholder{color:var(--muted)}
+  #clanRanking .cr-search input:focus{border-color:var(--accent);background:var(--card)}
+  #clanRanking .cr-tools .btn:disabled{opacity:.4;cursor:not-allowed}
+  #clanRanking .cr-tools .btn:disabled:hover{color:var(--ink-2);border-color:var(--border);background:var(--card)}
+  #clanRanking .cr-cap{margin:2px 16px 8px;padding:10px 13px;border:1px solid var(--border);border-radius:10px;background:var(--accent-soft);
+    font-size:12.5px;line-height:1.5;color:var(--ink-2)}
+  #clanRanking .cr-scroll{overflow-x:auto;padding:2px 8px 6px}
+  #clanRanking .cr-table{width:100%;border-collapse:collapse;table-layout:fixed;font-variant-numeric:tabular-nums}
+  #clanRanking .cr-table th{padding:7px 12px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap;
+    font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted)}
+  #clanRanking .cr-table th button{appearance:none;margin:0;padding:0;border:0;background:none;color:inherit;font:inherit;letter-spacing:inherit;
+    text-transform:inherit;cursor:pointer}
+  #clanRanking .cr-table th button:hover{color:var(--ink)}
+  #clanRanking .cr-table th[aria-sort] button{color:var(--gold-2)}
+  #clanRanking .cr-table th[aria-sort=ascending] button::after{content:" ▲"}
+  #clanRanking .cr-table th[aria-sort=descending] button::after{content:" ▼"}
+  #clanRanking .cr-table td{position:relative;height:44px;padding:0 12px;border-bottom:1px solid var(--line-2);text-align:right;font-size:12.5px;color:var(--ink-2)}
+  #clanRanking .cr-table tbody tr:last-child td{border-bottom:0}
+  #clanRanking .cr-table .c-rank,#clanRanking .cr-table .c-clan{text-align:left}
+  #clanRanking .cr-table .c-rank{width:70px}
+  #clanRanking .cr-table .c-delta{width:80px}
+  #clanRanking .cr-table .c-act{width:130px}
+  #clanRanking .cr-table .c-score{width:110px}
+  #clanRanking .cr-table td.c-rank{font-family:var(--fx);font-size:13px;color:var(--ink-2)}
+  #clanRanking .cr-table td.c-score{font-family:var(--fx);font-size:14px;color:var(--ink)}
+  #clanRanking .cr-table td.c-delta{font-size:11.5px;font-weight:700}
+  #clanRanking .cr-table tbody tr:not(.cr-skrow):hover td{background:rgba(255,255,255,.015)}
+  /* la ligne survolée porte le repère doré du classement des joueurs */
+  #clanRanking .cr-table td.c-rank::before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:2px;border-radius:2px;background:var(--accent);
+    transform:scaleY(0);transition:transform .2s cubic-bezier(.16,1,.3,1)}
+  #clanRanking .cr-table tbody tr:not(.cr-skrow):hover td.c-rank::before,#clanRanking .cr-table tr.mine td.c-rank::before{transform:scaleY(1)}
+  #clanRanking .cr-table tr.mine td{background:var(--gold-soft)}
+  #clanRanking .cr-table tbody tr.mine:hover td{background:rgba(229,185,92,.17)}
+  #clanRanking .cr-table tr.mine td.c-rank,#clanRanking .cr-table tr.mine .t{color:var(--gold-2)}
+  #clanRanking .cr-table tr.flash td{animation:crFlash 1.4s cubic-bezier(.16,1,.3,1)}
+  @keyframes crFlash{0%,30%{background:rgba(229,185,92,.32)}100%{background:var(--gold-soft)}}
+  #clanRanking .cr-clan{appearance:none;display:flex;align-items:center;gap:10px;width:100%;min-width:0;margin:0;padding:4px 0;border:0;background:none;
+    color:inherit;font:inherit;text-align:left;cursor:pointer}
+  #clanRanking .cr-clan .t{flex:none;font-weight:600;color:var(--ink)}
+  #clanRanking .cr-clan .n{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);transition:color .15s}
+  #clanRanking .cr-clan:hover .n{color:var(--ink-2)}
+  #clanRanking .cr-clan:focus-visible{outline:2px solid var(--ring);outline-offset:2px;border-radius:6px}
+  #clanRanking .cr-sk-clan{display:flex;align-items:center;gap:10px}
+  #clanRanking .cr-sk-clan .cr-sk:first-child{height:24px;border-radius:6px}
+  #clanRanking .cr-msg{height:auto !important;padding:36px 20px !important;text-align:center !important}
+  #clanRanking .cr-msg p{margin:0 auto;max-width:520px;font-size:14px;line-height:1.55;color:var(--ink-2)}
+  #clanRanking .cr-msg p.s{margin-top:6px;font-size:12.5px;color:var(--muted)}
+  #clanRanking .cr-msg .btn{margin-top:14px}
+
+  /* Ta ligne, épinglée en bas quand elle n'est pas sur la page */
+  #clanRanking .cr-pin{position:sticky;bottom:0;z-index:2;display:flex;align-items:center;gap:12px;padding:9px 16px;
+    border-top:1px solid var(--gold-line);background:var(--raised);box-shadow:0 -6px 18px rgba(0,0,0,.4);font-size:12.5px}
+  #clanRanking .cr-pin-k{flex:none;font-size:9.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--gold)}
+  #clanRanking .cr-pin .r{flex:none;font-family:var(--fx);font-size:14px;color:var(--gold-2)}
+  #clanRanking .cr-pin .nm{display:flex;align-items:baseline;gap:8px;flex:1;min-width:0}
+  #clanRanking .cr-pin .nm b{flex:none;font-weight:600;color:var(--ink)}
+  #clanRanking .cr-pin .nm span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)}
+  #clanRanking .cr-pin .v{flex:none;font-family:var(--fx);font-size:14px;color:var(--ink)}
+  #clanRanking .cr-pin .btn{padding:6px 11px}
+  #clanRanking .cr-pin-x{flex:none;font-size:12px;color:var(--muted)}
+
+  /* La pagination des Batailles, posée au pied de la carte */
+  #clanRanking .cr-pager{margin:0;padding:12px 14px;border-top:1px solid var(--line-2)}
+  #clanRanking .cr-pager .bl-pg-info b{font-weight:600;color:var(--ink-2)}
+  #clanRanking .cr-note{margin:12px 2px 0;max-width:760px;font-size:12px;line-height:1.55;color:var(--muted)}
+
+  @media (max-width:860px){
+    #clanRanking .cr-table .c-act{display:none}
+  }
+  @media (max-width:640px){
+    /* tuiles compactes : la place et le score sur une même ligne */
+    #clanRanking .cr-board{gap:12px;margin-bottom:12px}
+    #clanRanking .cr-tiles{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+    #clanRanking .cr-tile{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:baseline;gap:2px 8px;padding:10px 11px}
+    #clanRanking .cr-tile-h{grid-column:1/-1;margin-bottom:2px}
+    #clanRanking .cr-tile .v{font-size:17px}
+    #clanRanking .cr-tile .r{font-size:10px}
+    #clanRanking .cr-vd .vd-n i{margin-left:0}
+    #clanRanking .cr-rung{grid-template-columns:40px 22px minmax(0,1fr) auto 38px;gap:7px;padding:7px 4px}
+    #clanRanking .cr-rung .r{font-size:12.5px}
+    #clanRanking .cr-rung .cr-em{width:22px;height:22px}
+    #clanRanking .cr-rung .nm span,#clanRanking .cr-rung .cr-you{display:none}
+    #clanRanking .cr-list-head{padding:12px 12px 8px}
+    #clanRanking .cr-tools,#clanRanking .cr-search{flex:1 1 auto}
+    #clanRanking .cr-search input{width:100%}
+    #clanRanking .cr-scroll{padding:2px 4px 6px}
+    #clanRanking .cr-table th,#clanRanking .cr-table td{padding:0 6px}
+    #clanRanking .cr-table th{padding-top:7px;padding-bottom:7px;letter-spacing:.3px}
+    #clanRanking .cr-table .c-rank{width:50px}
+    #clanRanking .cr-table .c-delta{width:46px}
+    #clanRanking .cr-table .c-score{width:64px}
+    #clanRanking .cr-clan{gap:8px}
+    #clanRanking .cr-clan .n,#clanRanking .cr-clan .cr-you{display:none}
+    #clanRanking .cr-clan .t{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    #clanRanking .cr-cap{margin:2px 12px 8px}
+    #clanRanking .cr-pin{flex-wrap:wrap;gap:6px 10px;padding:9px 12px}
+    #clanRanking .cr-pin .nm span{display:none}
+    #clanRanking .cr-pager{padding:12px 6px}
+    #clanRanking .cr-pager .bl-pg{min-width:30px;padding:0 7px}
+    #clanRanking .cr-pager .bl-pg-info{flex-basis:100%;margin-left:0;text-align:center}
+  }
+  @media (prefers-reduced-motion:reduce){
+    #clanRanking .cr-sk{animation:none}
+    #clanRanking .cr-table tr.flash td{animation:none}
+    #clanRanking .cr-tile,#clanRanking .cr-table td.c-rank::before{transition:none}
+    #clanRanking .cr-tile:hover{transform:none}
+  }
   .res-row{display:flex;align-items:center;gap:14px;padding:12px 10px;border-top:1px solid var(--grid);cursor:pointer;transition:.12s;border-radius:8px}
   .res-row:hover{background:var(--accent-soft)}
   .res-row .rt{font-weight:750;min-width:76px;color:var(--accent)}
