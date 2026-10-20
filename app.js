@@ -936,6 +936,7 @@ function populatePlayerSel(){
 function placeSubbar(v){
   const sb=document.getElementById("subbar");
   if(v==="clan") document.getElementById("dashSub").appendChild(sb);
+  else if(v==="battles") document.getElementById("blSub").appendChild(sb);   // sous les onglets, comme dans la Vue clan
   else document.getElementById("loading").before(sb);
 }
 /* Sections encore en chantier : tout le monde voit le message, seul le mode test
@@ -1167,7 +1168,7 @@ function blTeam(rows, ours, tag, url, opt){
            : emblemHTML(tag,url,'ours');
   const dmgTot = sorted.reduce((s,r)=>s+(r.dmg||0),0);
   const qui = ours ? (opt.mine?'Mon équipe':'Notre équipe') : 'Adversaire';
-  const head=`<div class="hd">${em} ${qui} — [${esc(tag)}]<span class="sub">${fmt(dmgTot)} dég.</span></div>`;
+  const head=`<div class="hd">${em}<span class="nm">${qui} — [${esc(tag)}]</span><span class="sub">${fmt(dmgTot)} dég.</span></div>`;
   const ceH = ours?`<th class="c">SR</th>`:``;
   const body=sorted.map(r=>{
     let ceCell="";
@@ -1202,8 +1203,10 @@ function blRowHTML(g){
   const detail=g.mine
     ? blTeam(g.our,true,ourTag,autreClan?"":ourEmblemUrl(),{mine:true,srOf:mySrOf})+blTeam(g.foe,false,g.enemyTag,'')
     : blTeam(g.our,true,CLANTAG,ourEmblemUrl())+blTeam(g.foe,false,g.enemyTag,'');
+  /* La tête de carte est un bouton pour le clavier aussi : Tab l'atteint,
+     Entrée ou Espace la déplie, comme un clic. */
   return `<div class="bl-row ${cls}${g.mine?" bl-mine":""}" data-bid="${esc(String(g.id))}">
-    <div class="bl-head" onclick="this.parentNode.classList.toggle('open')">
+    <div class="bl-head" role="button" tabindex="0" onclick="blToggle(this)" onkeydown="blKey(event,this)">
       ${mapBgHTML(g.mapName)}
       ${mapInfoHTML(g.mapName,g.mode)}
       <div class="bl-match">
@@ -1215,13 +1218,13 @@ function blRowHTML(g){
       <div class="bl-right">
         ${sr}
         <div class="bl-metar"><div>${agoFR(g.ts)} · ${durFR(g.dur)}</div></div>
-        <span class="bl-chev">▾</span>
+        <svg class="ic bl-chev" aria-hidden="true"><use href="#i-chev"/></svg>
       </div>
     </div>
     <div class="bl-detail"><div class="bl-din">
       <div class="bl-tabs">
-        <button class="bl-tab on" type="button" data-bt="res" onclick="event.stopPropagation();blTab(this,'res','${g.id}')"><span class="bl-tab-ic">▤</span> Résultat</button>
-        <button class="bl-tab" type="button" data-bt="rep" onclick="event.stopPropagation();blTab(this,'rep','${g.id}')"><span class="bl-tab-ic">▶</span> Replay</button>
+        <button class="bl-tab on" type="button" data-bt="res" onclick="event.stopPropagation();blTab(this,'res','${g.id}')"><svg class="ic" aria-hidden="true"><use href="#i-users"/></svg> Résultat</button>
+        <button class="bl-tab" type="button" data-bt="rep" onclick="event.stopPropagation();blTab(this,'rep','${g.id}')"><span class="bl-tab-ic" aria-hidden="true">▶</span> Replay</button>
       </div>
       <div class="bl-pane" data-pane="res">${g.legion?'<p class="bl-note">Tu jouais en <b>légionnaire</b> pour <b>['+esc(g.ourTag)+']</b>, avec le tag <b>['+esc(g.selfTag)+']</b>.</p>':""}${g.byFoe?'<p class="bl-note">Enregistrée par le clan adverse : son mod l\'a envoyée, le résultat est donné de ton côté.</p>':""}<div class="bl-teams">${detail}</div></div>
       <div class="bl-pane" data-pane="rep" hidden><div class="rp-host"></div></div>
@@ -1242,6 +1245,7 @@ function blAdversaires(list){
   const barres = habitues.map((a,i)=>{
     const p=Math.round(a.v/a.n*100);
     return '<div class="bl-adv" style="--i:'+i+'" title="['+esc(a.tag)+'] — '+a.v+' victoire'+(a.v>1?"s":"")+' sur '+a.n+' rencontres">'+
+      emblemFoeHTML(a.tag,'bl-adv-em')+
       '<span class="t">['+esc(a.tag)+']</span>'+
       '<span class="b"><i style="width:'+p+'%"></i></span>'+
       '<span class="c">'+a.v+'<span class="s">/'+a.n+'</span></span></div>';
@@ -1261,7 +1265,7 @@ function blSummaryHTML(list){
   let titre, ph;
   if(!n){ titre="Aucune confrontation"; ph="Aucune bataille sur cette période."; }
   else{
-    titre = wr>=60?"On tient le terrain." : (wr>=50?"Jeu égal." : "Ça résiste en face.");
+    titre = wr>=60?"On <em>tient le terrain</em>." : (wr>=50?"<em>Jeu égal</em>." : "Ça <em>résiste</em> en face.");
     ph = "<b>"+fmt(n)+"</b> confrontation"+(n>1?"s":"")+", <b>"+wins+"</b> gagnée"+(wins>1?"s":"")+".";
     if(adv.length) ph += " <b>"+fmt(adv.length)+"</b> clan"+(adv.length>1?"s":"")+" affronté"+(adv.length>1?"s":"")+".";
     if(noire && noire.v/noire.n < .5)
@@ -1272,17 +1276,52 @@ function blSummaryHTML(list){
             ']</span> : <b>'+facile.v+"</b> sur <b>"+facile.n+"</b>.";
   }
 
-  return '<section class="bl-verdict">'+
-      '<div class="bl-vg"><h2 class="bl-vt">'+titre+'</h2><p class="bl-vp">'+ph+'</p></div>'+
-      '<div class="bl-vn"><b data-n="'+wr+'">'+wr+' %</b><i>de victoires</i></div>'+
-      (habitues.length?'<div class="bl-advs"><div class="bl-advt">Adversaires les plus fréquents</div>'+barres+'</div>':"")+
-    '</section>'+
+  return blVerdictHTML(titre, ph, wr, habitues.length?barres:"")+
     '<div class="bl-mes">'+
-      '<div class="bl-sc"><div class="l">Batailles</div><div class="v">'+fmt(n)+'</div></div>'+
-      '<div class="bl-sc"><div class="l">SR moyen du clan</div><div class="v" style="color:'+srCol+'">'+(srMoy!=null?fmt(srMoy):"—")+'</div></div>'+
-      '<div class="bl-sc"><div class="l">Dégâts moy./joueur</div><div class="v">'+fmt(dmgAvg)+'</div></div>'+
-      '<div class="bl-sc"><div class="l">Alliés survivants moy.</div><div class="v">'+survAvg.toFixed(1)+'<span class="u">/7</span></div></div>'+
+      blTuile("i-swords","Batailles",fmt(n))+
+      blTuile("i-star","SR moyen du clan",srMoy!=null?fmt(srMoy):"—",srCol)+
+      blTuile("i-target","Dégâts moy./joueur",fmt(dmgAvg))+
+      blTuile("i-shield","Alliés survivants moy.",survAvg.toFixed(1)+'<span class="u">/7</span>')+
     '</div>';
+}
+/* Le verdict des deux onglets : la classe globale .vd de la Vue clan —
+   la phrase et le grand pourcentage en haut, les adversaires sous le
+   filet, à la place qu'y tient la courbe de forme. */
+function blVerdictHTML(titre, ph, wr, barres){
+  return '<section class="vd bl-vd">'+
+      '<div class="vd-haut"><div class="vd-g"><h2 class="vd-t">'+titre+'</h2><p class="vd-p">'+ph+'</p></div>'+
+      '<div class="vd-n"><b data-n="'+wr+'">'+wr+' %</b><i>de victoires</i></div></div>'+
+      (barres?'<figure class="vd-c bl-advs"><figcaption>Adversaires les plus fréquents</figcaption><div class="bl-advl">'+barres+'</div></figure>':"")+
+    '</section>';
+}
+/* Une mesure : pastille d'icône, étiquette, valeur — les tuiles du
+   « Niveau officiel Wargaming » de la Vue clan. `col` : la couleur du
+   palier de SR, la seule qui change d'une tuile à l'autre. */
+function blTuile(ic, l, v, col){
+  return '<div class="bl-sc"><div class="bl-sc-h"><span class="bl-ic" aria-hidden="true"><svg class="ic"><use href="#'+ic+'"/></svg></span>'+
+    '<span class="l">'+l+'</span></div><div class="v"'+(col?' style="color:'+col+'"':"")+'>'+v+'</div></div>';
+}
+/* L'intitulé au-dessus des cartes, celui des groupes de la Vue clan. */
+function blSectHTML(titre, n){
+  return '<span class="si" aria-hidden="true"><svg class="ic"><use href="#i-swords"/></svg></span>'+
+    '<span>'+titre+'</span><span class="n">'+fmt(n)+'</span><span class="src">Les plus récentes d\'abord</span>';
+}
+/* Pendant que « Mes batailles » arrive : la forme de la page, pas un
+   sablier. Le message reste lisible pour les lecteurs d'écran. */
+function blSkeletonHTML(){
+  const sk=w=>'<span class="bl-sk" style="width:'+w+'"></span>';
+  return '<section class="vd bl-vd" aria-hidden="true"><div class="vd-haut"><div class="vd-g"><p class="vd-t">'+sk("52%")+'</p>'+
+      '<p class="vd-p">'+sk("88%")+'<br>'+sk("62%")+'</p></div><div class="vd-n"><b>'+sk("150px")+'</b></div></div></section>'+
+    '<div class="bl-mes" aria-hidden="true">'+('<div class="bl-sc">'+sk("60%")+'<div class="v">'+sk("45%")+'</div></div>').repeat(4)+'</div>';
+}
+function blSkeletonRows(){
+  return ('<div class="bl-row bl-row-sk" aria-hidden="true"><div class="bl-head"><span class="bl-sk" style="width:110px"></span>'+
+    '<span class="bl-sk bl-sk-m"></span><span class="bl-sk" style="width:64px"></span></div></div>').repeat(4);
+}
+function blToggle(h){ h.parentNode.classList.toggle("open"); }
+function blKey(e, h){
+  if(e.target!==h || (e.key!=="Enter" && e.key!==" ")) return;
+  e.preventDefault(); blToggle(h);
 }
 let BL_PAGE=0; const BL_PER_PAGE=50;
 function renderBattles(){
@@ -1290,29 +1329,35 @@ function renderBattles(){
   if(BL_SCOPE==="mine") return renderMyBattles();
   const ch=document.getElementById("blClans"); if(ch) ch.innerHTML="";
   const list=groupBattles();
-  const sum=document.getElementById("blSummary"), wrap=document.getElementById("blList"), pg=document.getElementById("blPager");
+  const sum=document.getElementById("blSummary"), wrap=document.getElementById("blList"), pg=document.getElementById("blPager"),
+        sect=document.getElementById("blSect");
   if(!list.length){
-    sum.innerHTML="";
+    sum.innerHTML=""; sect.hidden=true;
     /* Distinguer « le clan n'a rien » de « rien sur CETTE période » :
        le premier appelle la marche à suivre, le second un simple filtre
        à élargir. */
     const jamais = !RAW.some(r=>r.isMember);
     wrap.innerHTML = jamais ? cpVideClan()
-      : cpVide("🔍","Aucune bataille sur cette période",
+      : cpVide('<svg class="ic" aria-hidden="true"><use href="#i-search"/></svg>',"Aucune bataille sur cette période",
           "Élargis la période avec les boutons <b>7 j / 30 j / 90 j / Tout</b> en haut, "+
           "ou change de mode.", null, "");
     pg.innerHTML=""; return; }
   BL_BY_ID={}; list.forEach(g=>{ BL_BY_ID[g.id]=g; });
   sum.innerHTML=blSummaryHTML(list);
-  { const nb=sum.querySelector(".bl-vn b");
-    if(nb && typeof animateNum==="function" && !REDUCE_MOTION)
-      animateNum(nb, +nb.dataset.n, v=>Math.round(v)+" %"); }
+  blAnimeVerdict(sum);
+  sect.innerHTML=blSectHTML("Confrontations", list.length); sect.hidden=false;
   const pages=Math.ceil(list.length/BL_PER_PAGE);
   if(BL_PAGE>=pages) BL_PAGE=0;
   const slice=list.slice(BL_PAGE*BL_PER_PAGE,(BL_PAGE+1)*BL_PER_PAGE);
   wrap.innerHTML=slice.map(blRowHTML).join("");
   renderBlPager(list.length,pages);
-  resolveEnemyEmblems(slice);   // récupère les logos adverses en arrière-plan (page courante)
+  // logos adverses en arrière-plan : la page courante, et les habitués du verdict
+  resolveEnemyEmblems(slice.concat(blAdversaires(list).habitues.map(a=>({enemyTag:a.tag}))));
+}
+function blAnimeVerdict(sum){
+  const nb=sum.querySelector(".bl-vd .vd-n b");
+  if(nb && typeof animateNum==="function" && !REDUCE_MOTION)
+    animateNum(nb, +nb.dataset.n, v=>Math.round(v)+" %");
 }
 function renderBlPager(total,pages){
   const pg=document.getElementById("blPager"); if(!pg) return;
@@ -1476,7 +1521,7 @@ function blMySummaryHTML(list){
   let titre, ph=[];
   if(!n){ titre="Aucune bataille"; ph.push("Aucune bataille sur cette période."); }
   else{
-    titre = wr>=60?"Tu tiens le terrain." : (wr>=50?"Jeu égal." : "Ça résiste en face.");
+    titre = wr>=60?"Tu <em>tiens le terrain</em>." : (wr>=50?"<em>Jeu égal</em>." : "Ça <em>résiste</em> en face.");
     ph.push("Tu en as gagné <b>"+fmt(wins)+"</b> sur <b>"+fmt(n)+"</b>.");
     if(tags.size>1) ph.push("Sous les couleurs de <b>"+fmt(tags.size)+"</b> clans différents.");
     if(fav && fav[1]>1) ph.push("Ton char le plus joué : <b>"+esc(fav[0])+"</b>, <b>"+fmt(fav[1])+"</b> fois.");
@@ -1487,16 +1532,12 @@ function blMySummaryHTML(list){
   const phrases=ph.map(s=>"<span>"+s+"</span>").join(" ");
   const pctSurv=dn?Math.round(surv/dn*100):0;
 
-  return '<section class="bl-verdict">'+
-      '<div class="bl-vg"><h2 class="bl-vt">'+titre+'</h2><p class="bl-vp">'+phrases+'</p></div>'+
-      '<div class="bl-vn"><b data-n="'+wr+'">'+wr+' %</b><i>de victoires</i></div>'+
-      (habitues.length?'<div class="bl-advs"><div class="bl-advt">Adversaires les plus fréquents</div>'+barres+'</div>':"")+
-    '</section>'+
+  return blVerdictHTML(titre, phrases, wr, habitues.length?barres:"")+
     '<div class="bl-mes">'+
-      '<div class="bl-sc"><div class="l">Batailles</div><div class="v">'+fmt(n)+'</div></div>'+
-      '<div class="bl-sc"><div class="l">Mon SR moyen</div><div class="v" style="color:'+srCol+'">'+(srMoy!=null?fmt(srMoy):"—")+'</div></div>'+
-      '<div class="bl-sc"><div class="l">Mes dégâts moyens</div><div class="v">'+(dn?fmt(Math.round(dmg/dn)):"—")+'</div></div>'+
-      '<div class="bl-sc"><div class="l">Ma survie</div><div class="v">'+(dn?pctSurv:"—")+(dn?'<span class="u"> %</span>':"")+'</div></div>'+
+      blTuile("i-swords","Batailles",fmt(n))+
+      blTuile("i-star","Mon SR moyen",srMoy!=null?fmt(srMoy):"—",srCol)+
+      blTuile("i-target","Mes dégâts moyens",dn?fmt(Math.round(dmg/dn)):"—")+
+      blTuile("i-shield","Ma survie",(dn?pctSurv:"—")+(dn?'<span class="u"> %</span>':""))+
     '</div>';
 }
 
@@ -1516,9 +1557,9 @@ function blClansHTML(all){
 
 function renderMyBattles(){
   const sum=document.getElementById("blSummary"), wrap=document.getElementById("blList"),
-        pg=document.getElementById("blPager"), ch=document.getElementById("blClans");
+        pg=document.getElementById("blPager"), ch=document.getElementById("blClans"), sect=document.getElementById("blSect");
   if(MY.etat!=="ok"){
-    sum.innerHTML=""; pg.innerHTML=""; ch.innerHTML="";
+    sum.innerHTML=""; pg.innerHTML=""; ch.innerHTML=""; sect.hidden=true;
     if(MY.etat==="erreur"){
       wrap.innerHTML=cpVide('<svg class="ic" aria-hidden="true"><use href="#i-alert"/></svg>',
         "Impossible de charger tes batailles",
@@ -1528,7 +1569,8 @@ function renderMyBattles(){
       if(b) b.onclick=()=>{ MY.etat="rien"; renderBattles(); };
       return;
     }
-    wrap.innerHTML=cpLoader("Recherche de tes batailles dans tous les clans…");
+    sum.innerHTML='<p class="bl-wait" role="status">Recherche de tes batailles dans tous les clans…</p>'+blSkeletonHTML();
+    wrap.innerHTML=blSkeletonRows();
     if(MY.etat==="rien") loadMyBattles();
     return;
   }
@@ -1539,7 +1581,7 @@ function renderMyBattles(){
   const list=BL_CLANF ? all.filter(g=>String(g.ourTag).toUpperCase()===BL_CLANF) : all;
 
   if(!list.length){
-    sum.innerHTML=""; pg.innerHTML="";
+    sum.innerHTML=""; pg.innerHTML=""; sect.hidden=true;
     wrap.innerHTML = !MY.n
       ? cpVide('<svg class="ic" aria-hidden="true"><use href="#i-swords"/></svg>',
           "Aucune bataille à ton nom pour l'instant",
@@ -1554,15 +1596,14 @@ function renderMyBattles(){
   BL_BY_ID={}; list.forEach(g=>{ BL_BY_ID[g.id]=g; });
   sum.innerHTML=blMySummaryHTML(list)+
     (MY.total>MY.n?'<p class="bl-note">Les <b>'+fmt(MY.n)+'</b> plus récentes sur <b>'+fmt(MY.total)+'</b>.</p>':"");
-  { const nb=sum.querySelector(".bl-vn b");
-    if(nb && typeof animateNum==="function" && !REDUCE_MOTION)
-      animateNum(nb, +nb.dataset.n, v=>Math.round(v)+" %"); }
+  blAnimeVerdict(sum);
+  sect.innerHTML=blSectHTML("Confrontations", list.length); sect.hidden=false;
   const pages=Math.ceil(list.length/BL_PER_PAGE);
   if(BL_PAGE>=pages) BL_PAGE=0;
   const slice=list.slice(BL_PAGE*BL_PER_PAGE,(BL_PAGE+1)*BL_PER_PAGE);
   wrap.innerHTML=slice.map(blRowHTML).join("");
   renderBlPager(list.length,pages);
-  resolveEnemyEmblems(slice);
+  resolveEnemyEmblems(slice.concat(blAdversaires(list).habitues.map(a=>({enemyTag:a.tag}))));
 }
 
 /* ============================================================
@@ -1705,7 +1746,7 @@ function blTab(btn, which, id){
 }
 async function startReplay(id, host){
   const g=BL_BY_ID[id]; if(!g) return;
-  host.innerHTML=cpLoader("Chargement du replay…");
+  host.innerHTML=rpSkeletonHTML();
   let rep=null, demo=false;
   try{
     // « Mes batailles » : la bataille peut être rangée sous un autre clan
@@ -1760,14 +1801,30 @@ function mockReplay(g){
   }
   return {bounds:B, duration:dur, bases, vehicles:veh, shots};
 }
+/* Les icônes du lecteur, au trait comme celles du menu. */
+const RP_IC={
+  play:'<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 5.2l11 6.8-11 6.8z"/></svg>',
+  pause:'<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5.5v13M15 5.5v13"/></svg>',
+  arriere:'<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7l-5 5 5 5M18 7l-5 5 5 5"/></svg>',
+  avant:'<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7l5 5-5 5M6 7l5 5-5 5"/></svg>',
+  relief:'<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18l6-12 5 8 3-4 4 8z"/><path d="M3 18h18" opacity=".5"/></svg>',
+};
+/* Pendant le chargement : la forme du lecteur (la carte, la barre, le journal). */
+function rpSkeletonHTML(){
+  return '<p class="bl-wait" role="status">Chargement du replay…</p>'+
+    '<div class="rp-sk" aria-hidden="true"><div><span class="bl-sk rp-sk-stage"></span><span class="bl-sk rp-sk-ctrl"></span></div>'+
+    '<span class="bl-sk rp-sk-side"></span></div>';
+}
 function renderReplay(host, rep, mkey, demo){
   const B=rep.bounds, W=1000, K=W/700, spanX=(B.maxX-B.minX)||1, spanZ=(B.maxZ-B.minZ)||1;
   const wx=x=>(x-B.minX)/spanX*W, wy=z=>(B.maxZ-z)/spanZ*W;
-  // Couleurs lues sur le système de design du site (elles suivent le thème)
-  const _cssv=getComputedStyle(document.documentElement);
+  /* Couleurs et police lues sur le lecteur lui-même : il vit dans la vue
+     Batailles (.dashx), ses jetons sont ceux des vues de l'appli. */
+  const _cssv=getComputedStyle(host);
   const tok=(n,d)=>((_cssv.getPropertyValue(n)||"").trim()||d);
   const ALLY=tok("--good","#2ec26e"), ENEMY=tok("--bad","#ec6a6a"), GOLD=tok("--accent","#d8b566");
   const SHOT=tok("--accent-2","#ecd190"), INK=tok("--ink","#f6f5f1"), PLANE=tok("--plane","#0c0c0b");
+  const FX=tok("--fx","system-ui,sans-serif");
   const DMG="#ffb060";   // trait de dégâts : orange chaud, distinct des couleurs d'équipe
   const esc2=s=>esc(String(s==null?"":s));
   const fmtT=s=>{ s=Math.max(0,Math.floor(s)); return Math.floor(s/60)+":"+String(s%60).padStart(2,"0"); };
@@ -1792,24 +1849,27 @@ function renderReplay(host, rep, mkey, demo){
     for(let i=0;i<h.length;i++){ if(h[i][0]<=time) lost+=h[i][1]; else break; }
     return Math.max(0, v.maxHp-lost);  // char intact -> anneau plein
   }
+  /* La carte, puis la barre de lecture (lecture, ±5 s, curseur, temps,
+     vitesse), puis les débriefings ; le journal à droite, à la hauteur
+     de la carte. */
   host.innerHTML=`<div class="rp-wrap">
     <div class="rp-main${hasSide?"":" no-side"}">
-      <div>
+      <div class="rp-col">
         <div class="rp-stage"><img src="maps/top/${mkey}.jpg" alt="" onerror="this.style.opacity='.12'"><canvas width="${W}" height="${W}"></canvas><div class="rp-tip"></div></div>
         <div class="rp-ctrl">
-          <button class="rp-play" type="button" aria-label="Lecture/pause">❚❚</button>
-          <button class="rp-step" type="button" data-step="-5" aria-label="Reculer de 5 s">⏴</button>
-          <button class="rp-step" type="button" data-step="5" aria-label="Avancer de 5 s">⏵</button>
-          <input class="rp-scrub" type="range" min="0" max="${rep.duration}" step="0.1" value="0">
-          <select class="rp-speed" aria-label="Vitesse"><option value="1">×1</option><option value="2" selected>×2</option><option value="4">×4</option><option value="8">×8</option></select>
+          <button class="rp-play on" type="button" aria-label="Lecture/pause" title="Lecture/pause">${RP_IC.pause}</button>
+          <button class="rp-step" type="button" data-step="-5" aria-label="Reculer de 5 s" title="Reculer de 5 s">${RP_IC.arriere}</button>
+          <button class="rp-step" type="button" data-step="5" aria-label="Avancer de 5 s" title="Avancer de 5 s">${RP_IC.avant}</button>
+          <input class="rp-scrub" type="range" min="0" max="${rep.duration}" step="0.1" value="0" aria-label="Moment de la bataille">
           <span class="rp-time">0:00 / ${durFR(rep.duration)}</span>
+          <span class="rp-speed" role="group" aria-label="Vitesse">${[1,2,4,8].map(s=>`<button type="button" data-speed="${s}" aria-pressed="${s===2}"${s===2?' class="on"':""}>×${s}</button>`).join("")}</span>
         </div>
-        ${demo?`<div class="rp-note">Démo — positions simulées (le mod enverra bientôt les vraies).</div>`
-              :`<div class="rp-note"><button class="rp-launch" type="button" onclick="event.stopPropagation();stOpenReplay('${rep.battleId||""}',this)">✎ Débriefer dans l'éditeur</button><button class="rp-launch" type="button" onclick="event.stopPropagation();stOpen3D('${rep.battleId||""}')" title="Rejouer la bataille sur le relief réel, en 3D">⛰ Débriefer en 3D</button></div>`}
+        ${demo?`<p class="rp-note"><svg class="ic" aria-hidden="true"><use href="#i-alert"/></svg><span>Démo — positions simulées (le mod enverra bientôt les vraies).</span></p>`
+              :`<div class="rp-acts"><button class="rp-launch" type="button" onclick="event.stopPropagation();stOpenReplay('${rep.battleId||""}',this)"><svg class="ic" aria-hidden="true"><use href="#i-pen"/></svg>Débriefer dans l'éditeur</button><button class="rp-launch" type="button" onclick="event.stopPropagation();stOpen3D('${rep.battleId||""}')" title="Rejouer la bataille sur le relief réel, en 3D">${RP_IC.relief}Débriefer en 3D</button></div>`}
       </div>
       ${hasSide?`<div class="rp-side">
-        <div class="rp-card rp-jcard">
-          <h4>Journal <span class="rp-jn"></span></h4>
+        <div class="rp-jcard">
+          <h4><svg class="ic" aria-hidden="true"><use href="#i-doc"/></svg>Journal <span class="rp-jn"></span></h4>
           <div class="rp-log"></div>
         </div>
       </div>`:""}
@@ -1817,7 +1877,11 @@ function renderReplay(host, rep, mkey, demo){
 
   const cv=host.querySelector("canvas"), ctx=cv.getContext("2d");
   const scrub=host.querySelector(".rp-scrub"), playBtn=host.querySelector(".rp-play"), timeEl=host.querySelector(".rp-time");
-  const speedSel=host.querySelector(".rp-speed"), tip=host.querySelector(".rp-tip");
+  const speedBtns=host.querySelectorAll(".rp-speed button"), tip=host.querySelector(".rp-tip");
+  // le bouton montre l'action possible : pause pendant la lecture, lecture à l'arrêt
+  const setPlay=on=>{ playBtn.innerHTML=on?RP_IC.pause:RP_IC.play; playBtn.classList.toggle("on",on); };
+  // la part déjà jouée du curseur, en or
+  const syncScrub=()=>{ scrub.value=t; scrub.style.setProperty("--p",(rep.duration?t/rep.duration*100:0)+"%"); };
   const logEl=host.querySelector(".rp-log"), jnEl=host.querySelector(".rp-jn");
   if(logEl) logEl.innerHTML=journal.map(e=>
     `<div class="${e.cls}"><span class="jt">${fmtT(e.t)}</span><span class="ji">${e.ic}</span><span class="jm">${e.html}</span></div>`).join("");
@@ -1865,7 +1929,7 @@ function renderReplay(host, rep, mkey, demo){
     ctx.strokeRect(.75,.75,W-1.5,W-1.5);
     // repères : lettres en haut, chiffres à gauche
     const fs=Math.round(12*K);
-    ctx.font="800 "+fs+"px system-ui,sans-serif";
+    ctx.font="600 "+fs+"px "+FX;
     ctx.textAlign="center"; ctx.textBaseline="middle";
     ctx.fillStyle="rgba(255,255,255,.55)";
     ctx.shadowColor="rgba(0,0,0,.85)"; ctx.shadowBlur=3*K;
@@ -2011,24 +2075,25 @@ function renderReplay(host, rep, mkey, demo){
   function frame(now){
     if(!document.body.contains(cv)) return;
     const dt=(now-last)/1000; last=now;
-    if(playing){ t+=dt*speed; if(t>=rep.duration){ t=rep.duration; playing=false; playBtn.textContent="▶"; } scrub.value=t; }
+    if(playing){ t+=dt*speed; if(t>=rep.duration){ t=rep.duration; playing=false; setPlay(false); } syncScrub(); }
     timeEl.textContent=fmtT(t)+" / "+durFR(rep.duration);
     draw(); if(playing) renderFeed();
     requestAnimationFrame(frame);
   }
-  function seek(nt){ t=Math.max(0,Math.min(rep.duration,nt)); scrub.value=t;
+  function seek(nt){ t=Math.max(0,Math.min(rep.duration,nt)); syncScrub();
     timeEl.textContent=fmtT(t)+" / "+durFR(rep.duration); draw(); renderFeed(); }
 
-  playBtn.onclick=()=>{ if(t>=rep.duration) t=0; playing=!playing; playBtn.textContent=playing?"❚❚":"▶"; last=performance.now(); draw(); };
-  scrub.oninput=()=>{ playing=false; playBtn.textContent="▶"; seek(+scrub.value); };
-  speedSel.onchange=()=>{ speed=+speedSel.value; };
-  host.querySelectorAll(".rp-step").forEach(b=>b.onclick=()=>{ playing=false; playBtn.textContent="▶"; seek(t+(+b.dataset.step)); });
+  playBtn.onclick=()=>{ if(t>=rep.duration) t=0; playing=!playing; setPlay(playing); last=performance.now(); draw(); };
+  scrub.oninput=()=>{ playing=false; setPlay(false); seek(+scrub.value); };
+  speedBtns.forEach(b=>b.onclick=()=>{ speed=+b.dataset.speed;
+    speedBtns.forEach(x=>{ const on=x===b; x.classList.toggle("on",on); x.setAttribute("aria-pressed",on); }); });
+  host.querySelectorAll(".rp-step").forEach(b=>b.onclick=()=>{ playing=false; setPlay(false); seek(t+(+b.dataset.step)); });
   cv.addEventListener("mousemove",e=>{ const r=cv.getBoundingClientRect();
     mouse={x:(e.clientX-r.left)/r.width*W, y:(e.clientY-r.top)/r.height*W}; draw(); });
   cv.addEventListener("mouseleave",()=>{ mouse=null; hover=null; tip.classList.remove("on"); draw(); });
 
   rpLoadIcons(()=>{ if(document.body.contains(cv)) draw(); });   // icônes de classe (async)
-  timeEl.textContent="0:00 / "+durFR(rep.duration); renderFeed(); draw();
+  timeEl.textContent="0:00 / "+durFR(rep.duration); syncScrub(); renderFeed(); draw();
   requestAnimationFrame(frame);
 }
 
@@ -10510,9 +10575,11 @@ function stOpen3D(battleId){
 }
 async function stOpenReplay(battleId, btn){
   const g=BL_BY_ID[battleId]; if(!g) return;
+  // le bouton retrouve ensuite son libellé tel qu'il était, icône et langue comprises
+  const avant=btn?btn.innerHTML:"";
   if(btn){ btn.disabled=true; btn.textContent="Chargement…"; }
   const ok=await stRpLoad(g.id, mapKey(g.mapName), pretty2(g.mapName)+" · "+agoFR(g.ts));
-  if(btn){ btn.disabled=false; btn.innerHTML='✎ Débriefer dans l\'éditeur'; }
+  if(btn){ btn.disabled=false; btn.innerHTML=avant; }
   if(!ok){ alert("Aucun replay enregistré pour cette bataille."); return; }
   // L'éditeur vit DANS l'onglet Stratégie : il faut y basculer, sinon il s'ouvre
   // dans un conteneur masqué (la vue Batailles semblait alors se figer).

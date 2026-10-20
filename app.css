@@ -1456,118 +1456,170 @@
     .clan-hero h2{font-size:19px}
   }
 
-  /* --- Onglet Batailles (confrontations) --- */
-  /* ── Verdict : une phrase et un chiffre, avant les mesures ──────
-     Même grammaire que la Vue clan : on dit ce que les chiffres veulent
-     dire, puis on montre les chiffres, plus petits. */
-  .bl-verdict{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:26px;align-items:start;
-    background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
-    box-shadow:var(--shadow);padding:22px 24px;margin:6px 0 12px;position:relative;overflow:hidden}
-  .bl-verdict::after{content:"";position:absolute;top:0;bottom:0;width:38%;pointer-events:none;
-    background:linear-gradient(100deg,transparent,rgba(229,185,92,.09) 45%,transparent);
-    transform:translateX(-140%)}
-  .rev .bl-verdict::after{animation:blBalaye 1.4s cubic-bezier(.3,0,.2,1) .2s both}
-  @keyframes blBalaye{to{transform:translateX(360%)}}
-  .bl-vt{font-size:clamp(22px,2.7vw,31px);font-weight:800;letter-spacing:-.02em;margin:0 0 8px;
-    text-wrap:balance}
-  .bl-vp{font-size:14.5px;line-height:1.6;color:var(--ink-2);margin:0;max-width:64ch}
-  .bl-vp b{color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums}
-  .bl-vp .who{color:var(--accent-2);font-weight:700}
-  .bl-vn{text-align:right;line-height:1}
-  .bl-vn b{display:block;font-size:clamp(34px,4.4vw,50px);font-weight:800;letter-spacing:-.035em;
-    font-variant-numeric:tabular-nums;
-    background:linear-gradient(160deg,var(--ink) 30%,var(--accent-2));
-    -webkit-background-clip:text;background-clip:text;color:transparent}
-  .bl-vn i{display:block;font-style:normal;font-size:10.5px;letter-spacing:.13em;
-    text-transform:uppercase;color:var(--muted);margin-top:6px}
+  /* ---- Batailles — refonte du 20/10/2026 ----
+     Aux codes des vues de l'appli : #viewBattles porte .dashx comme la
+     Vue clan, les Classements et Chercher un clan. Onglets de la Vue clan
+     (.cv-tab), verdict .vd, tuiles à pastille du « Niveau officiel
+     Wargaming », intitulé .d2sect, cartes en panneaux d'acier, pagination
+     .bl-pager. L'or marque la sélection et ton clan ; le vert et le rouge
+     ne disent que le résultat, toujours doublés d'un mot ou d'un signe. */
+  #viewBattles{color:var(--ink)}
+  #viewBattles [data-scope-txt][hidden],#viewBattles .bl-sect[hidden]{display:none}
+  #viewBattles .sec-h{margin-top:22px}
+  #viewBattles :focus-visible{outline:2px solid var(--ring);outline-offset:2px}
 
-  /* les adversaires : le palmarès que seul cet onglet peut donner */
-  .bl-advs{grid-column:1/-1;border-top:1px solid var(--border);padding-top:15px;margin-top:3px;
-    display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:9px 22px}
-  .bl-advt{grid-column:1/-1;font-size:11px;color:var(--muted);margin-bottom:1px}
-  .bl-adv{display:grid;grid-template-columns:58px 1fr auto;align-items:center;gap:10px;
-    font-size:12.5px}
-  .bl-adv .t{font-weight:700;color:var(--ink-2);white-space:nowrap;overflow:hidden;
-    text-overflow:ellipsis}
-  .bl-adv .b{height:6px;border-radius:3px;background:var(--bad);overflow:hidden;opacity:.9}
-  .bl-adv .b i{display:block;height:100%;background:var(--good);border-radius:3px;
-    transform-origin:left center}
-  .bl-adv .c{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700;font-size:12px}
-  .bl-adv .c .s{color:var(--muted);font-weight:400}
+  /* Batailles du clan / Mes batailles : les onglets de la Vue clan. Le
+     chiffre dit combien de batailles attendent derrière chacun. */
+  .bl-scope{display:flex;flex-wrap:wrap;gap:6px;margin:0}
+  .bl-scope-b{display:inline-flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line);
+    color:var(--ink-2);font:inherit;font-size:13px;font-weight:600;padding:9px 16px;border-radius:10px;
+    cursor:pointer;transition:color .15s,border-color .15s,background .15s}
+  .bl-scope-b svg.ic{width:15px;height:15px;flex:none}
+  .bl-scope-b:hover{color:var(--ink);border-color:var(--gold-line)}
+  .bl-scope-b.on{background:var(--gold-soft);color:var(--gold-2);border-color:var(--gold-line)}
+  .bl-scope-b .n{font-family:var(--fx);font-size:12px;line-height:1.45;font-variant-numeric:tabular-nums;
+    color:var(--muted);background:var(--raised);border-radius:999px;padding:0 8px}
+  .bl-scope-b .n:empty{display:none}
+  .bl-scope-b.on .n{color:var(--gold-2);background:rgba(0,0,0,.28)}
+
+  /* la barre Mode / Période, posée dans la vue comme dans la Vue clan */
+  #blSub .filters{margin:0 0 16px;background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    padding:10px 15px;box-shadow:none}
+
+  /* Les clans sous lesquels le joueur a joué : un filtre en pastilles. */
+  .bl-chips{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 14px}
+  .bl-chips:empty{display:none}
+  .bl-chips-l{font-size:10.5px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--ink-2);margin-right:4px}
+  .bl-chip{appearance:none;display:inline-flex;align-items:center;gap:8px;margin:0;padding:6px 12px;border:1px solid var(--line);
+    border-radius:999px;background:var(--panel);color:var(--ink-2);font:inherit;font-size:12.5px;font-weight:600;
+    cursor:pointer;transition:color .15s,border-color .15s,background .15s}
+  .bl-chip:hover{color:var(--ink);border-color:var(--gold-line);background:var(--raised)}
+  .bl-chip.on{background:var(--gold-soft);color:var(--gold-2);border-color:var(--gold-line)}
+  .bl-chip .t{font-family:var(--fx);font-size:13.5px;letter-spacing:.3px;color:var(--ink)}
+  .bl-chip.on .t{color:var(--gold-2)}
+  .bl-chip .n{font-family:var(--fx);font-size:12px;font-variant-numeric:tabular-nums;color:var(--muted)}
+  .bl-chip.on .n{color:var(--gold-2)}
+
+  /* ── Le verdict : la classe globale .vd ; les adversaires tiennent la
+     place de la courbe de forme, sous le filet. ── */
+  .bl-sum{display:block;margin:0}
+  #viewBattles .bl-vd{margin-bottom:12px}
+  #viewBattles .bl-vd .vd-t{margin:0 0 10px;text-wrap:balance}
+  #viewBattles .bl-vd .vd-p{text-wrap:pretty}
+  /* .who est aussi le nom du joueur de la barre du haut, masqué sur
+     téléphone : sans ceci, le tag du clan adverse disparaissait de la phrase */
+  #viewBattles .vd-p .who{display:inline;font-size:inherit;line-height:inherit;white-space:normal}
+  /* la lumière passe à chaque rendu : changer de filtre, c'est un nouveau verdict */
+  .rev #viewBattles .bl-vd::after{animation:vdBalaye 1.5s cubic-bezier(.3,0,.2,1) .2s both}
+  .bl-advs figcaption{margin-bottom:12px}
+  .bl-advl{display:grid;grid-template-columns:repeat(auto-fit,minmax(228px,1fr));gap:10px 28px}
+  .bl-adv{display:grid;grid-template-columns:22px 64px minmax(0,1fr) 46px;align-items:center;gap:10px;min-width:0}
+  .bl-adv-em{width:22px;height:22px;border-radius:6px;object-fit:contain;background:var(--raised)}
+  .bl-adv-em.bl-em-ph{font-size:7.5px}
+  .bl-adv .t{font-family:var(--fx);font-size:13.5px;letter-spacing:.3px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bl-adv .b{height:6px;border-radius:3px;background:var(--bad);opacity:.88;overflow:hidden}
+  .bl-adv .b i{display:block;height:100%;background:var(--good);border-radius:3px;transform-origin:left center}
+  .bl-adv .c{font-family:var(--fx);font-size:14px;text-align:right;color:var(--ink);font-variant-numeric:tabular-nums}
+  .bl-adv .c .s{color:var(--muted)}
   .rev .bl-adv .b i,.rev .bl-dom i{animation:blPousse .7s cubic-bezier(.16,1,.3,1) both;
     animation-delay:calc(.25s + var(--i,0) * .07s)}
   @keyframes blPousse{from{transform:scaleX(0)}to{transform:scaleX(1)}}
-  @media (max-width:760px){
-    .bl-verdict{grid-template-columns:1fr;gap:16px;padding:18px}
-    .bl-vn{text-align:left}
-  }
 
-  /* les mesures passent APRÈS le verdict, et plus petites */
-  .bl-mes{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:0 0 16px}
-  /* Le conteneur du resume etait lui-meme une grille : le verdict et les
-     mesures devenaient deux colonnes cote a cote, et les tuiles s etiraient
-     a vide pour rattraper la hauteur du verdict. Il redevient un bloc :
-     verdict pleine largeur, mesures en dessous. */
-  .bl-sum{display:block;margin:6px 0 16px}
-  .bl-sc{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px}
-  .bl-sc .l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;font-weight:700}
-  .bl-sc .v{font-size:23px;font-weight:800;margin-top:4px;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
-  .bl-sc .u{font-size:13px;color:var(--muted);font-weight:400}
+  /* les mesures, après le verdict et plus petites : tuiles à pastille */
+  .bl-mes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:0}
+  .bl-sc{min-width:0;padding:12px 14px;border:1px solid var(--line);border-radius:11px;background:var(--panel-2)}
+  .bl-sc-h{display:flex;align-items:center;gap:8px;margin-bottom:6px;min-width:0}
+  .bl-ic{width:24px;height:24px;flex:none;display:grid;place-items:center;border-radius:6px;
+    background:var(--gold-soft);border:1px solid var(--gold-line);color:var(--gold)}
+  .bl-ic svg{width:13px;height:13px}
+  .bl-sc .l{min-width:0;font-size:9.5px;line-height:1.25;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--muted)}
+  .bl-sc .v{font-family:var(--fx);font-size:22px;line-height:1.15;color:var(--ink);font-variant-numeric:tabular-nums}
+  .bl-sc .u{font-size:13px;color:var(--muted)}
+  .bl-note{font-size:12.5px;line-height:1.5;color:var(--muted);margin:10px 2px 0}
+  .bl-note b{color:var(--ink-2);font-variant-numeric:tabular-nums}
+  .bl-pane > .bl-note{margin:0 0 12px}
+  .bl-wait{margin:0 2px 12px;font-size:12.5px;color:var(--muted)}
+
+  /* l'intitulé des cartes : celui des groupes de la Vue clan (.d2sect) */
+  #viewBattles .bl-sect{display:flex;align-items:center;gap:9px;margin:24px 2px 12px;font-size:12px;font-weight:700;
+    letter-spacing:1px;text-transform:uppercase;color:var(--ink-2)}
+  .bl-sect .si{width:22px;height:22px;flex:none;display:grid;place-items:center;border-radius:6px;
+    background:var(--gold-soft);border:1px solid var(--gold-line);color:var(--gold)}
+  .bl-sect .si svg{width:13px;height:13px}
+  .bl-sect .n{font-family:var(--fx);font-size:13px;letter-spacing:0;color:var(--gold-2);font-variant-numeric:tabular-nums}
+  .bl-sect .src{margin-left:auto;font-size:11px;font-weight:400;letter-spacing:0;text-transform:none;color:var(--muted);white-space:nowrap}
+
+  /* ── Les cartes de bataille ───────────────────────────────────────
+     Une affiche de match par bataille : la carte jouée en fond, les deux
+     clans face à face, le score. Le filet de gauche porte l'issue, le mot
+     sous le score la redit. */
   .bl-list{display:flex;flex-direction:column;gap:10px}
+  .bl-row{position:relative;background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--line);
+    border-radius:13px;overflow:hidden;transition:transform .2s cubic-bezier(.16,1,.3,1),border-color .2s ease}
+  .bl-row:hover,.bl-row.open{border-color:var(--gold-line)}
+  .bl-row:hover{transform:translateY(-2px)}
+  .bl-row::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;z-index:2}
+  .bl-win::before{background:var(--good)} .bl-loss::before{background:var(--bad)} .bl-draw::before{background:var(--muted)}
+  .bl-head{position:relative;display:flex;align-items:center;gap:18px;cursor:pointer;min-height:88px;padding:12px 18px 12px 20px;isolation:isolate}
+  #viewBattles .bl-head:focus-visible{outline-offset:-3px;border-radius:12px}
+  /* la carte jouée, en fond, qui se fond dans l'acier */
+  .bl-bg{position:absolute;inset:0;z-index:-1;overflow:hidden}
+  .bl-bg img{position:absolute;left:0;top:0;width:52%;height:100%;object-fit:cover;opacity:.62;
+    -webkit-mask-image:linear-gradient(90deg,#000 18%,transparent);mask-image:linear-gradient(90deg,#000 18%,transparent)}
+  .bl-bg .sh{position:absolute;inset:0;background:linear-gradient(90deg,rgba(11,12,12,.5),rgba(11,12,12,0) 46%)}
+  /* zone 1 : la carte et le mode */
+  .bl-mapinfo{width:150px;flex:0 0 150px;min-width:0;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.85)}
+  .bl-mapinfo .nm{font-family:var(--fx);font-size:17px;letter-spacing:.3px;line-height:1.12;overflow-wrap:anywhere}
+  .bl-mapinfo .md{margin-top:4px;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#d6d2c6}
+  /* zone 2 : la confrontation */
+  .bl-match{flex:1;display:flex;align-items:center;justify-content:center;gap:18px;min-width:0}
+  .bl-team{display:flex;align-items:center;gap:11px;width:160px;min-width:0}
+  .bl-team.left{justify-content:flex-end;text-align:right}
+  .bl-team.right{justify-content:flex-start}
+  .bl-team .tag{min-width:0;font-family:var(--fx);font-size:16px;letter-spacing:.4px;color:var(--ink);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bl-team.left .tag{color:var(--gold-2)}
+  .bl-emblem{width:46px;height:46px;flex:0 0 auto;border-radius:11px;object-fit:contain;padding:3px;
+    background:var(--panel-2);border:1px solid var(--line)}
+  .bl-emblem.ours{border-color:var(--gold-line);box-shadow:0 0 0 1px var(--gold-line)}
+  .bl-emblem.bl-em-ph{padding:0;font-family:var(--fx);font-size:12px;color:var(--ink-2)}
+  .bl-scorebox{flex:0 0 auto;min-width:96px;text-align:center}
+  .bl-scorebox .sc{font-family:var(--fx);font-size:30px;line-height:1;letter-spacing:1px;color:var(--ink);font-variant-numeric:tabular-nums}
+  .bl-sep{margin:0 2px;color:var(--muted)}
+  .bl-win .sc .a{color:var(--good)} .bl-loss .sc .a{color:var(--bad)}
+  .bl-scorebox .rz{display:inline-block;margin-top:6px;padding:2px 8px;border-radius:999px;font-size:9.5px;font-weight:700;
+    letter-spacing:.8px;text-transform:uppercase;color:var(--muted);background:var(--raised)}
+  .bl-win .rz{color:var(--good);background:rgba(76,192,119,.14)}
+  .bl-loss .rz{color:var(--bad);background:var(--red-soft)}
+  /* La forme du score, sans avoir à le lire : plein = écrasement,
+     coupé au milieu = partie serrée. */
+  .bl-dom{display:block;width:76px;height:3px;margin:7px auto 0;border-radius:2px;background:var(--bad);opacity:.85;overflow:hidden}
+  .bl-dom i{display:block;height:100%;background:var(--good);border-radius:2px;transform-origin:left center}
+  .bl-draw .bl-dom i{background:var(--muted)}
+  /* zone 3 : SR, date et durée, chevron */
+  .bl-right{display:flex;align-items:center;gap:14px;flex:0 0 auto}
+  .bl-sr{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:64px;padding:6px 12px;
+    border:1px solid;border-radius:10px;background:rgba(0,0,0,.28)}
+  .bl-sr .lbl{font-size:9px;font-weight:700;letter-spacing:.9px;opacity:.85}
+  .bl-sr .val{font-family:var(--fx);font-size:18px;line-height:1;font-variant-numeric:tabular-nums}
+  .bl-metar{min-width:92px;text-align:right;font-size:11.5px;line-height:1.5;color:var(--muted);font-variant-numeric:tabular-nums}
+  .bl-chev{width:16px;height:16px;flex:none;color:var(--muted);transform:rotate(90deg);transition:transform .2s ease,color .15s}
+  .bl-row:hover .bl-chev{color:var(--gold)}
+  .bl-row.open .bl-chev{transform:rotate(-90deg);color:var(--gold)}
 
-  /* ── Batailles du clan / Mes batailles ─────────────────────────────
-     Deux points de vue sur les mêmes cartes. Le sélecteur reprend la
-     grammaire des onglets de la Vue clan ; le chiffre dit combien de
-     batailles attendent derrière chaque onglet. */
-  .bl-scope{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 18px}
-  /* le titre et l'intro de l'onglet inactif : .sec-h impose son display */
-  #viewBattles [data-scope-txt][hidden]{display:none}
-  .bl-scope-b{display:inline-flex;align-items:center;gap:9px;background:var(--card);border:1px solid var(--border);
-    color:var(--ink-2);font:inherit;font-size:13.5px;font-weight:600;padding:10px 16px;border-radius:10px;
-    cursor:pointer;transition:color .15s,border-color .15s,background .15s}
-  .bl-scope-b svg.ic{width:16px;height:16px;flex:none}
-  .bl-scope-b:hover{color:var(--ink);border-color:var(--accent)}
-  .bl-scope-b.on{background:var(--accent-soft);color:var(--accent-2);border-color:var(--accent)}
-  .bl-scope-b:focus-visible,.bl-chip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-  .bl-scope-b .n{font:600 11.5px/1.5 "IBM Plex Mono",ui-monospace,Consolas,monospace;font-variant-numeric:tabular-nums;
-    color:var(--muted);background:var(--surface-2);border-radius:20px;padding:0 8px}
-  .bl-scope-b .n:empty{display:none}
-  .bl-scope-b.on .n{color:var(--accent-2);background:rgba(0,0,0,.28)}
-
-  /* Les clans sous lesquels le joueur a joué : un filtre en pastilles. */
-  .bl-chips{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 12px}
-  .bl-chips:empty{display:none}
-  .bl-chips-l{font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:var(--muted);margin-right:6px}
-  .bl-chip{display:inline-flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border);
-    color:var(--ink-2);font:inherit;font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:20px;
-    cursor:pointer;transition:color .15s,border-color .15s,background .15s}
-  .bl-chip:hover{color:var(--ink);border-color:var(--accent)}
-  .bl-chip.on{background:var(--accent-soft);color:var(--ink);border-color:var(--accent)}
-  .bl-chip .t{font-weight:700;color:var(--accent)}
-  .bl-chip .n{font:500 11.5px/1 "IBM Plex Mono",ui-monospace,Consolas,monospace;font-variant-numeric:tabular-nums;color:var(--muted)}
-  .bl-chip.on .n{color:var(--ink-2)}
-
-  /* La ligne du joueur, sur la carte même : son char, ses dégâts, s'il
-     a survécu. Séparée du duel par un filet, comme une colonne de plus. */
-  .bl-me{flex:0 0 150px;display:flex;flex-direction:column;gap:2px;min-width:0;
-    padding-left:12px;border-left:1px solid var(--border);line-height:1.3}
-  .bl-me-l{display:flex;align-items:center;gap:5px;font-size:9.5px;font-weight:800;letter-spacing:.12em;
+  /* « Mes batailles » : la ligne du joueur, sur la carte même — son char,
+     ses dégâts, s'il a survécu. Séparée du duel par un filet. */
+  .bl-me{flex:0 0 150px;display:flex;flex-direction:column;gap:2px;min-width:0;padding-left:14px;
+    border-left:1px solid var(--line);line-height:1.3}
+  .bl-me-l{display:flex;align-items:center;gap:5px;font-size:9.5px;font-weight:700;letter-spacing:.1em;
     text-transform:uppercase;color:var(--muted);white-space:nowrap}
   .bl-me-l .bl-alive,.bl-me-l .bl-dead{font-size:9px;letter-spacing:0}
   .bl-me-s{display:inline-flex;align-items:center;gap:5px;min-width:0;overflow:hidden}
-  /* joué pour un autre clan que le sien. Sans espacement des lettres : à
-     côté de « Détruit », la colonne n'a que 137 px. */
-  .bl-me-leg{flex:none;font-size:8px;letter-spacing:0;line-height:1.5;padding:0 5px;border-radius:20px;
-    color:var(--accent-2);border:1px solid var(--accent);cursor:help}
-  .bl-me-t{font-size:14px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  /* joué pour un autre clan que le sien */
+  .bl-me-leg{flex:none;font-size:8px;letter-spacing:0;line-height:1.5;padding:0 5px;border-radius:999px;
+    color:var(--gold-2);border:1px solid var(--gold-line);cursor:help}
+  .bl-me-t{font-family:var(--fx);font-size:15px;letter-spacing:.2px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .bl-me-n{font-size:12px;color:var(--ink-2);font-variant-numeric:tabular-nums;white-space:nowrap}
-  .bl-note{font-size:12.5px;line-height:1.5;color:var(--muted);margin:10px 2px 12px}
-  .bl-note b{color:var(--ink-2);font-variant-numeric:tabular-nums}
-  .bl-pane > .bl-note{margin:0 0 12px}
-  /* sa propre ligne dans le détail : plus marquée que celles du clan */
-  .bl-tbl tr.self{background:color-mix(in srgb,var(--accent) 20%,transparent)}
-  .bl-tbl tr.self td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
-  .bl-tbl tr.self td:nth-child(2){color:var(--accent-2);font-weight:700}
 
   /* Les cartes arrivent l'une après l'autre. Le décalage n'est appliqué
      qu'aux quatorze premières : au-delà, on attendrait pour rien. */
@@ -1587,6 +1639,8 @@
   .rev #blList .bl-row:nth-child(12){animation-delay:495ms}
   .rev #blList .bl-row:nth-child(13){animation-delay:540ms}
   .rev #blList .bl-row:nth-child(14){animation-delay:585ms}
+
+  /* La pagination — partagée avec les Classements, qui la posent au pied de leur carte */
   .bl-pager{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:16px}
   .bl-pg{min-width:34px;height:34px;padding:0 10px;border:1px solid var(--border);background:var(--card);color:var(--ink-2);font:inherit;font-size:13px;font-weight:600;border-radius:8px;cursor:pointer;transition:.15s}
   .bl-pg:hover:not(:disabled){border-color:var(--accent);color:var(--ink)}
@@ -1594,108 +1648,68 @@
   .bl-pg:disabled{opacity:.4;cursor:default}
   .bl-pg-dot{color:var(--muted);padding:0 3px}
   .bl-pg-info{margin-left:10px;font-size:12px;color:var(--muted)}
-  .bl-row{position:relative;background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow-sm);overflow:hidden;transition:transform .15s,box-shadow .15s,border-color .15s}
-  @media (prefers-reduced-motion:reduce){
-    .rev #blList .bl-row,.rev .bl-adv .b i,.rev .bl-dom i,.rev .bl-verdict::after,
-    .bl-row.open .bl-din > *{animation:none !important}
-    .bl-detail{transition:none}
-  }
-  .bl-row:hover{transform:translateY(-1px);box-shadow:var(--shadow);border-color:var(--axis)}
-  .bl-head{position:relative;display:flex;align-items:center;gap:18px;cursor:pointer;min-height:92px;padding:12px 18px;isolation:isolate}
-  /* image de la carte = FOND de la ligne, fondue vers la carte */
-  .bl-bg{position:absolute;inset:0;z-index:-1;overflow:hidden}
-  .bl-bg img{position:absolute;left:0;top:0;width:52%;height:100%;object-fit:cover}
-  .bl-bg .sh{position:absolute;inset:0;background:linear-gradient(90deg,rgba(14,13,10,.38) 0%,rgba(14,13,10,.72) 22%,var(--card) 50%)}
-  /* liseré résultat (gauche) */
-  .bl-row::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;z-index:2}
-  .bl-win::before{background:var(--good)} .bl-loss::before{background:var(--bad)} .bl-draw::before{background:var(--muted)}
-  /* zone 1 : identité carte (posée sur l'image) */
-  .bl-mapinfo{width:148px;flex:0 0 148px;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.8)}
-  .bl-mapinfo .nm{font-size:15px;font-weight:800;letter-spacing:-.2px;line-height:1.15}
-  .bl-mapinfo .md{font-size:10.5px;font-weight:600;opacity:.85;text-transform:uppercase;letter-spacing:.6px;margin-top:3px}
-  /* zone 2 : la confrontation, groupe compact centré */
-  .bl-match{flex:1;display:flex;align-items:center;justify-content:center;gap:20px;min-width:0}
-  .bl-team{display:flex;align-items:center;gap:11px;width:158px;min-width:0}
-  .bl-team.left{justify-content:flex-end;text-align:right}
-  .bl-team.right{justify-content:flex-start}
-  .bl-emblem{width:46px;height:46px;border-radius:10px;object-fit:cover;background:var(--surface-2);flex:0 0 auto}
-  .bl-emblem.bl-em-ph{display:grid;place-items:center;font-size:12px;font-weight:700;color:var(--ink-2);border:1px solid var(--border)}
-  .bl-emblem.ours{box-shadow:0 0 0 2px var(--accent)}
-  .bl-team .tag{font-size:15px;font-weight:800;letter-spacing:-.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .bl-team.left .tag{color:var(--accent)}
-  .bl-scorebox{text-align:center;flex:0 0 auto;min-width:96px}
-  /* La forme du score, sans avoir à le lire : plein = écrasement,
-     coupé au milieu = partie serrée. */
-  .bl-dom{display:block;height:3px;margin:7px auto 0;width:76px;border-radius:2px;
-    background:var(--bad);overflow:hidden;opacity:.85}
-  .bl-dom i{display:block;height:100%;background:var(--good);border-radius:2px;
-    transform-origin:left center}
-  .bl-draw .bl-dom i{background:var(--muted)}
-  .bl-scorebox .sc{font-size:27px;font-weight:800;letter-spacing:2px;line-height:1;font-variant-numeric:tabular-nums}
-  .bl-scorebox .rz{display:inline-block;font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;margin-top:5px;padding:2px 8px;border-radius:20px;color:var(--muted);background:var(--surface-2)}
-  .bl-win .sc .a{color:var(--good)} .bl-loss .sc .a{color:var(--bad)}
-  .bl-win .rz{color:var(--good);background:color-mix(in srgb,var(--good) 14%,transparent)}
-  .bl-loss .rz{color:var(--bad);background:color-mix(in srgb,var(--bad) 14%,transparent)}
-  .bl-sep{color:var(--muted);font-weight:400}
-  /* zone 3 : SR + meta */
-  .bl-right{display:flex;align-items:center;gap:16px;flex:0 0 auto}
-  .bl-sr{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:7px 14px;border-radius:10px;border:1.5px solid;min-width:66px;background:var(--surface-1)}
-  .bl-sr .lbl{font-size:9px;font-weight:800;letter-spacing:.9px;opacity:.85}
-  .bl-sr .val{font-size:17px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
-  .bl-metar{text-align:right;font-size:11px;color:var(--muted);line-height:1.6;min-width:96px}
-  .bl-chev{color:var(--muted);flex:0 0 auto;transition:transform .15s;font-size:13px}
-  .bl-row.open .bl-chev{transform:rotate(180deg)}
-  /* détail */
-  /* display:none ne s'anime pas. Une grille à 0fr → 1fr, si : la hauteur
+  #viewBattles .bl-pager{margin-top:18px}
+  #viewBattles .bl-pg{font-family:var(--fx);font-weight:400;font-size:14px;background:var(--panel);border-color:var(--line)}
+  #viewBattles .bl-pg:hover:not(:disabled){border-color:var(--gold-line)}
+  #viewBattles .bl-pg.on{background:var(--gold-soft);color:var(--gold-2);border-color:var(--gold-line)}
+
+  /* ── Le détail d'une bataille dépliée ──
+     display:none ne s'anime pas. Une grille à 0fr → 1fr, si : la hauteur
      se calcule toute seule, sans la mesurer en JavaScript. */
-  .bl-detail{display:grid;grid-template-rows:0fr;background:var(--surface-1);
+  .bl-detail{display:grid;grid-template-rows:0fr;background:rgba(0,0,0,.2);
     transition:grid-template-rows .38s cubic-bezier(.16,1,.3,1)}
-  .bl-row.open .bl-detail{grid-template-rows:1fr}
+  .bl-row.open .bl-detail{grid-template-rows:1fr;border-top:1px solid var(--line)}
   /* ⚠️ Ni padding ni bordure ICI. Avec grid-template-rows:0fr la boite de
      CONTENU fait 0, mais le padding, lui, garde sa hauteur : overflow:hidden
      clippe alors a la boite de padding et laissait depasser le haut des
      onglets sous les cartes fermees. On deporte l espacement sur les enfants. */
   .bl-din{overflow:hidden;min-height:0}
-  .bl-din > .bl-tabs{padding:9px 16px 0}
-  .bl-din > .bl-pane{padding:0 16px 14px}
-  .bl-row.open .bl-detail{border-top:1px solid var(--border)}
+  .bl-din > .bl-tabs{padding:12px 16px 0}
+  .bl-din > .bl-pane{padding:0 16px 16px}
   .bl-din .bl-pane{overflow-x:auto}
   /* le contenu monte légèrement en apparaissant, au lieu de surgir */
   .bl-row.open .bl-din > *{animation:blOuvre .4s cubic-bezier(.16,1,.3,1) both}
   .bl-row.open .bl-din > *:nth-child(2){animation-delay:.06s}
   @keyframes blOuvre{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
-  .bl-tl{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:700;margin:12px 0 5px}
-  .bl-tl:first-child{margin-top:2px} .bl-tl.ours{color:var(--accent)} .bl-tl.foe{color:var(--bad)}
-  .bl-em{width:34px;height:34px;border-radius:8px;object-fit:cover;background:var(--surface-2);flex:0 0 auto}
-  .bl-em-ph{display:grid;place-items:center;font-size:10px;font-weight:700;color:var(--ink-2)}
-  .bl-tl .bl-em{width:20px;height:20px;border-radius:5px}
-  .bl-tbl{width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap}
-  .bl-tbl th{font-weight:500;color:var(--muted);font-size:10px;text-align:right;padding:3px 9px}
-  .bl-tbl th:first-child,.bl-tbl th:nth-child(2){text-align:left}
-  .bl-tbl td{padding:4px 9px;text-align:right} .bl-tbl td.c,.bl-tbl th.c{text-align:center}
-  .bl-tbl td:first-child,.bl-tbl td:nth-child(2){text-align:left}
-  .bl-tbl tbody tr{border-top:1px solid var(--border)}
-  .bl-tbl tr.me{background:var(--accent-soft)} .bl-tbl tr.me td:nth-child(2){color:var(--accent);font-weight:600}
+  /* onglets Résultat / Replay : ceux du haut de la page, en plus petit */
+  .bl-tabs{display:flex;gap:6px;margin:0 0 14px}
+  .bl-tab{display:inline-flex;align-items:center;gap:7px;background:var(--panel);border:1px solid var(--line);
+    color:var(--ink-2);font:inherit;font-size:12.5px;font-weight:600;padding:7px 14px;border-radius:9px;cursor:pointer;transition:.15s}
+  .bl-tab svg.ic{width:14px;height:14px}
+  .bl-tab:hover{color:var(--ink);border-color:var(--gold-line)}
+  .bl-tab.on{background:var(--gold-soft);color:var(--gold-2);border-color:var(--gold-line)}
+  .bl-tab .bl-tab-ic{font-size:10px}
+  .bl-pane[hidden]{display:none}
+  /* les deux équipes : cartes .d2card, tableau aux mesures de .pl */
+  .bl-teams{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+  .bl-team-card{min-width:0;background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .bl-team-card>.hd{display:flex;align-items:center;gap:9px;padding:10px 14px;border-bottom:1px solid var(--line);
+    font-family:var(--fx);font-size:14px;letter-spacing:.3px}
+  .bl-team-card>.hd .nm{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .bl-team-card.ours>.hd{color:var(--gold-2)} .bl-team-card.foe>.hd{color:var(--bad)}
+  .bl-team-card>.hd .sub{margin-left:auto;flex:none;font:400 11px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    color:var(--muted);font-variant-numeric:tabular-nums}
+  .bl-em{width:24px;height:24px;flex:0 0 auto;border-radius:6px;object-fit:contain;background:var(--raised)}
+  .bl-em-ph{display:grid;place-items:center;overflow:hidden;font-size:8px;font-weight:700;color:var(--muted)}
+  .bl-tbl{width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap;font-variant-numeric:tabular-nums}
+  .bl-tbl th{padding:7px 7px;text-align:right;font-size:9.5px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;
+    color:var(--muted);border-bottom:1px solid var(--line)}
+  .bl-tbl td{padding:7px 7px;text-align:right;color:var(--ink-2);border-bottom:1px solid var(--line-2)}
+  .bl-tbl th:first-child,.bl-tbl td:first-child{padding-left:12px}
+  .bl-tbl tbody tr:last-child td{border-bottom:0}
+  .bl-tbl th:first-child,.bl-tbl th:nth-child(2),.bl-tbl td:first-child,.bl-tbl td:nth-child(2){text-align:left}
+  .bl-tbl td.c,.bl-tbl th.c{text-align:center}
+  .bl-tbl td:first-child{color:var(--ink)}
+  .bl-tbl tr.me td{background:var(--gold-soft)}
+  .bl-tbl tr.me td:nth-child(2){color:var(--gold-2);font-weight:600}
+  /* sa propre ligne, dans « Mes batailles » : plus marquée que celles du clan */
+  .bl-tbl tr.self td{background:rgba(229,185,92,.2)}
+  .bl-tbl tr.self td:first-child{box-shadow:inset 3px 0 0 var(--gold)}
+  .bl-tbl tr.self td:nth-child(2){color:var(--gold-2);font-weight:700}
   .bl-dead{color:var(--bad)} .bl-alive{color:var(--good)}
   .ce-badge{font-weight:700;letter-spacing:-.2px}
   /* lecteur de replay */
   .bl-replay{margin-top:14px;border-top:1px solid var(--border);padding-top:12px}
-  /* onglets dans la carte de bataille dépliée : Résultat / Replay */
-  .bl-tabs{display:flex;gap:6px;margin:2px 0 14px}
-  .bl-tab{display:inline-flex;align-items:center;gap:8px;background:var(--surface-2);border:1px solid var(--border);
-    color:var(--ink-2);font:inherit;font-size:13px;font-weight:600;padding:9px 16px;border-radius:10px;cursor:pointer;transition:.15s}
-  .bl-tab:hover{color:var(--ink);border-color:var(--accent)}
-  .bl-tab.on{background:var(--accent-soft);color:var(--accent-2);border-color:var(--accent)}
-  .bl-tab .bl-tab-ic{font-size:11px}
-  .bl-pane[hidden]{display:none}
-  /* panneaux d'équipe : même langage que les cartes du site */
-  .bl-teams{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-  @media(max-width:900px){.bl-teams{grid-template-columns:1fr}}
-  .bl-team-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
-  .bl-team-card>.hd{display:flex;align-items:center;gap:9px;padding:11px 14px;border-bottom:1px solid var(--border);
-    font-size:12.5px;font-weight:800;letter-spacing:-.1px}
-  .bl-team-card.ours>.hd{color:var(--accent)} .bl-team-card.foe>.hd{color:var(--bad)}
-  .bl-team-card>.hd .sub{margin-left:auto;font-size:11px;font-weight:600;color:var(--muted)}
   /* La classe .tw signifie « tableau large » : elle doit defiler chez elle
    plutot que pousser la page de cote. Elle n existait que dans le contexte
    des cartes d equipe ; ailleurs elle ne faisait rien, et le tableau de
@@ -1703,109 +1717,230 @@
 .tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
 .bl-team-card .tw{overflow-x:auto}
 
+  /* Les squelettes, pendant que « Mes batailles » arrive */
+  #viewBattles .bl-sk{display:inline-block;max-width:100%;height:12px;vertical-align:middle;border-radius:4px;
+    background:var(--raised);animation:blPulse 1.3s ease-in-out infinite}
+  @keyframes blPulse{50%{opacity:.45}}
+  #viewBattles .vd-t .bl-sk{height:30px}
+  #viewBattles .vd-p .bl-sk{height:14px;margin:4px 0}
+  #viewBattles .vd-n .bl-sk{height:64px;border-radius:10px}
+  #viewBattles .bl-sc .bl-sk{height:11px}
+  #viewBattles .bl-sc .v .bl-sk{height:20px;margin-top:9px}
+  .bl-row-sk{pointer-events:none}
+  .bl-row-sk .bl-head{justify-content:space-between;cursor:default}
+  .bl-row-sk .bl-sk{height:16px !important}
+  .bl-row-sk .bl-sk-m{width:min(240px,38%);height:30px !important;border-radius:8px}
+
   /* ── La carte suit la largeur de la LISTE, pas celle de l'écran ────
      Barre latérale dépliée, une tablette de 768 px ne laisse que 490 px à
-     la liste : les règles par largeur d'écran (plus bas, 720 px) ne se
-     déclenchaient pas, et le duel s'écrasait à 2 px sous les blocs voisins.
-     Une ligne complète demande 900 px (clan) ou 1 055 px (Mes batailles,
-     avec la colonne « ton char ») : on cède la place par paliers.
-     ⚠️ Ce bloc doit rester APRÈS les règles de base des cartes (.bl-head,
-     .bl-mapinfo…) : une requête de conteneur n'ajoute aucune priorité,
-     c'est l'ordre du fichier qui départage. */
+     la liste. Une ligne complète demande 900 px (clan) ou 1 055 px (Mes
+     batailles, avec la colonne « ton char ») : on cède la place par
+     paliers, puis, sous 640 px, la carte passe sur deux lignes — la carte
+     jouée et le SR en haut, le duel en entier en dessous, tags compris.
+     ⚠️ Ce bloc doit rester APRÈS les règles de base des cartes : une
+     requête de conteneur n'ajoute aucune priorité, c'est l'ordre du
+     fichier qui départage. */
   #blList{container:bllist / inline-size}
-  @container bllist (min-width:1001px) and (max-width:1060px){ .bl-mine .bl-team{width:130px} }
+  @container bllist (min-width:1001px) and (max-width:1080px){ .bl-mine .bl-team{width:130px} }
   @container bllist (max-width:1000px){
     .bl-mine .bl-head{flex-wrap:wrap;row-gap:8px}
     .bl-mine .bl-me{order:10;flex:1 1 100%;flex-direction:row;align-items:baseline;gap:10px;
-      padding:8px 0 0;border-left:0;border-top:1px solid var(--border)}
+      padding:9px 0 0;border-left:0;border-top:1px solid var(--line-2)}
   }
-  @container bllist (max-width:840px){ .bl-metar{display:none} }
-  @container bllist (max-width:700px){
-    .bl-head{gap:10px;padding:10px 12px;min-height:78px}
-    .bl-mapinfo{width:96px;flex-basis:96px} .bl-mapinfo .nm{font-size:13px}
-    .bl-match{gap:10px} .bl-team,.bl-mine .bl-team{width:auto} .bl-team .tag{display:none}
-    .bl-emblem{width:38px;height:38px}
-    .bl-scorebox{min-width:70px} .bl-scorebox .sc{font-size:22px}
-    .bl-sr{padding:5px 9px;min-width:52px} .bl-sr .val{font-size:14px}
-    .bl-me-t{font-size:13px}
+  @container bllist (max-width:860px){
+    .bl-metar{display:none}
+    .bl-teams{grid-template-columns:minmax(0,1fr)}
   }
-  @container bllist (max-width:520px){
-    .bl-mapinfo{width:80px;flex-basis:80px}
-    .bl-right{gap:8px}
-    .bl-emblem{width:32px;height:32px}
+  @container bllist (max-width:760px){
+    .bl-head{gap:12px;padding:10px 14px 10px 16px;min-height:80px}
+    .bl-mapinfo{width:112px;flex-basis:112px} .bl-mapinfo .nm{font-size:15px}
+    .bl-match{gap:10px} .bl-team{width:auto;flex:1 1 0;gap:8px}
+    .bl-emblem{width:38px;height:38px;border-radius:9px}
+    .bl-team .tag{font-size:14px}
+    .bl-scorebox{min-width:76px} .bl-scorebox .sc{font-size:24px}
+    .bl-right{gap:10px}
+    .bl-sr{min-width:54px;padding:5px 9px} .bl-sr .val{font-size:15px}
   }
-  /* Téléphone : 290 px de liste. Le préfixe #blList passe devant les
-     règles par largeur d'écran, qui viennent plus bas dans le fichier.
-     Le chevron disparaît : toute la ligne reste cliquable. */
+  /* deux lignes : la carte jouée (nom ; mode, date et durée) et le SR en
+     haut ; le duel en entier dessous ; « Mes batailles », sa ligne à la fin */
+  @container bllist (max-width:640px){
+    #blList .bl-head{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;
+      grid-template-areas:"nm nm sr chev" "md meta sr chev" "match match match match";gap:0 12px;padding:12px 14px 12px 16px}
+    #blList .bl-mine .bl-head{grid-template-areas:"nm nm sr chev" "md meta sr chev" "match match match match" "me me me me"}
+    #blList .bl-row-sk .bl-head{display:flex}
+    #blList .bl-right,#blList .bl-mapinfo{display:contents}
+    #blList .bl-mapinfo .nm{grid-area:nm;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    #blList .bl-mapinfo .md{grid-area:md;align-self:baseline;margin-top:3px}
+    #blList .bl-metar{grid-area:meta;align-self:baseline;display:block;min-width:0;margin-top:3px;text-align:left;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 3px rgba(0,0,0,.85)}
+    #blList .bl-metar::before{content:"·";margin:0 6px 0 -4px}
+    #blList .bl-metar div{display:inline}
+    #blList .bl-sr{grid-area:sr;align-self:center;min-width:54px;padding:4px 9px}
+    #blList .bl-chev{grid-area:chev;align-self:center}
+    #blList .bl-match{grid-area:match;justify-content:space-between;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line-2)}
+    #blList .bl-team{gap:7px}
+    #blList .bl-emblem{width:34px;height:34px}
+    #blList .bl-scorebox{min-width:62px}
+    #blList .bl-mine .bl-me{grid-area:me;order:0;margin-top:10px}
+    #blList .bl-din > .bl-tabs{padding:10px 10px 0}
+    #blList .bl-din > .bl-pane{padding:0 10px 12px}
+    /* l'en-tête d'équipe passe sur deux lignes plutôt que de couper le tag */
+    #blList .bl-team-card>.hd{flex-wrap:wrap;row-gap:2px;padding:9px 12px}
+    #blList .bl-team-card>.hd .nm{white-space:normal}
+    #blList .bl-bg img{width:100%;opacity:.42}
+    #blList .bl-bg .sh{background:linear-gradient(180deg,rgba(11,12,12,.4),rgba(11,12,12,0) 55%)}
+  }
   @container bllist (max-width:400px){
-    #blList .bl-head{gap:6px;padding:10px}
-    #blList .bl-mapinfo{width:68px;flex-basis:68px}
-    #blList .bl-scorebox .rz{padding:2px 6px;letter-spacing:.4px}
-    #blList .bl-dom{width:56px}
-    #blList .bl-mapinfo .nm{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    #blList .bl-head{padding:11px 12px 11px 14px;column-gap:10px}
+    #blList .bl-mapinfo .nm{font-size:15px}
+    #blList .bl-metar{font-size:11px}
     #blList .bl-match{gap:6px}
-    #blList .bl-emblem{width:26px;height:26px;border-radius:7px}
-    #blList .bl-emblem.bl-em-ph{font-size:8.5px;letter-spacing:-.02em;overflow:hidden}
-    #blList .bl-scorebox{min-width:60px}
-    #blList .bl-right{gap:6px}
-    #blList .bl-sr{padding:4px 7px;min-width:44px}
-    #blList .bl-chev{display:none}
+    #blList .bl-team{gap:6px}
+    #blList .bl-team .tag{font-size:13px;letter-spacing:.2px}
+    #blList .bl-emblem{width:30px;height:30px;border-radius:8px;padding:2px}
+    #blList .bl-emblem.bl-em-ph{font-size:9px}
+    #blList .bl-scorebox{min-width:56px} #blList .bl-scorebox .sc{font-size:22px}
+    #blList .bl-scorebox .rz{padding:2px 6px;letter-spacing:.5px}
+    #blList .bl-dom{width:56px}
+    #blList .bl-me-t{font-size:14px}
+    /* le char d'abord : dégâts et frags passent à la ligne */
+    #blList .bl-mine .bl-me{flex-wrap:wrap;row-gap:1px}
+    #blList .bl-me-n{flex-basis:100%}
   }
-  .rp-launch{appearance:none;cursor:pointer;display:inline-flex;align-items:center;gap:8px;background:var(--surface-2);border:1px solid var(--border);border-radius:9px;padding:9px 15px;color:var(--ink);font-size:13px;font-weight:700}
-  .rp-launch:hover{border-color:var(--accent);color:var(--accent)}
-  .rp-launch .rp-tri{color:var(--accent);font-size:11px}
-  .rp-launch .rp-demo{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);border:1px solid var(--border);border-radius:20px;padding:1px 7px}
+  @media (max-width:820px){
+    .bl-mes{grid-template-columns:repeat(2,minmax(0,1fr))}
+  }
+  @media (max-width:640px){
+    /* les deux onglets se partagent la ligne */
+    .bl-scope-b{flex:1 1 0;justify-content:center;padding:9px 10px;gap:7px}
+    .bl-advl{grid-template-columns:minmax(0,1fr)}
+    #viewBattles .bl-sect .src{display:none}
+  }
+  @media (max-width:420px){ .bl-scope-b svg.ic{display:none} }
+  @media (prefers-reduced-motion:reduce){
+    .rev #blList .bl-row,.rev .bl-adv .b i,.rev .bl-dom i,.rev #viewBattles .bl-vd::after,
+    .bl-row.open .bl-din > *,#viewBattles .bl-sk{animation:none !important}
+    .bl-detail{transition:none}
+    .bl-row:hover{transform:none}
+  }
+  /* ── Le lecteur de replay — refonte du 20/10/2026 ──
+     Il vit dans la carte de bataille dépliée, donc dans le monde .dashx :
+     la carte en panneau d'acier, une barre de lecture comme la barre des
+     filtres, la vitesse en segments comme la période, l'or pour la lecture
+     en cours et la part déjà jouée ; le journal en carte, à droite, à la
+     hauteur de la carte. Vert et rouge : les deux camps, comme en jeu. */
   .rp-wrap{max-width:100%;margin:2px auto 0}
-  .rp-main{display:grid;grid-template-columns:minmax(0,1fr) 240px;gap:14px;align-items:start}
-  @media(max-width:860px){.rp-main{grid-template-columns:1fr}}
-  /* pas de panneau latéral (replay sans événements) -> carte centrée */
+  .rp-main{display:grid;grid-template-columns:minmax(0,1fr) 270px;gap:14px;align-items:stretch}
+  .rp-col{min-width:0}
+  /* pas de journal (replay sans événements) -> carte centrée */
   .rp-main.no-side{grid-template-columns:minmax(0,1fr)}
-  .rp-main.no-side>div:first-child{max-width:820px;width:100%;margin:0 auto}
+  .rp-main.no-side>.rp-col{max-width:820px;width:100%;margin:0 auto}
+  .rp-stage{position:relative;width:100%;aspect-ratio:1/1;border-radius:12px;overflow:hidden;border:1px solid var(--line);background:var(--panel-2)}
+  .rp-stage img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .rp-stage canvas{position:absolute;inset:0;width:100%;height:100%}
   .rp-stage:hover{cursor:crosshair}
-  .rp-tip{position:absolute;pointer-events:none;z-index:3;background:color-mix(in srgb,var(--plane) 92%,transparent);border:1px solid var(--border);
-    border-radius:7px;padding:5px 8px;font-size:11.5px;color:var(--ink);white-space:nowrap;transform:translate(-50%,-140%);
-    box-shadow:0 4px 14px rgba(0,0,0,.5);opacity:0;transition:opacity .12s}
+  .rp-tip{position:absolute;pointer-events:none;z-index:3;background:var(--panel-2);border:1px solid var(--line);
+    border-radius:8px;padding:6px 9px;font-size:12px;color:var(--ink);white-space:nowrap;transform:translate(-50%,-140%);
+    box-shadow:0 10px 26px -8px rgba(0,0,0,.75);opacity:0;transition:opacity .12s}
   .rp-tip.on{opacity:1}
-  .rp-tip b{color:var(--accent-2)}
-  .rp-speed{appearance:none;cursor:pointer;font:inherit;font-size:11.5px;font-weight:700;color:var(--ink-2);
-    background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:0 9px;height:34px}
-  .rp-speed:hover{border-color:var(--accent);color:var(--accent)}
-  .rp-step{appearance:none;cursor:pointer;width:30px;height:34px;flex:0 0 auto;border-radius:8px;border:1px solid var(--border);
-    background:var(--surface-2);color:var(--ink-2);font-size:13px;display:grid;place-items:center}
-  .rp-step:hover{border-color:var(--accent);color:var(--accent)}
-  .rp-side{display:flex;flex-direction:column;gap:10px;min-width:0}
-  .rp-card{background:var(--surface-1);border:1px solid var(--border);border-radius:10px;padding:10px}
-  .rp-card h4{margin:0 0 7px;font-size:10px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:var(--muted)}
-  /* Journal : les événements de la bataille défilent au fil de la lecture */
-  .rp-jcard{display:flex;flex-direction:column;min-height:0}
-  .rp-jcard h4{display:flex;align-items:center;justify-content:space-between}
-  .rp-jn{font-weight:700;color:var(--ink-2);letter-spacing:0;text-transform:none;font-size:10.5px}
-  .rp-log{display:flex;flex-direction:column;gap:1px;overflow-y:auto;scroll-behavior:smooth;
-    height:clamp(320px,52vh,620px);font-size:11.5px;padding-right:2px}
-  .rp-log>div{display:none;gap:7px;align-items:baseline;padding:4px 6px;border-radius:6px}
+  .rp-tip b{font-family:var(--fx);font-weight:600;font-size:13px;letter-spacing:.2px;color:var(--gold-2)}
+
+  /* la barre de lecture : celle des filtres, en plus serré */
+  .rp-ctrl{display:flex;align-items:center;gap:8px;margin-top:10px;padding:8px 10px;
+    background:var(--panel);border:1px solid var(--line);border-radius:12px}
+  .rp-play,.rp-step{appearance:none;cursor:pointer;flex:0 0 auto;display:grid;place-items:center;height:34px;padding:0;
+    border-radius:9px;border:1px solid var(--line);background:var(--raised);color:var(--ink-2);
+    transition:color .15s,border-color .15s,background .15s}
+  .rp-play{width:40px}
+  .rp-step{width:34px}
+  .rp-play svg.ic{width:16px;height:16px}
+  .rp-step svg.ic{width:15px;height:15px}
+  .rp-play:hover,.rp-step:hover{color:var(--ink);border-color:var(--gold-line)}
+  .rp-play.on{background:var(--gold-soft);border-color:var(--gold-line);color:var(--gold-2)}
+  .rp-scrub{-webkit-appearance:none;appearance:none;flex:1 1 auto;min-width:60px;height:22px;margin:0 4px;
+    background:transparent;cursor:pointer;--p:0%}
+  .rp-scrub::-webkit-slider-runnable-track{height:5px;border-radius:3px;
+    background:linear-gradient(90deg,var(--gold) var(--p),var(--raised) var(--p))}
+  .rp-scrub::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:15px;height:15px;margin-top:-5px;border-radius:50%;
+    background:var(--gold-2);border:2px solid var(--panel-2);box-shadow:0 0 0 1px var(--gold-line)}
+  .rp-scrub::-moz-range-track{height:5px;border-radius:3px;background:var(--raised)}
+  .rp-scrub::-moz-range-progress{height:5px;border-radius:3px;background:var(--gold)}
+  .rp-scrub::-moz-range-thumb{width:11px;height:11px;border-radius:50%;background:var(--gold-2);border:2px solid var(--panel-2)}
+  .rp-scrub:focus-visible{outline:2px solid var(--ring);outline-offset:2px;border-radius:6px}
+  .rp-time{flex:0 0 auto;min-width:78px;text-align:right;font-family:var(--fx);font-size:14px;color:var(--ink-2);
+    font-variant-numeric:tabular-nums;white-space:nowrap}
+  /* la vitesse : un sélecteur à segments, comme celui de la période */
+  .rp-speed{flex:0 0 auto;display:inline-flex;padding:3px;border-radius:9px;background:var(--panel-2);border:1px solid var(--line)}
+  .rp-speed button{appearance:none;cursor:pointer;border:0;background:transparent;color:var(--muted);font-family:var(--fx);
+    font-size:13px;padding:4px 8px;border-radius:6px;transition:color .15s,background .15s}
+  .rp-speed button:hover{color:var(--ink)}
+  .rp-speed button.on{background:var(--gold-soft);color:var(--gold-2)}
+
+  /* les débriefings : deux boutons secondaires à l'or */
+  .rp-acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .rp-launch{appearance:none;cursor:pointer;display:inline-flex;align-items:center;gap:8px;padding:9px 15px;border-radius:10px;
+    border:1px solid var(--gold-line);background:var(--panel);color:var(--gold-2);font:inherit;font-size:13px;font-weight:600;
+    transition:background .15s,transform .15s}
+  .rp-launch svg.ic{width:15px;height:15px}
+  .rp-launch:hover{background:var(--gold-soft);transform:translateY(-1px)}
+  .rp-launch:disabled{opacity:.6;cursor:default;transform:none}
+  /* replay de démonstration : un encart, bordé d'un seul côté */
+  .rp-note{display:flex;align-items:flex-start;gap:8px;margin:10px 0 0;padding:9px 12px;border-left:3px solid var(--or);
+    border-radius:0 10px 10px 0;background:var(--or-soft);font-size:12.5px;line-height:1.5;color:var(--ink-2)}
+  .rp-note svg.ic{width:15px;height:15px;flex:none;margin-top:2px;color:var(--or)}
+
+  /* Journal : une carte de la Vue clan ; les événements défilent au fil
+     de la lecture. Posé en absolu, il prend la hauteur de la carte au
+     lieu de l'imposer. */
+  .rp-side{position:relative;min-width:0}
+  .rp-jcard{position:absolute;inset:0;display:flex;flex-direction:column;min-height:0;overflow:hidden;
+    background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--line);border-radius:12px}
+  .rp-jcard h4{display:flex;align-items:center;gap:8px;margin:0;padding:11px 14px;border-bottom:1px solid var(--line);
+    font-family:var(--fx);font-size:13px;font-weight:600;letter-spacing:.5px;color:var(--ink)}
+  .rp-jcard h4 svg.ic{width:14px;height:14px;color:var(--gold)}
+  .rp-jn{margin-left:auto;font-size:12px;letter-spacing:0;color:var(--muted);font-variant-numeric:tabular-nums}
+  .rp-log{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;gap:1px;overflow-y:auto;scroll-behavior:smooth;
+    padding:6px;font-size:12px}
+  .rp-log>div{display:none;gap:8px;align-items:baseline;padding:5px 8px;border-radius:7px}
   .rp-log>div.on{display:flex}
-  .rp-log>div:nth-child(odd).on{background:color-mix(in srgb,var(--ink) 4%,transparent)}
-  .rp-log>div.last{background:var(--accent-soft)}
-  .rp-log .jt{color:var(--muted);font-variant-numeric:tabular-nums;flex:0 0 auto;font-size:10.5px}
+  .rp-log>div:nth-child(odd).on{background:rgba(255,255,255,.025)}
+  .rp-log>div.last{background:var(--gold-soft);box-shadow:inset 2px 0 0 var(--gold)}
+  .rp-log .jt{flex:0 0 auto;font-family:var(--fx);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
   .rp-log .ji{flex:0 0 auto;width:11px;text-align:center}
-  .rp-log .jm{min-width:0;color:var(--ink-2);line-height:1.35}
-  .rp-log .jm b{font-weight:700}
+  .rp-log .jm{min-width:0;color:var(--ink-2);line-height:1.4}
+  .rp-log .jm b{font-weight:600}
   .rp-log .A{color:var(--good)} .rp-log .E{color:var(--bad)}
-  .rp-log .jv{font-variant-numeric:tabular-nums;font-weight:700;color:var(--ink);font-style:normal}
+  .rp-log .jv{font-family:var(--fx);font-style:normal;color:var(--ink);font-variant-numeric:tabular-nums}
   .rp-log .k .ji{color:var(--bad)}
   .rp-log .d .ji{color:var(--muted)}
   .rp-log .empty{display:flex;color:var(--muted);padding:10px 4px}
-  .rp-stage{position:relative;width:100%;aspect-ratio:1/1;border-radius:10px;overflow:hidden;border:1px solid var(--border);background:var(--plane)}
-  .rp-stage img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-  .rp-stage canvas{position:absolute;inset:0;width:100%;height:100%}
-  .rp-ctrl{display:flex;align-items:center;gap:11px;margin-top:9px}
-  .rp-play{appearance:none;cursor:pointer;width:34px;height:34px;flex:0 0 auto;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);color:var(--ink);font-size:12px;display:grid;place-items:center}
-  .rp-play:hover{border-color:var(--accent);color:var(--accent)}
-  .rp-scrub{flex:1;accent-color:var(--accent)}
-  .rp-time{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;min-width:88px;text-align:right}
-  .rp-legend{display:flex;gap:15px;justify-content:center;flex-wrap:wrap;font-size:11px;color:var(--ink-2);margin-top:9px}
-  .rp-legend i{font-style:normal;font-size:12px}
-  .rp-note{text-align:center;font-size:11px;color:var(--muted);margin-top:5px}
+
+  /* le squelette du lecteur, pendant le chargement */
+  .rp-sk{display:grid;grid-template-columns:minmax(0,1fr) 270px;gap:14px}
+  #viewBattles .rp-sk .bl-sk{display:block;width:100%}
+  #viewBattles .rp-sk .rp-sk-stage{height:auto;aspect-ratio:1/1;border-radius:12px}
+  #viewBattles .rp-sk .rp-sk-ctrl{height:52px;margin-top:10px;border-radius:12px}
+  #viewBattles .rp-sk .rp-sk-side{height:auto;border-radius:12px}
+
+  /* La largeur de la LISTE décide, pas celle de l'écran : le lecteur est
+     dans #blList, conteneur « bllist ». */
+  @container bllist (max-width:760px){
+    .rp-main,.rp-sk{grid-template-columns:minmax(0,1fr)}
+    .rp-jcard{position:static;height:280px}
+    #viewBattles .rp-sk .rp-sk-side{display:none}
+  }
+  @container bllist (max-width:560px){
+    /* le curseur et le temps sur une ligne, les boutons dessous */
+    .rp-ctrl{flex-wrap:wrap;row-gap:10px}
+    .rp-scrub{order:-2;flex:1 1 calc(100% - 100px);margin:0}
+    .rp-time{order:-1}
+    .rp-speed{margin-left:auto}
+    .rp-launch{flex:1 1 auto;justify-content:center}
+  }
+  @container bllist (max-width:400px){
+    .rp-ctrl{gap:6px;padding:8px}
+    .rp-speed button{padding:4px 6px}
+  }
   /* Logo de chargement anime */
   .cp-load{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:50px 0}
   .cp-load-mark{position:relative;width:104px;height:104px}
@@ -3695,18 +3830,6 @@ i.pm-eq{width:8px;height:8px;background:var(--accent);opacity:.55;
   @media(max-width:640px){ .fm-pair{grid-template-columns:1fr} }
   @media(max-width:820px){ .wz-body{grid-template-columns:1fr} .wz-side{position:static} .wz-line{width:18px} .fm-pair{grid-template-columns:1fr} }
 
-  @media(max-width:840px){ .bl-metar{display:none} }
-  @media(max-width:720px){
-    .bl-head{gap:10px;padding:10px 12px;min-height:78px}
-    .bl-mapinfo{width:96px;flex-basis:96px} .bl-mapinfo .nm{font-size:13px}
-    .bl-bg img{width:70%} .bl-bg .sh{background:linear-gradient(90deg,rgba(14,13,10,.45) 0%,rgba(14,13,10,.8) 20%,var(--card) 62%)}
-    .bl-match{gap:10px} .bl-team{width:auto} .bl-team .tag{display:none}
-    .bl-emblem{width:38px;height:38px}
-    .bl-scorebox{min-width:70px} .bl-scorebox .sc{font-size:22px}
-    .bl-sr{padding:5px 9px;min-width:52px} .bl-sr .val{font-size:14px}
-    /* les deux onglets se partagent la ligne quand ils y tiennent */
-    .bl-scope-b{flex:1 1 0;justify-content:center;padding:10px 12px}
-  }
 
 /* ══ ACCUEIL — la vitrine « La compo » (refonte du 03/10/2026) ═══════
    La page est une feuille de composition Bastion à sept postes : chaque

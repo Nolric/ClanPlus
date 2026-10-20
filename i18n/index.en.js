@@ -1972,6 +1972,20 @@ Object.assign(window.CP_EN, {
   "En légionnaire : <b>{n}</b>.": "As a legionnaire: <b>{n}</b>.",
   "Tu jouais en <b>légionnaire</b> pour <b>{t}</b>, avec le tag <b>{t}</b>.": "You played as a <b>legionnaire</b> for <b>{t}</b>, wearing the <b>{t}</b> tag.",
   "Tu jouais pour {t} avec le tag {t}": "You played for {t} wearing the {t} tag",
+  /* ── Batailles : refonte du 20/10/2026 (verdict .vd, intitulé des cartes) ── */
+  "On <em>tient le terrain</em>.": "We're <em>holding the ground</em>.",
+  "Tu <em>tiens le terrain</em>.": "You're <em>holding the ground</em>.",
+  "<em>Jeu égal</em>.": "<em>An even game</em>.",
+  "Ça <em>résiste</em> en face.": "They're <em>holding out</em>.",
+  "Confrontations": "Match-ups",
+  "Les plus récentes d'abord": "Most recent first",
+  /* ── Lecteur de replay : refonte du 20/10/2026 ── */
+  "Débriefer dans l'éditeur": "Debrief in the editor",
+  "Débriefer en 3D": "Debrief in 3D",
+  "Rejouer la bataille sur le relief réel, en 3D": "Replay the battle on the real terrain, in 3D",
+  "Moment de la bataille": "Point in the battle",
+  "Journal": "Battle log",
+  "· hors repérage": "· not spotted",
   /* ── Cartes : les noms du jeu (catalogue 2.4.1) qui diffèrent en anglais ── */
   "Autoroute": "Highway",
   "Avant-poste": "Outpost",

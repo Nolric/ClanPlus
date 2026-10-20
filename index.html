@@ -17,12 +17,12 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20240%20240%22%3E%3Crect%20width%3D%22240%22%20height%3D%22240%22%20rx%3D%2254%22%20fill%3D%22%23141310%22%2F%3E%3Cg%20transform%3D%22translate%2830%2030%29%20scale%280.75%29%22%20fill%3D%22%23d8b566%22%3E%3Ccircle%20cx%3D%22120%22%20cy%3D%22120%22%20r%3D%22100%22%20fill%3D%22none%22%20stroke%3D%22%23d8b566%22%20stroke-width%3D%227%22%2F%3E%3Crect%20x%3D%2281%22%20y%3D%228%22%20width%3D%2218%22%20height%3D%2218%22%2F%3E%3Crect%20x%3D%22111%22%20y%3D%224%22%20width%3D%2218%22%20height%3D%2218%22%2F%3E%3Crect%20x%3D%22141%22%20y%3D%228%22%20width%3D%2218%22%20height%3D%2218%22%2F%3E%3Cpath%20d%3D%22M161%2C155%20A54%2C54%200%201%201%20161%2C85%22%20fill%3D%22none%22%20stroke%3D%22%23d8b566%22%20stroke-width%3D%2220%22%20stroke-linecap%3D%22round%22%2F%3E%3Crect%20x%3D%22112%22%20y%3D%2294%22%20width%3D%2216%22%20height%3D%2252%22%20rx%3D%225%22%2F%3E%3Crect%20x%3D%2294%22%20y%3D%22112%22%20width%3D%2252%22%20height%3D%2216%22%20rx%3D%225%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
 <script src="i18n/index.fr.js?v=c0085edf"></script>
 <script src="i18n/recruteur.en.js?v=9d5b0660"></script>
-<script src="i18n/index.en.js?v=f9a18512"></script>
+<script src="i18n/index.en.js?v=4910be97"></script>
 <script src="i18n.js?v=ed3f8a4f"></script>
 <link rel="stylesheet" href="fonts/fonts.css?v=d81c6085">
 <!-- La charte vit dans app.css : progression.html la partage, et le
        navigateur la garde en cache d'une visite à l'autre. -->
-  <link rel="stylesheet" href="app.css?v=a25d437b">
+  <link rel="stylesheet" href="app.css?v=ea7d01a1">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" defer></script>
 </head>
 <body>
@@ -584,10 +584,22 @@
   <div id="evModal" class="ev-modal hidden"></div>
   </div><!-- /viewClan -->
 
-  <div id="viewBattles" class="hidden">
-    <!-- Deux points de vue sur les mêmes cartes de bataille : celles du
-         clan, ou toutes celles où le joueur a joué, quel que soit le clan
-         qui les a enregistrées (fonction player-battles). -->
+  <div id="viewBattles" class="hidden dashx">
+    <!-- BATAILLES — contrat de conception (refonte du 20/10/2026)
+         THESIS : on ouvre cette page pour savoir comment ça se passe EN FACE —
+           le bilan d'abord, puis chaque confrontation, que l'on déplie.
+         OWN-WORLD : le monde .dashx des vues de l'appli (Vue clan, Classements,
+           Chercher un clan) — panneaux acier, filets, l'or pour la sélection et
+           pour ton clan ; titres et chiffres en --fx ; onglets .cv-tab, verdict
+           .vd, tuiles à pastille façon « Niveau officiel Wargaming », intitulé
+           .d2sect, pagination .bl-pager, squelettes pendant le chargement.
+         FIRST VIEWPORT : les deux onglets, le titre de section, les filtres,
+           le verdict (phrase, grand pourcentage, adversaires), les mesures.
+         Deux points de vue sur les mêmes cartes de bataille : celles du clan,
+           ou toutes celles où le joueur a joué, quel que soit le clan qui les a
+           enregistrées (fonction player-battles). Une bataille reste rangée chez
+           le SEUL clan du détachement de son envoyeur : la page ne fait que la
+           montrer. -->
     <div class="bl-scope" id="blScope" role="tablist" aria-label="Quelles batailles afficher">
       <button type="button" class="bl-scope-b on" role="tab" aria-selected="true" data-scope="clan"><svg class="ic" aria-hidden="true"><use href="#i-shield"/></svg><span>Batailles du clan</span><span class="n" id="blScopeNClan"></span></button>
       <button type="button" class="bl-scope-b" role="tab" aria-selected="false" data-scope="mine"><svg class="ic" aria-hidden="true"><use href="#i-user"/></svg><span>Mes batailles</span><span class="n" id="blScopeNMine" hidden></span></button>
@@ -596,8 +608,11 @@
     <p class="sec-desc" data-scope-txt="clan">Chaque <b>bataille de clan</b> enregistrée par le mod, présentée comme une <b>confrontation</b> : notre clan contre le clan adverse. Clique sur une ligne pour dérouler le <b>détail des deux équipes</b>.</p>
     <div class="sec-h" data-scope-txt="mine" hidden>Mes batailles, tous clans confondus</div>
     <p class="sec-desc" data-scope-txt="mine" hidden>Toutes les batailles de clan <b>où tu as joué</b>, quel que soit le clan que tu portais : celui-ci, un ancien clan, et même celles enregistrées par l'adversaire. Le résultat est toujours donné <b>de ton côté</b>.</p>
+    <!-- la barre Mode / Période vient se poser ici (placeSubbar) -->
+    <div id="blSub"></div>
     <div class="bl-chips" id="blClans"></div>
     <div class="bl-sum" id="blSummary"></div>
+    <div class="bl-sect" id="blSect" hidden></div>
     <div class="bl-list" id="blList"></div>
     <div class="bl-pager" id="blPager"></div>
   </div>
@@ -786,7 +801,7 @@
      partage, pour qu'il n'existe jamais deux versions des mêmes
      calculs. « defer » l'exécute après lecture complète de la page. -->
   <script src="recruteur.js?v=fe25164d" defer></script>
-  <script src="app.js?v=c5811bf2" defer></script>
+  <script src="app.js?v=aea47de3" defer></script>
 <script src="app-fin.js?v=4e570ee3" defer></script>
 </body>
 </html>
