@@ -191,6 +191,7 @@ async function openApp(){
   srInit(res.j);   // modèle SR figé de la saison + profils joueurs + cotes Bastion
   MEMBERS = res.j.members || [];
   ME_ID = res.j.me ? res.j.me.account_id : null;
+  rcGate();   // l'onglet Recrutement n'existe que pour l'état-major et les recruteurs
   CLANINFO = res.j.clanInfo || null;
   CLANRATINGS = res.j.clanRatings || null;
   // en-tête
@@ -953,6 +954,7 @@ function wipGate(v){
   }
 }
 function switchView(v){
+  if(v==="recruit" && !canRecruit()) v="clan";   // réservé (voir VUE RECRUTEMENT)
   wipGate(v);
   if(v!=="strats") stQuitteVue();
   document.querySelectorAll("#nav .tab").forEach(t=>t.classList.toggle("on",t.dataset.v===v));
@@ -980,83 +982,220 @@ function switchView(v){
 }
 
 /* ============================================================
-   VUE RECRUTEMENT  (annonce du clan, façon job board)
+   VUE RECRUTEMENT — refonte du 20/10/2026
+   L'annonce du clan sur la page publique « Trouver un clan ».
+   ACCÈS (décision de Robert) : officier du personnel et au-dessus
+   (commandant, officier exécutif, officier du personnel), plus les
+   recruteurs. Personne d'autre ne voit l'onglet ni la fenêtre. Le
+   serveur (fonction clan-offers) applique la même règle : c'est lui
+   qui fait foi, l'appli ne fait que ne pas montrer la porte.
+   À gauche le formulaire, à droite l'aperçu exact de la carte publique,
+   mis à jour pendant la frappe.
    ============================================================ */
-const RC_LANGS=[["fr","🇫🇷 Français"],["en","🇬🇧 Anglais"],["de","🇩🇪 Allemand"],["es","🇪🇸 Espagnol"],["it","🇮🇹 Italien"],["pl","🇵🇱 Polonais"],["pt","🇵🇹 Portugais"],["nl","🇳🇱 Néerl."],["tr","🇹🇷 Turc"],["cs","🇨🇿 Tchèque"],["ru","Russe"]];
-const RC_ACTS=[["cw","Guerre de clans"],["skirmish","Escarmouches"],["random","Aléatoire"],["tournament","Tournois"],["fun","Détente"]];
-let RC_OFFER=null, RC_CANEDIT=false;
+const RC_ROLES=new Set(["commander","executive_officer","deputy_commander","personnel_officer","recruitment_officer"]);
+function canRecruit(){
+  if(DEV) return true;   // mode test : tout est débloqué, le serveur garde la main
+  const m=(MEMBERS||[]).find(x=>Number(x.account_id)===Number(ME_ID));
+  return !!m && RC_ROLES.has(normRole(m.wg_role));
+}
+// l'onglet n'existe que pour ceux qui peuvent s'en servir
+function rcGate(){
+  document.querySelectorAll('#nav .tab[data-v="recruit"]').forEach(b=>{ b.style.display=canRecruit()?"":"none"; });
+}
+const RC_LANGS=[["fr","Français"],["en","Anglais"],["de","Allemand"],["es","Espagnol"],["it","Italien"],["pl","Polonais"],
+  ["pt","Portugais"],["nl","Néerlandais"],["tr","Turc"],["cs","Tchèque"],["ru","Russe"]];
+const RC_ACTS=[["skirmish","Escarmouches"],["cw","Clan Wars"],["random","Batailles aléatoires"],["tournament","Tournois"],["fun","Détente"]];
+const RC_LANG_EN={fr:"French",en:"English",de:"German",es:"Spanish",it:"Italian",pl:"Polish",pt:"Portuguese",nl:"Dutch",tr:"Turkish",cs:"Czech",ru:"Russian"};
+const RC={ offer:null, saved:null, canEdit:false, state:"idle", msg:null, err:"" };
+
 async function loadRecruit(){
-  const card=document.getElementById("recruitCard");
-  card.innerHTML='<h2>Recrutement</h2><p class="sec-desc">Chargement…</p>';
-  const r=await fnCall("clan-offers",{session:localStorage.getItem(LS_SESSION),action:"mine"});
-  if(!r.ok){ card.innerHTML='<h2>Recrutement</h2><p class="sec-desc">Erreur : '+esc(r.j.error||r.status)+'. La fonction serveur « clan-offers » est-elle déployée&nbsp;?</p>'; return; }
-  RC_OFFER=r.j.offer||{}; RC_CANEDIT=!!r.j.canEdit;
+  const host=document.getElementById("rcHost");
+  if(!canRecruit()){ host.innerHTML=rcLockHTML(); return; }
+  RC.state="loading"; RC.msg=null; host.innerHTML=rcSkeleton();
+  const r=await fnCall("clan-offers",{ session:localStorage.getItem(LS_SESSION), action:"mine" });
+  if(r.status===403){ host.innerHTML=rcLockHTML(); return; }
+  if(!r.ok){
+    RC.state="err";
+    host.innerHTML=`<div class="rc-msgbox"><p>L'annonce de ton clan n'a pas pu être chargée.</p><p class="s">${esc((r.j&&r.j.error)||String(r.status))}</p>
+      <button type="button" class="btn" id="rcRetry">Réessayer</button></div>`;
+    document.getElementById("rcRetry").onclick=loadRecruit;
+    return;
+  }
+  RC.saved=r.j.offer||null; RC.canEdit=!!r.j.canEdit;
+  RC.offer=Object.assign({ title:"", pitch:"", langs:[], activities:[], play_hours:"", min_wn8:null, min_battles:null, min_tier:null, contact:"", status:"paused" }, RC.saved||{});
+  RC.state="ready";
   renderRecruit();
 }
+function rcLockHTML(){
+  return `<div class="rc-msgbox"><p><b>Réservé à l'état-major du clan.</b></p>
+    <p class="s">L'annonce de recrutement se gère par le commandant, l'officier exécutif, l'officier du personnel et les recruteurs.</p></div>`;
+}
+function rcSkeleton(){
+  const s=w=>`<span class="rc-sk" style="width:${w}"></span>`;
+  return `<section class="vd"><div class="vd-haut"><div class="vd-g"><p class="vd-t">${s("55%")}</p><p class="vd-p">${s("80%")}</p></div></div></section>
+    <div class="rc-two"><div class="rc-card">${s("40%")}<br>${s("100%")}<br>${s("100%")}</div><div class="rc-card">${s("60%")}<br>${s("100%")}</div></div>`;
+}
+const rcClan=()=>({ tag:(CLANINFO&&CLANINFO.tag)||CLANTAG||"", name:(CLANINFO&&CLANINFO.name)||"",
+  em:(CLANINFO&&CLANINFO.emblems&&((CLANINFO.emblems.x64&&(CLANINFO.emblems.x64.portal||CLANINFO.emblems.x64.wot))||(CLANINFO.emblems.x32&&CLANINFO.emblems.x32.portal)))||"",
+  m:(CLANINFO&&CLANINFO.members_count!=null)?CLANINFO.members_count:((MEMBERS||[]).length||null),
+  id:(CLANINFO&&CLANINFO.clan_id)||Number(localStorage.getItem("cp_clan"))||0 });
+const rcDirty=()=>{ const a=RC.offer, b=Object.assign({ title:"", pitch:"", langs:[], activities:[], play_hours:"", min_wn8:null, min_battles:null, min_tier:null, contact:"" }, RC.saved||{});
+  return ["title","pitch","play_hours","contact","min_wn8","min_battles","min_tier"].some(k=>(a[k]||"")!==(b[k]||""))
+    || [...(a.langs||[])].sort().join()!==[...(b.langs||[])].sort().join() || [...(a.activities||[])].sort().join()!==[...(b.activities||[])].sort().join(); };
+
+/* ── Le verdict : où en est l'annonce ── */
+function rcVerdictHTML(){
+  const c=rcClan(), free=c.m!=null ? Math.max(0,100-c.m) : null, s=RC.saved;
+  const quand=s&&s.updated_at ? new Date(s.updated_at).toLocaleDateString(window.CP_LOC,{ day:"numeric", month:"long" }) : "";
+  let titre, ph=[];
+  if(!s){ titre="Ton clan <em>n'a pas encore d'annonce</em>.";
+    ph.push("Sur « Trouver un clan », les annonces Clan Plus passent avant tous les autres clans."); }
+  else if(s.status==="active"){ titre="Ton annonce est <em>en ligne</em>.";
+    ph.push("Elle apparaît en tête de « Trouver un clan », pour tous les joueurs sans clan."); }
+  else { titre="Ton annonce est <em>en pause</em>.";
+    ph.push("Elle est enregistrée, mais personne ne la voit. Publie-la quand ton clan recrute à nouveau."); }
+  if(quand) ph.push(s.updated_by_name ? `Dernière modification le <b>${esc(quand)}</b> par <b>${esc(s.updated_by_name)}</b>.` : `Dernière modification le <b>${esc(quand)}</b>.`);
+  return `<section class="vd rc-vd"><div class="vd-haut"><div class="vd-g"><h3 class="vd-t">${titre}</h3>
+      <p class="vd-p">${ph.map(x=>`<span>${x}</span>`).join(" ")}</p>
+      ${c.id?`<a class="btn rc-pub" href="trouver-clan.html#clan-${c.id}" target="_blank" rel="noopener">Voir la fiche publique du clan ↗</a>`:""}</div>
+    ${free!=null?`<div class="vd-n"><b>${fmt(free)}</b><i>${free>1?"places libres":"place libre"}</i></div>`:""}</div></section>`;
+}
+
+/* ── L'aperçu : la carte de « Trouver un clan », au pixel près ── */
+function rcPreviewHTML(){
+  const o=RC.offer, c=rcClan(), en=window.CP_LANG==="en";
+  const langs=(o.langs||[]).map(l=>`<span class="rc-ptag">${esc(en?(RC_LANG_EN[l]||l):((RC_LANGS.find(x=>x[0]===l)||[l,l])[1]))}</span>`).join("");
+  const acts=(o.activities||[]).map(a=>`<span class="rc-ptag act">${esc((RC_ACTS.find(x=>x[0]===a)||[a,a])[1])}</span>`).join("");
+  const reqs=[];
+  if(o.min_wn8) reqs.push(`WN8 <b>${fmt(o.min_wn8)}+</b>`);
+  if(o.min_battles) reqs.push(`<b>${fmt(o.min_battles)}</b> batailles minimum`);
+  if(o.min_tier) reqs.push(`Chars <b>rang ${o.min_tier}+</b>`);
+  if(o.play_hours) reqs.push(`<span data-i18n-skip>${esc(o.play_hours)}</span>`);
+  const contact=String(o.contact||"").trim(), isUrl=/^https?:\/\//i.test(contact)||/discord\.(gg|com)/i.test(contact);
+  if(contact && !isUrl) reqs.push(`Contact : <b>${esc(contact)}</b>`);
+  const rt=(typeof CLANRATINGS!=="undefined"&&CLANRATINGS)||null;
+  const tier=rt ? [["fb_elo_rating_10","Rang X"],["fb_elo_rating_8","Rang VIII"],["fb_elo_rating_6","Rang VI"]].find(([f])=>rt[f]&&rt[f].rank!=null) : null;
+  const vide=!o.title && !o.pitch;
+  return `<article class="rc-prev${vide?" vide":""}">
+    <div>
+      ${langs?`<div class="rc-ptags">${langs}</div>`:""}
+      <h4 class="rc-pt" data-i18n-skip>${esc(o.title||`[${c.tag}]`)}</h4>
+      ${o.pitch?`<p class="rc-pp" data-i18n-skip>${esc(o.pitch)}</p>`:`<p class="rc-pp vide">La présentation de ton clan apparaîtra ici.</p>`}
+      ${acts?`<div class="rc-ptags">${acts}</div>`:""}
+      ${reqs.length?`<div class="rc-preqs">${reqs.map(x=>`<span>${x}</span>`).join("")}</div>`:""}
+    </div>
+    <div class="rc-pside">
+      <div class="rc-pclan">${c.em?`<img src="${esc(c.em)}" alt="">`:`<span class="ph">${esc(c.tag.slice(0,3))}</span>`}
+        <span><b data-i18n-skip>[${esc(c.tag)}]</b><small>${c.m!=null&&tier?`${fmt(c.m)} / 100 membres · ${tier[1]} #${fmt(rt[tier[0]].rank)}`:c.m!=null?`${fmt(c.m)} / 100 membres`:tier?`${tier[1]} #${fmt(rt[tier[0]].rank)}`:""}</small></span></div>
+      <span class="rc-pgo">${contact&&isUrl?"Contacter ↗":"Postuler ↗"}</span>
+      <span class="rc-pbtn">Voir le clan</span>
+    </div></article>`;
+}
+
+/* ── Le formulaire ── */
 function renderRecruit(){
-  const o=RC_OFFER||{}, card=document.getElementById("recruitCard");
-  const langsSel=new Set(o.langs||[]), actsSel=new Set(o.activities||[]);
-  const chip=(arr,sel,cls)=>arr.map(([v,lab])=>`<span class="rc-chip ${sel.has(v)?"on":""}" data-${cls}="${v}">${esc(lab)}</span>`).join("");
-  card.innerHTML=`
-    <h2>Recrutement <span class="hint">l'annonce de ton clan</span></h2>
-    <p class="sec-desc" style="margin:-6px 0 14px">Publie une annonce que les joueurs <b>sans clan</b> verront sur la page «&nbsp;Trouver un clan&nbsp;». Une annonce par clan. <a href="trouver-clan.html#offres" target="_blank" rel="noopener" style="color:var(--accent);font-weight:600">Voir la page ↗</a></p>
-    ${RC_CANEDIT?"":'<div class="rc-notice">Seuls les <b>officiers</b> du clan peuvent modifier l\'annonce. Tu peux la consulter ci-dessous.</div>'}
-    <div class="rc-form ${RC_CANEDIT?"":"rc-disabled"}">
-      <label>Titre / accroche
-        <input type="text" id="rcTitle" maxlength="90" placeholder="Ex : Clan FR convivial recrute pour le Bastion" value="${esc(o.title||"")}"></label>
-      <label>Présentation du clan
-        <textarea id="rcPitch" maxlength="1500" placeholder="Ambiance, ce que vous jouez, vos attentes, votre organisation…">${esc(o.pitch||"")}</textarea></label>
-      <div class="rc-grid">
-        <label>Langues parlées<div class="rc-chips" id="rcLangs">${chip(RC_LANGS,langsSel,"lang")}</div></label>
-        <label>Vous jouez surtout<div class="rc-chips" id="rcActs">${chip(RC_ACTS,actsSel,"act")}</div></label>
-      </div>
-      <div class="rc-grid3">
-        <label>WN8 minimum<input type="number" id="rcWn8" min="0" max="99999" placeholder="ex : 1500" value="${o.min_wn8||""}"></label>
-        <label>Batailles minimum<input type="number" id="rcBat" min="0" placeholder="ex : 5000" value="${o.min_battles||""}"></label>
-        <label>Tier de chars min<input type="number" id="rcTier" min="1" max="10" placeholder="ex : 8" value="${o.min_tier||""}"></label>
-      </div>
-      <div class="rc-grid">
-        <label>Créneaux de jeu<input type="text" id="rcHours" maxlength="80" placeholder="Ex : 20h-23h en semaine" value="${esc(o.play_hours||"")}"></label>
-        <label>Contact (Discord ou lien)<input type="text" id="rcContact" maxlength="200" placeholder="https://discord.gg/… ou pseudo" value="${esc(o.contact||"")}"></label>
-      </div>
-      <div class="rc-actions">
-        <label class="rc-status"><input type="checkbox" id="rcActive" ${o.status!=="paused"?"checked":""}> Annonce publiée (visible par les joueurs)</label>
-        <div style="margin-left:auto;display:flex;gap:8px">
-          ${(o.clan_id||o._saved)?'<button class="btn" id="rcDelete">Supprimer</button>':""}
-          <button class="btn primary" id="rcSave">Enregistrer</button>
-        </div>
-      </div>
-      <div class="rc-msg" id="rcMsg"></div>
+  const host=document.getElementById("rcHost"), o=RC.offer, ro=!RC.canEdit;
+  const chips=(arr,sel,key)=>arr.map(([v,l])=>`<button type="button" class="rc-chip" data-${key}="${v}" aria-pressed="${sel.includes(v)}"${ro?" disabled":""}>${esc(l)}</button>`).join("");
+  const tiers=[["","Aucune"],["5","Rang 5+"],["6","Rang 6+"],["7","Rang 7+"],["8","Rang 8+"],["9","Rang 9+"],["10","Rang 10"]];
+  const s=RC.saved, live=s&&s.status==="active";
+  host.innerHTML=rcVerdictHTML()+`
+    <div class="rc-two">
+      <form class="rc-card rc-form" id="rcForm" autocomplete="off" novalidate>
+        <fieldset${ro?" disabled":""}>
+          <h3 class="rc-st">L'essentiel</h3>
+          <label class="rc-f"><span>Titre de l'annonce <small id="rcTitleN">${(o.title||"").length} / 90</small></span>
+            <input type="text" id="rcTitle" maxlength="90" placeholder="Ex : clan francophone détendu recrute pour le Bastion rang X" value="${esc(o.title||"")}"></label>
+          <label class="rc-f"><span>Présentation du clan <small id="rcPitchN">${(o.pitch||"").length} / 1500</small></span>
+            <textarea id="rcPitch" maxlength="1500" rows="7" placeholder="L'ambiance, ce que vous jouez, quand, ce que vous attendez d'une recrue…">${esc(o.pitch||"")}</textarea></label>
+
+          <h3 class="rc-st">Pour qui</h3>
+          <div class="rc-f"><span>Langues parlées <small>4 au plus</small></span><div class="rc-chips" id="rcLangs">${chips(RC_LANGS,o.langs||[],"lang")}</div></div>
+          <div class="rc-f"><span>Vous jouez surtout</span><div class="rc-chips" id="rcActs">${chips(RC_ACTS,o.activities||[],"act")}</div></div>
+
+          <h3 class="rc-st">Exigences <small>facultatives</small></h3>
+          <div class="rc-grid">
+            <label class="rc-f"><span>WN8 minimum</span><input type="number" id="rcWn8" min="0" max="99999" inputmode="numeric" placeholder="Ex : 1500" value="${o.min_wn8||""}"></label>
+            <label class="rc-f"><span>Batailles minimum</span><input type="number" id="rcBat" min="0" inputmode="numeric" placeholder="Ex : 10000" value="${o.min_battles||""}"></label>
+            <label class="rc-f"><span>Rang de chars</span><select id="rcTier">${tiers.map(([v,l])=>`<option value="${v}"${String(o.min_tier||"")===v?" selected":""}>${l}</option>`).join("")}</select></label>
+          </div>
+          <label class="rc-f"><span>Créneaux de jeu</span><input type="text" id="rcHours" maxlength="80" placeholder="Ex : du lundi au jeudi, 20 h – 23 h" value="${esc(o.play_hours||"")}"></label>
+
+          <h3 class="rc-st">Contact</h3>
+          <label class="rc-f"><span>Lien Discord ou pseudo</span>
+            <input type="text" id="rcContact" maxlength="200" placeholder="https://discord.gg/… ou un pseudo en jeu" value="${esc(o.contact||"")}"></label>
+          <p class="rc-help">Un lien devient le bouton « Contacter » de l'annonce. Sinon, le bouton « Postuler » mène à la page Wargaming du clan.</p>
+        </fieldset>
+        ${ro?"":`<div class="rc-bar">
+          <span class="rc-state" id="rcState" role="status" aria-live="polite"></span>
+          ${s?`<button type="button" class="rc-del" id="rcDelete">Supprimer</button>`:""}
+          <button type="button" class="btn" id="rcAlt">${live?"Mettre en pause":"Enregistrer sans publier"}</button>
+          <button type="button" class="rc-go" id="rcSave">${live?"Enregistrer les modifications":"Publier l'annonce"}</button>
+        </div>`}
+      </form>
+      <aside class="rc-side">
+        <p class="rc-side-l">Aperçu sur « Trouver un clan »</p>
+        <div id="rcPreview">${rcPreviewHTML()}</div>
+        <p class="rc-help">Les joueurs voient cette carte en tête de la page, avant les autres clans. Elle n'apparaît que lorsque l'annonce est publiée.</p>
+      </aside>
     </div>`;
-  card.querySelectorAll(".rc-chip").forEach(c=>c.onclick=()=>{ if(RC_CANEDIT) c.classList.toggle("on"); });
-  if(RC_CANEDIT){
-    document.getElementById("rcSave").onclick=saveRecruit;
-    const del=document.getElementById("rcDelete"); if(del) del.onclick=deleteRecruit;
+  rcState();
+  if(ro) return;
+  const f=document.getElementById("rcForm");
+  f.addEventListener("input",rcRead);
+  f.addEventListener("change",rcRead);
+  f.querySelectorAll(".rc-chip").forEach(b=>b.addEventListener("click",()=>{
+    const on=b.getAttribute("aria-pressed")!=="true";
+    if(on && b.dataset.lang && f.querySelectorAll('#rcLangs .rc-chip[aria-pressed="true"]').length>=4){ RC.msg=["err","4 langues au plus."]; rcState(); return; }
+    b.setAttribute("aria-pressed",String(on)); rcRead();
+  }));
+  document.getElementById("rcSave").onclick=()=>saveRecruit("active");
+  document.getElementById("rcAlt").onclick=()=>saveRecruit("paused");
+  const del=document.getElementById("rcDelete"); if(del) del.onclick=deleteRecruit;
+}
+function rcRead(){
+  const v=id=>document.getElementById(id).value, num=id=>{ const n=parseInt(v(id),10); return Number.isFinite(n)&&n>0?n:null; };
+  Object.assign(RC.offer,{ title:v("rcTitle").trim(), pitch:v("rcPitch").trim(), play_hours:v("rcHours").trim(), contact:v("rcContact").trim(),
+    min_wn8:num("rcWn8"), min_battles:num("rcBat"), min_tier:num("rcTier"),
+    langs:[...document.querySelectorAll('#rcLangs .rc-chip[aria-pressed="true"]')].map(b=>b.dataset.lang),
+    activities:[...document.querySelectorAll('#rcActs .rc-chip[aria-pressed="true"]')].map(b=>b.dataset.act) });
+  document.getElementById("rcTitleN").textContent=`${v("rcTitle").length} / 90`;
+  document.getElementById("rcPitchN").textContent=`${v("rcPitch").length} / 1500`;
+  document.getElementById("rcPreview").innerHTML=rcPreviewHTML();
+  if(RC.msg && RC.msg[0]!=="busy") RC.msg=null;
+  rcState();
+}
+// une seule ligne d'état, à côté des boutons : ce qui se passe, ou ce qui n'est pas enregistré
+function rcState(){
+  const el=document.getElementById("rcState"); if(!el) return;
+  const [k,txt]=RC.msg || (rcDirty() ? ["dirty","Modifications non enregistrées."] : ["",""]);
+  el.className="rc-state"+(k?" "+k:""); el.textContent=txt;
+}
+async function saveRecruit(status){
+  rcRead();
+  const o=RC.offer;
+  if(status==="active" && (o.title.length<6 || o.pitch.length<30)){
+    RC.msg=["err","Pour publier : un titre (6 caractères au moins) et une présentation (30 caractères au moins)."]; rcState(); return;
+  }
+  RC.msg=["busy","Enregistrement…"]; rcState();
+  const offer={ title:o.title, pitch:o.pitch, langs:o.langs, activities:o.activities, play_hours:o.play_hours,
+    min_wn8:o.min_wn8, min_battles:o.min_battles, min_tier:o.min_tier, contact:o.contact, status };
+  const r=await fnCall("clan-offers",{ session:localStorage.getItem(LS_SESSION), action:"save", offer });
+  if(r.ok && r.j.ok){
+    RC.saved=Object.assign({}, RC.saved||{}, offer, { updated_at:new Date().toISOString(), updated_by_name:(document.querySelector("#who b")||{}).textContent||null });
+    RC.offer=Object.assign({}, RC.saved);
+    RC.msg=["ok", status==="active" ? "Annonce publiée : elle est visible sur « Trouver un clan »." : "Annonce enregistrée, sans être publiée."];
+    renderRecruit();
+  }else{
+    RC.msg=["err", r.status===403 ? "Ton grade ne permet pas de modifier l'annonce." : "L'enregistrement a échoué : "+((r.j&&r.j.error)||r.status)+"."]; rcState();
   }
 }
-function collectRecruit(){
-  const langs=[...document.querySelectorAll("#rcLangs .rc-chip.on")].map(c=>c.dataset.lang);
-  const activities=[...document.querySelectorAll("#rcActs .rc-chip.on")].map(c=>c.dataset.act);
-  const num=id=>{const v=parseInt(document.getElementById(id).value,10);return Number.isFinite(v)&&v>0?v:null;};
-  return { title:document.getElementById("rcTitle").value.trim(), pitch:document.getElementById("rcPitch").value.trim(),
-    langs, activities, play_hours:document.getElementById("rcHours").value.trim(),
-    min_wn8:num("rcWn8"), min_battles:num("rcBat"), min_tier:num("rcTier"),
-    contact:document.getElementById("rcContact").value.trim(),
-    status:document.getElementById("rcActive").checked?"active":"paused" };
-}
-async function saveRecruit(){
-  const msg=document.getElementById("rcMsg"); msg.className="rc-msg"; msg.textContent="Enregistrement…";
-  const offer=collectRecruit();
-  const r=await fnCall("clan-offers",{session:localStorage.getItem(LS_SESSION),action:"save",offer});
-  if(r.ok&&r.j.ok){ msg.className="rc-msg ok"; msg.textContent=offer.status==="paused"?"✓ Enregistrée (en pause — non visible).":"✓ Annonce publiée — visible sur « Trouver un clan »."; RC_OFFER=Object.assign({},RC_OFFER||{},offer,{_saved:true}); }
-  else { msg.className="rc-msg err"; msg.textContent="Erreur : "+esc(r.j.error||r.status); }
-}
 async function deleteRecruit(){
-  if(!confirm("Supprimer l'annonce de recrutement de ton clan ?"))return;
-  const msg=document.getElementById("rcMsg"); msg.className="rc-msg"; msg.textContent="Suppression…";
-  const r=await fnCall("clan-offers",{session:localStorage.getItem(LS_SESSION),action:"delete"});
-  if(r.ok&&r.j.ok){ RC_OFFER={}; renderRecruit(); }
-  else { msg.className="rc-msg err"; msg.textContent="Erreur : "+esc(r.j.error||r.status); }
+  if(!confirm(t("Supprimer définitivement l'annonce de recrutement de ton clan ?"))) return;
+  RC.msg=["busy","Suppression…"]; rcState();
+  const r=await fnCall("clan-offers",{ session:localStorage.getItem(LS_SESSION), action:"delete" });
+  if(r.ok && r.j.ok){ RC.saved=null; RC.offer={ title:"", pitch:"", langs:[], activities:[], play_hours:"", min_wn8:null, min_battles:null, min_tier:null, contact:"", status:"paused" };
+    RC.msg=["ok","Annonce supprimée."]; renderRecruit(); }
+  else { RC.msg=["err","La suppression a échoué : "+((r.j&&r.j.error)||r.status)+"."]; rcState(); }
 }
 
 /* ============================================================
