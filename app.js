@@ -11350,9 +11350,10 @@ function toggleSidebar(){
    On ouvre cette page pour SITUER SON CLAN : la bande d'onglets donne
    sa place dans chaque classement d'un coup d'œil, la carte « ta
    position » dit l'écart avec le clan juste devant, et le classement
-   complet suit. Tout vient de l'API publique de Wargaming, appelée
-   depuis le navigateur. Le module est encapsulé : aucune variable ne
-   déborde dans le reste de l'application.
+   complet suit. Tout vient de l'API publique de Wargaming : le
+   classement passe d'abord par la copie partagée du serveur, le reste
+   est demandé depuis le navigateur. Le module est encapsulé : aucune
+   variable ne déborde dans le reste de l'application.
    ============================================================ */
 let CR_INITED=false;
 function loadRanking(){
@@ -11411,14 +11412,18 @@ function initClanRanking(clanIdIn, clanTagIn){
      Le service des classements de Wargaming tombe par épisodes :
      « top » et « neighbors » renvoient SOURCE_NOT_AVAILABLE pendant que
      « clans » répond (constaté par Robert, et mesuré le 20/10/2026).
-     Trois parades :
+     Quatre parades :
        · chaque requête est retentée quatre fois en ~6 s ;
        · le classement arrive par pages de 500, chacune retentée seule ;
        · le dernier classement reçu est GARDÉ dans le navigateur.
          Wargaming ne le recalcule qu'une fois par jour : tant que sa
          date n'a pas changé, la copie suffit et rien n'est redemandé.
          Si Wargaming ne répond plus, la page montre la copie au lieu
-         d'une erreur, et retente seule tant qu'elle reste ouverte. */
+         d'une erreur, et retente seule tant qu'elle reste ouverte ;
+       · le serveur garde une copie COMMUNE à tous (fonction
+         clan-ranking) : elle sert aussi le joueur qui arrive pendant
+         une panne sans rien dans son navigateur. Fonction absente,
+         muette ou d'ancien format : on appelle Wargaming comme avant. */
   const CK="cp_rank1:";
   const store={
     get(k){ try{ return JSON.parse(localStorage.getItem(CK+k)||"null"); }catch(e){ return null; } },
@@ -11449,9 +11454,9 @@ function initClanRanking(clanIdIn, clanTagIn){
     }
   }
   const PG=500;
-  async function fetchRanking(key, onRetry){
+  async function fetchRankingWg(key, onRetry, essais=4){
     const m=METRICS[key], fields=["clan_id","clan_tag","clan_name",m.field,"battles_count_avg_daily"].join(",");
-    const page=async n=>{ const j=await api("/wot/clanratings/top/",{ rank_field:key, limit:PG, page_no:n, fields },4,onRetry);
+    const page=async n=>{ const j=await api("/wot/clanratings/top/",{ rank_field:key, limit:PG, page_no:n, fields },essais,onRetry);
       return Array.isArray(j.data) ? j.data : []; };
     // trois pages à la fois : le Bastion tient en 1 500 clans, donc en une seule vague
     const max=m.full ? 20 : 4;
@@ -11468,11 +11473,32 @@ function initClanRanking(clanIdIn, clanTagIn){
     return { rows, capped:!m.full && !fin };
   }
   // la copie : des tableaux plutôt que des objets, deux fois moins de place
-  function save(key,data){ store.set(key,{ d:data.d, t:Date.now(), c:data.capped?1:0,
+  // (le serveur renvoie le même format)
+  const unpack=a=>({ id:a[0], tag:a[1], name:a[2], rank:a[3], value:a[4], delta:a[5], act:a[6] });
+  // une vieille copie (stale) est gardée sans heure : elle ne passe jamais pour fraîche
+  function save(key,data){ store.set(key,{ d:data.d, t:data.stale?0:Date.now(), c:data.capped?1:0,
     r:data.rows.map(r=>[r.id,r.tag,r.name,r.rank,r.value,r.delta??null,r.act??null]) }); }
   function restore(key){ const s=store.get(key); if(!s || !Array.isArray(s.r)) return null;
-    return { d:s.d||"", t:s.t||0, capped:!!s.c,
-      rows:s.r.map(a=>({ id:a[0], tag:a[1], name:a[2], rank:a[3], value:a[4], delta:a[5], act:a[6] })) }; }
+    return { d:s.d||"", t:s.t||0, capped:!!s.c, rows:s.r.map(unpack) }; }
+  // la copie partagée du serveur ; null s'il ne peut pas la donner
+  async function fetchRankingSrv(key){
+    const session=localStorage.getItem(LS_SESSION);
+    if(!session) return null;
+    const r=await Promise.race([ fnCall("clan-ranking",{ session, metric:key }),
+      new Promise(res=>setTimeout(()=>res(null), 45000)) ]).catch(()=>null);
+    if(!r || !r.ok || !Array.isArray(r.j?.rows)) return null;   // l'ancienne fonction (top 50) n'a pas de rows
+    return { rows:r.j.rows.map(unpack), capped:!!r.j.capped, stale:!!r.j.stale,
+             d:r.j.d || String(r.j.fetched_at||"").slice(0,10) };
+  }
+  /* Le serveur d'abord. S'il n'a qu'une vieille copie, c'est que
+     Wargaming ne lui répond pas : un essai direct, court, puis cette
+     copie plutôt qu'une erreur. */
+  async function fetchRanking(key, onRetry){
+    const srv=await fetchRankingSrv(key);
+    if(srv && !srv.stale) return srv;
+    try{ return await fetchRankingWg(key, onRetry, srv ? 2 : 4); }
+    catch(e){ if(srv) return srv; throw e; }
+  }
   // ta position dans tous les classements : une petite requête, gardée elle aussi
   async function fetchMine(){
     if(!MY || S.mineFetched) return;
@@ -11754,20 +11780,26 @@ function initClanRanking(clanIdIn, clanTagIn){
     const today=dayKey(S.date);
     const aJour=!force && copy && (mem || (today ? copy.d===today : Date.now()-copy.t<6*3600e3));
     const taches=[ fetchMine() ];
+    // nouvel essai tout seul, tant que la page reste ouverte
+    const relance=ms=>{ S.retryT=setTimeout(()=>{ if(req===S.req && visible()) load(); }, ms); };
     if(!aJour){
       S.updating=!!copy; renderStatus();
       taches.push((async()=>{
         try{
           const data=await fetchRanking(key,(n,t)=>{ if(req===S.req){ S.retrying=[n,t]; renderStatus(); } });
           if(req!==S.req) return;
-          data.d=today || dayKey(new Date());
-          S.cache.set(key,data); save(key,data);
-          S.rows=data.rows; S.capped=data.capped; S.day=data.d;
+          data.d=data.d || today || dayKey(new Date());
+          // la vieille copie du serveur ne remplace pas une copie du navigateur plus récente
+          if(!data.stale || !copy || data.d>(copy.d||"")){
+            if(!data.stale) S.cache.set(key,data);
+            save(key,data);
+            S.rows=data.rows; S.capped=data.capped; S.day=data.d;
+          }
+          if(data.stale){ S.stale=true; relance(90000); }
         }catch(e){
           if(req!==S.req) return;
           if(copy) S.stale=true; else S.error=e?.message||String(e);
-          // nouvel essai tout seul, tant que la page reste ouverte
-          S.retryT=setTimeout(()=>{ if(req===S.req && visible()) load(); }, copy ? 90000 : 20000);
+          relance(copy ? 90000 : 20000);
         }
       })());
     }
