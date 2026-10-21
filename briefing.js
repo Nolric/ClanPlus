@@ -1,17 +1,25 @@
 /* Clan Plus — le Briefing, la page d'arrivée du joueur connecté.
 
-   Elle répond à trois questions :
-     · qu'est-ce qui m'attend ?        → Ce soir, À faire
-     · comment je m'en suis sorti ?    → Depuis ta dernière visite, Ta forme
-     · où en est le clan ?             → Le clan en bref, État-major
-   L'ordre change avec le moment : avant l'activité, le poste passe en
-   premier ; juste après, le débrief ; un soir sans activité, ce qu'il
-   reste à régler. Une carte n'a sa place ici que si elle demande une
-   action, apprend quelque chose de nouveau, ou mène quelque part en un
-   clic. Sinon on arrête de la regarder au bout d'une semaine.
+   Une page sur TOI, pas sur le clan (retour de Robert, 21/10/2026) :
+     · en haut, réduits : ce soir (ton poste, ou le bilan de la soirée,
+       ou la prochaine activité) et ce qu'il te reste à faire ;
+     · l'en-tête joueur : ta cote, tes batailles, tes marques, ton SR ;
+     · au cœur, « Mes chars » : marques d'excellence, maîtrise, stats en
+       aléatoire et en Bastion, équipement monté face au setup du clan.
+       Un clic ouvre la fiche du char.
 
-   Chargé en différé APRÈS app.js : le SR, le coach et la lecture des
-   line-ups sont ceux de l'application, pas des copies qui dériveraient.
+   D'où vient chaque chiffre :
+     · API Wargaming, lue depuis le navigateur comme « Chercher un clan »
+       (csWg) : account/info, tanks/stats (stats par char, maîtrise),
+       tanks/achievements (marksOnGun), encyclopedia/vehicles (nom, rang,
+       image ; gardée sept jours dans le navigateur) ;
+     · le mod : le garage (chars possédés VI/VIII/X, équipement monté) ;
+     · nos batailles (clan-data) : SR et stats de Bastion par char.
+   Le % vers la prochaine marque n'existe que dans le jeu : il viendra
+   avec une version du mod qui le lira en même temps que le garage.
+
+   Chargé en différé APRÈS app.js : le SR, la lecture des line-ups et
+   des loadouts sont ceux de l'application, pas des copies.
 
    Deux cadres :
      · index.html — une vue de l'application (#viewBriefing). openApp a
@@ -49,18 +57,29 @@
   const trn = (n, un, plusieurs, ...v) => tr(n > 1 ? plusieurs : un, n, ...v);
   const PC = EN ? "%" : " %";
 
+  const RANGS = [10, 8, 6], ROMAIN = { 6: "VI", 8: "VIII", 10: "X" };
+  const CLASSE = { heavyTank: "Lourd", mediumTank: "Moyen", lightTank: "Léger", "AT-SPG": "Chasseur", SPG: "Artillerie" };
+  const MAITRISE = { 4: "As", 3: "1re classe", 2: "2e classe", 1: "3e classe" };
+  const TRIS = [["batailles", "Batailles"], ["marques", "Marques"], ["sr", "SR Bastion"], ["degats", "Dégâts"]];
+  const PAR_PAGE = 12;
+
   /* L'état de la page. Chaque champ reste à null tant que sa requête
-     n'est pas revenue : la carte qui en dépend garde son squelette. */
+     n'est pas revenue : la partie qui en dépend garde son squelette. */
   const B = {
     vu: null, moment: null, officier: false,
-    lu: null, ev: null, liens: null, garages: null, lo: null, prio: null,
-    modv: null, offres: null, departs: null,
+    lu: null, ev: null, liens: null, garages: null, lo: null, prio: null, modv: null,
     clan: false, clanErr: false,
+    wg: null, wgErr: false, wgEnCours: false, ency: {}, encyErr: {}, encyEnCours: {},
+    /* les réglages de « Mes chars », gardés d'une visite à l'autre */
+    rang: [10, 8, 6].includes(Number(lsGet("cp_bf_rang"))) ? Number(lsGet("cp_bf_rang")) : 10,
+    tri: TRIS.some(x => x[0] === lsGet("cp_bf_tri")) ? lsGet("cp_bf_tri") : "batailles",
+    tous: false, voirTout: false, fiche: null,
     dispoFaite: {}, dispoMsg: {}, dispoMinuteur: {},
   };
 
   const maintenant = () => Date.now() / 1000;
   const ic = id => `<svg class="ic" aria-hidden="true"><use href="#${id}"/></svg>`;
+  const pct = (a, b) => b ? Math.round(a / b * 100) : null;
 
   /* ══ Le temps ══════════════════════════════════════════════════════ */
   function heure(ts) { return new Date(ts * 1000).toLocaleTimeString(window.CP_LOC, { hour: "2-digit", minute: "2-digit" }); }
@@ -92,8 +111,7 @@
   }
 
   /* La visite précédente. Recharger la page dans la demi-heure ne compte
-     pas comme une nouvelle visite : sinon « ce qui est nouveau » serait
-     vidé par un simple F5. */
+     pas comme une nouvelle visite. Sert au bilan « depuis ta visite ». */
   function visite() {
     const n = Date.now();
     let v = null;
@@ -105,10 +123,9 @@
   }
 
   /* ══ Qui suis-je ═══════════════════════════════════════════════════
-     clan-data le dit, mais c'est la requête la plus lourde. En attendant,
-     le pseudo gardé à la connexion, retrouvé dans les line-ups. La future
-     fonction serveur du briefing renverra le compte : cette devinette
-     disparaîtra avec elle. */
+     clan-data le dit, mais c'est la requête la plus lourde. Dans le labo,
+     en attendant, le pseudo gardé à la connexion, retrouvé dans les
+     line-ups. Dans l'application, ME_ID est déjà connu. */
   function moi() {
     if (ME_ID != null) return Number(ME_ID);
     const nick = String(lsGet("cp_nick") || "").toLowerCase();
@@ -118,19 +135,23 @@
     return null;
   }
   function monSlot(lu) { const me = moi(); return (lu.slots || []).find(s => s && s._type !== "meta" && Number(s.account_id) === me) || null; }
-  function nomMembre(acc, lu) {
-    const m = (MEMBERS || []).find(x => Number(x.account_id) === Number(acc));
-    if (m) return m.nickname;
-    const s = lu && (lu.slots || []).find(x => x && Number(x.account_id) === Number(acc));
-    return s ? s.name : "?";
-  }
-  function nomChar(id) {
-    if (!id) return "";
-    const v = VEHMAP[Number(id)]; if (v && v.name) return v.name;
-    const ch = ((LO_REF && LO_REF.tanks) || []).find(x => Number(x.tank_id) === Number(id));
-    return ch ? ch.name : "";
-  }
   function semaineCourante() { return luDateISO(luMonday()); }
+
+  /* Ce qu'on sait d'un char : l'encyclopédie d'abord (nom, rang, image),
+     puis la table des chars du clan, puis la référence des loadouts. */
+  function infoChar(id) {
+    id = Number(id);
+    for (const r of RANGS) { const e = B.ency[r] && B.ency[r].get(id); if (e) return { nom: e.s || e.n, nomLong: e.n, rang: r, classe: e.c, prem: e.p, img: e.i }; }
+    const v = VEHMAP[id];
+    if (v) return { nom: v.name, nomLong: v.name, rang: Number(v.tier) || 0, classe: v.cls, prem: false, img: "" };
+    const x = ((LO_REF && LO_REF.tanks) || []).find(y => Number(y.tank_id) === id);
+    return x ? { nom: x.name, nomLong: x.name, rang: Number(x.tier) || 0, classe: x.type, prem: false, img: x.small_icon || "" } : null;
+  }
+  function nomChar(id) { const i = id ? infoChar(id) : null; return i ? i.nom : ""; }
+  function imgChar(i) {
+    const repli = "classes/" + encodeURIComponent(i.classe || "mediumTank") + ".png";
+    return `<img src="${esc(i.img || repli)}" alt="" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='${repli}'">`;
+  }
 
   /* ══ L'agenda ══════════════════════════════════════════════════════ */
   const finDe = e => e.event_ts + (Number(e.duration_min) || 60) * 60;
@@ -154,10 +175,8 @@
     }
     return trouvees.find(x => x.poste) || trouvees.find(x => x.dedans) || trouvees[0] || null;
   }
-
-  /* Le moment décide de l'ordre des cartes. Il ne dépend QUE des données
-     légères (calendrier, line-ups) : sinon la page se réorganiserait sous
-     les yeux du joueur à l'arrivée des batailles. */
+  /* Le moment décide de ce que dit le bandeau du haut : ton poste avant
+     l'activité, le bilan juste après, la prochaine activité sinon. */
   function leMoment() {
     const n = maintenant(), p = prochaine(), f = derniereFinie();
     if (p && p.event_ts - n < 14 * H) return "avant";          // avant ou pendant
@@ -165,11 +184,6 @@
     if (ceSoir() && new Date().getHours() >= 12) return "avant"; // compo épinglée, rien au calendrier
     return "semaine";
   }
-  const PLANS = {
-    avant:   [["soir", 4], ["afaire", 2], ["depuis", 4], ["forme", 2], ["clan", 3], ["em", 3]],
-    apres:   [["depuis", 4], ["forme", 2], ["soir", 3], ["afaire", 3], ["clan", 3], ["em", 3]],
-    semaine: [["afaire", 3], ["soir", 3], ["depuis", 4], ["forme", 2], ["clan", 3], ["em", 3]],
-  };
 
   /* ══ Garage et setup ═══════════════════════════════════════════════ */
   function monGarage() {
@@ -181,30 +195,32 @@
     const g = monGarage();
     if (g === undefined) return undefined;
     if (!g) return null;
-    return (g.tanks || []).find(t => Number(t.id) === Number(id)) || false;
+    return (g.tanks || []).find(x => Number(x.id) === Number(id)) || false;
   }
-  /* Setup du clan pour un char, comparé à ce que le joueur a monté.
+  /* L'équipement d'un char : ce qui est monté, et le setup du clan.
      Équipements comparés PAR FAMILLE (un fouloir bonus vaut un fouloir),
      consommables par identifiant exact — comme la pastille du mod. */
-  function setupDe(tankId) {
-    const lo = (B.lo || []).find(l => Number(l.tank_id) === Number(tankId));
-    if (!lo || !LO_REF) return null;
+  function equipementDe(tankId) {
+    if (!LO_REF) return null;
+    const lo = (B.lo || []).find(l => Number(l.tank_id) === Number(tankId)) || null;
     const F = loEqFam(), em = LO_REF.equipmentMap || {};
     const fam = id => F.idFam[id] || ("id" + id);
     const nomEq = id => (F.fam[F.idFam[id]] && F.fam[F.idFam[id]].name) || (em[id] && em[id].name) || ("#" + id);
     const nomCo = id => { const c = (LO_REF.consumables || []).find(x => Number(x.id) === Number(id)); return c ? c.name : "#" + id; };
     const monte = charAuGarage(tankId);
-    const eqClan = (lo.equipment || []).map(Number), coClan = (lo.consumables || []).map(Number);
-    const pieces = eqClan.map(id => ({ nom: nomEq(id), ok: monte ? (monte.eq || []).some(m => fam(m) === fam(id)) : null }))
-      .concat(coClan.map(id => ({ nom: nomCo(id), ok: monte ? (monte.cons || []).map(Number).includes(id) : null })));
-    const enTrop = monte ? (monte.eq || []).filter(m => !eqClan.some(id => fam(id) === fam(m))).map(nomEq)
-      .concat((monte.cons || []).map(Number).filter(c => !coClan.includes(c)).map(nomCo)) : [];
-    return { pieces, enTrop, manque: pieces.filter(p => p.ok === false).length };
+    const eqClan = lo ? (lo.equipment || []).map(Number) : [], coClan = lo ? (lo.consumables || []).map(Number) : [];
+    /* ce qui est monté, marqué par rapport au clan s'il y a un setup */
+    const eq = monte ? (monte.eq || []).map(Number).map(id => ({ nom: nomEq(id), ok: lo ? eqClan.some(c => fam(c) === fam(id)) : null })) : [];
+    const cons = monte ? (monte.cons || []).map(Number).map(id => ({ nom: nomCo(id), ok: lo ? coClan.includes(id) : null })) : [];
+    /* le setup du clan, marqué par rapport à ce qui est monté */
+    const clan = lo ? eqClan.map(id => ({ nom: nomEq(id), ok: monte ? (monte.eq || []).some(m => fam(m) === fam(id)) : null }))
+      .concat(coClan.map(id => ({ nom: nomCo(id), ok: monte ? (monte.cons || []).map(Number).includes(id) : null }))) : [];
+    return { monte, eq, cons, clan, aSetup: !!lo, manque: clan.filter(p => p.ok === false).length };
   }
 
   /* ══ Ce qu'il reste à faire ════════════════════════════════════════ */
   function aFaire() {
-    const items = [], me = moi(), sem = semaineCourante();
+    const items = [], sem = semaineCourante();
     for (const lu of B.lu || []) {
       const s = monSlot(lu);
       if (!s) continue;
@@ -214,16 +230,14 @@
       items.push({
         cle: "dispo-" + lu.id, ic: "i-cal", fait: !!fait && av.some(Boolean),
         titre: tr("Coche tes soirs — %1", esc(lu.name)),
-        texte: !aJour ? tr("La semaine de cette line-up n'est pas encore ouverte : un officier doit la lancer.")
-          : tr("%1 · aucun soir coché cette semaine.", tr(FORMAT[luMeta(lu).format] || "Line-up")),
+        texte: !aJour ? tr("La semaine de cette line-up n'est pas encore ouverte : un officier doit la lancer.") : "",
         jours: aJour ? { lu: lu.id, av } : null,
       });
     }
     if (B.liens) {
       const l = B.liens.links || [], gar = B.liens.garage;
       if (!l.length) items.push({ cle: "mod", ic: "i-link", titre: tr("Relie ton jeu"),
-        texte: tr("Ton poste et le setup du clan s'afficheront dans ta fenêtre de jeu, et ton garage sera vérifié tout seul."),
-        lien: ["lier", tr("Relier mon jeu")] });
+        texte: tr("Ton équipement et ton poste du soir s'afficheront ici et dans le jeu."), lien: ["lier", tr("Relier mon jeu")] });
       else {
         const v = l.map(x => x.mod_version || "").sort(cmpVersion).pop();
         if (B.modv && v && cmpVersion(v, B.modv) < 0) items.push({ cle: "modv", ic: "i-bolt", titre: tr("Mets ton mod à jour"),
@@ -239,9 +253,7 @@
       const manque = (B.prio.prio || []).map(Number).filter(id => !possede.has(id));
       if (manque.length) items.push({ cle: "prio", ic: "i-trophy",
         titre: trn(manque.length, "%1 char prioritaire du clan te manque", "%1 chars prioritaires du clan te manquent"),
-        texte: manque.map(id => `<span class="bf-puce">${esc(nomChar(id) || "#" + id)}</span>`).join(" ") +
-          (g ? "" : `<br><span class="bf-disc">${tr("D'après ta liste déclarée — relie ton jeu pour que ce soit automatique.")}</span>`),
-        lien: ["prio", tr("Voir la liste du clan")] });
+        texte: manque.map(id => esc(nomChar(id) || "#" + id)).join(", "), lien: ["prio", tr("Liste du clan")] });
     }
     return items;
   }
@@ -251,7 +263,7 @@
     return 0;
   }
 
-  /* ══ Les batailles du joueur ═══════════════════════════════════════ */
+  /* ══ Les batailles du joueur (nos données) ═════════════════════════ */
   function mesBatailles() {
     const me = moi(), vus = new Set();
     return RAW.filter(r => r.accId === me && !vus.has(r.battleId) && vus.add(r.battleId)).sort((a, b) => b.ts - a.ts);
@@ -265,82 +277,221 @@
   }
   function bilan(lot) {
     const v = lot.filter(r => r.result === 1).length, d = lot.filter(r => r.result === 0).length;
-    return { n: lot.length, v, d, nul: lot.length - v - d, sr: srAvg(lot),
-             dmg: lot.length ? Math.round(lot.reduce((s, r) => s + r.dmg, 0) / lot.length) : 0 };
-  }
-  function lotDuDebrief() {
-    const mes = mesBatailles();
-    const neuf = B.vu ? mes.filter(r => r.ts > B.vu) : [];
-    return neuf.length ? { lot: neuf, rattrapage: false, mes } : { lot: derniereSoiree(mes), rattrapage: true, mes };
+    return { n: lot.length, v, d, sr: srAvg(lot) };
   }
   function srMoyen30(mes) {
     const n = maintenant(), l = mes.filter(r => estTierSR(r) && n - r.ts <= 30 * J);
-    return l.length >= 5 ? { sr: srAvg(l), rows: l, trente: true } : { sr: srAvg(mes.filter(estTierSR)), rows: mes.filter(estTierSR), trente: false };
+    return l.length >= 5 ? { sr: srAvg(l), trente: true } : { sr: srAvg(mes.filter(estTierSR)), trente: false };
+  }
+  /* Bastion par char, d'après les batailles enregistrées par le mod */
+  function bastionParChar() {
+    const par = new Map();
+    for (const r of mesBatailles()) { const a = par.get(r.veh) || []; a.push(r); par.set(r.veh, a); }
+    const out = new Map();
+    for (const [id, rows] of par) out.set(Number(id), {
+      n: rows.length, v: rows.filter(r => r.result === 1).length, d: rows.filter(r => r.result === 0).length,
+      dmg: Math.round(rows.reduce((s, r) => s + r.dmg, 0) / rows.length), sr: srAvg(rows.filter(estTierSR)), rows });
+    return out;
   }
 
-  /* ══ Les cartes ════════════════════════════════════════════════════ */
-  function tete(icone, titre, meta, badge) {
-    return `<header class="bf-ch"><span class="bf-ci">${ic(icone)}</span><h2>${titre}</h2>` +
-      (badge ? `<span class="bf-badge">${badge}</span>` : "") + (meta ? `<span class="bf-cm">${meta}</span>` : "") + `</header>`;
+  /* ══ Mes chars ═════════════════════════════════════════════════════
+     La liste d'un rang : les chars joués (API Wargaming), ceux du garage
+     (mod) et ceux de nos batailles. Avec le garage connu, on ne montre
+     d'abord que les chars possédés. */
+  function listeChars(rang) {
+    const E = B.ency[rang];
+    if (!E) return null;
+    const g = monGarage(), auGarage = new Set(g ? (g.tanks || []).map(x => Number(x.id)) : []);
+    const bas = B.clan ? bastionParChar() : new Map();
+    const ids = new Set();
+    if (B.wg) for (const [id, s] of B.wg.stats) if (E.has(id) && s.all && s.all.battles > 0) ids.add(id);
+    for (const id of auGarage) if (E.has(id)) ids.add(id);
+    for (const id of bas.keys()) if (E.has(id)) ids.add(id);
+    const prio = new Set(((B.prio && B.prio.prio) || []).map(Number));
+    const tn = ceSoir(), ceSoirId = tn && tn.poste && tn.poste.tank_id ? Number(tn.poste.tank_id) : null;
+    let l = [...ids].map(id => {
+      const s = B.wg && B.wg.stats.get(id), a = (s && s.all) || {}, sk = (s && s.stronghold_skirmish) || {}, df = (s && s.stronghold_defense) || {};
+      const nb = (sk.battles || 0) + (df.battles || 0);
+      return { id, info: infoChar(id), garage: g ? auGarage.has(id) : null,
+        marques: (B.wg && B.wg.marques.get(id)) || 0, maitrise: (s && s.mark_of_mastery) || 0,
+        ale: { n: a.battles || 0, wr: pct(a.wins || 0, a.battles || 0), dmg: a.battles ? Math.round(a.damage_dealt / a.battles) : null },
+        bas: { n: nb, wr: pct((sk.wins || 0) + (df.wins || 0), nb) },
+        cp: bas.get(id) || null, prio: prio.has(id), soir: id === ceSoirId };
+    });
+    const total = l.length;
+    if (g && !B.tous) l = l.filter(c => c.garage);
+    const cle = {
+      batailles: c => c.ale.n,
+      marques: c => c.marques * 1e6 + c.ale.n,
+      sr: c => (c.cp && c.cp.sr != null ? c.cp.sr : -1) * 1e4 + c.bas.n,
+      degats: c => c.ale.dmg || 0,
+    }[B.tri];
+    l.sort((x, y) => cle(y) - cle(x) || x.info.nom.localeCompare(y.info.nom));
+    return { chars: l, total, filtre: !!g && !B.tous };
   }
-  /* Un lien porte sa cible deux fois : une adresse, pour le labo et le
-     clic du milieu, et une clé que l'application traduit en changement
-     de vue (voir ALLER). */
-  function lienHTML(cle, texte) {
-    return `<a class="bf-lien" href="${esc(LIENS[cle])}" data-bf-go="${cle}">${texte}<span aria-hidden="true"> →</span></a>`;
-  }
-  function pied(liens) {
-    const l = liens.filter(Boolean);
-    return l.length ? `<footer class="bf-cf">${l.map(([cle, txt]) => lienHTML(cle, txt)).join("")}</footer>` : "";
-  }
-  function vide(txt) { return `<p class="bf-vide">${txt}</p>`; }
-  function echecClan() {
-    return `<div class="bf-err"><p>${tr("Impossible de charger les batailles du clan.")}</p><button type="button" class="bf-btn" data-bf="relance">${tr("Réessayer")}</button></div>`;
-  }
-  const nomCat = c => tr(c[1]);
 
-  /* ── 1. Ce soir ── */
-  function carteSoir() {
-    if (!B.lu || !B.ev) return null;
-    if (B.moment !== "avant") return carteProchaine();
-    const tn = ceSoir(), ev = prochaine(), n = maintenant();
-    const meta = ev ? esc(ev.title) + " · " + heure(ev.event_ts) : (tn ? tr(FORMAT[tn.format] || "") : "");
-    let corps;
-    if (!tn) corps = vide(tr("La composition de ce soir n'est pas encore publiée.")) + dispoDuSoir(ev ? ev.event_ts : n);
-    else if (!tn.poste) corps = `<p class="bf-reserve"><b>${tr("Tu n'es pas dans la composition « %1 ».", esc(tn.comp.name))}</b>
-      ${tr(tn.dedans ? "Tu fais partie de la line-up : reste joignable, un poste peut se libérer." : "Tu n'es pas dans cette line-up.")}</p>` + equipe(tn);
-    else corps = posteHTML(tn) + equipe(tn);
-    return tete("i-target", tr("Ce soir"), meta) + `<div class="bf-cb">${corps}</div>` + pied([["lineups", tr("Voir la line-up")]]);
+  /* trois traits sur le canon, comme dans le jeu */
+  function marquesHTML(n) {
+    const l = n ? trn(n, "%1 marque d'excellence", "%1 marques d'excellence") : tr("Aucune marque d'excellence");
+    return `<span class="bf-mq" role="img" aria-label="${esc(l)}" title="${esc(l)}">${[1, 2, 3].map(i => `<i class="${i <= n ? "on" : ""}"></i>`).join("")}</span>`;
   }
-  function posteHTML(tn) {
-    const p = tn.poste, c = luCat(p.cat), tank = nomChar(p.tank_id);
-    const g = p.tank_id ? charAuGarage(p.tank_id) : undefined;
-    const etat = g === undefined ? "" : g === null ? `<span class="bf-etat">${tr("garage inconnu — relie ton jeu")}</span>`
-      : g ? `<span class="bf-etat ok">${tr("✓ dans ton garage")}</span>` : `<span class="bf-etat ko">${tr("✗ pas dans ton garage")}</span>`;
-    const st = p.tank_id ? setupDe(p.tank_id) : null;
-    const setup = !st ? "" : `<div class="bf-bloc"><span class="bf-k">${tr("Setup du clan")}</span>
-      <ul class="bf-pieces">${st.pieces.map(x => `<li class="${x.ok === true ? "ok" : x.ok === false ? "ko" : ""}">${x.ok === true ? "✓ " : x.ok === false ? "✗ " : ""}${esc(x.nom)}</li>`).join("")}</ul>
-      ${st.manque && st.enTrop.length ? `<p class="bf-disc">${tr("Monté à la place : %1.", st.enTrop.map(esc).join(", "))}</p>` : ""}
-      ${st.pieces.some(x => x.ok === null) ? `<p class="bf-disc">${tr("Relie ton jeu pour comparer avec ce que tu as monté.")}</p>` : ""}</div>`;
-    return `<div class="bf-soir">
-      <div class="bf-poste">
-        <div class="bf-pn"><b>${tn.i + 1}</b><i>/${tn.comp.posts.length}</i><span>${tr("ton poste")}</span></div>
-        <div class="bf-pd"><div class="bf-pc">${luCatIco(c[0])}<b>${esc(nomCat(c))}</b></div><p>${esc(tr(c[3] || ""))}</p></div>
-      </div>
-      <div class="bf-bloc"><span class="bf-k">${tr("Ton char")}</span>
-        <div class="bf-char"><b>${tank ? esc(tank) : tr("À ton choix")}</b>${tank ? etat : `<span class="bf-etat">${tr("dans la catégorie %1", esc(nomCat(c).toLowerCase()))}</span>`}</div></div>
-      ${setup}
-      ${tn.comp.note ? `<blockquote class="bf-note">${esc(tn.comp.note)}<cite>${tr("Composition « %1 »", esc(tn.comp.name))}</cite></blockquote>` : ""}
+  function maitriseHTML(m) {
+    return m ? `<span class="bf-mt m${m}" title="${esc(tr("Badge de maîtrise"))}">${tr(MAITRISE[m])}</span>` : "";
+  }
+  function piecesHTML(l) {
+    return `<ul class="bf-pieces">${l.map(x => `<li class="${x.ok === true ? "ok" : x.ok === false ? "ko" : ""}">${x.ok === true ? "✓ " : x.ok === false ? "✗ " : ""}${esc(x.nom)}</li>`).join("")}</ul>`;
+  }
+  function srHTML(sr) { const p = ceTier(sr); return `<b class="bf-srv" style="color:${p.c}" title="${esc(tr(p.l))}">${sr == null ? "—" : fmt(sr)}</b>`; }
+
+  function carteChar(c) {
+    const i = c.info, ouvert = B.fiche === c.id, eq = equipementDe(c.id);
+    const chips = [maitriseHTML(c.maitrise), c.soir ? `<span class="bf-puce or">${tr("Ce soir")}</span>` : "",
+      c.prio ? `<span class="bf-puce or">${tr("Prio clan")}</span>` : "",
+      c.garage === false ? `<span class="bf-puce">${tr("Plus au garage")}</span>` : ""].join("");
+    const ligneEq = !eq || !eq.monte ? "" : `<div class="bf-c-eq">${eq.eq.map(x =>
+      `<span class="${x.ok === true ? "ok" : x.ok === false ? "ko" : ""}" title="${esc(x.ok === false ? tr("Pas dans le setup du clan") : x.ok ? tr("Comme le setup du clan") : "")}">${x.ok === false ? "✗ " : x.ok ? "✓ " : ""}${esc(x.nom)}</span>`).join("")}</div>`;
+    return `<article class="bf-char${ouvert ? " ouvert" : ""}" data-char="${c.id}">
+      <button type="button" class="bf-c-t" data-bf-char="${c.id}" aria-expanded="${ouvert}">
+        <span class="bf-c-img">${imgChar(i)}</span>
+        <span class="bf-c-n"><b>${esc(i.nom)}</b><i>${ROMAIN[i.rang] || i.rang} · ${esc(tr(CLASSE[i.classe] || i.classe || ""))}${i.prem ? " · " + tr("premium") : ""}</i></span>
+        ${marquesHTML(c.marques)}
+      </button>
+      ${chips ? `<div class="bf-c-chips">${chips}</div>` : ""}
+      <dl class="bf-c-s">
+        <div><dt>${tr("Aléatoires")}</dt><dd>${c.ale.n ? tr("<b>%1</b> bat. · <b>%2</b> · <b>%3</b> dég.", fmt(c.ale.n), c.ale.wr + PC, fmt(c.ale.dmg)) : tr("pas joué")}</dd></div>
+        <div><dt>${tr("Bastion")}</dt><dd>${c.bas.n ? tr("<b>%1</b> bat. · <b>%2</b>", fmt(c.bas.n), c.bas.wr + PC) : tr("pas joué")}${c.cp && c.cp.sr != null ? " · SR " + srHTML(c.cp.sr) : ""}</dd></div>
+      </dl>
+      ${ligneEq}
+      ${ouvert ? ficheHTML(c, eq) : ""}
+    </article>`;
+  }
+  /* La fiche, au clic : le détail des chiffres, l'équipement face au
+     setup du clan, les dernières batailles de Bastion sur ce char. */
+  function ficheHTML(c, eq) {
+    const cp = c.cp;
+    const lignes = (cp ? cp.rows : []).slice(0, 5).map(r => {
+      const res = r.result === 1 ? ["v", tr("Victoire")] : r.result === 0 ? ["d", tr("Défaite")] : ["n", tr("Nul")];
+      const sr = srBattle(r);
+      return `<li><a class="bf-fb ${res[0]}" href="${esc(LIENS.bataille(r.battleId))}" data-bf-go="bataille" data-bf-id="${esc(String(r.battleId))}">
+        <span><b>${esc(prettyMap(r.mapName))}</b><i>${jourDit(r.ts, true)}</i></span><span class="bf-fb-r">${res[1]}</span>
+        <span>${tr("%1 dég.", fmt(r.dmg))}</span><span>SR ${srHTML(sr)}</span></a></li>`;
+    }).join("");
+    const eqBloc = !eq ? "" : !eq.monte
+      ? `<p class="bf-disc">${tr(monGarage() === null ? "Relie ton jeu pour voir l'équipement monté sur ce char." : "Ce char n'est pas dans ton garage.")}</p>` +
+        (eq.aSetup ? `<span class="bf-k">${tr("Setup du clan")}</span>${piecesHTML(eq.clan)}` : "")
+      : `<span class="bf-k">${tr("Monté")}</span>${piecesHTML(eq.eq.concat(eq.cons))}` +
+        (eq.aSetup ? `<span class="bf-k">${tr("Setup du clan")}</span>${piecesHTML(eq.clan)}${eq.manque ? `<p class="bf-disc">${trn(eq.manque, "%1 pièce du setup du clan manque.", "%1 pièces du setup du clan manquent.")}</p>` : `<p class="bf-disc ok">${tr("✓ Monté comme le veut le clan.")}</p>`}`
+          : `<p class="bf-disc">${tr("Pas de setup du clan pour ce char.")}</p>`);
+    return `<div class="bf-fiche">
+      <div class="bf-f-col"><span class="bf-k">${tr("Tes chiffres")}</span><table class="bf-f-t">
+        <tr><th>${tr("Aléatoires")}</th><td>${fmt(c.ale.n)}</td><td>${c.ale.wr == null ? "—" : c.ale.wr + PC}</td><td>${c.ale.dmg == null ? "—" : tr("%1 dég.", fmt(c.ale.dmg))}</td></tr>
+        <tr><th>${tr("Bastion (Wargaming)")}</th><td>${fmt(c.bas.n)}</td><td>${c.bas.wr == null ? "—" : c.bas.wr + PC}</td><td>—</td></tr>
+        <tr><th>${tr("Bastion (Clan Plus)")}</th><td>${cp ? fmt(cp.n) : "0"}</td><td>${cp ? pct(cp.v, cp.v + cp.d) + PC : "—"}</td><td>${cp ? tr("%1 dég.", fmt(cp.dmg)) : "—"}</td></tr>
+      </table><p class="bf-disc">${tr("Colonnes : batailles, victoires, dégâts moyens. « Clan Plus » : les batailles enregistrées par le mod, avec ton SR.")}</p></div>
+      <div class="bf-f-col">${eqBloc}</div>
+      <div class="bf-f-col"><span class="bf-k">${tr("Tes dernières batailles de Bastion")}</span>${lignes ? `<ol class="bf-f-b">${lignes}</ol>` : `<p class="bf-disc">${tr("Aucune bataille de clan enregistrée sur ce char.")}</p>`}</div>
     </div>`;
   }
-  function equipe(tn) {
-    const me = moi(), auj = luToday(), roster = luCleanSlots(tn.lu);
-    return `<div class="bf-bloc"><span class="bf-k">${tr("L'équipe")}</span><ol class="bf-equipe">${tn.comp.posts.map((p, i) => {
-      if (!p.account_id) return `<li class="vide"><span>${i + 1}</span><b>${tr("à pourvoir")}</b><i>${esc(nomCat(luCat(p.cat)))}</i></li>`;
-      const s = roster.find(x => Number(x.account_id) === Number(p.account_id));
-      const absent = s && !s.availability[auj];
-      return `<li class="${Number(p.account_id) === me ? "moi" : ""}${absent ? " absent" : ""}"${absent ? ` title="${esc(tr("N'a pas coché ce soir"))}"` : ""}><span>${i + 1}</span><b>${Number(p.account_id) === me ? tr("Toi") : esc(nomMembre(p.account_id, tn.lu))}</b><i>${esc(nomChar(p.tank_id) || nomCat(luCat(p.cat)))}</i></li>`;
-    }).join("")}</ol></div>`;
+
+  function sectionChars() {
+    const tete = `<header class="bf-s-h"><h2>${tr("Mes chars")}</h2>
+      <div class="bf-seg" role="group" aria-label="${esc(tr("Rang"))}">${RANGS.map(r => `<button type="button" data-bf-rang="${r}" class="${r === B.rang ? "on" : ""}" aria-pressed="${r === B.rang}">${tr("Rang %1", ROMAIN[r])}</button>`).join("")}</div>
+      <label class="bf-tri"><span>${tr("Trier par")}</span><select data-bf-tri>${TRIS.map(([k, l]) => `<option value="${k}"${k === B.tri ? " selected" : ""}>${tr(l)}</option>`).join("")}</select></label>
+    </header>`;
+    if (B.encyErr[B.rang]) return tete + `<div class="bf-err"><p>${tr("Wargaming ne répond pas : tes chars n'ont pas pu être chargés.")}</p><button type="button" class="bf-btn" data-bf="relance-wg">${tr("Réessayer")}</button></div>`;
+    const L = listeChars(B.rang);
+    if (!L || (!B.wg && !B.wgErr)) return tete + `<div class="bf-grille">${Array.from({ length: 6 }, () => `<div class="bf-char bf-char-sk">${SQUELETTE}</div>`).join("")}</div>`;
+    const avis = monGarage() === null ? `<p class="bf-avis">${ic("i-link")} ${tr("Relie ton jeu pour voir l'équipement monté sur chaque char et le comparer au setup du clan.")} ${lienHTML("lier", tr("Relier mon jeu"))}</p>`
+      : B.wgErr ? `<p class="bf-avis">${tr("Wargaming ne répond pas : les marques et les stats en aléatoire manquent pour l'instant.")}</p>` : "";
+    if (!L.chars.length) return tete + avis + `<p class="bf-vide">${L.total ? tr("Aucun char de ce rang dans ton garage.") : tr("Aucun char de ce rang joué pour l'instant.")}</p>` +
+      (L.total && L.filtre ? `<p><button type="button" class="bf-btn" data-bf="tous">${trn(L.total, "Voir le char joué", "Voir les %1 chars joués")}</button></p>` : "");
+    const montres = B.voirTout ? L.chars : L.chars.slice(0, PAR_PAGE);
+    const resume = L.filtre ? trn(L.chars.length, "%1 char au garage", "%1 chars au garage") : trn(L.chars.length, "%1 char joué", "%1 chars joués");
+    const bascule = L.filtre && L.total > L.chars.length ? `<button type="button" class="bf-lienb" data-bf="tous">${tr("Montrer aussi les chars vendus")}</button>`
+      : (!L.filtre && monGarage() ? `<button type="button" class="bf-lienb" data-bf="tous">${tr("Seulement mon garage")}</button>` : "");
+    return tete + avis + `<p class="bf-resume">${resume}${bascule ? " · " + bascule : ""}</p>
+      <div class="bf-grille">${montres.map(carteChar).join("")}</div>` +
+      (L.chars.length > montres.length ? `<p class="bf-plus"><button type="button" class="bf-btn" data-bf="voir-tout">${trn(L.chars.length - montres.length, "Voir l'autre char", "Voir les %1 autres chars")}</button></p>` : "");
+  }
+
+  /* ══ L'en-tête joueur ══════════════════════════════════════════════ */
+  function enTete() {
+    const me = moi(), m = (MEMBERS || []).find(x => Number(x.account_id) === me);
+    const nick = (B.wg && B.wg.info && B.wg.info.nickname) || (m && m.nickname) || lsGet("cp_nick") || "";
+    const grade = m ? tr(ROLE_FR[normRole(m.wg_role)] || m.wg_role || "") : "";
+    const clan = (CLANINFO && CLANINFO.tag) || CLANTAG;
+    const st = B.wg && B.wg.info && B.wg.info.statistics && B.wg.info.statistics.all;
+    const tuile = (l, v, s) => `<div><span>${l}</span><b>${v}</b>${s ? `<i>${s}</i>` : ""}</div>`;
+    const charge = !B.wg && !B.wgErr ? `<span class="bf-sk-t"></span>` : "—";
+    /* les marques : le total, et combien de chars à trois, deux, une */
+    let marques = charge, detail = "";
+    if (B.wg) {
+      const n = [0, 0, 0, 0]; for (const v of B.wg.marques.values()) n[v]++;
+      marques = String(n[1] + 2 * n[2] + 3 * n[3]);
+      detail = [3, 2, 1].filter(k => n[k]).map(k => `${k}★ ×${n[k]}`).join(" · ") || tr("aucune pour l'instant");
+    }
+    let sr = B.clanErr ? "—" : charge, srDetail = "";
+    if (B.clan) {
+      const f = srMoyen30(mesBatailles());
+      sr = f.sr == null ? "—" : `<span style="color:${ceTier(f.sr).c}">${fmt(f.sr)}</span>`;
+      const sp = srByPlayer(), cl = [...sp.entries()].filter(([acc, v]) => v.etat !== "insuffisant" && MEMBERSET.has(acc)).sort((a, b) => b[1].sr - a[1].sr);
+      const rang = cl.findIndex(([acc]) => acc === me);
+      srDetail = rang >= 0 ? tr("%1 du clan · %2", rangDit(rang + 1), tr(f.trente ? "30 j" : "saison")) : tr(f.trente ? "30 derniers jours" : "toute la saison");
+    }
+    return `<div class="bf-j-id">
+        <p class="bf-kick">${tr("Briefing")} · ${capFirst(new Date().toLocaleDateString(window.CP_LOC, { weekday: "long", day: "numeric", month: "long" }))}</p>
+        <h1>${esc(nick)}</h1>
+        <p class="bf-j-sub">${clan ? `<b>[${esc(clan)}]</b> ` : ""}${esc(grade)}</p>
+      </div>
+      <div class="bf-tuiles bf-j-t">
+        ${tuile(tr("Cote Wargaming"), st ? fmt(B.wg.info.global_rating) : charge)}
+        ${tuile(tr("Batailles"), st ? fmt(st.battles) : charge)}
+        ${tuile(tr("Victoires"), st && st.battles ? (st.wins / st.battles * 100).toLocaleString(window.CP_LOC, { maximumFractionDigits: 1 }) + PC : charge)}
+        ${tuile(tr("Dégâts moyens"), st && st.battles ? fmt(Math.round(st.damage_dealt / st.battles)) : charge)}
+        ${tuile(tr("Marques d'excellence"), marques, detail)}
+        ${tuile(tr("SR Bastion"), sr, srDetail)}
+      </div>`;
+  }
+
+  /* ══ Le haut : ce soir, à faire ════════════════════════════════════ */
+  function bandeauSoir() {
+    if (!B.lu || !B.ev) return null;
+    const n = maintenant();
+    if (B.moment === "apres") {
+      if (!B.clan) return null;
+      const mes = mesBatailles(), neuf = B.vu ? mes.filter(r => r.ts > B.vu) : [], lot = neuf.length ? neuf : derniereSoiree(mes);
+      const p = aVenir();
+      if (!lot.length) return `<div class="bf-b-k">${ic("i-swords")}${tr("Soirée terminée")}</div>
+        <p class="bf-b-t">${tr("Tu n'as pas joué de bataille de clan ce soir.")}</p>${p ? `<p class="bf-b-d">${tr("Prochaine activité : %1", jourDit(p.event_ts, true))}</p>` : ""}`;
+      const b = bilan(lot);
+      return `<div class="bf-b-k">${ic("i-swords")}${tr("Soirée terminée")}</div>
+        <p class="bf-b-t">${tr("<b>%1 V · %2 D</b> · ton SR moyen %3", b.v, b.d, srHTML(b.sr))}</p>
+        <p class="bf-b-d">${trn(b.n, "%1 bataille", "%1 batailles")}${p ? " · " + tr("prochaine activité %1", jourDit(p.event_ts, true)) : ""}</p>
+        ${lienHTML("batailles", tr("Mes batailles"))}`;
+    }
+    if (B.moment === "avant") {
+      const ev = prochaine(), tn = ceSoir();
+      const quand = ev ? `${heure(ev.event_ts)} · <em>${ev.event_ts > n ? tr("dans %1", dans(ev.event_ts - n)) : tr("en cours")}</em>` : "";
+      const k = `<div class="bf-b-k">${ic("i-target")}${tr("Ce soir")}${quand ? " · " + quand : ""}</div>`;
+      if (tn && tn.poste) {
+        const p = tn.poste, c = luCat(p.cat), tank = nomChar(p.tank_id);
+        const g = p.tank_id ? charAuGarage(p.tank_id) : undefined, eq = p.tank_id ? equipementDe(p.tank_id) : null;
+        const etat = [g === true || (g && typeof g === "object") ? `<span class="ok">${tr("✓ au garage")}</span>` : g === false ? `<span class="ko">${tr("✗ pas au garage")}</span>` : "",
+          eq && eq.aSetup && eq.monte ? (eq.manque ? `<span class="ko">${trn(eq.manque, "✗ %1 pièce du setup manque", "✗ %1 pièces du setup manquent")}</span>` : `<span class="ok">${tr("✓ setup du clan")}</span>`) : ""].filter(Boolean).join(" · ");
+        /* le char d'abord : c'est ce que le joueur doit sortir du garage */
+        return k + `<div class="bf-b-l"><span class="bf-b-p"><b>${tn.i + 1}</b>/${tn.comp.posts.length}</span>
+          <div><p class="bf-b-t">${luCatIco(c[0])}<b>${tank ? esc(tank) : tr("Char à ton choix")}</b></p>
+          <p class="bf-b-d">${esc(tr(c[1]))} · ${ev ? esc(ev.title) + " · " : ""}${tr("compo « %1 »", esc(tn.comp.name))}</p>
+          ${etat ? `<p class="bf-b-e">${etat}</p>` : ""}</div></div>
+          ${p.tank_id ? `<button type="button" class="bf-lienb" data-bf-char="${Number(p.tank_id)}" data-bf-voir="1">${tr("Voir mon setup")} →</button> ` : ""}${lienHTML("lineups", tr("La line-up"))}`;
+      }
+      if (tn) return k + `<p class="bf-b-t">${tr("Tu es en réserve.")}</p><p class="bf-b-d">${tr("La composition « %1 » est publiée sans toi : reste joignable.", esc(tn.comp.name))}</p>${lienHTML("lineups", tr("La line-up"))}`;
+      return k + `<p class="bf-b-t">${ev ? esc(ev.title) : ""}</p><p class="bf-b-d">${tr("La composition n'est pas encore publiée.")}</p>${dispoDuSoir(ev ? ev.event_ts : n)}`;
+    }
+    const p = aVenir();
+    if (!p) return `<div class="bf-b-k">${ic("i-cal")}${tr("Prochaine activité")}</div><p class="bf-b-t">${tr("Rien au calendrier pour l'instant.")}</p>${lienHTML("calendrier", tr("Calendrier"))}`;
+    return `<div class="bf-b-k">${ic("i-cal")}${tr("Prochaine activité")} · <em>${tr("dans %1", dans(p.event_ts - n))}</em></div>
+      <p class="bf-b-t"><b>${esc(p.title)}</b></p><p class="bf-b-d">${capFirst(jourDit(p.event_ts, true))}</p>${dispoDuSoir(p.event_ts)}`;
   }
   /* « Je serai là » pour un soir donné, dans chaque line-up du joueur
      dont la semaine couvre ce soir-là. */
@@ -357,304 +508,57 @@
     }
     return out.join("");
   }
-  /* ── 1 bis. Prochaine activité (après l'activité, ou un soir sans) ── */
-  function carteProchaine() {
-    const p = aVenir(), n = maintenant();
-    if (!p) return tete("i-cal", tr("Prochaine activité")) + `<div class="bf-cb">${vide(tr("Rien au calendrier pour l'instant. Les officiers y publient les soirées."))}</div>` + pied([["calendrier", tr("Calendrier")]]);
-    return tete("i-cal", tr("Prochaine activité"), tr("dans %1", dans(p.event_ts - n))) + `<div class="bf-cb">
-      <div class="bf-prox"><b>${esc(p.title)}</b><span>${capFirst(jourDit(p.event_ts, true))}</span>${p.notes ? `<p>${esc(p.notes)}</p>` : ""}</div>
-      ${dispoDuSoir(p.event_ts)}</div>` + pied([["calendrier", tr("Calendrier")]]);
-  }
-
-  /* ── 2. À faire ── */
   /* les initiales des jours, du lundi au dimanche, dans la langue du lecteur */
   const JOURS = Array.from({ length: 7 }, (_, i) => new Date(2024, 0, 1 + i).toLocaleDateString(window.CP_LOC, { weekday: "narrow" }).toUpperCase());
-  function carteAFaire() {
+  function bandeauAFaire() {
     if (!B.lu) return null;
     const items = aFaire(), restants = items.filter(x => !x.fait).length, auj = luToday();
-    const liste = items.length ? `<ul class="bf-todo">${items.map(x => `<li class="${x.fait ? "fait" : ""}">
+    const charge = !B.liens || !B.prio || B.garages === null;
+    const tete = `<div class="bf-b-k">${ic("i-check")}${tr("À faire")}${restants ? ` <span class="bf-badge">${restants}</span>` : ""}${charge ? ` <em>${tr("vérification…")}</em>` : ""}</div>`;
+    if (!items.length) return tete + `<p class="bf-b-t bf-pret">${ic("i-check")}${tr("Rien à faire : tu es prêt.")}</p>`;
+    return tete + `<ul class="bf-todo">${items.map(x => `<li class="${x.fait ? "fait" : ""}">
         <span class="bf-tc">${ic(x.fait ? "i-check" : x.ic)}</span>
-        <div class="bf-tt"><b>${x.titre}</b><p>${x.fait ? tr("Enregistré. Tu pourras les changer dans Line-ups.") : x.texte}</p>
+        <div class="bf-tt"><b>${x.titre}</b>${x.fait ? `<p>${tr("Enregistré. Tu pourras les changer dans Line-ups.")}</p>` : x.texte ? `<p>${x.texte}</p>` : ""}
           ${x.jours ? `<div class="bf-jours" role="group" aria-label="${esc(tr("Tes soirs de la semaine"))}">${x.jours.av.map((on, i) =>
             `<button type="button" class="bf-j${on ? " on" : ""}${i === auj ? " auj" : ""}" data-lu="${esc(String(x.jours.lu))}" data-j="${i}" aria-pressed="${on}" aria-label="${esc(capFirst(new Date(2024, 0, 1 + i).toLocaleDateString(window.CP_LOC, { weekday: "long" })))}"${i === auj ? ` title="${esc(tr("Ce soir"))}"` : ""}>${JOURS[i]}</button>`).join("")}
             ${B.dispoMsg[x.jours.lu] ? `<span class="bf-msg">${B.dispoMsg[x.jours.lu]}</span>` : ""}</div>` : ""}
-          ${x.lien && !x.fait ? lienHTML(x.lien[0], x.lien[1]) : ""}</div></li>`).join("")}</ul>`
-      : `<div class="bf-pret">${ic("i-check")}<b>${tr("Rien à faire.")}</b><span>${tr("Tu es prêt pour la prochaine activité.")}</span></div>`;
-    const charge = !B.liens || !B.prio || B.garages === null;
-    return tete("i-check", tr("À faire"), charge ? tr("vérification…") : "", restants || "") + `<div class="bf-cb">${liste}</div>`;
-  }
-
-  /* ── 3. Depuis ta dernière visite ── */
-  function carteDepuis() {
-    if (B.clanErr) return tete("i-swords", tr("Depuis ta dernière visite")) + echecClan();
-    if (!B.clan) return null;
-    const { lot, rattrapage, mes } = lotDuDebrief();
-    const titre = tr(B.moment === "apres" && !rattrapage ? "Ta soirée" : (rattrapage ? "Ta dernière soirée" : "Depuis ta dernière visite"));
-    if (!mes.length) return tete("i-swords", titre) + `<div class="bf-cb">${vide(tr("Aucune bataille enregistrée pour toi. Elles arrivent ici dès que tu joues une bataille de clan avec le mod."))}</div>`;
-    const meta = rattrapage ? (B.vu ? tr("rien de neuf depuis %1", jourDit(B.vu)) : jourDit(lot[0].ts)) : (B.vu ? tr("depuis %1", jourDit(B.vu, true)) : "");
-    const b = bilan(lot), ref = srMoyen30(mes).sr, palier = ceTier(b.sr);
-    const ecart = b.sr != null && ref != null ? b.sr - ref : null;
-    /* V / D : les lettres du bilan, qu'un dictionnaire ne peut pas porter
-       (une clé « V » traduirait aussi le vendredi des soirs à cocher) */
-    const [lV, lD, lN] = EN ? ["W", "L", "D"] : ["V", "D", "N"];
-    const tuiles = `<div class="bf-tuiles">
-      <div><span>${tr("Batailles")}</span><b>${b.n}</b></div>
-      <div><span>${tr("Bilan")}</span><b><em class="v">${b.v} ${lV}</em> · <em class="d">${b.d} ${lD}</em>${b.nul ? ` · ${b.nul} ${lN}` : ""}</b></div>
-      <div><span>${tr("Ton SR moyen")}</span><b style="color:${palier.c}">${b.sr == null ? "—" : fmt(b.sr)}</b>${ecart != null && Math.abs(ecart) >= 10 ? `<i class="${ecart > 0 ? "up" : "dn"}">${tr(ecart > 0 ? "▲ %1 au-dessus de ta moyenne" : "▼ %1 sous ta moyenne", fmt(Math.abs(ecart)))}</i>` : ""}</div>
-      <div><span>${tr("Dégâts moyens")}</span><b>${fmt(b.dmg)}</b></div></div>`;
-    const plus = lot.length > 5 ? `<p class="bf-disc">${trn(lot.length - 5, "Et %1 autre bataille.", "Et %1 autres batailles.")}</p>` : "";
-    /* Peu de nouveau : on complète avec ce qui précède, en retrait, pour
-       que le bilan se lise avec son contexte. */
-    const avant = !rattrapage && lot.length < 5 ? mes.filter(r => r.ts <= lot[lot.length - 1].ts && !lot.includes(r)).slice(0, 5 - lot.length) : [];
-    const ligne = r => {
-      const sr = srBattle(r), pal = ceTier(sr);
-      const res = r.result === 1 ? ["v", tr("Victoire"), lV] : r.result === 0 ? ["d", tr("Défaite"), lD] : ["n", tr("Nul"), lN];
-      return `<li><a class="bf-b ${res[0]}" href="${esc(LIENS.bataille(r.battleId))}" data-bf-go="bataille" data-bf-id="${esc(String(r.battleId))}">
-        <span class="bf-bm">${dashMapThumb(r.mapName)}</span>
-        <span class="bf-bi"><b>${esc(prettyMap(r.mapName))}</b><i>${jourDit(r.ts, true)}</i></span>
-        <span class="bf-bt">${esc(r.tank || tr("Char inconnu"))}<i>${trn(r.kills, "%2 dég. · %1 frag", "%2 dég. · %1 frags", fmt(r.dmg))}</i></span>
-        <span class="bf-br"><span class="bf-br-l">${res[1]}</span><span class="bf-br-c" aria-hidden="true">${res[2]}</span></span>
-        <span class="bf-sr" style="color:${pal.c}" title="${esc(tr("SR de la bataille — %1", tr(pal.l)))}"><i>SR</i>${sr == null ? "—" : fmt(sr)}</span></a></li>`;
-    };
-    return tete("i-swords", titre, meta) + `<div class="bf-cb">${tuiles}<ol class="bf-bl">${lot.slice(0, 5).map(ligne).join("")}</ol>${plus}` +
-      (avant.length ? `<span class="bf-k bf-avant">${tr("Plus tôt")}</span><ol class="bf-bl bf-bl-avant">${avant.map(ligne).join("")}</ol>` : "") +
-      `</div>` + pied([["batailles", tr("Toutes mes batailles")]]);
-  }
-
-  /* ── 4. Ta forme ── */
-  /* Une seule chose à travailler, prise au coach de Ma progression : la
-     première de ses missions. S'il n'en a pas, un recul récent à
-     surveiller ; sinon le point fort — pour ne pas laisser la carte muette. */
-  function mission(my, clanRows) {
-    SELP = moi();                                 // coachDiag compare au clan SANS le joueur
-    const d = coachDiag(my, clanRows);
-    const tri = my.slice().sort((a, b) => b.ts - a.ts), rec = tri.slice(0, 10), avant = tri.slice(10);
-    const fm = g => v => g.u === "%" ? Math.round(v * 100) + PC : (g.u === "s" ? Math.round(v) + " s" : v.toLocaleString(window.CP_LOC, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-    for (const g of d.retards) {
-      const dep = g.calc(avant);
-      if (!dep || !(dep.v < g.c)) continue;
-      const base = dep.v, cible = base + (g.c - base) / 2, r = g.calc(rec), now = r ? r.v : null;
-      const av = now == null ? 0 : Math.max(0, Math.min(100, (cible - base) ? (now - base) / (cible - base) * 100 : 100));
-      return { type: "mission", g, base, cible, now, av, fait: now != null && now >= cible, f: fm(g) };
-    }
-    /* sous le clan, mais seulement depuis peu : pas de mission (elle
-       demanderait de reculer), c'est une alerte */
-    for (const g of d.retards) {
-      const a = g.calc(avant), r = g.calc(rec);
-      if (a && r && r.v < a.v) return { type: "recul", g, avant: a.v, now: r.v, f: fm(g) };
-    }
-    const g = d.forts[0];
-    return g ? { type: "fort", g, texte: g.constat ? g.constat(g.m, g.c) : "" } : null;
-  }
-  function missionHTML(ms) {
-    if (!ms) return "";
-    if (ms.type === "fort") return `<div class="bf-mis"><div class="bf-mis-h"><span class="bf-k">${tr("Ton point fort")}</span><b>${esc(tr(ms.g.nom))}</b><em class="up">▲</em></div>
-      <p>${esc(tr(ms.texte))}</p></div>`;
-    if (ms.type === "recul") return `<div class="bf-mis"><div class="bf-mis-h"><span class="bf-k">${tr("À surveiller")}</span><b>${esc(tr(ms.g.nom))}</b><em class="dn">${tr("▼ en recul")}</em></div>
-      <p>${tr("Sur tes 10 dernières : <b>%1</b>, contre <b>%2</b> avant.", ms.f(ms.now), ms.f(ms.avant))}</p><p class="bf-disc">${esc(tr(ms.g.action))}</p></div>`;
-    return `<div class="bf-mis${ms.fait ? " ok" : ""}"><div class="bf-mis-h"><span class="bf-k">${tr("Ta mission")}</span><b>${esc(tr(ms.g.nom))}</b><em>${ms.fait ? tr("✓ réussie") : Math.round(ms.av) + PC}</em></div>
-      <div class="bf-jauge"><i style="width:${ms.av.toFixed(1)}%"></i></div>
-      <p>${tr("Passer de <b>%1</b> à <b>%2</b>", ms.f(ms.base), ms.f(ms.cible))}${ms.now != null ? tr(" · sur tes 10 dernières : <b>%1</b>", ms.f(ms.now)) : ""}</p>
-      <p class="bf-disc">${esc(tr(ms.g.action))}</p></div>`;
-  }
-  function spark(vals, ref) {
-    if (vals.length < 3) return "";
-    const W = 200, Hh = 44, all = vals.concat(ref != null ? [ref] : []);
-    const lo = Math.min(...all) - 40, hi = Math.max(...all) + 40, y = v => Hh - (v - lo) / (hi - lo) * Hh, x = i => i / (vals.length - 1) * W;
-    const pts = vals.map((v, i) => x(i).toFixed(1) + "," + y(v).toFixed(1)).join(" ");
-    return `<svg class="bf-spark" viewBox="0 0 ${W} ${Hh}" preserveAspectRatio="none" aria-hidden="true">
-      ${ref != null ? `<line class="ref" x1="0" x2="${W}" y1="${y(ref).toFixed(1)}" y2="${y(ref).toFixed(1)}"/>` : ""}
-      <polyline points="${pts}"/></svg>`;
-  }
-  function carteForme() {
-    if (B.clanErr) return tete("i-chart", tr("Ta forme")) + echecClan();
-    if (!B.clan) return null;
-    const mes = mesBatailles(), f = srMoyen30(mes), me = moi();
-    if (f.rows.length < 5) return tete("i-chart", tr("Ta forme")) + `<div class="bf-cb">${vide(tr("Il faut au moins cinq batailles de rang X pour mesurer ta forme."))}</div>`;
-    const palier = ceTier(f.sr), clan = dashStats(dashFilterRows(f.trente ? 30 : 0));
-    const ecart = clan.sr != null && f.sr != null ? f.sr - clan.sr : null;
-    const wr = battlesWinrate(f.rows), dmg = Math.round(avgOf(f.rows, "dmg"));
-    const cmp = (a, b, pts) => { const d = a - b; return Math.abs(d) < (pts ? 0.5 : 1) ? `<i>${tr("comme le clan")}</i>`
-      : `<i class="${d > 0 ? "up" : "dn"}">${tr(d > 0 ? (pts ? "▲ %1 pts au-dessus du clan" : "▲ %1 au-dessus du clan") : (pts ? "▼ %1 pts en dessous du clan" : "▼ %1 en dessous du clan"),
-          pts ? Math.abs(d).toFixed(0) : fmt(Math.abs(d)))}</i>`; };
-    /* le rang dans le clan : le classement de la Vue clan, mêmes règles
-       d'affichage (pas de rang sous dix batailles) */
-    const sp = srByPlayer(), classes = [...sp.entries()].filter(([acc, v]) => v.etat !== "insuffisant" && MEMBERSET.has(acc)).sort((a, b) => b[1].sr - a[1].sr);
-    const rang = classes.findIndex(([acc]) => acc === me);
-    const vals = f.rows.slice(0, 20).reverse().map(srBattle).filter(v => v != null);
-    const ms = mission(mes.filter(estTierSR), RAW.filter(r => r.isMember && estTierSR(r)));
-    return tete("i-chart", tr("Ta forme"), tr(f.trente ? "30 derniers jours" : "toute la saison")) + `<div class="bf-cb">
-      <div class="bf-sr-g"><div><b style="color:${palier.c}">${f.sr == null ? "—" : fmt(f.sr)}</b><span>${tr("ton SR · %1", esc(tr(palier.l)))}</span>
-        ${ecart != null ? `<i class="${ecart >= 0 ? "up" : "dn"}">${tr(ecart >= 0 ? "▲ %1 au-dessus du clan" : "▼ %1 en dessous du clan", fmt(Math.abs(ecart)))}</i>` : ""}</div>
-        ${spark(vals, clan.sr)}</div>
-      <div class="bf-duo"><div><span>${tr("Dégâts moyens")}</span><b>${fmt(dmg)}</b>${cmp(dmg, clan.dmg)}</div>
-        <div><span>${tr("Victoires")}</span><b>${Math.round(wr.wr * 100)}${PC}</b>${cmp(wr.wr * 100, clan.winrate * 100, true)}</div></div>
-      ${rang >= 0 ? `<p class="bf-rang">${tr("Tu es <b>%1</b> du clan au SR de la saison, sur %2 joueurs classés.", rangDit(rang + 1), classes.length)}</p>` : ""}
-      ${missionHTML(ms)}
-    </div>` + pied([DEV && ["progression", tr("Ma progression")]]);
-  }
-
-  /* ── 5. Le clan en bref ── */
-  function carteClan() {
-    if (B.clanErr) return tete("i-shield", tr("Le clan en bref")) + echecClan();
-    if (!B.clan) return null;
-    const n = maintenant(), cote = CLANRATINGS && CLANRATINGS.fb_elo_rating;
-    const s7 = dashStats(dashFilterRows(7)), p7 = dashStats(dashFilterRows(7, true));
-    const dwr = s7.tot && p7.tot ? Math.round((s7.winrate - p7.winrate) * 100) : null;
-    const nouveaux = (MEMBERS || []).filter(m => m.joined_at && n - m.joined_at < 14 * J);
-    /* le meilleur SR de la semaine, à partir de trois batailles */
-    const par = new Map();
-    dashFilterRows(7).filter(estTierSR).forEach(r => { const v = srBattle(r); if (v == null) return; const a = par.get(r.accId) || []; a.push(v); par.set(r.accId, a); });
-    const top = [...par.entries()].filter(([, v]) => v.length >= 3).map(([acc, v]) => [acc, v.reduce((a, b) => a + b, 0) / v.length]).sort((a, b) => b[1] - a[1])[0];
-    const tuile = (l, v, s) => `<div><span>${l}</span><b>${v}</b>${s || ""}</div>`;
-    return tete("i-shield", tr("Le clan en bref"), CLANINFO ? "[" + esc(CLANINFO.tag || "") + "]" : "") + `<div class="bf-cb"><div class="bf-tuiles bf-t2">
-      ${cote ? tuile(tr("Cote Bastion"), fmt(cote.value), `<i>${tr("rang %1", fmt(cote.rank))}${cote.rank_delta ? ` <em class="${cote.rank_delta > 0 ? "up" : "dn"}">${cote.rank_delta > 0 ? "▲" : "▼"}${Math.abs(cote.rank_delta)}</em>` : ""}</i>`) : ""}
-      ${tuile(tr("7 derniers jours"), s7.battles ? Math.round(s7.winrate * 100) + PC : "—",
-        `<i>${trn(s7.battles, "%1 bataille", "%1 batailles")}${dwr ? ` · <em class="${dwr > 0 ? "up" : "dn"}">${dwr > 0 ? "▲" : "▼"} ${Math.abs(dwr)} pts</em>` : ""}</i>`)}
-      ${top ? tuile(tr("Meilleur SR de la semaine"), fmt(Math.round(top[1])), `<i>${esc(nomMembre(top[0]))}</i>`) : ""}
-      ${tuile(tr("Nouveaux"), nouveaux.length || "—", nouveaux.length ? `<i>${nouveaux.slice(0, 3).map(m => esc(m.nickname)).join(", ")}</i>` : `<i>${tr("personne ces 14 jours")}</i>`)}
-    </div></div>` + pied([["clan", tr("Vue clan")]]);
-  }
-
-  /* ── 6. État-major ── */
-  function carteEM() {
-    if (!B.lu) return null;
-    const lignes = [], auj = luToday(), sem = semaineCourante(), ev = prochaine();
-    /* ce soir : postes vides et joueurs placés qui n'ont pas coché ce soir */
-    let pin = null;
-    for (const lu of B.lu) { const tn = luTonightOf(lu); if (tn && new Date(tn.until).getTime() > Date.now()) { const c = luCompsOf(lu).find(x => x.id === tn.comp); if (c) { pin = { lu, c }; break; } } }
-    if (pin) {
-      const roster = luCleanSlots(pin.lu), posts = pin.c.posts;
-      const vides = posts.map((p, i) => [p, i]).filter(([p]) => !p.account_id);
-      const absents = posts.map((p, i) => [p, i]).filter(([p]) => { const s = p.account_id && roster.find(x => Number(x.account_id) === Number(p.account_id)); return s && !s.availability[auj]; });
-      const pb = vides.map(([p, i]) => tr("poste %1 (%2) à pourvoir", i + 1, esc(nomCat(luCat(p.cat)).toLowerCase())))
-        .concat(absents.map(([p, i]) => tr("%1 (poste %2) n'a pas coché ce soir", esc(nomMembre(p.account_id, pin.lu)), i + 1)));
-      lignes.push({ alerte: pb.length > 0, ic: "i-target", titre: tr("Ce soir : %1 postes sur %2 pourvus", posts.length - vides.length, posts.length),
-        texte: pb.length ? capFirst(pb.join(" · ")) + "." : tr("Tout le monde est placé et disponible."), lien: ["lineups", tr("Compo")] });
-    } else if (B.moment === "avant" && ev) {
-      lignes.push({ alerte: true, ic: "i-target", titre: tr("Aucune composition épinglée pour ce soir"),
-        texte: tr("%1 à %2. Les joueurs reliés verront leur poste dans le jeu dès qu'elle l'est.", esc(ev.title), heure(ev.event_ts)), lien: ["lineups", tr("Line-ups")] });
-    }
-    /* dispos de la semaine : qui n'a rien coché */
-    for (const lu of B.lu) {
-      if (luMeta(lu).week_start !== sem) continue;
-      const rien = luCleanSlots(lu).filter(s => s.account_id !== "" && !s.availability.some(Boolean) && Number(s.account_id) !== moi());
-      if (rien.length) lignes.push({ alerte: true, ic: "i-cal",
-        titre: trn(rien.length, "%2 : %1 joueur sans aucun soir coché", "%2 : %1 joueurs sans aucun soir coché", esc(lu.name)),
-        texte: rien.slice(0, 3).map(s => esc(nomMembre(s.account_id, lu))).join(", ") + (rien.length > 3 ? tr(" et %1 autres", rien.length - 3) : "") + ".", lien: ["lineups", tr("Relancer")] });
-    }
-    if (B.offres && Array.isArray(B.offres.offers)) {
-      const act = B.offres.offers.filter(o => o.status === "active" && !o.expired);
-      const bientot = act.filter(o => Date.parse(o.expires_at) - Date.now() < 7 * J * 1000).sort((a, b) => Date.parse(a.expires_at) - Date.parse(b.expires_at))[0];
-      lignes.push({ alerte: !act.length || !!bientot, ic: "i-users",
-        titre: act.length ? trn(act.length, "%1 annonce de recrutement en ligne", "%1 annonces de recrutement en ligne") : tr("Aucune annonce de recrutement en ligne"),
-        texte: bientot ? tr("« %1 » expire dans %2 : un clic la prolonge.", esc(bientot.title || tr("Sans titre")), dans(Date.parse(bientot.expires_at) / 1000 - maintenant()))
-          : tr(act.length ? "Aucune n'expire cette semaine." : "Les joueurs qui cherchent un clan ne vous voient pas."),
-        lien: ["recruteur", tr("Espace recruteur")] });
-    }
-    if (B.departs && Array.isArray(B.departs.rows) && B.departs.rows.length) {
-      const r = B.departs.rows;
-      lignes.push({ alerte: false, ic: "i-user", titre: trn(r.length, "%1 joueur solide vient de quitter son clan", "%1 joueurs solides viennent de quitter leur clan"),
-        texte: r.slice(0, 2).map(x => tr(x.new_clan_id ? "<b>%1</b> (WN8 %2, parti chez [%3])" : "<b>%1</b> (WN8 %2, sans clan)", esc(x.nickname), fmt(x.wn8), esc(x.new_clan_tag || "?"))).join(" · "),
-        lien: ["recruteur", tr("Sorties de clan")] });
-    }
-    const corps = lignes.length ? `<ul class="bf-em">${lignes.map(l => `<li class="${l.alerte ? "alerte" : ""}">
-        <span class="bf-tc">${ic(l.ic)}</span><div class="bf-tt"><b>${l.titre}</b><p>${l.texte}</p></div>
-        ${lienHTML(l.lien[0], l.lien[1])}</li>`).join("")}</ul>`
-      : vide(tr("Rien à signaler pour l'état-major."));
-    return tete("i-flag", tr("État-major"), tr("visible des officiers")) + `<div class="bf-cb">${corps}</div>`;
-  }
-
-  const CARTES = { soir: carteSoir, afaire: carteAFaire, depuis: carteDepuis, forme: carteForme, clan: carteClan, em: carteEM };
-
-  /* ══ Le verdict : la phrase du jour ════════════════════════════════
-     Le composant .vd des autres vues : un titre, une phrase, un chiffre. */
-  function vdHTML(titre, phrase, chiffre, legende, barres) {
-    return `<div class="vd-haut"><div class="vd-g">
-        <p class="bf-kick">${tr("Briefing")} · ${capFirst(new Date().toLocaleDateString(window.CP_LOC, { weekday: "long", day: "numeric", month: "long" }))}</p>
-        <h1 class="vd-t">${titre}</h1><p class="vd-p">${phrase}</p></div>
-      ${chiffre ? `<div class="vd-n"><b>${chiffre}</b><i>${legende}</i>${barres || ""}</div>` : ""}</div>`;
-  }
-  function verdict() {
-    const n = maintenant();
-    if (B.moment === "apres") {
-      if (B.clanErr) return vdHTML(tr("Soirée terminée"), tr("Les batailles n'ont pas pu être chargées."), "", "");
-      if (!B.clan) return null;
-      const { lot, rattrapage } = lotDuDebrief();
-      if (rattrapage || !lot.length) {
-        const p = aVenir();
-        return vdHTML(tr("Soirée terminée"), tr("Tu n'as pas joué de bataille de clan ce soir.") + (p ? tr(" Prochaine activité : <b>%1</b>.", jourDit(p.event_ts, true)) : ""), "", "");
-      }
-      const b = bilan(lot), ref = srMoyen30(mesBatailles()).sr, ecart = b.sr != null && ref != null ? b.sr - ref : null;
-      const best = lot.slice().sort((x, y) => (srBattle(y) || 0) - (srBattle(x) || 0))[0];
-      const wr = b.v + b.d ? Math.round(b.v / (b.v + b.d) * 100) : 0;
-      const barres = `<div class="vd-f">${lot.slice(0, 10).reverse().map((r, i) => `<i class="${r.result === 1 ? "v" : "d"}" style="--i:${i};height:${r.result === 1 ? 100 : 55}%"></i>`).join("")}</div>`;
-      const comparaison = ecart != null && Math.abs(ecart) >= 10
-        ? tr(ecart > 0 ? ", <span class=\"up\">▲ %1</span> au-dessus de ta moyenne" : ", <span class=\"dn\">▼ %1</span> en dessous de ta moyenne", fmt(Math.abs(ecart)))
-        : tr(", dans ta moyenne");
-      return vdHTML(trn(b.v, "Soirée terminée : <em>%1 victoire</em> sur %2", "Soirée terminée : <em>%1 victoires</em> sur %2", b.n),
-        tr("Ton SR moyen ce soir : <b>%1</b>", b.sr == null ? "—" : fmt(b.sr)) + comparaison +
-        tr(". Meilleure partie : <b>%1</b> en %2, %3 dégâts.", esc(prettyMap(best.mapName)), esc(best.tank || "?"), fmt(best.dmg)),
-        wr + PC, tr("de victoires ce soir"), barres);
-    }
-    if (!B.lu || !B.ev) return null;
-    if (B.moment === "avant") {
-      const ev = prochaine(), tn = ceSoir();
-      const chiffre = ev ? (ev.event_ts > n ? dans(ev.event_ts - n) : tr("en cours")) : "";
-      const legende = ev && ev.event_ts > n ? tr("avant le début") : "";
-      const quoi = ev ? tr("%1 à <b>%2</b>", esc(ev.title), heure(ev.event_ts)) : esc(tr(FORMAT[tn && tn.format] || "La soirée"));
-      if (tn && tn.poste) {
-        const tank = nomChar(tn.poste.tank_id), g = tn.poste.tank_id ? charAuGarage(tn.poste.tank_id) : undefined, st = tn.poste.tank_id ? setupDe(tn.poste.tank_id) : null;
-        const soucis = [];
-        if (g === false) soucis.push(tr("ce char n'est pas dans ton garage"));
-        if (st && st.manque) soucis.push(trn(st.manque, "%1 pièce du setup du clan manque sur ton char", "%1 pièces du setup du clan manquent sur ton char"));
-        const fin = soucis.length ? " " + capFirst(soucis.join(EN ? ", and " : ", et ")) + "."
-          : g ? tr(" Ton char est au garage et monté comme le veut le clan : tu es prêt.") : "";
-        return vdHTML(tank ? tr("Ce soir, <em>poste %1</em> en %2", tn.i + 1, esc(tank)) : tr("Ce soir, <em>poste %1</em>", tn.i + 1),
-          tr("%1, composition « %2 ».", quoi, esc(tn.comp.name)) + fin, chiffre, legende);
-      }
-      if (tn) return vdHTML(tr("Ce soir, <em>tu es en réserve</em>"), tr("%1. La composition « %2 » est publiée sans toi : reste joignable, un poste peut se libérer.", quoi, esc(tn.comp.name)), chiffre, legende);
-      return vdHTML(tr("Ce soir, <em>%1</em>", ev ? esc(ev.title) : "Bastion"),
-        (ev ? tr("À <b>%1</b>. ", heure(ev.event_ts)) : "") + tr("La composition n'est pas encore publiée : les officiers la préparent."), chiffre, legende);
-    }
-    const p = aVenir(), reste = aFaire().filter(x => !x.fait).length;
-    if (!p) return vdHTML(tr("Rien au calendrier"), tr("Aucune activité programmée pour l'instant.") + (reste ? " " + trn(reste, "%1 chose à régler en attendant.", "%1 choses à régler en attendant.") : ""), "", "");
-    return vdHTML(tr("Prochaine activité <em>%1</em>", jourDit(p.event_ts)),
-      tr("%1 à <b>%2</b>. ", esc(p.title), heure(p.event_ts)) + (reste ? trn(reste, "%1 chose à régler d'ici là.", "%1 choses à régler d'ici là.") : tr("Tout est en ordre de ton côté.")),
-      dans(p.event_ts - n), tr("avant la prochaine activité"));
+        </div>${x.lien && !x.fait ? lienHTML(x.lien[0], x.lien[1]) : ""}</li>`).join("")}</ul>`;
   }
 
   /* ══ Le rendu ══════════════════════════════════════════════════════ */
+  /* Un lien porte sa cible deux fois : une adresse, pour le labo et le
+     clic du milieu, et une clé que l'application traduit en changement
+     de vue (voir ALLER). */
+  function lienHTML(cle, texte) {
+    return `<a class="bf-lien" href="${esc(LIENS[cle])}" data-bf-go="${cle}">${texte}<span aria-hidden="true"> →</span></a>`;
+  }
   const SQUELETTE = `<div class="bf-sk" aria-hidden="true"><i></i><i></i><i></i></div>`;
   function squelette() {
-    HOTE.innerHTML = `<section class="vd bf-vd" id="bfVd" aria-busy="true">${SQUELETTE}</section>
-      <div class="bf-g" id="bfG">${PLANS.avant.map(([k, w]) => `<article class="bf-c bf-w${w}">${SQUELETTE}</article>`).join("")}</div>`;
+    HOTE.innerHTML = `<div class="bf-haut">
+        <section class="bf-bloc-h bf-soir" id="bfSoir" aria-busy="true">${SQUELETTE}</section>
+        <section class="bf-bloc-h bf-afaire" id="bfAFaire" aria-busy="true">${SQUELETTE}</section>
+      </div>
+      <section class="bf-joueur" id="bfJoueur" aria-busy="true">${SQUELETTE}</section>
+      <section class="bf-chars" id="bfChars" aria-label="${esc(tr("Mes chars"))}">${SQUELETTE}</section>`;
   }
-  /* La grille se construit UNE fois, quand le moment est connu. Ensuite
-     chaque arrivée de données ne remplit que l'intérieur des cartes :
-     rien ne bouge de place. */
-  function construit() {
-    let plan = PLANS[B.moment].filter(([k]) => k !== "em" || B.officier);
-    if (!B.officier) plan = plan.map(([k, w]) => [k, k === "clan" ? 6 : w]);
-    B.plan = B.moment + (B.officier ? "+em" : "");
-    document.getElementById("bfG").innerHTML = plan.map(([k, w], i) =>
-      `<article class="bf-c bf-w${w} dash-anim${k === "soir" && B.moment === "avant" ? " bf-lumiere" : ""}" style="--di:${i + 1}" id="bf-${k}" aria-busy="true">${SQUELETTE}</article>`).join("");
+  function remplit(id, html) {
+    const el = document.getElementById(id);
+    if (!el || html == null) return;
+    el.innerHTML = html;
+    el.removeAttribute("aria-busy");
   }
   function rafraichir() {
-    const vd = document.getElementById("bfVd");
-    if (vd && B.moment) { const h = verdict(); if (h != null) { vd.innerHTML = h; vd.removeAttribute("aria-busy"); } }
-    if (!B.moment) return;
-    for (const k in CARTES) {
-      const el = document.getElementById("bf-" + k);
-      if (!el) continue;
-      const h = CARTES[k]();
-      if (h != null) { el.innerHTML = h; el.removeAttribute("aria-busy"); }
-    }
+    if (!document.getElementById("bfChars")) return;
+    const soir = document.getElementById("bfSoir");
+    if (soir) soir.classList.toggle("bf-lumiere", B.moment === "avant");
+    remplit("bfSoir", bandeauSoir());
+    remplit("bfAFaire", bandeauAFaire());
+    remplit("bfJoueur", enTete());
+    if (!B.ency[B.rang]) chargeEncy(B.rang);
+    remplit("bfChars", sectionChars());
   }
 
-  /* ── Les soirs cochés depuis le briefing ──
-     L'action « attendance » existe déjà : un membre ne modifie que SA
-     ligne. On envoie 0,6 s après le dernier clic pour grouper les clics. */
+  /* ══ Les gestes ════════════════════════════════════════════════════ */
   function appel(fn, corps) {
     return fnCall(fn, Object.assign({ session: lsGet(LS_SESSION) }, corps || {})).catch(() => ({ ok: false, status: 0, j: null }));
   }
@@ -671,8 +575,32 @@
     lier: () => openLinkGame(),
     bataille: id => { try { sessionStorage.setItem(OPEN_BATTLE_KEY, id); } catch (_) { /* rien */ } openBattleFromLink(); },
   };
+  /* ouvre (ou ferme) la fiche d'un char ; depuis le bandeau du soir, on
+     bascule d'abord sur son rang et on descend jusqu'à elle */
+  function basculeFiche(id, depuisHaut) {
+    const i = infoChar(id);
+    if (depuisHaut) {
+      if (i && i.rang && i.rang !== B.rang) { B.rang = i.rang; lsSet("cp_bf_rang", String(i.rang)); }
+      B.fiche = id; B.voirTout = true;
+      if (charAuGarage(id) === false) B.tous = true;   // vendu : il faut montrer aussi les chars vendus
+    } else B.fiche = B.fiche === id ? null : id;
+    rafraichir();
+    const el = HOTE.querySelector(`.bf-char[data-char="${id}"]`);
+    if (el && depuisHaut) el.scrollIntoView({ block: "start", behavior: "smooth" });
+  }
   HOTE.addEventListener("click", e => {
-    if (e.target.closest("[data-bf=relance]")) { chargeClan(); return; }
+    const r = e.target.closest("[data-bf]");
+    if (r) {
+      const a = r.dataset.bf;
+      if (a === "relance") { chargeClan(); return; }
+      if (a === "relance-wg") { B.wgErr = false; B.encyErr = {}; chargeWg(); rafraichir(); return; }
+      if (a === "tous") { B.tous = !B.tous; B.voirTout = false; rafraichir(); return; }
+      if (a === "voir-tout") { B.voirTout = true; rafraichir(); return; }
+    }
+    const rg = e.target.closest("[data-bf-rang]");
+    if (rg) { B.rang = Number(rg.dataset.bfRang); B.fiche = null; B.voirTout = false; lsSet("cp_bf_rang", String(B.rang)); rafraichir(); return; }
+    const ch = e.target.closest("[data-bf-char]");
+    if (ch) { basculeFiche(Number(ch.dataset.bfChar), !!ch.dataset.bfVoir); return; }
     const a = e.target.closest("[data-bf-go]");
     if (a && DANS_APPLI && ALLER[a.dataset.bfGo] && e.button === 0 && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
       e.preventDefault();
@@ -684,6 +612,9 @@
       if (nav) nav.dispatchEvent(new Event("click"));
       return;
     }
+    /* les soirs cochés depuis le briefing : l'action « attendance » existe
+       déjà, un membre ne modifie que SA ligne. Envoi 0,6 s après le
+       dernier clic, pour grouper les clics. */
     const b = e.target.closest(".bf-j");
     if (!b) return;
     const lu = (B.lu || []).find(x => String(x.id) === b.dataset.lu), s = lu && monSlot(lu);
@@ -696,15 +627,66 @@
     rafraichir();
     clearTimeout(B.dispoMinuteur[lu.id]);
     B.dispoMinuteur[lu.id] = setTimeout(async () => {
-      const r = await appel("lineups", { action: "attendance", id: lu.id, availability: av });
-      B.dispoMsg[lu.id] = tr(r.ok ? "✓ Enregistré" : "Échec de l'envoi — réessaie");
+      const rep = await appel("lineups", { action: "attendance", id: lu.id, availability: av });
+      B.dispoMsg[lu.id] = tr(rep.ok ? "✓ Enregistré" : "Échec de l'envoi — réessaie");
       rafraichir();
     }, 600);
   });
+  HOTE.addEventListener("change", e => {
+    const s = e.target.closest("[data-bf-tri]");
+    if (!s) return;
+    B.tri = s.value; lsSet("cp_bf_tri", B.tri); rafraichir();
+  });
 
-  /* ══ Le démarrage ══════════════════════════════════════════════════ */
+  /* ══ Le chargement ═════════════════════════════════════════════════ */
+  /* Ce que Wargaming sait du joueur : son compte, ses chars, ses marques. */
+  async function chargeWg() {
+    const me = moi();
+    if (me == null || B.wg || B.wgEnCours) return;
+    B.wgEnCours = true;
+    try {
+      const [inf, st, ac] = await Promise.all([
+        csWg("/wot/account/info/", { account_id: me, fields: "nickname,global_rating,statistics.all.battles,statistics.all.wins,statistics.all.damage_dealt" }),
+        csWg("/wot/tanks/stats/", { account_id: me, fields: "tank_id,mark_of_mastery,all.battles,all.wins,all.damage_dealt,stronghold_skirmish.battles,stronghold_skirmish.wins,stronghold_defense.battles,stronghold_defense.wins" }),
+        csWg("/wot/tanks/achievements/", { account_id: me, fields: "tank_id,achievements" }),
+      ]);
+      const stats = new Map(), marques = new Map();
+      for (const s of (st.data && st.data[me]) || []) stats.set(Number(s.tank_id), s);
+      for (const x of (ac.data && ac.data[me]) || []) { const m = x.achievements && x.achievements.marksOnGun; if (m) marques.set(Number(x.tank_id), Number(m)); }
+      B.wg = { info: (inf.data && inf.data[me]) || null, stats, marques };
+    } catch (_) { B.wgErr = true; }
+    B.wgEnCours = false;
+    rafraichir();
+  }
+  /* L'encyclopédie d'un rang (nom, classe, image) : quelques centaines
+     de chars qui ne changent qu'à une mise à jour du jeu. Gardée sept
+     jours dans le navigateur. */
+  async function chargeEncy(rang) {
+    if (B.ency[rang] || B.encyEnCours[rang] || B.encyErr[rang]) return;
+    const cle = "cp_bf_ency_" + rang;
+    try {
+      const c = JSON.parse(localStorage.getItem(cle) || "null");
+      if (c && Date.now() - c.t < 7 * J * 1000 && Array.isArray(c.d)) { B.ency[rang] = new Map(c.d.map(x => [x.id, x])); rafraichir(); return; }
+    } catch (_) { /* cache illisible : on recharge */ }
+    B.encyEnCours[rang] = true;
+    try {
+      const d = [];
+      for (let page = 1; page <= 6; page++) {
+        /* big_icon (160×100) plutôt que small_icon : la petite silhouette
+           se perd dans la carte du char */
+        const j = await csWg("/wot/encyclopedia/vehicles/", { tier: rang, limit: 100, page_no: page, fields: "tank_id,name,short_name,type,nation,is_premium,images.big_icon,images.small_icon" });
+        for (const v of Object.values(j.data || {})) if (v) d.push({ id: Number(v.tank_id), n: v.name, s: v.short_name, c: v.type, p: !!v.is_premium,
+          i: String((v.images && (v.images.big_icon || v.images.small_icon)) || "").replace(/^http:/, "https:") });
+        if (!j.meta || !j.meta.page_total || page >= j.meta.page_total) break;
+      }
+      B.ency[rang] = new Map(d.map(x => [x.id, x]));
+      try { localStorage.setItem(cle, JSON.stringify({ t: Date.now(), d })); } catch (_) { /* plein : tant pis */ }
+    } catch (_) { B.encyErr[rang] = true; }
+    B.encyEnCours[rang] = false;
+    rafraichir();
+  }
   async function chargeClan() {
-    B.clanErr = false; rafraichir();
+    B.clanErr = false;
     let res = null;
     for (let n = 1; n <= 3; n++) {
       res = await appel("clan-data");
@@ -722,32 +704,27 @@
     if (sub && clan.tag) sub.textContent = "[" + clan.tag + "] " + (clan.name || "");
     if (who && res.j.me) who.innerHTML = '<span class="odot on"></span>Connecté&nbsp;<b>' + esc(res.j.me.nickname || "") + "</b>";
     B.clan = true;
+    chargeWg();
     rafraichir();
   }
   /* Les données légères : relues à chaque ouverture de la vue — un soir
-     coché dans Line-ups, une compo épinglée entre-temps doivent se voir
-     ici. La grille n'est reconstruite que si le moment a changé. */
+     coché dans Line-ups, une compo épinglée entre-temps doivent se voir. */
   function chargeLeger() {
     const fin = f => r => { f(r); rafraichir(); };
     Promise.all([appel("lineups", { action: "list" }), appel("clan-events", { action: "list" })]).then(([l, e]) => {
       B.lu = l.ok && l.j && Array.isArray(l.j.lineups) ? l.j.lineups : [];
       B.ev = e.ok && e.j && Array.isArray(e.j.events) ? e.j.events : [];
-      /* officier : le droit d'éditer les line-ups, rendu par le serveur */
       B.officier = !!(l.ok && l.j && l.j.canEdit);
       B.moment = leMoment();
-      if (B.plan !== B.moment + (B.officier ? "+em" : "")) construit();
+      chargeWg();   // le compte est peut-être connu maintenant (labo)
       rafraichir();
-      if (B.officier) {
-        appel("clan-offers", { action: "mine" }).then(fin(r => { B.offres = r.ok ? r.j : null; }));
-        appel("clan-departures", { action: "list", f: { days: 2, wn8: 2000 } }).then(fin(r => { B.departs = r.ok ? r.j : null; }));
-      }
     });
     appel("mod", { action: "links" }).then(fin(r => { B.liens = r.ok && r.j ? r.j : { links: [], garage: null }; }));
     appel("mod", { action: "garages" }).then(fin(r => { B.garages = r.ok && r.j && Array.isArray(r.j.garages) ? r.j.garages : []; }));
     appel("loadouts", { action: "list" }).then(fin(r => { B.lo = r.ok && r.j && Array.isArray(r.j.loadouts) ? r.j.loadouts : []; }));
     appel("loadouts", { action: "prio_get" }).then(fin(r => { B.prio = r.ok && r.j ? r.j : { prio: [], owned: [] }; }));
-    /* la référence des chars et des équipements est lourde : une fois suffit,
-       et la vue Loadouts l'a peut-être déjà chargée */
+    /* la référence des équipements est lourde : une fois suffit, et la vue
+       Loadouts l'a peut-être déjà chargée */
     if (!LO_REF) appel("reference").then(fin(r => { if (r.ok && r.j && !LO_REF) LO_REF = r.j; }));
     fetch("mod-version.json", { cache: "no-store" }).then(r => r.json()).then(fin(j => { B.modv = j && j.version; })).catch(() => {});
   }
@@ -759,12 +736,13 @@
     B.clan = true;
     if (!B.ouvert) { B.ouvert = true; B.vu = visite(); squelette(); }
     chargeLeger();
+    chargeWg();
   }
   /* Dans le labo : la page fait tout elle-même, batailles comprises. */
   function demarre() {
     document.documentElement.setAttribute("data-theme", "dark");
     if (!lsGet(LS_SESSION)) {
-      HOTE.innerHTML = `<section class="vd bf-vd"><h1 class="vd-t">${tr("Connecte-toi")}</h1><p class="vd-p">${tr("Le briefing est ta page personnelle : il faut être connecté avec ton compte Wargaming.")} <a class="bf-lien" href="index.html">${tr("Se connecter →")}</a></p></section>`;
+      HOTE.innerHTML = `<section class="bf-joueur"><div class="bf-j-id"><h1>${tr("Connecte-toi")}</h1><p class="bf-j-sub">${tr("Le briefing est ta page personnelle : il faut être connecté avec ton compte Wargaming.")} <a class="bf-lien" href="index.html">${tr("Se connecter →")}</a></p></div></section>`;
       return;
     }
     B.ouvert = true;
