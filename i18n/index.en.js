@@ -841,6 +841,7 @@ window.CP_EN = Object.assign(window.CP_EN || {}, {
   "Tiens un point de vision passive au lieu de suivre la ligne : rester immobile en buisson rapporte plus que d'avancer.": "Hold a passive spotting position instead of following the line: sitting still in a bush pays more than pushing.",
   "Tire depuis un buisson à distance, et repars avant que le camouflage ne tombe.": "Fire from a bush at range, and move off before your camo drops.",
   "Tire moins souvent en mouvement, et attends l'arrêt complet du réticule sur les tirs longs.": "Fire less often on the move, and wait for the reticle to close fully on long shots.",
+  "Tu tapes trop souvent du blindage frontal. Vise les flancs, les toits de tourelle et les points faibles plutôt que la masse.": "You hit frontal armour too often. Aim for the sides, turret roofs and weak spots rather than the bulk of the tank.",
   "Tirer plus souvent.": "Fire more often.",
   "Tirer sans te faire voir.": "Shoot without being seen.",
   "Toi": "You",

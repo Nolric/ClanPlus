@@ -87,6 +87,9 @@ async function boot(){
      n'est que la politesse. */
   if(!DEV) document.querySelectorAll('#sidebar a[href="progression.html"]')
     .forEach(function(a){ a.style.display="none"; });
+  // même politesse pour le Briefing tant qu'il n'est pas ouvert à tous (BF_OUVERT)
+  if(!bfAccueil()) document.querySelectorAll('#nav .tab[data-v="briefing"]')
+    .forEach(function(b){ b.style.display="none"; });
   if(DEV){ const b=document.createElement("div"); b.textContent="MODE TEST"; b.title="Interface officier débloquée (clic pour quitter)";
     b.style.cssText="position:fixed;bottom:12px;right:12px;z-index:200;background:#e5b95c;color:#141310;font:700 11px system-ui;letter-spacing:.5px;padding:5px 11px;border-radius:20px;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.4)";
     b.onclick=()=>{ localStorage.removeItem("cp_dev"); location.href=location.pathname; }; document.body.appendChild(b); }
@@ -159,7 +162,7 @@ async function openApp(){
   document.getElementById("app").classList.remove("hidden");
   document.getElementById("loading").classList.remove("hidden");
   document.getElementById("subbar").classList.add("hidden");
-  ["viewClan","viewBattles","viewLineups","viewLoadouts","viewStrats","viewRanking","viewSearch","viewRecruit"].forEach(id=>document.getElementById(id).classList.add("hidden"));
+  ["viewBriefing","viewClan","viewBattles","viewLineups","viewLoadouts","viewStrats","viewRanking","viewSearch","viewRecruit"].forEach(id=>document.getElementById(id).classList.add("hidden"));
 
   /* Même problème que la connexion : un incident passager côté Supabase ou
      Wargaming laissait l'utilisateur devant un message sec, sans recours.
@@ -207,9 +210,15 @@ async function openApp(){
   document.getElementById("clanTitle").textContent = clan.tag ? ("["+clan.tag+"] "+(clan.name||"")) : "Ton clan";
   document.getElementById("clanSub").textContent = "Statistiques Bastion";
   document.getElementById("who").innerHTML = '<span class="odot on"></span>Connecté&nbsp;<b>'+esc(res.j.me?.nickname||"")+"</b>";
-  document.getElementById("subbar").classList.remove("hidden");
-  document.getElementById("viewClan").classList.remove("hidden");
-  placeSubbar("clan");
+  /* Sans le Briefing, la Vue clan s'affiche AVANT d'être dessinée, comme
+     toujours : ses courbes mesurent leur vraie largeur. */
+  const accueil = bfAccueil() ? "briefing" : "clan";
+  if(accueil==="clan"){
+    document.getElementById("subbar").classList.remove("hidden");
+    document.getElementById("viewClan").classList.remove("hidden");
+    placeSubbar("clan");
+    CLAN_VU=true;
+  }
   loadClanProfile();   // nationalité (non bloquant)
   loadClanEvents();    // calendrier + prochaine activité du bandeau (non bloquant)
   wireUI();
@@ -219,8 +228,18 @@ async function openApp(){
   renderClanInfo();
   populatePlayerSel();
   // arrivé par le bouton DEBRIEF du mod : on ne lui barre pas la route avec une fenêtre
-  if(!openBattleFromLink()) setTimeout(linkWelcome, 700);
+  if(openBattleFromLink()) return;
+  /* On arrive sur le Briefing. Sa liste « À faire » propose déjà de relier
+     le jeu : la fenêtre d'accueil ne s'ouvre plus que sur la Vue clan. */
+  if(accueil==="briefing"){ switchView("briefing"); return; }
+  setTimeout(linkWelcome, 700);
 }
+
+/* ── Le Briefing, page d'arrivée du joueur (briefing.js) ──
+   Ouvert d'abord en mode test (?dev) : passer BF_OUVERT à true l'ouvre
+   à tout le monde, une fois vu sur les vraies données du clan. */
+const BF_OUVERT=false;
+function bfAccueil(){ return BF_OUVERT || DEV; }
 
 /* Lien direct vers une bataille : clanplus.eu/?bataille=<arenaUniqueID>.
    C'est l'adresse qu'ouvre le bouton DEBRIEF de la fenêtre du mod (v1.0.39),
@@ -962,11 +981,14 @@ function wipGate(v){
     [...el.children].forEach(n=>{ if(n!==msg) n.style.display = bloque ? "none" : ""; });
   }
 }
+let CLAN_VU=false;
 function switchView(v){
   if(v==="recruit" && !canRecruit()) v="clan";   // réservé (voir VUE RECRUTEMENT)
+  if(v==="briefing" && !bfAccueil()) v="clan";
   wipGate(v);
   if(v!=="strats") stQuitteVue();
   document.querySelectorAll("#nav .tab").forEach(t=>t.classList.toggle("on",t.dataset.v===v));
+  document.getElementById("viewBriefing").classList.toggle("hidden", v!=="briefing");
   document.getElementById("viewClan").classList.toggle("hidden", v!=="clan");
   document.getElementById("viewBattles").classList.toggle("hidden", v!=="battles");
   /* « Ma progression » n'est plus une vue d'ici : c'est progression.html. */
@@ -980,6 +1002,11 @@ function switchView(v){
   document.getElementById("subbar").classList.toggle("hidden", v!=="clan"&&v!=="player"&&v!=="battles");
   const _s=document.getElementById("search"); if(_s) _s.style.visibility = (v==="clan") ? "visible" : "hidden";
   placeSubbar(v);
+  if(v==="briefing" && window.bfOuvre) bfOuvre();
+  /* La Vue clan a été dessinée cachée quand on arrive sur le Briefing :
+     ses courbes ont pris une largeur par défaut. On la redessine à sa
+     première apparition. */
+  if(v==="clan" && !CLAN_VU){ CLAN_VU=true; render(); }
   if(v==="battles") renderBattles();
   /* « Ma progression » n'est plus une vue : c'est progression.html. */
   if(v==="lineups") loadLineups();
