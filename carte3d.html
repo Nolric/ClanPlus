@@ -5282,7 +5282,12 @@ function pretty(k){ const L=LABELS[k];
       return;
     }
     const e=ST.els[ST.sel], garde=e?(e.char||""):"";
-    const vus=CHARS.chars.filter(c=>(!pickCls||c.classe===pickCls)&&(!pickQ||platC(c.nom).includes(pickQ)))
+    /* Les chars que le jeu marque « secret » ou « testTank » (horsEditeur
+       dans chars.json) ne sont pas proposés : le replay seul les montre.
+       Sauf celui déjà posé sur l'élément choisi, pour qu'un plan ancien
+       garde sa sélection. */
+    const vus=CHARS.chars.filter(c=>(!c.horsEditeur||c.cle===garde)&&
+        (!pickCls||c.classe===pickCls)&&(!pickQ||platC(c.nom).includes(pickQ)))
       .sort((a,b)=>a.nation.localeCompare(b.nation)||a.nom.localeCompare(b.nom,"fr"));
     l.innerHTML="";
     const bt=document.createElement("button");

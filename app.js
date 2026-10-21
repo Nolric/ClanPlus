@@ -1619,7 +1619,11 @@ let BL_BY_ID={};
 const RP_CLASSES=["heavyTank","mediumTank","lightTank","AT-SPG","SPG"];
 const RP_ICON={}, RP_TINT={};
 /* Drapeaux de base : sprites d'origine du jeu (extraits de battleAtlas)
-   — vert = notre base, rouge = base adverse, neutre = base blanche (7v7). */
+   — vert = notre base (AllyTeamBaseEntry_green_0), rouge = base adverse
+   (EnemyTeamBaseEntry_red_0), neutre = base blanche des batailles de
+   rencontre (ControlPointEntry_0). Les trois sont des badges de 64 px.
+   Le neutre était auparavant FlagNeutralMinimapEntry, le petit drapeau
+   du mode capture du drapeau : ce n'était pas la bonne base. */
 const RP_BASES=["green","red","neutral"];
 const RP_BASE_IMG={};
 let RP_ICONS_READY=false;
@@ -1947,9 +1951,8 @@ function renderReplay(host, rep, mkey, demo){
       const px=wx(b.x), py=wy(b.z);
       const kind=b.team==="ally"?"green":(b.team==="enemy"?"red":"neutral");
       const im=RP_BASE_IMG[kind];
-      // le sprite neutre a une source plus petite (32px) : on le grossit pour
-      // que les trois drapeaux aient la même taille visible
-      if(im){ const S=52*K*(kind==="neutral"?1.35:1); ctx.drawImage(im, px-S/2, py-S/2, S, S); }
+      // les trois badges ont la même taille d'origine : même taille à l'écran
+      if(im){ const S=52*K; ctx.drawImage(im, px-S/2, py-S/2, S, S); }
       else { const col=b.team==="ally"?ALLY:(b.team==="enemy"?ENEMY:INK);
         ctx.beginPath(); ctx.arc(px,py,9*K,0,7); ctx.fillStyle=col; ctx.globalAlpha=.9; ctx.fill(); ctx.globalAlpha=1; }
     });
