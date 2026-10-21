@@ -1858,6 +1858,9 @@ function pretty(k){ const L=LABELS[k];
      `pieces` dans l'index. Sur les cartes ces deux nombres sont absorbés
      dans la matrice de chaque exemplaire ; ici il n'y en a pas. */
   let CHARS=null, charsEtat=0;            // 0 rien · 1 en cours · 2 prêt · 3 échec
+  /* Les noms courts du jeu, langue par langue (chars/noms.json, fait par
+     outils/terrain/chars-noms.js) : ce que le mod enregistre au replay. */
+  let CHARS_NOMS=null;
   const charsJeu={vb:null,ib:null,xb:null,modeles:[]};
   const charsXB=gl.createBuffer(); let charsLots=[];
   async function chargeChars(){
@@ -1865,11 +1868,13 @@ function pretty(k){ const L=LABELS[k];
     if(charsEtat===3||charsEtat===1) return false;
     charsEtat=1;
     try{
-      const [j,ab]=await Promise.all([
+      const [j,ab,noms]=await Promise.all([
         litData("chars/chars.json").then(r=>{ if(!r.ok) throw new Error(r.status); return r.json(); }),
-        litData("chars/chars.bin").then(r=>{ if(!r.ok) throw new Error(r.status); return r.arrayBuffer(); })]);
+        litData("chars/chars.bin").then(r=>{ if(!r.ok) throw new Error(r.status); return r.arrayBuffer(); }),
+        /* facultatif : sans lui, le replay garde ses rapprochements par le nom */
+        litData("chars/noms.json").then(r=>r.ok?r.json():null).catch(()=>null)]);
       lisCPF4(ab,charsJeu);
-      CHARS=j; charsEtat=2;
+      CHARS=j; CHARS_NOMS=(noms&&noms.noms)||null; charsEtat=2;
       majBoutonChar(); pickRemplit(); buildChars();
       return true;
     }catch(e){
@@ -5096,7 +5101,14 @@ function pretty(k){ const L=LABELS[k];
 
      On compare donc par étapes de plus en plus tolérantes, et on
      n'accepte QUE lorsqu'un seul candidat répond. Deux candidats, on
-     renonce : un marqueur vaut mieux qu'un char qui n'est pas le bon. */
+     renonce : un marqueur vaut mieux qu'un char qui n'est pas le bon.
+
+     Et d'abord, la table exacte (chars/noms.json) : le nom court que
+     l'encyclopédie Wargaming donne pour chaque char, dans chaque langue.
+     Les rapprochements seuls laissaient dix-huit chars de rang X sans
+     modèle — « Dravec », « S. Conqueror », « M48 Patton »… — et en
+     confondaient trois : « Jg.Pz. E 100 » devenait le G.W. E 100. */
+  const platU=(s)=>platC(s).replace(/[^\p{L}\p{N}]/gu,"");  // tout collé, tous alphabets
   const platA=(s)=>platC(s).replace(/[^a-z0-9]/g,"");     // tout collé
   const platL=(s)=>platA(s).replace(/[0-9]/g,"");         // les lettres
   const platN=(s)=>platA(s).replace(/[^0-9]/g,"");        // les chiffres
@@ -5118,9 +5130,19 @@ function pretty(k){ const L=LABELS[k];
   const rpModele=(nomChar)=>{
     if(!CHARS||!CHARS.chars) return null;      // pas encore : on redemandera
     if(!nomChar) return "";
-    if(!rpTable||rpTable.n!==CHARS.chars.length)
-      rpTable={n:CHARS.chars.length, l:CHARS.chars.map(x=>({
+    if(!rpTable||rpTable.n!==CHARS.chars.length){
+      /* nom réduit → clé ; "" si deux chars le portaient (on ne tranche pas).
+         Le mod coupe à vingt-quatre signes : la forme coupée compte aussi. */
+      const noms=new Map();
+      for(const cle in (CHARS_NOMS||{})) if(charDe(cle)) for(const n of CHARS_NOMS[cle])
+        for(const k of [platU(n), platU(n.slice(0,24))]){
+          if(k) noms.set(k, noms.has(k)&&noms.get(k)!==cle?"":cle); }
+      rpTable={n:CHARS.chars.length, noms, l:CHARS.chars.map(x=>({
         cle:x.cle, a:platA(x.nom), lt:platL(x.nom), ch:platN(x.nom)}))};
+    }
+    /* 0 · le nom court du jeu, tel que la table le connaît */
+    const u=platU(nomChar);
+    if(u&&rpTable.noms.get(u)) return rpTable.noms.get(u);
     const L=rpTable.l, a=platA(nomChar), lt=platL(nomChar), ch=platN(nomChar);
     const seul=(v)=>v.length===1?v[0].cle:"";
     /* 1 · le même nom, aux accents et à la ponctuation près */
