@@ -1128,8 +1128,11 @@ function mapBgHTML(name){
   const img=k?`<img src="maps/${k}.jpg" alt="" onerror="this.style.display='none'">`:"";
   return `<div class="bl-bg">${img}<div class="sh"></div></div>`;
 }
-function mapInfoHTML(name,mode){
-  return `<div class="bl-mapinfo"><div class="nm">${esc(cleanMap(name))}</div><div class="md">${esc(modeFR(mode))}</div></div>`;
+/* Le rang dans son propre élément : « Bastion » reste un texte que le
+   traducteur reconnaît seul. */
+function mapInfoHTML(name,mode,rang){
+  const rg=rang?`<span class="rg${rang===11?" xi":""}">Tier ${romainDe(rang)}</span>`:"";
+  return `<div class="bl-mapinfo"><div class="nm">${esc(cleanMap(name))}</div><div class="md">${esc(modeFR(mode))}${rg}</div></div>`;
 }
 function srPill(v){ const t=ceTier(v);
   return `<div class="bl-sr" style="border-color:${t.c};color:${t.c}" title="Synergy Rating — ${esc(t.l)}"><span class="lbl">SR</span><span class="val">${v==null?"—":fmt(v)}</span></div>`; }
@@ -1169,6 +1172,7 @@ function groupBattles(){
     g.ourScore = g.foe.filter(r=>!r.surv).length;         // ennemis détruits
     g.foeScore = g.our.filter(r=>!r.surv).length;         // alliés détruits
     g.enemyTag = BATTLE_ENEMY[g.id] || (g.foe[0]&&g.foe[0].clan) || "?";
+    g.rang = BATTLE_TIER[g.id] || 0;
     // MVP retiré : désigner un « meilleur joueur » sur les seuls dégâts
     // récompensait le char qui tire, jamais celui qui éclaire ou qui
     // encaisse. L'impact décomposé du tableau de bord répond mieux à la
@@ -1235,7 +1239,7 @@ function blRowHTML(g){
   return `<div class="bl-row ${cls}${g.mine?" bl-mine":""}" data-bid="${esc(String(g.id))}">
     <div class="bl-head" role="button" tabindex="0" onclick="blToggle(this)" onkeydown="blKey(event,this)">
       ${mapBgHTML(g.mapName)}
-      ${mapInfoHTML(g.mapName,g.mode)}
+      ${mapInfoHTML(g.mapName,g.mode,g.rang)}
       <div class="bl-match">
         <div class="bl-team left"><span class="tag">[${esc(ourTag)}]</span>${ourEm}</div>
         <div class="bl-scorebox"><div class="sc"><span class="a">${g.ourScore}</span><span class="bl-sep">:</span><span>${g.foeScore}</span></div><div class="rz">${rz}</div><span class="bl-dom" role="img" aria-label="${g.ourScore} chars adverses détruits, ${g.foeScore} des nôtres"><i style="width:${(g.ourScore+g.foeScore)?Math.round(g.ourScore/(g.ourScore+g.foeScore)*100):50}%"></i></span></div>
@@ -1355,7 +1359,7 @@ function renderBattles(){
   blScopeUI();
   if(BL_SCOPE==="mine") return renderMyBattles();
   const ch=document.getElementById("blClans"); if(ch) ch.innerHTML="";
-  const list=groupBattles();
+  const list=blRangsUI(groupBattles());
   const sum=document.getElementById("blSummary"), wrap=document.getElementById("blList"), pg=document.getElementById("blPager"),
         sect=document.getElementById("blSect");
   if(!list.length){
@@ -1370,7 +1374,7 @@ function renderBattles(){
           "ou change de mode.", null, "");
     pg.innerHTML=""; return; }
   BL_BY_ID={}; list.forEach(g=>{ BL_BY_ID[g.id]=g; });
-  sum.innerHTML=blSummaryHTML(list);
+  sum.innerHTML=blSummaryHTML(list)+blRangNoteHTML();
   blAnimeVerdict(sum);
   sect.innerHTML=blSectHTML("Confrontations", list.length); sect.hidden=false;
   const pages=Math.ceil(list.length/BL_PER_PAGE);
@@ -1412,6 +1416,29 @@ function renderBlPager(total,pages){
    ============================================================ */
 let BL_SCOPE=(lsGet("cp_bl_scope")==="mine")?"mine":"clan";
 let BL_CLANF="";   // « joué sous les couleurs de [TAG] » — vide = tous
+let BL_RANG=0;     // rang du Bastion (11, 10, 8, 6) — 0 = tous
+
+/* Le rang : un filtre commun aux deux vues, montré dès que les batailles
+   en comptent plus d'un. Un Tier XI ne se lit pas comme un Tier X : ni les
+   mêmes chars, ni les mêmes dégâts. Renvoie la liste filtrée. */
+function blRangsUI(all){
+  const par={}; all.forEach(g=>{ if(g.rang) par[g.rang]=(par[g.rang]||0)+1; });
+  if(BL_RANG && !par[BL_RANG]) BL_RANG=0;
+  const L=Object.keys(par).map(Number).sort((a,b)=>b-a);
+  const el=document.getElementById("blRangs");
+  if(el){
+    const chip=(k,lbl,nb)=>`<button type="button" class="bl-chip${BL_RANG===k?" on":""}" data-rang="${k}" aria-pressed="${BL_RANG===k}">${lbl}<span class="n">${fmt(nb)}</span></button>`;
+    el.innerHTML = L.length<2 ? "" : `<span class="bl-chips-l">Rang</span>`+
+      chip(0,"Tous les rangs",all.length)+L.map(k=>chip(k,`<span class="t">Tier ${romainDe(k)}</span>`,par[k])).join("");
+    el.querySelectorAll("[data-rang]").forEach(b=>b.onclick=()=>{ BL_RANG=Number(b.dataset.rang); BL_PAGE=0; renderBattles(); });
+  }
+  return BL_RANG ? all.filter(g=>g.rang===BL_RANG) : all;
+}
+/* Un rang que le SR ne couvre pas : la tuile « SR » affiche « — », on dit pourquoi. */
+function blRangNoteHTML(){
+  return BL_RANG && BL_RANG!==SR_TIER
+    ? `<p class="bl-note">Pas de SR au Tier ${romainDe(BL_RANG)} : il n'est calibré que sur le Tier ${romainDe(SR_TIER)} pour l'instant.</p>` : "";
+}
 const MY={ etat:"rien", raw:[], fiches:{}, n:0, total:0, sr:null };
 
 function setBlScope(s){
@@ -1487,6 +1514,7 @@ function buildMyRaw(data){
     r.isMember = !r.isSelf && Number(r.team)===f.team && f.tag!=="" &&
                  String(r.clan).toUpperCase()===f.tag.toUpperCase(); });
   MY.fiches=fiches; MY.n=Object.keys(fiches).length; MY.total=Number(data.total)||MY.n; MY.sr=null;
+  MY.rangs=rangsParBataille(MY.raw);
 }
 /* Le SR de SES batailles : le modèle figé de la saison, appliqué avec
    son équipe et le clan qu'il portait. Calculé une fois, à la demande. */
@@ -1520,6 +1548,7 @@ function groupMyBattles(){
     const ct={}; g.foe.forEach(r=>{ if(r.clan) ct[r.clan]=(ct[r.clan]||0)+1; });
     let best="",bn=0; for(const t in ct) if(ct[t]>bn){ bn=ct[t]; best=t; }
     g.enemyTag=g.foeDet||best||"?";   // le détachement d'en face s'il est connu
+    g.rang=(MY.rangs||{})[g.id]||0;
     const v=g.me?mySrOf(g.me):null; g.ce=v==null?null:Math.round(v);   // SON SR, pas la moyenne
     g.win=g.result===1; g.draw=g.result===-1;
     g.dur=g.rows.reduce((mx,r)=>Math.max(mx,r.life||0),0);
@@ -1587,6 +1616,8 @@ function renderMyBattles(){
         pg=document.getElementById("blPager"), ch=document.getElementById("blClans"), sect=document.getElementById("blSect");
   if(MY.etat!=="ok"){
     sum.innerHTML=""; pg.innerHTML=""; ch.innerHTML=""; sect.hidden=true;
+    // les puces seulement : le rang choisi doit survivre au chargement
+    { const rg=document.getElementById("blRangs"); if(rg) rg.innerHTML=""; }
     if(MY.etat==="erreur"){
       wrap.innerHTML=cpVide('<svg class="ic" aria-hidden="true"><use href="#i-alert"/></svg>',
         "Impossible de charger tes batailles",
@@ -1601,7 +1632,7 @@ function renderMyBattles(){
     if(MY.etat==="rien") loadMyBattles();
     return;
   }
-  const all=groupMyBattles();                       // mode + période
+  const all=blRangsUI(groupMyBattles());            // mode + période + rang
   if(BL_CLANF && !all.some(g=>String(g.ourTag).toUpperCase()===BL_CLANF)) BL_CLANF="";
   ch.innerHTML=blClansHTML(all);
   ch.querySelectorAll("[data-clanf]").forEach(b=>b.onclick=()=>{ BL_CLANF=b.dataset.clanf; BL_PAGE=0; renderBattles(); });
@@ -1621,7 +1652,7 @@ function renderMyBattles(){
     return;
   }
   BL_BY_ID={}; list.forEach(g=>{ BL_BY_ID[g.id]=g; });
-  sum.innerHTML=blMySummaryHTML(list)+
+  sum.innerHTML=blMySummaryHTML(list)+blRangNoteHTML()+
     (MY.total>MY.n?'<p class="bl-note">Les <b>'+fmt(MY.n)+'</b> plus récentes sur <b>'+fmt(MY.total)+'</b>.</p>':"");
   blAnimeVerdict(sum);
   sect.innerHTML=blSectHTML("Confrontations", list.length); sect.hidden=false;
@@ -2603,12 +2634,7 @@ function buildRaw(data){
   // ⚠️ Même règle que srBuild : le tier MÉDIAN des chars présents, pas celui d'une
   // ligne isolée. Un char absent de la table des véhicules ferait autrement
   // disparaître la bataille de l'affichage alors que le SR, lui, la compte.
-  BATTLE_TIER={}; const tpar={};
-  RAW.forEach(r=>{ const t=Number((VEHMAP[r.veh]||{}).tier)||0;
-    if(t) (tpar[r.battleId]=tpar[r.battleId]||[]).push(t); });
-  Object.keys(tpar).forEach(bid=>{ const v=tpar[bid].sort((a,b)=>a-b);
-    const med=v[Math.floor(v.length/2)];
-    BATTLE_TIER[bid]= med>=10?10:(med>=8?8:6); });
+  BATTLE_TIER=rangsParBataille(RAW);
   // bannière si vide
   /* #banner n'existe que sur index.html. buildRaw est une fonction de
      DONNÉES : elle ne devrait pas toucher au DOM du tout. En attendant
@@ -2974,7 +3000,7 @@ function srBuild(src, camp){
     const ct={}; theirs.forEach(r=>{ const t=String(r.clan||"").toUpperCase(); if(t) ct[t]=(ct[t]||0)+1; });
     let atag="",an=0; for(const t in ct) if(ct[t]>an){an=ct[t];atag=t;}
     const tiers=ours.map(r=>(VEHMAP[r.veh]||{}).tier||0).filter(Boolean).sort((a,b)=>b-a);
-    const tb=tiers[Math.floor(tiers.length/2)]||10, rang=tb>=10?10:(tb>=8?8:6);
+    const tb=tiers[Math.floor(tiers.length/2)]||10, rang=rangDuTier(tb);
     // ⭐ Un Bastion Tier VI et un Tier X n'ont ni les mêmes dégâts, ni les mêmes PV,
     // ni la même cote Elo : les mélanger dans une seule note n'a pas de sens. Le
     // jeu impose le tier, donc le tier du char EST celui de la bataille — le test
@@ -3078,10 +3104,26 @@ function srDecomp(accId){
    second rang est calibré — et un seul endroit à relire pour savoir ce qui est
    compté. Le jeu impose le tier en Bastion : le tier du char est celui du combat. */
 const SR_TIER=10;
+/* Les rangs du Bastion : VI, VIII, X et XI. ⚠️ Le XI est un rang à part
+   entière, pas un « X et plus » : avant, il était compté avec le X et
+   faussait le SR. Même règle dans sr-calibrate. */
+function rangDuTier(t){ return t>=11?11:(t>=10?10:(t>=8?8:6)); }
+function romainDe(n){ return ({11:"XI",10:"X",8:"VIII",6:"VI"})[n]||String(n); }
+/* Rang de chaque bataille : le tier MÉDIAN des chars présents, pas celui
+   d'une ligne isolée. Sert aux batailles du clan (BATTLE_TIER) comme à
+   « Mes batailles » (MY.rangs). */
+function rangsParBataille(rows){
+  const par={}, out={};
+  rows.forEach(r=>{ const t=Number((VEHMAP[r.veh]||{}).tier)||0;
+    if(t) (par[r.battleId]=par[r.battleId]||[]).push(t); });
+  Object.keys(par).forEach(bid=>{ const v=par[bid].sort((a,b)=>a-b);
+    out[bid]=rangDuTier(v[Math.floor(v.length/2)]); });
+  return out;
+}
 // Le rang vient de la BATAILLE (voir BATTLE_TIER), pas du char de la ligne :
 // c est la meme regle que celle qui decide le SR, donc les deux ne peuvent pas
 // diverger. Repli sur le char si la bataille est inconnue.
-const estTierSR=r=>(BATTLE_TIER[r.battleId] ?? (Number((VEHMAP[r.veh]||{}).tier)>=10?10:0))===SR_TIER;
+const estTierSR=r=>(BATTLE_TIER[r.battleId] ?? rangDuTier(Number((VEHMAP[r.veh]||{}).tier)||0))===SR_TIER;
 const SR_AXES=[["deg","Dégâts"],["enc","Encaissé"],["bli","Blindage"],["vis","Vision"],["obj","Objectif"]];
 /* Virgule décimale : toFixed rend « 0.72 », illisible au milieu d'un texte français. */
 const nb2=v=>Number(v||0).toLocaleString(window.CP_LOC,{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -7212,7 +7254,7 @@ function renderPlayerView(){
   {
     const tousRangs=RAW.filter(r=>r.accId===SELP);
     const hors=tousRangs.length-tousRangs.filter(estTierSR).length;
-    const RANGS=[[10,"X"],[8,"VIII"],[6,"VI"]];
+    const RANGS=[11,10,8,6].map(n=>[n,romainDe(n)]);
     {
       const cs=document.getElementById("pClsSel");
       if(cs){
@@ -7235,7 +7277,7 @@ function renderPlayerView(){
          n===SR_TIER ? `<span class="ts-b on">Tier ${rn}</span>`
                      : `<span class="ts-b off" title="Pas encore calibré">Tier ${rn}</span>`).join("")}</span>
        <span class="ts-note">${hors
-         ? `${fmt(hors)} bataille${hors>1?"s":""} d'un autre rang ${hors>1?"sont écartées":"est écartée"} — le SR n'est calibré que sur le Tier ${RANGS[0][1]} pour l'instant.`
+         ? `${fmt(hors)} bataille${hors>1?"s":""} d'un autre rang ${hors>1?"sont écartées":"est écartée"} — le SR n'est calibré que sur le Tier ${romainDe(SR_TIER)} pour l'instant.`
          : `Les autres rangs seront ouverts dès qu'ils auront assez de batailles pour être calibrés.`}</span>`;
   }
   { const el=document.getElementById("pVerdictHost");

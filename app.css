@@ -1571,6 +1571,9 @@
   .bl-mapinfo{width:150px;flex:0 0 150px;min-width:0;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.85)}
   .bl-mapinfo .nm{font-family:var(--fx);font-size:17px;letter-spacing:.3px;line-height:1.12;overflow-wrap:anywhere}
   .bl-mapinfo .md{margin-top:4px;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#d6d2c6}
+  /* le rang du Bastion, à la suite du mode ; le XI ressort en or */
+  .bl-mapinfo .rg::before{content:"·";margin:0 5px}
+  .bl-mapinfo .rg.xi{color:var(--gold-2)}
   /* zone 2 : la confrontation */
   .bl-match{flex:1;display:flex;align-items:center;justify-content:center;gap:18px;min-width:0}
   .bl-team{display:flex;align-items:center;gap:11px;width:160px;min-width:0}
