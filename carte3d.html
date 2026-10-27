@@ -14,7 +14,7 @@
 <meta property="og:description" content="The game's real map elevation in 3D: rotate, zoom, read the ground.">
 <meta property="og:image" content="https://clanplus.eu/og.jpg">
 <meta name="twitter:card" content="summary_large_image">
-<script src="i18n/carte3d.fr.js?v=c38d2f75"></script>
+<script src="i18n/carte3d.fr.js?v=e1fb635b"></script>
 <script src="i18n.js?v=ed3f8a4f"></script>
 <!-- Le client Supabase, UNIQUEMENT pour le temps réel : les appels de
      données passent par `fetch` et n'en ont pas besoin. Il est chargé en
@@ -318,6 +318,10 @@
   #rpSeek{width:min(38vw,300px)}
   #rpBar .btn{padding:5px 9px;font-size:11.5px}
   #rpNom{max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  /* les autres replays : prend la place du nom dès que la liste est là */
+  #rpAutres{display:none;max-width:230px;font-size:11.5px;padding:4px 20px 4px 7px}
+  body.rpAutres #rpAutres{display:inline-block}
+  body.rpAutres #rpNom{display:none}
   #rpOeil,#rpProp{font-size:11.5px;padding:4px 20px 4px 7px;max-width:140px}
   #presBar{display:none}
   body.presente #presBar{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);
@@ -891,6 +895,7 @@
     <select id="rpOeil"></select>
     <select id="rpProp"></select>
     <span class="obEt" id="rpNom"></span>
+    <select id="rpAutres" aria-label="Other replays" title="Other replays"></select>
     <button class="btn" id="rpX">Leave</button>
   </div>
   <div id="grLbl"></div>
@@ -6879,7 +6884,16 @@ function pretty(k){ const L=LABELS[k];
        carte, chez n'importe qui du clan. */
     (function(){
       const p=new URLSearchParams(location.search);
-      const bat=p.get("battle"), ck=p.get("carte");
+      /* Les identifiants dépassent 2^53 : le site les range arrondis. Le
+         bouton DEBRIEF du mod envoie l'identifiant EXACT du jeu ; on
+         l'arrondit de même, sinon le serveur ne trouve pas la bataille. */
+      const brutId=p.get("battle"), ck=p.get("carte");
+      const bat=brutId&&/^\d{16,25}$/.test(brutId)?String(Number(brutId)):brutId;
+      /* Une bataille qu'on ne peut pas montrer ici — carte sans 3D, ou
+         navigateur pas connecté — part vers sa page du site, qui sait
+         faire les deux : débrief en 2D, connexion qui garde la bataille. */
+      const versLeSite=()=>location.replace("index.html?bataille="+encodeURIComponent(brutId));
+      if(bat&&(!ck||!MAPS3D[ck]||!stSession())){ versLeSite(); return; }
       if(!ck||!MAPS3D[ck]) return;
       ouvrirCarte(ck);
       /* La vue d'abord, avant même le replay : elle ne dépend que du
@@ -6897,8 +6911,9 @@ function pretty(k){ const L=LABELS[k];
       const clan=p.get("clan"), camp=Number(p.get("camp"));
       stDit(t("Loading the replay…"));
       fnAppel("replay",Object.assign({battle_id:bat},clan?{clan_id:clan}:{})).then(async(r)=>{
+        if(r.status===401){ versLeSite(); return; }      // session expirée
         const brut=r.ok&&r.j&&r.j.replay;
-        const rep=brut?litReplay(Object.assign({battleId:bat},brut,camp>0?{myTeam:camp}:{}),ck,p.get("nom")||""):null;
+        const rep=brut?litReplay(Object.assign({battleId:bat},brut,camp>0?{myTeam:camp}:{}),ck,p.get("nom")||pretty(ck)):null;
         if(!rep){ stDit(t("No replay saved for this battle.")); return; }
         RP=rep;
         RP.clan=clan; RP.camp=camp>0?camp:null;
@@ -6916,8 +6931,40 @@ function pretty(k){ const L=LABELS[k];
         const inst=Number(p.get("t"));
         histoRaz(); rpVaA(isFinite(inst)&&inst>0?inst:0); stMaj();
         poseVueQuandPret(texteVersVue(p.get("vue")));
+        rpAutres(String(bat));
       }).catch(()=>stDit(t("No replay saved for this battle.")));
     })();
+    /* ── PASSER D'UN REPLAY À L'AUTRE ─────────────────────────────
+       Les dernières batailles qui ont un replay (fonction replay, action
+       « liste »), sur les cartes que la 3D connaît. En choisir une
+       recharge la page sur elle : un replay reste une adresse, qu'on
+       partage, et le bouton Retour du navigateur ramène au précédent. */
+    async function rpAutres(cur){
+      const s=$("rpAutres"); if(!s) return;
+      const r=await fnAppel("replay",{action:"liste"}).catch(()=>null);
+      const L=((r&&r.ok&&r.j&&r.j.battles)||[])
+        .map(b=>Object.assign(b,{k:String(b.map_name||"").toLowerCase().replace(/[^a-z]/g,"")}))
+        .filter(b=>MAPS3D[b.k]);
+      if(!L.some(b=>String(b.battle_id)!==cur)) return;   // rien d'autre à proposer
+      const res={"1":t("Win"),"0":t("Loss"),"-1":t("Draw")}, loc=window.CP_LANG==="fr"?"fr-FR":"en-GB";
+      const quand=(ts)=>{ const d=new Date(ts); return isNaN(d)?"":
+        d.toLocaleDateString(loc,{day:"2-digit",month:"2-digit"})+" "+d.toLocaleTimeString(loc,{hour:"2-digit",minute:"2-digit"}); };
+      s.innerHTML="";
+      const opt=(v,txt,on)=>{ const o=document.createElement("option"); o.value=v; o.textContent=txt; o.selected=!!on; s.appendChild(o); };
+      if(!L.some(b=>String(b.battle_id)===cur)) opt("",(RP&&RP.nom)||t("This battle"),true);
+      L.forEach((b,i)=>opt(String(i),[pretty(b.k),quand(b.ts),res[String(b.result)]||"",b.foe_tag?"["+b.foe_tag+"]":""]
+        .filter(Boolean).join(" · "),String(b.battle_id)===cur));
+      s.onchange=()=>{
+        const b=L[Number(s.value)]; if(!b||String(b.battle_id)===cur) return;
+        if(histoSale&&!confirm(t("Your unsaved changes will be lost. Open this replay?"))){
+          s.value=String(L.findIndex(x=>String(x.battle_id)===cur)); return; }
+        const q=new URLSearchParams({battle:String(b.battle_id),carte:b.k});
+        if(Number(b.clan_id)) q.set("clan",String(b.clan_id));
+        if(b.camp>0) q.set("camp",String(b.camp));
+        location.assign(location.pathname+"?"+q.toString());
+      };
+      document.body.classList.add("rpAutres");
+    }
     /* Revenir aux cartes ne referme pas la stratégie ouverte par
        mégarde : on la ferme explicitement, sinon on la retrouverait
        posée sur une autre carte. */
