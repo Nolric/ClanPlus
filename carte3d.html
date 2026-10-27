@@ -4922,11 +4922,14 @@ function pretty(k){ const L=LABELS[k];
          DIRECTION VISÉE : orientation de caisse plus angle de tourelle,
          en degrés, zéro vers le nord et sens horaire — exactement la
          convention du cap de nos marqueurs. Le mod ne l'a que pour les
-         chars présents côté client, d'où l'optionnel. */
+         chars présents côté client, d'où l'optionnel. Le cinquième,
+         depuis le mod 1.0.47, est le cap de la CAISSE seule. */
       piste:(x.track||[]).map(p=>p.length>3
-        ? [Number(p[0])||0,Number(p[1])||0,Number(p[2])||0,Number(p[3])]
+        ? [Number(p[0])||0,Number(p[1])||0,Number(p[2])||0,Number(p[3])].concat(p.length>4?[Number(p[4])]:[])
         : [Number(p[0])||0,Number(p[1])||0,Number(p[2])||0]),
     })).filter(x=>x.piste.length);
+    const trouRp=Math.max(2,Number(brut.interval)||2)*1.6;
+    for(const c of chars) c.recul=sensDeMarche(c.piste,trouRp);
     const parId={};
     for(const c of chars) if(c.id!=null) parId[c.id]=c;
     /* Les événements du mod : tirs, morts, dégâts. On garde les deux
@@ -4996,27 +4999,33 @@ function pretty(k){ const L=LABELS[k];
     if(!p.length) return null;
     const trou=(RP?RP.pas:2)*1.6;
     const vis=(e)=>e.length>3&&isFinite(e[3])?e[3]:null;
+    /* le cap de la caisse quand le mod l'a relevé (1.0.47) : il fait foi */
+    const caisse=(e)=>e.length>4&&isFinite(e[4])?e[4]:null;
     /* mort : on le laisse là où il est tombé */
     if(c.mort!=null&&t>=c.mort){
       let q=p[0];
       for(const e of p){ if(e[0]<=c.mort) q=e; else break; }
-      return {x:q[1], z:q[2], cap:0, vise:vis(q), repere:1, mort:1};
+      return {x:q[1], z:q[2], cap:caisse(q)??0, vise:vis(q), repere:1, mort:1};
     }
     if(t<p[0][0]) return null;
     const i=rpIdx(c,t);
     const lo=p[i], hi=(i+1<p.length)?p[i+1]:null;
     /* dernier relevé connu, ou trou : il reste où on l'a vu */
     if(!hi||(hi[0]-lo[0])>trou)
-      return {x:lo[1], z:lo[2], cap:null, vise:vis(lo),
+      return {x:lo[1], z:lo[2], cap:caisse(lo), vise:vis(lo),
               repere:(t-lo[0])<=trou?1:0, mort:0};
     const f=(t-lo[0])/((hi[0]-lo[0])||1);
     const P1=[lo[1],lo[2]], P2=[hi[1],hi[2]];
     const seg=Math.hypot(P2[0]-P1[0],P2[1]-P1[1]);
+    /* La caisse relevée, balayée d'un relevé à l'autre comme la visée.
+       À l'arrêt comme en marche arrière, elle dit la vérité. */
+    const cL=caisse(lo), cH=caisse(hi);
+    const capReleve=cL==null?null:cH==null?cL:(cL+((((cH-cL+540)%360)-180)*f)+360)%360;
     /* Le cap de la MARCHE. À l'arrêt il n'a pas de sens : un écart de
        quelques centimètres ferait pivoter la caisse au hasard. On
        retombe alors sur la direction visée, ou sur rien. */
     if(seg<0.05)
-      return {x:P1[0], z:P1[1], cap:null, vise:rpVise(lo,hi,f,vis), repere:1, mort:0};
+      return {x:P1[0], z:P1[1], cap:capReleve, vise:rpVise(lo,hi,f,vis), repere:1, mort:0};
     /* Les voisins nourrissent la courbe. Au bord d'un relevé — début de
        piste, ou trou de repérage — on reflète le point pour que la
        tangente reste celle du segment au lieu de partir n'importe où. */
@@ -5030,9 +5039,45 @@ function pretty(k){ const L=LABELS[k];
     const e2=0.06;
     const qa=crom(P0,P1,P2,P3,Math.max(0,f-e2)), qb=crom(P0,P1,P2,P3,Math.min(1,f+e2));
     const dx=qb[0]-qa[0], dz=qb[1]-qa[1];
-    const cap=(seg>0.6&&Math.hypot(dx,dz)>1e-4)
+    let cap=(seg>0.6&&Math.hypot(dx,dz)>1e-4)
       ?((Math.atan2(dx,dz)*180/Math.PI+360)%360):null;
-    return {x:q[0], z:q[1], cap, vise:rpVise(lo,hi,f,vis), repere:1, mort:0};
+    /* en marche arrière, la caisse regarde à l'opposé de la marche */
+    if(cap!=null&&c.recul&&c.recul[i]) cap=(cap+180)%360;
+    return {x:q[0], z:q[1], cap:capReleve??cap, vise:rpVise(lo,hi,f,vis), repere:1, mort:0};
+  }
+  /* ── LA MARCHE ARRIÈRE ────────────────────────────────────────
+     Sans cap de caisse relevé (replays d'avant le mod 1.0.47, chars vus
+     de loin seulement), la caisse suivait la direction de la marche : un
+     char qui reculait se retournait d'un coup et repartait « en avant ».
+     On DÉDUIT donc le sens, segment par segment :
+       · plus de 9 m/s (32 km/h) : en avant, aucun char ne recule si vite ;
+       · en mouvement continu, une caisse ne fait pas demi-tour d'un relevé
+         à l'autre : une marche à plus de 120° du cap tenu jusque-là est
+         une marche arrière, et elle le reste tant qu'elle va dans ce sens ;
+       · au départ, après un arrêt ou un trou de repérage, le cap tenu ne
+         dit plus rien (le char a pu pivoter sur place) : la visée tranche.
+         On recule en gardant le canon sur l'ennemi, donc à plus de 120°
+         de la marche ; on avance en regardant à peu près où l'on va.
+     Rend un octet par segment : 1 = marche arrière. */
+  function sensDeMarche(p,trou){
+    const recul=new Uint8Array(Math.max(0,p.length-1));
+    const ecart=(a,b)=>Math.abs(((a-b+540)%360)-180);
+    let cap=null, suivi=false;          // cap de la caisse ; vient-il d'un mouvement ininterrompu ?
+    for(let i=0;i+1<p.length;i++){
+      const a=p[i], b=p[i+1], dt=b[0]-a[0];
+      if(dt>trou){ cap=null; suivi=false; continue; }
+      const dx=b[1]-a[1], dz=b[2]-a[2], d=Math.hypot(dx,dz);
+      if(d<=0.6){ suivi=false; continue; }   // à l'arrêt : il a pu pivoter
+      const m=(Math.atan2(dx,dz)*180/Math.PI+360)%360, v=d/(dt||1);
+      const vise=a.length>3&&isFinite(a[3])?a[3]:null;
+      let r;
+      if(v>9) r=0;
+      else if(cap!=null&&suivi) r=ecart(m,cap)>120?1:0;
+      else if(vise!=null) r=ecart(m,vise)>120?1:0;
+      else r=cap!=null&&ecart(m,cap)>120?1:0;
+      recul[i]=r; cap=r?(m+180)%360:m; suivi=true;
+    }
+    return recul;
   }
   /* La direction visée entre deux relevés, par le plus court chemin
      angulaire. Elle SAUTAIT : on gardait celle du relevé précédent
