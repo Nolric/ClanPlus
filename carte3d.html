@@ -2197,7 +2197,8 @@ function pretty(k){ const L=LABELS[k];
   let hEnnemi=null;
   function hauteurEnnemie(){
     if(hEnnemi!==null) return hEnnemi;
-    const l=(CHARS&&CHARS.chars||[]).map(c=>c.bbClic[1][1]-c.bbCaisse[0][1])
+    // le rang X seul : c'est lui que le panneau annonce (le XI porte `rang`)
+    const l=(CHARS&&CHARS.chars||[]).filter(c=>!c.rang).map(c=>c.bbClic[1][1]-c.bbCaisse[0][1])
       .filter(v=>v>0.5&&v<6).sort((a,b)=>a-b);
     hEnnemi = l.length ? +l[l.length>>1].toFixed(2) : 2.5;
     return hEnnemi;
@@ -5071,9 +5072,8 @@ function pretty(k){ const L=LABELS[k];
     const A1=mix(P0,P1,t0,t1), A2=mix(P1,P2,t1,t2), A3=mix(P2,P3,t2,t3);
     return mix(mix(A1,A2,t0,t2), mix(A2,A3,t1,t3), t1,t2);
   }
-  /* La bibliothèque ne contient QUE le rang X. Les batailles de clan s'y
-     jouent, donc la plupart des chars d'un replay de Bastion y sont ;
-     les autres retombent sur un marqueur, ce qui reste juste. */
+  /* La bibliothèque contient les rangs X et XI, ceux du Bastion ; les
+     chars d'un autre rang retombent sur un marqueur, ce qui reste juste. */
   /* Rend la clé du modèle, "" si ce char n'est pas dans la
      bibliothèque, et NULL si la bibliothèque n'est pas encore arrivée.
 
@@ -5308,7 +5308,7 @@ function pretty(k){ const L=LABELS[k];
       b.className="pickL"+(c.cle===garde?" on":""); b.type="button";
       b.innerHTML='<span class="nm"></span><span class="cl"></span>';
       b.querySelector(".nm").textContent=c.nom;
-      b.querySelector(".cl").textContent=t((ST_CLS.find(x=>x[0]===c.classe)||ST_CLS[1])[1]);
+      b.querySelector(".cl").textContent=t((ST_CLS.find(x=>x[0]===c.classe)||ST_CLS[1])[1])+(c.rang===11?" · XI":"");
       b.addEventListener("click",()=>poseChar(c.cle));
       l.appendChild(b);
     }

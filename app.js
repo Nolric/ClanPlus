@@ -7679,7 +7679,7 @@ function renderPlan(name,my,byClass,byMap,elist,prec,survrate,myDmg,clanDmg,obj)
    ============================================================ */
 const LU_DAYS=["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"];
 const LU_DAY_NAMES=["lundi","mardi","mercredi","jeudi","vendredi","samedi","dimanche"];
-const LU_FORMAT_LABELS={bastion10:"Bastion T10",bastion8:"Bastion T8",manoeuvres:"Manœuvres"};
+const LU_FORMAT_LABELS={bastion11:"Bastion T11",bastion10:"Bastion T10",bastion8:"Bastion T8",manoeuvres:"Manœuvres"};
 const LU_MAX_PLAYERS=10, LU_MAX_COMPS=8, LU_MAX_POSTS=15;
 const LU_MANAGER_ROLES=new Set(["commander","deputy_commander","executive_officer","combat_officer","personnel_officer",
   "recruitment_officer","intelligence_officer","quartermaster","junior_officer"]);
@@ -8103,7 +8103,7 @@ function openLinkGame(o){
    Un seul appel pour tout le roster (10 comptes au plus), gardé 15 min.
    data[compte] : Map(tank_id → batailles), ou null quand Wargaming ne
    renvoie rien pour ce compte. Absent de data = pas encore lu. */
-const LU_GAR={data:{},at:{},ver:{},state:"idle",err:"",ts:0};   // ver[compte] = date du garage vérifié par le mod
+const LU_GAR={data:{},at:{},ver:{},tier:{},state:"idle",err:"",ts:0};   // ver[compte] = date du garage vérifié par le mod ; tier[char] = rang donné par le mod
 const LU_GAR_TTL=15*60*1000;
 async function luGarageLoad(ids,force){
   const now=Date.now();
@@ -8134,7 +8134,8 @@ async function luGarageLoad(ids,force){
   (await verP).forEach(g=>{
     const id=Number(g.account_id); if(!need.includes(id)) return;
     const wg=LU_GAR.data[id], m=new Map();
-    (g.tanks||[]).forEach(tk=>{ const tid=Number(tk.id); m.set(tid,(wg instanceof Map&&wg.get(tid))||0); });
+    (g.tanks||[]).forEach(tk=>{ const tid=Number(tk.id); m.set(tid,(wg instanceof Map&&wg.get(tid))||0);
+      if(Number(tk.tier)) LU_GAR.tier[tid]=Number(tk.tier); });
     LU_GAR.data[id]=m; LU_GAR.ver[id]=g.updated_at||true; LU_GAR.at[id]=now;
   });
   if(!j){ LU_GAR.state="error"; LU_GAR.err=err; return; }
@@ -8144,12 +8145,22 @@ async function luGarageLoad(ids,force){
 /* ── Les chars d'un joueur, au rang de la line-up ──────────────────
    VEHMAP (données du clan) donne le rang et la classe de chaque char ;
    le classement commun (LU_CATDATA, rang X seulement) donne les
-   catégories. Une line-up Bastion T8 lit donc les chars de rang VIII,
-   rangés par classe. */
+   catégories. Une line-up Bastion T8 ou T11 lit donc les chars de son
+   rang, rangés par classe. À défaut de VEHMAP, le rang vient du garage
+   envoyé par le mod (LU_GAR.tier). */
 const LU_CLASSES=[["heavyTank","Lourds"],["mediumTank","Moyens"],["lightTank","Légers"],["AT-SPG","Chasseurs"],["SPG","Artillerie"]];
-function luTier(w){ return w&&w.format==="bastion8"?8:10; }
+function luTier(w){ return ({bastion11:11,bastion8:8})[w&&w.format]||10; }
 function luHasCats(tier){ return tier===10&&!!LU_CATDATA; }
-function luTankName(id){ const c=luTankInfo(id), v=VEHMAP[Number(id)]; return (c&&c.nom)||(v&&v.name)||("#"+id); }
+function luTankName(id){ const c=luTankInfo(id), v=VEHMAP[Number(id)], rf=luRefTank(id); return (c&&c.nom)||(v&&v.name)||(rf&&rf.name)||("#"+id); }
+/* La référence des chars (fonction reference, rangs X et XI), si l'onglet
+   des loadouts l'a déjà chargée : un recours pour un char que la table des
+   véhicules ne connaît pas encore. */
+let LU_REF_IDX=null;
+function luRefTank(id){
+  if(!LO_REF||!LO_REF.tanks) return null;
+  if(!LU_REF_IDX||LU_REF_IDX.src!==LO_REF) LU_REF_IDX={src:LO_REF,m:new Map(LO_REF.tanks.map(t=>[Number(t.tank_id),t]))};
+  return LU_REF_IDX.m.get(Number(id))||null;
+}
 /* [{id,nom,classe,cats,n}] du plus joué au moins joué.
    undefined = pas encore lu ; null = rien de Wargaming pour ce compte. */
 function luTanksOf(acc,tier){
@@ -8159,9 +8170,9 @@ function luTanksOf(acc,tier){
   const ver=!!LU_GAR.ver[Number(acc)], out=[];
   g.forEach((n,id)=>{
     if(!(n>0||ver)) return;   // garage vérifié : un char jamais joué compte quand même
-    const v=VEHMAP[id], c=LU_CATDATA&&LU_CATDATA.get(id);
-    const tr=v&&Number(v.tier)?Number(v.tier):(c?10:0); if(tr!==tier) return;
-    out.push({id,nom:(c&&c.nom)||(v&&v.name)||("#"+id),classe:(v&&v.cls)||(c&&c.classe)||"",cats:c?c.cats:[],n});
+    const v=VEHMAP[id], c=LU_CATDATA&&LU_CATDATA.get(id), rf=luRefTank(id);
+    const tr=v&&Number(v.tier)?Number(v.tier):(LU_GAR.tier[id]||(rf&&Number(rf.tier))||(c?10:0)); if(tr!==tier) return;
+    out.push({id,nom:(c&&c.nom)||(v&&v.name)||(rf&&rf.name)||("#"+id),classe:(v&&v.cls)||(c&&c.classe)||(rf&&rf.type)||"",cats:c?c.cats:[],n});
   });
   return out.sort((a,b)=>b.n-a.n||a.nom.localeCompare(b.nom,"fr"));
 }
@@ -8174,7 +8185,7 @@ function luTanksFor(acc,cat,tier){
 function luToday(){ return (new Date().getDay()+6)%7; }
 
 /* ── Chargement et navigation ─────────────────────────────────── */
-const LU_FORMAT_ORDER={bastion10:0,bastion8:1,manoeuvres:2};
+const LU_FORMAT_ORDER={bastion11:0,bastion10:1,bastion8:2,manoeuvres:3};
 let LU_WIRED=false;
 async function loadLineups(){
   const list=document.getElementById("luList");
@@ -8577,7 +8588,7 @@ function luTankChip(x,tier){
 }
 function luRenderChars(){
   const body=document.getElementById("lxBody"), w=LU_W; if(!body||!w) return;
-  const roster=w.roster, tier=luTier(w), rank=tier===8?"VIII":"X";
+  const roster=w.roster, tier=luTier(w), rank=romainDe(tier);
   if(!roster.length){
     body.innerHTML=`<div class="lx-empty">${luIco("i-users","lx-empty-ic")}<h4>Aucun joueur dans cette line-up</h4><p>Ajoute des joueurs dans l'onglet « Joueurs et dispos » : leurs chars apparaîtront ici.</p></div>`;
     return;
@@ -8592,7 +8603,7 @@ function luRenderChars(){
     const lead=`<div class="lx-chars-top"><p class="lx-hint">${cv==="cat"
       ?`Pour chaque catégorie, les joueurs qui ont au moins un char de rang ${rank} de ce type.`
       :`Les chars de rang ${rank} de chaque joueur. Clique sur un nom pour voir ses chars.`}</p>${toggle}</div>
-      ${tier===8?`<p class="lx-src">Rang VIII : les chars sont rangés par classe. Le classement par catégorie (hulldown, brawl…) ne couvre que le rang X.</p>`:""}`;
+      ${tier!==10?`<p class="lx-src">Rang ${rank} : les chars sont rangés par classe. Le classement par catégorie (hulldown, brawl…) ne couvre que le rang X.</p>`:""}`;
     let main="";
     if(cv==="cat"){
       main=`<div class="lx-cv">${LU_CATS.filter(c=>c[0]!=="libre").map(([k,l,,d])=>{
@@ -9074,7 +9085,7 @@ function renderLoadouts(){
       <div class="lo-card2-h">
         ${t.icon?`<div class="lo-t-ic"><img src="${esc(t.icon)}" onerror="this.style.display='none'"></div>`:""}
         <div class="lo-t-info"><div class="lo-t-name">${prSet.has(Number(lo.tank_id))?'<span class="lo-star" title="Char prioritaire du clan">★</span>':''}${esc(t.name)}</div>
-          <div class="lo-t-meta">${t.type?`<span class="lo-clsic" style="--cimg:url(classes/${esc(t.type)}.png)"></span>`:""}<span class="lo-cls">${esc(clsLbl)}</span><span class="lo-tier">X</span></div>
+          <div class="lo-t-meta">${t.type?`<span class="lo-clsic" style="--cimg:url(classes/${esc(t.type)}.png)"></span>`:""}<span class="lo-cls">${esc(clsLbl)}</span><span class="lo-tier">${romainDe(Number(t.tier)||10)}</span></div>
           <div class="lo-pills">${pills.join("")}</div>
         </div>${btns}<span class="lo-chev" aria-hidden="true">⌄</span></div>
       <div class="lo-card2-body">
@@ -9170,7 +9181,14 @@ const LO_NATION_FR={ussr:"URSS",germany:"Allemagne",usa:"USA",france:"France",uk
 
 /* ---- Étape 1 : choix du char (chars déjà réglés grisés) ---- */
 function wizStep1(){
-  const src=(LO_REF.tanks||[]), W=LO_WIZ;
+  const tous=(LO_REF.tanks||[]), W=LO_WIZ;
+  /* Rang X par défaut ; le XI dès que la référence en contient. Un char
+     déjà choisi ouvre l'assistant sur son rang. */
+  const rangs=[...new Set(tous.map(x=>Number(x.tier)||10))].sort((a,b)=>a-b);
+  const choisi=tous.find(x=>Number(x.tank_id)===Number(W.tank_id));
+  if(!W.ttier) W.ttier=choisi?(Number(choisi.tier)||10):10;
+  if(!rangs.includes(W.ttier)) W.ttier=rangs[0]||10;
+  const src=tous.filter(x=>(Number(x.tier)||10)===W.ttier);
   const used=new Set(LOADOUTS.map(l=>Number(l.tank_id)));
   const nats=[...new Set(src.map(x=>x.nation).filter(Boolean))].sort();
   const natOpts='<option value="">Toutes nations</option>'+nats.map(n=>`<option value="${n}"${W.tnat===n?' selected':''}>${LO_NATION_FR[n]||n}</option>`).join("");
@@ -9181,8 +9199,11 @@ function wizStep1(){
       <img src="${esc(x.icon||'')}" onerror="this.style.display='none'" loading="lazy">
       <span>${esc(x.name)}</span>${dis?'<em class="lo-used">déjà réglé</em>':(sel?'<em class="lo-ok">✓ choisi</em>':'')}</button>`;
   }).join("");
-  return `<div class="wz-hdr"><h3>Choix du char</h3><p>Sélectionne le char tier X à configurer. Les chars déjà réglés sont grisés.</p></div>
-    <div class="wz-flt"><span class="wz-tier">Tier X</span>
+  const rangSel=rangs.length>1
+    ? `<select class="lo-fclass" id="wizTTier" aria-label="Rang">${rangs.map(r=>`<option value="${r}"${r===W.ttier?' selected':''}>Tier ${romainDe(r)}</option>`).join("")}</select>`
+    : `<span class="wz-tier">Tier ${romainDe(W.ttier)}</span>`;
+  return `<div class="wz-hdr"><h3>Choix du char</h3><p>Sélectionne le char à configurer. Les chars déjà réglés sont grisés.</p></div>
+    <div class="wz-flt">${rangSel}
       <select class="lo-fclass" id="wizTCls">${clsOpts}</select>
       <select class="lo-fnation" id="wizTNat">${natOpts}</select>
       <input class="lo-search" id="wizTQ" placeholder="Rechercher un char…" value="${esc(W.tq||'')}"></div>
@@ -9194,6 +9215,9 @@ function wizWire1(){
   const apply=()=>{ W.tq=q.value; W.tcls=fc.value; W.tnat=fn.value; const qq=(W.tq||'').toLowerCase();
     ed.querySelectorAll(".lo-popt-char").forEach(b=>{ const ok=(!qq||b.dataset.name.indexOf(qq)>=0)&&(!W.tcls||b.dataset.cls===W.tcls)&&(!W.tnat||b.dataset.nat===W.tnat); b.style.display=ok?'':'none'; }); };
   q.oninput=apply; fc.onchange=apply; fn.onchange=apply; apply();
+  // changer de rang change la grille entière : on la refait
+  const ft=document.getElementById("wizTTier");
+  if(ft) ft.onchange=()=>{ W.ttier=Number(ft.value)||10; W.tq=q.value; renderWizard(); };
   ed.querySelectorAll(".lo-popt-char:not(.dis)").forEach(b=> b.onclick=()=>{
     const nid=Number(b.dataset.tank);
     if(nid!==Number(W.tank_id)){   // char différent -> on réinitialise les étapes suivantes (spécifiques au char)
@@ -9673,7 +9697,10 @@ function renderTierlists(){
   el.querySelectorAll("[data-tledit]").forEach(b=>b.onclick=e=>{e.stopPropagation();openTierlistEditor(TIERLISTS.find(x=>String(x.id)===b.dataset.tledit));});
   el.querySelectorAll("[data-tldel]").forEach(b=>b.onclick=e=>{e.stopPropagation();deleteTierlist(b.dataset.tldel);});
 }
-function tlAllTankIds(){ return ((LO_REF&&LO_REF.tanks)||[]).map(t=>Number(t.tank_id)); }
+/* Les tier lists restent au rang X : la référence porte aussi le XI depuis
+   octobre 2026, qu'on ne mélange pas aux classements existants. */
+const tlTanks=()=>((LO_REF&&LO_REF.tanks)||[]).filter(t=>!t.tier||Number(t.tier)===10);
+function tlAllTankIds(){ return tlTanks().map(t=>Number(t.tank_id)); }
 function tlPool(){ const placed=new Set(); TL_EDIT.rows.forEach(r=>r.tanks.forEach(id=>placed.add(Number(id)))); return tlAllTankIds().filter(id=>!placed.has(id)); }
 function openTierlistEditor(tl){
   if(!TL_CANEDIT){ alert("Réservé aux officiers de combat et plus."); return; }
@@ -9690,7 +9717,7 @@ function renderTierEditor(){
     <div class="tl-row-lbl" style="background:${esc(r.color)}"><input class="tl-lbl-in" value="${esc(r.label)}" maxlength="24" data-lbl="${i}" title="Nom du tier">
       <div class="tl-row-ctl"><input type="color" class="tl-color" value="${esc(r.color)}" data-color="${i}" title="Couleur"><button type="button" class="tl-rowbtn" data-rowup="${i}" title="Monter">▲</button><button type="button" class="tl-rowbtn" data-rowdown="${i}" title="Descendre">▼</button><button type="button" class="tl-rowbtn tl-rowdel" data-rowdel="${i}" title="Supprimer la ligne">✕</button></div></div>
     <div class="tl-drop" data-drop="${i}">${r.tanks.map(id=>tlTankTile(id,true)).join("")}</div></div>`).join("");
-  const src=(LO_REF.tanks||[]);
+  const src=tlTanks();
   const nats=[...new Set(src.map(x=>x.nation).filter(Boolean))].sort();
   const natOpts='<option value="">Toutes nations</option>'+nats.map(n=>`<option value="${n}"${TL_TNAT===n?' selected':''}>${LO_NATION_FR[n]||n}</option>`).join("");
   const clsOpts='<option value="">Toutes classes</option>'+LO_CLS_OPT.filter(c=>src.some(x=>x.type===c[0])).map(c=>`<option value="${c[0]}"${TL_TCLS===c[0]?' selected':''}>${c[1]}</option>`).join("");
