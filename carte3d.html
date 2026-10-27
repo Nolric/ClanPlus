@@ -14,7 +14,7 @@
 <meta property="og:description" content="The game's real map elevation in 3D: rotate, zoom, read the ground.">
 <meta property="og:image" content="https://clanplus.eu/og.jpg">
 <meta name="twitter:card" content="summary_large_image">
-<script src="i18n/carte3d.fr.js?v=e1fb635b"></script>
+<script src="i18n/carte3d.fr.js?v=a2f3070b"></script>
 <script src="i18n.js?v=ed3f8a4f"></script>
 <!-- Le client Supabase, UNIQUEMENT pour le temps réel : les appels de
      données passent par `fetch` et n'en ont pas besoin. Il est chargé en
@@ -264,6 +264,41 @@
   #secElems .inspCorps{padding:2px 7px 7px;flex:1 1 auto;min-height:60px}
   #secElems .stRow,#secElems .stPos{flex:0 0 auto}
   #secAff,#secProps{flex:0 1 auto}
+  /* ── les replays : une carte par bataille, rangées par jour ──────────
+     La minimap d'abord : c'est elle qu'un joueur reconnaît, avant le nom.
+     Le résultat est écrit en toutes lettres ; sa couleur ne fait que le
+     souligner. La bataille regardée est en or. */
+  #secReplays{display:none;flex:0 1 auto;max-height:46%}
+  body.replay.rpAutres #secReplays{display:flex}
+  #rpListe{display:flex;flex-direction:column;gap:5px;padding:0 8px 10px;flex:1 1 auto;min-height:0}
+  .rpJour{padding:9px 4px 3px;font:700 10px/1 var(--d-cond);letter-spacing:.14em;text-transform:uppercase;color:var(--muted2)}
+  .rpJour:first-child{padding-top:2px}
+  .rpCarte{display:grid;grid-template-columns:58px minmax(0,1fr);gap:10px;align-items:center;width:100%;
+    padding:5px 9px 5px 5px;margin:0;text-align:left;font:inherit;color:var(--ink);cursor:pointer;
+    background:rgba(255,255,255,.028);border:1px solid rgba(255,255,255,.07);border-radius:7px;
+    transition:border-color .15s,background .15s,transform .15s}
+  .rpCarte:hover{border-color:var(--gold);background:rgba(255,255,255,.05);transform:translateX(-2px)}
+  .rpCarte:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
+  .rpCarte.on{border-color:var(--gold);background:var(--gold-soft);cursor:default;transform:none}
+  .rpVign{width:58px;height:58px;border-radius:5px;overflow:hidden;background:var(--chrome2);
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);display:grid;place-items:center;
+    font:700 17px/1 var(--d-cond);letter-spacing:.04em;text-transform:uppercase;color:var(--muted2)}
+  .rpVign img{width:100%;height:100%;object-fit:cover;display:block}
+  .rpCarte:not(.on) .rpVign img{filter:saturate(.75) brightness(.88);transition:filter .15s}
+  .rpCarte:hover .rpVign img{filter:none}
+  .rpL1{display:flex;align-items:center;gap:7px;min-width:0}
+  .rpNomC{flex:1;min-width:0;font:700 14px/1.15 var(--d-cond);letter-spacing:.01em;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rpRes{flex:0 0 auto;padding:3px 6px 2px;border:1px solid;border-radius:4px;
+    font:700 9.5px/1 var(--d-cond);letter-spacing:.1em;text-transform:uppercase}
+  .rpRes.v{color:var(--ami);border-color:rgba(108,194,135,.42);background:rgba(108,194,135,.08)}
+  .rpRes.d{color:var(--enn);border-color:rgba(229,119,107,.42);background:rgba(229,119,107,.08)}
+  .rpRes.n{color:var(--muted);border-color:var(--line2)}
+  .rpL2{display:flex;align-items:center;gap:6px;margin-top:6px;min-width:0;
+    font:500 11px/1 var(--d-mono);color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .rpL2 .foe{min-width:0;overflow:hidden;text-overflow:ellipsis;color:var(--ink);opacity:.82}
+  .rpIci{margin-left:auto;flex:0 0 auto;font:700 9.5px/1 var(--d-cond);letter-spacing:.12em;
+    text-transform:uppercase;color:var(--gold)}
   .inspSec.plie{flex:0 0 auto;min-height:0}
   .inspSec.plie .inspCorps{display:none}
 
@@ -318,10 +353,6 @@
   #rpSeek{width:min(38vw,300px)}
   #rpBar .btn{padding:5px 9px;font-size:11.5px}
   #rpNom{max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  /* les autres replays : prend la place du nom dès que la liste est là */
-  #rpAutres{display:none;max-width:230px;font-size:11.5px;padding:4px 20px 4px 7px}
-  body.rpAutres #rpAutres{display:inline-block}
-  body.rpAutres #rpNom{display:none}
   #rpOeil,#rpProp{font-size:11.5px;padding:4px 20px 4px 7px;max-width:140px}
   #presBar{display:none}
   body.presente #presBar{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);
@@ -700,6 +731,14 @@
 
   <!-- l'inspecteur -->
   <div id="insp">
+    <!-- les autres replays : en tête, seulement pendant un replay -->
+    <div class="inspSec" id="secReplays">
+      <div class="inspTete">
+        <span class="lg" id="lgReplays">Replays</span>
+        <span class="acCompte" id="rpCompte"></span>
+      </div>
+      <div class="inspCorps" id="rpListe"></div>
+    </div>
     <div class="inspSec" id="secEtapes">
       <div class="inspTete">
         <span class="lg" id="lgEtapes">Steps</span>
@@ -895,7 +934,6 @@
     <select id="rpOeil"></select>
     <select id="rpProp"></select>
     <span class="obEt" id="rpNom"></span>
-    <select id="rpAutres" aria-label="Other replays" title="Other replays"></select>
     <button class="btn" id="rpX">Leave</button>
   </div>
   <div id="grLbl"></div>
@@ -6981,34 +7019,60 @@ function pretty(k){ const L=LABELS[k];
     })();
     /* ── PASSER D'UN REPLAY À L'AUTRE ─────────────────────────────
        Les dernières batailles qui ont un replay (fonction replay, action
-       « liste »), sur les cartes que la 3D connaît. En choisir une
-       recharge la page sur elle : un replay reste une adresse, qu'on
-       partage, et le bouton Retour du navigateur ramène au précédent. */
+       « liste »), sur les cartes que la 3D connaît, dans la section
+       « Replays » de l'inspecteur : une carte par bataille, rangées par
+       jour. En choisir une recharge la page sur elle : un replay reste une
+       adresse, qu'on partage, et le bouton Retour ramène au précédent. */
     async function rpAutres(cur){
-      const s=$("rpAutres"); if(!s) return;
+      const box=$("rpListe"); if(!box) return;
       const r=await fnAppel("replay",{action:"liste"}).catch(()=>null);
       const L=((r&&r.ok&&r.j&&r.j.battles)||[])
         .map(b=>Object.assign(b,{k:String(b.map_name||"").toLowerCase().replace(/[^a-z]/g,"")}))
         .filter(b=>MAPS3D[b.k]);
       if(!L.some(b=>String(b.battle_id)!==cur)) return;   // rien d'autre à proposer
-      const res={"1":t("Win"),"0":t("Loss"),"-1":t("Draw")}, loc=window.CP_LANG==="fr"?"fr-FR":"en-GB";
-      const quand=(ts)=>{ const d=new Date(ts); return isNaN(d)?"":
-        d.toLocaleDateString(loc,{day:"2-digit",month:"2-digit"})+" "+d.toLocaleTimeString(loc,{hour:"2-digit",minute:"2-digit"}); };
-      s.innerHTML="";
-      const opt=(v,txt,on)=>{ const o=document.createElement("option"); o.value=v; o.textContent=txt; o.selected=!!on; s.appendChild(o); };
-      if(!L.some(b=>String(b.battle_id)===cur)) opt("",(RP&&RP.nom)||t("This battle"),true);
-      L.forEach((b,i)=>opt(String(i),[pretty(b.k),quand(b.ts),res[String(b.result)]||"",b.foe_tag?"["+b.foe_tag+"]":""]
-        .filter(Boolean).join(" · "),String(b.battle_id)===cur));
-      s.onchange=()=>{
-        const b=L[Number(s.value)]; if(!b||String(b.battle_id)===cur) return;
-        if(histoSale&&!confirm(t("Your unsaved changes will be lost. Open this replay?"))){
-          s.value=String(L.findIndex(x=>String(x.battle_id)===cur)); return; }
+      const RES={"1":["v",t("Win")],"0":["d",t("Loss")],"-1":["n",t("Draw")]};
+      const loc=window.CP_LANG==="fr"?"fr-FR":"en-GB";
+      const minuit=(d)=>{ const x=new Date(d); x.setHours(0,0,0,0); return x.getTime(); };
+      const jourDe=(d)=>{ const n=Math.round((minuit(Date.now())-minuit(d))/864e5);
+        return n===0?t("Today"):n===1?t("Yesterday")
+          :d.toLocaleDateString(loc,{weekday:"long",day:"numeric",month:"long"}); };
+      const el=(tag,cls,txt)=>{ const e=document.createElement(tag); if(cls) e.className=cls;
+        if(txt!=null) e.textContent=txt; return e; };
+      const ouvre=(b)=>{
+        if(histoSale&&!confirm(t("Your unsaved changes will be lost. Open this replay?"))) return;
         const q=new URLSearchParams({battle:String(b.battle_id),carte:b.k});
         if(Number(b.clan_id)) q.set("clan",String(b.clan_id));
         if(b.camp>0) q.set("camp",String(b.camp));
         location.assign(location.pathname+"?"+q.toString());
       };
+      box.innerHTML="";
+      let jour=null;
+      for(const b of L){
+        const d=new Date(b.ts), ok=!isNaN(d), j=ok?jourDe(d):"";
+        if(j!==jour){ jour=j; if(j) box.appendChild(el("div","rpJour",j)); }
+        const ici=String(b.battle_id)===cur, res=RES[String(b.result)];
+        const c=el("button","rpCarte"+(ici?" on":"")); c.type="button";
+        if(ici) c.setAttribute("aria-current","true");
+        const v=el("span","rpVign"), img=el("img"); img.alt=""; img.loading="lazy";
+        // sans minimap : les initiales de la carte, plutôt qu'une case vide
+        img.src="maps/top/"+b.k+".jpg"; img.onerror=()=>{ img.remove(); v.textContent=pretty(b.k).slice(0,2); };
+        v.appendChild(img);
+        const tx=el("span","rpTxt"), l1=el("span","rpL1"), l2=el("span","rpL2");
+        l1.appendChild(el("span","rpNomC",pretty(b.k)));
+        if(res) l1.appendChild(el("span","rpRes "+res[0],res[1]));
+        if(ok) l2.appendChild(el("span","",d.toLocaleTimeString(loc,{hour:"2-digit",minute:"2-digit"})));
+        if(b.foe_tag) l2.appendChild(el("span","foe",t("vs")+" ["+b.foe_tag+"]"));
+        if(ici) l2.appendChild(el("span","rpIci",t("Watching")));
+        tx.append(l1,l2); c.append(v,tx);
+        if(!ici) c.addEventListener("click",()=>ouvre(b));
+        box.appendChild(c);
+      }
+      $("rpCompte").textContent=String(L.length);
       document.body.classList.add("rpAutres");
+      // la bataille regardée reste en vue, sans faire défiler pour rien
+      const on=box.querySelector(".rpCarte.on");
+      if(on){ const y=on.offsetTop-box.offsetTop;
+        if(y+on.offsetHeight>box.clientHeight) box.scrollTop=y-Math.round(box.clientHeight/3); }
     }
     /* Revenir aux cartes ne referme pas la stratégie ouverte par
        mégarde : on la ferme explicitement, sinon on la retrouverait
