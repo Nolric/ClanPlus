@@ -35,7 +35,7 @@ window.CP_FR = Object.assign(window.CP_FR || {}, {
   /* vitrine « La compo » (03/10/2026) */
   "The mod records every clan battle. The site prepares the next one: line-ups, strategies, replays, and a rating that finally measures teamplay.": "Le mod enregistre chaque bataille de clan. Le site prépare la suivante : compositions, stratégies, replays, et une note qui mesure enfin le jeu d'équipe.",
   "Install the mod": "Installer le mod",
-  "Free · no ads · official Wargaming sign-in · WoT EU 2.4.1.0": "Gratuit · sans publicité · connexion officielle Wargaming · WoT EU 2.4.1.0",
+  "Free · no ads · official Wargaming sign-in · WoT EU 2.4.1.1": "Gratuit · sans publicité · connexion officielle Wargaming · WoT EU 2.4.1.1",
   "example": "exemple",
   "Hull-down heavy": "Lourd hulldown",
   "Brawling heavy": "Lourd de brawl",
