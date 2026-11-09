@@ -14,14 +14,17 @@
 <meta property="og:description" content="Clans recruiting on Clan Plus, then every clan active in Strongholds that still has free slots. Official Wargaming data, filtered by tier and size.">
 <meta property="og:image" content="https://clanplus.eu/og.jpg">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20240%20240%22%3E%3Crect%20width%3D%22240%22%20height%3D%22240%22%20rx%3D%2254%22%20fill%3D%22%23141310%22%2F%3E%3Cg%20transform%3D%22translate%2830%2030%29%20scale%280.75%29%22%20fill%3D%22%23d8b566%22%3E%3Ccircle%20cx%3D%22120%22%20cy%3D%22120%22%20r%3D%22100%22%20fill%3D%22none%22%20stroke%3D%22%23d8b566%22%20stroke-width%3D%227%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
-<script src="i18n/trouver-clan.fr.js?v=3b399837"></script>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20240%20240%22%3E%3Crect%20width%3D%22240%22%20height%3D%22240%22%20rx%3D%2254%22%20fill%3D%22%23141310%22%2F%3E%3Cg%20transform%3D%22translate%2830%2030%29%20scale%280.75%29%22%20fill%3D%22%23d8b566%22%3E%3Ccircle%20cx%3D%22120%22%20cy%3D%22120%22%20r%3D%22100%22%20fill%3D%22none%22%20stroke%3D%22%23d8b566%22%20stroke-width%3D%227%22%2F%3E%3Crect%20x%3D%2281%22%20y%3D%228%22%20width%3D%2218%22%20height%3D%2218%22%2F%3E%3Crect%20x%3D%22111%22%20y%3D%224%22%20width%3D%2218%22%20height%3D%2218%22%2F%3E%3Crect%20x%3D%22141%22%20y%3D%228%22%20width%3D%2218%22%20height%3D%2218%22%2F%3E%3Cpath%20d%3D%22M161%2C155%20A54%2C54%200%201%201%20161%2C85%22%20fill%3D%22none%22%20stroke%3D%22%23d8b566%22%20stroke-width%3D%2220%22%20stroke-linecap%3D%22round%22%2F%3E%3Crect%20x%3D%22112%22%20y%3D%2294%22%20width%3D%2216%22%20height%3D%2252%22%20rx%3D%225%22%2F%3E%3Crect%20x%3D%2294%22%20y%3D%22112%22%20width%3D%2252%22%20height%3D%2216%22%20rx%3D%225%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
+<script src="i18n/cadre.fr.js?v=4e25be25"></script>
+<script src="i18n/trouver-clan.fr.js?v=9a962880"></script>
 <script src="i18n/recruteur.en.js?v=9d5b0660"></script>
 <script src="i18n.js?v=ed3f8a4f"></script>
 <!-- La charte de l'appli : une seule définition des jetons et des composants
      (bandeau .hero2, verdict .vd, .btn, .sec-h). Choix de Robert : cette page
      publique a l'allure de l'appli, pas celle de l'accueil. -->
+<link rel="stylesheet" href="fonts/fonts.css?v=d81c6085">
 <link rel="stylesheet" href="app.css?v=6cd85dca">
+<link rel="stylesheet" href="cadre.css?v=f100187f">
 <style>
   /* TROUVER UN CLAN — contrat de conception (refonte du 20/10/2026)
      THESIS : un joueur sans clan doit trouver, en une page, des clans
@@ -44,18 +47,6 @@
   .tc-sk{display:inline-block;max-width:100%;height:12px;vertical-align:middle;border-radius:4px;background:var(--raised);animation:tcPulse 1.3s ease-in-out infinite}
   @keyframes tcPulse{50%{opacity:.45}}
 
-  /* La barre du haut */
-  .tc-top{position:sticky;top:0;z-index:30;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:11px 22px;
-    background:var(--surface-1);border-bottom:1px solid var(--line)}
-  .tc-brand{display:flex;align-items:center;gap:10px;text-decoration:none}
-  .tc-brand .logo{width:34px;height:34px;flex:none;display:grid;place-items:center;padding:5px;border-radius:10px;background:#141310;
-    box-shadow:inset 0 0 0 1px rgba(229,185,92,.3)}
-  .tc-brand .logo svg{width:100%;height:100%;display:block}
-  .tc-brand b{font:700 16px/1 var(--fx);letter-spacing:.4px;text-transform:uppercase;color:#eaf1f8}
-  .nav-r{display:flex;align-items:center;gap:6px}
-  .tc-link{padding:8px 11px;border-radius:8px;color:var(--ink-2);font-size:13px;font-weight:600;text-decoration:none;transition:color .15s,background-color .15s}
-  .tc-link:hover{color:var(--ink);background:var(--raised)}
-  .tc-rec{color:var(--gold-2);box-shadow:inset 0 0 0 1px var(--gold-line)}
   .tc-rec:hover{color:var(--gold-2);background:var(--gold-soft)}
   .tc-rec-go{margin-top:16px}
   #tcRecruteur #clanRecruit>.sec-h{margin-top:0}
@@ -198,10 +189,6 @@
   .tc-desc.cut{max-height:220px;overflow:hidden;-webkit-mask-image:linear-gradient(180deg,#000 70%,transparent);mask-image:linear-gradient(180deg,#000 70%,transparent)}
   .tc-apply{margin:14px 2px 0;font-size:12.5px;line-height:1.55;color:var(--muted);max-width:760px}
 
-  .tc-foot{max-width:1180px;margin:0 auto;padding:20px 22px 34px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
-    border-top:1px solid var(--line);color:var(--muted);font-size:12.5px}
-  .tc-foot a{color:var(--ink-2);text-decoration:none}
-  .tc-foot a:hover{color:var(--ink)}
 
   @media (max-width:900px){
     .tc-offer{grid-template-columns:minmax(0,1fr)}
@@ -212,11 +199,6 @@
     .tc-toggle{margin-left:0}
   }
   @media (max-width:640px){
-    .tc-top{padding:10px 14px}
-    .tc-brand b{display:none}
-    .nav-r{gap:2px}
-    .nav-r>.tc-link:first-child{display:none}
-    .tc-link{padding:8px 8px;white-space:nowrap}
     .tc-wrap{padding:16px 14px 32px}
     .tc-vd .vd-n i{margin-left:0}
     .tc-search{flex-wrap:wrap}
@@ -231,7 +213,6 @@
     .tc-hero .h2-meta{flex-direction:column;align-items:flex-start;gap:8px}
     .tc-hero-act{flex-direction:column}
     .tc-mem{grid-template-columns:minmax(0,1fr);padding:2px 12px 6px}
-    .tc-foot{padding:18px 14px 28px}
   }
   @media (prefers-reduced-motion:reduce){
     .tc-sk{animation:none}
@@ -241,17 +222,17 @@
 </style>
 </head>
 <body class="tc dashx">
-  <header class="tc-top">
-    <a class="tc-brand" href="index.html" aria-label="Clan Plus">
-      <span class="logo"><svg viewBox="0 0 240 240" aria-hidden="true"><circle cx="120" cy="120" r="100" fill="none" stroke="#e5b95c" stroke-width="7"/><circle cx="120" cy="120" r="88" fill="none" stroke="#e5b95c" stroke-width="2.5" opacity=".5"/><rect x="81" y="8" width="18" height="18" fill="#e5b95c"/><rect x="111" y="4" width="18" height="18" fill="#e5b95c"/><rect x="141" y="8" width="18" height="18" fill="#e5b95c"/><circle cx="20" cy="120" r="4.5" fill="#e5b95c"/><circle cx="220" cy="120" r="4.5" fill="#e5b95c"/><path d="M161,155 A54,54 0 1 1 161,85" fill="none" stroke="#e5b95c" stroke-width="20" stroke-linecap="round"/><rect x="112" y="94" width="16" height="52" rx="5" fill="#e5b95c"/><rect x="94" y="112" width="52" height="16" rx="5" fill="#e5b95c"/></svg></span>
-      <b>Clan Plus</b>
-    </a>
-    <nav class="nav-r" aria-label="Clan Plus">
-      <a class="tc-link" href="index.html">Clan Plus</a>
-      <a class="tc-link tc-rec" href="#recruteur">Recruiter space</a>
-      <a class="tc-link" id="authLink" href="index.html">Sign in</a>
+  <header class="cpc-top cpc-has-act"><div class="cpc-bar">
+    <a class="cpc-brand" href="/" aria-label="Clan Plus"><span class="mk"><svg viewBox="0 0 240 240" aria-hidden="true"><circle cx="120" cy="120" r="100" fill="none" stroke="#d8b566" stroke-width="7"/><circle cx="120" cy="120" r="88" fill="none" stroke="#d8b566" stroke-width="2.5" opacity=".5"/><rect x="81" y="8" width="18" height="18" fill="#d8b566"/><rect x="111" y="4" width="18" height="18" fill="#d8b566"/><rect x="141" y="8" width="18" height="18" fill="#d8b566"/><path d="M161,155 A54,54 0 1 1 161,85" fill="none" stroke="#d8b566" stroke-width="20" stroke-linecap="round"/><rect x="112" y="94" width="16" height="52" rx="5" fill="#d8b566"/><rect x="94" y="112" width="52" height="16" rx="5" fill="#d8b566"/></svg></span><b>Clan <em>Plus</em></b></a>
+    <nav class="cpc-links" aria-label="Site">
+      <a href="mod.html">The mod</a>
+      <a href="trouver-clan.html" aria-current="page">Find a clan</a>
+      <a href="soutenir.html">Support</a>
     </nav>
-  </header>
+    <a class="cpc-act" href="#recruteur">Recruiter space</a>
+    <a class="cpc-signin" id="authLink" href="/">Sign in</a>
+    <span class="cp-lang-slot"></span>
+  </div></header>
 
   <main class="tc-wrap">
     <!-- LA LISTE -->
@@ -324,10 +305,15 @@
     </div>
   </main>
 
-  <div class="tc-foot">
-    <span>Clan Plus · official Wargaming data (EU) · not affiliated with Wargaming</span>
-    <a href="index.html">Back to Clan Plus →</a>
-  </div>
+  <footer class="cpc-foot"><div class="cpc-foot-in">
+  <nav class="cpc-foot-nav" aria-label="Site links">
+    <a href="mod.html">The mod</a><a href="aide-editeur.html">Editor manual</a>
+    <a href="aide-sr.html">The SR explained</a><a href="soutenir.html">Support</a>
+    <a href="trouver-clan.html">Find a clan</a>
+    <a href="/#legal-mentions">Legal notice</a><a href="/#legal-privacy">Privacy</a><a href="/#legal-cookies">Cookies</a>
+  </nav>
+  <p>Clan Plus is an independent community project, free and ad-free, built by a World of Tanks EU player. <strong>Not affiliated with Wargaming.</strong> World of Tanks and Wargaming are trademarks of Wargaming.net.</p>
+</div></footer>
 
 <script src="recruteur.js?v=fe25164d"></script>
 <script>

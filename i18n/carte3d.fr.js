@@ -323,4 +323,6 @@ window.CP_FR = Object.assign(window.CP_FR || {}, {
   "right-click for the menu": "clic droit pour le menu",
   "Trees": "Arbres",
   "← Back to the site": "← Retour au site",
+  /* la mention légale sous la grille des cartes */
+  "Clan Plus is an independent community project, free and ad-free, built by a World of Tanks EU player. <strong>Not affiliated with Wargaming.</strong> World of Tanks is a trademark of Wargaming.net. · <a href=\"/#legal-mentions\">Legal notice</a> · <a href=\"/#legal-privacy\">Privacy</a>": "Clan Plus est un projet communautaire indépendant, gratuit et sans publicité, développé par un joueur de World of Tanks EU. <strong>Non affilié à Wargaming.</strong> World of Tanks est une marque de Wargaming.net. · <a href=\"/#legal-mentions\">Mentions légales</a> · <a href=\"/#legal-privacy\">Confidentialité</a>",
 });

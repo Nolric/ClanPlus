@@ -2000,6 +2000,7 @@ Object.assign(window.CP_EN, {
   "Grand Parc": "Widepark",
   "Plage sereine": "Serene Coast",
   "Refuge": "Safe Haven",
+  "Région d’Ensk": "Ensk Region",
   "Rivière de perles": "Pearl River",
   "Ville fantôme": "Ghost Town",
   "Cette stratégie n'existe plus : elle a sans doute été supprimée entre-temps. Ton dessin est toujours à l'écran.": "This strategy no longer exists: it was probably deleted in the meantime. Your drawing is still on screen.",

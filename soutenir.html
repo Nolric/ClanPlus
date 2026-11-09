@@ -14,10 +14,12 @@
 <meta property="og:description" content="Free and ad-free. Here's what the project costs, in full.">
 <meta property="og:image" content="https://clanplus.eu/og.jpg">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20240%20240%22%3E%3Crect%20width%3D%22240%22%20height%3D%22240%22%20rx%3D%2254%22%20fill%3D%22%23141310%22%2F%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22%23d8b566%22%3E%3Ccircle%20cx%3D%22120%22%20cy%3D%22120%22%20r%3D%22100%22%20stroke-width%3D%227%22%2F%3E%3Cpath%20d%3D%22M161%2C155%20A54%2C54%200%201%201%20161%2C85%22%20stroke-width%3D%2220%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fg%3E%3Cg%20fill%3D%22%23d8b566%22%3E%3Crect%20x%3D%22112%22%20y%3D%2294%22%20width%3D%2216%22%20height%3D%2252%22%20rx%3D%225%22%2F%3E%3Crect%20x%3D%2294%22%20y%3D%22112%22%20width%3D%2252%22%20height%3D%2216%22%20rx%3D%225%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
-<script src="i18n/soutenir.fr.js?v=64cc1560"></script>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20240%20240%22%3E%3Crect%20width%3D%22240%22%20height%3D%22240%22%20rx%3D%2254%22%20fill%3D%22%23141310%22%2F%3E%3Cg%20transform%3D%22translate%2830%2030%29%20scale%280.75%29%22%20fill%3D%22%23d8b566%22%3E%3Ccircle%20cx%3D%22120%22%20cy%3D%22120%22%20r%3D%22100%22%20fill%3D%22none%22%20stroke%3D%22%23d8b566%22%20stroke-width%3D%227%22%2F%3E%3Crect%20x%3D%2281%22%20y%3D%228%22%20width%3D%2218%22%20height%3D%2218%22%2F%3E%3Crect%20x%3D%22111%22%20y%3D%224%22%20width%3D%2218%22%20height%3D%2218%22%2F%3E%3Crect%20x%3D%22141%22%20y%3D%228%22%20width%3D%2218%22%20height%3D%2218%22%2F%3E%3Cpath%20d%3D%22M161%2C155%20A54%2C54%200%201%201%20161%2C85%22%20fill%3D%22none%22%20stroke%3D%22%23d8b566%22%20stroke-width%3D%2220%22%20stroke-linecap%3D%22round%22%2F%3E%3Crect%20x%3D%22112%22%20y%3D%2294%22%20width%3D%2216%22%20height%3D%2252%22%20rx%3D%225%22%2F%3E%3Crect%20x%3D%2294%22%20y%3D%22112%22%20width%3D%2252%22%20height%3D%2216%22%20rx%3D%225%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
+<script src="i18n/cadre.fr.js?v=4e25be25"></script>
+<script src="i18n/soutenir.fr.js?v=89a0c1e5"></script>
 <script src="i18n.js?v=ed3f8a4f"></script>
 <link rel="stylesheet" href="fonts/fonts.css?v=d81c6085">
+<link rel="stylesheet" href="cadre.css?v=f100187f">
 <style>
 /* ══════════════════════════════════════════════════════════════════
    Même monde que l'accueil et la page du mod : la plaque d'ordonnance.
@@ -56,23 +58,6 @@ strong{color:#fff;font-weight:600}
 .skip:focus{left:0;top:0}
 .sheet{max-width:900px;margin:0 auto;padding:0 24px}
 
-/* ── en-tête ── */
-.top{position:sticky;top:0;z-index:40;background:rgba(10,10,9,.84);
-  backdrop-filter:blur(14px) saturate(1.2);border-bottom:1px solid var(--rule)}
-.top-in{max-width:900px;margin:0 auto;padding:0 24px;height:60px;display:flex;align-items:center;gap:16px}
-.logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink);height:44px}
-.logo .mk{width:34px;height:34px;flex:0 0 auto;background:#141310;border-radius:9px;display:grid;
-  place-items:center;padding:5px;box-shadow:inset 0 0 0 1px rgba(216,181,102,.3);
-  transition:transform .4s cubic-bezier(.16,1,.3,1)}
-.logo:hover .mk{transform:rotate(-8deg) scale(1.06)}
-.logo .mk svg{width:100%;height:100%}
-.logo b{font-weight:700;font-size:16.5px;letter-spacing:-.01em}
-.logo b em{font-style:normal;color:var(--gold)}
-.sp{margin-left:auto}
-.lk{font-size:14px;font-weight:500;color:var(--ink-2);text-decoration:none;height:44px;padding:0 14px;
-  display:inline-flex;align-items:center;border-radius:var(--r);transition:color .16s,background .16s}
-.lk:hover{color:var(--ink);background:rgba(255,255,255,.05)}
-@media(max-width:640px){.lk{display:none}}
 
 /* ── ouverture ── */
 .hero{padding:66px 0 46px;text-align:center}
@@ -172,12 +157,6 @@ p{margin:0 0 14px;max-width:66ch}
 .aide h3{margin:9px 0 7px;font-size:19px}
 .aide p{color:var(--ink-2);font-size:14.5px;margin:0;max-width:none}
 
-footer{border-top:1px solid var(--rule);padding:36px 0 56px;color:var(--ink-3);font-size:13.5px;margin-top:64px}
-.fnav{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:16px}
-.fnav a{color:var(--ink-2);text-decoration:none;padding:12px 13px;border-radius:var(--r);
-  display:inline-flex;align-items:center;min-height:44px;font-size:13.5px}
-.fnav a:hover{color:var(--ink);background:rgba(255,255,255,.045)}
-footer p{max-width:74ch;line-height:1.7;margin:0}
 
 /* ── motion ── */
 @keyframes marque{from{opacity:0;transform:scale(.7) rotate(-14deg)}to{opacity:1;transform:none}}
@@ -247,14 +226,16 @@ h1 .ln i{display:block;font-style:normal}
 
 <a class="skip" href="#main">Skip to content</a>
 
-<div class="top"><div class="top-in">
-  <a class="logo" href="/">
-    <span class="mk"><svg viewBox="0 0 240 240" aria-hidden="true"><circle cx="120" cy="120" r="100" fill="none" stroke="#d8b566" stroke-width="7"/><circle cx="120" cy="120" r="88" fill="none" stroke="#d8b566" stroke-width="2.5" opacity=".5"/><rect x="81" y="8" width="18" height="18" fill="#d8b566"/><rect x="111" y="4" width="18" height="18" fill="#d8b566"/><rect x="141" y="8" width="18" height="18" fill="#d8b566"/><circle cx="20" cy="120" r="4.5" fill="#d8b566"/><circle cx="220" cy="120" r="4.5" fill="#d8b566"/><path d="M161,155 A54,54 0 1 1 161,85" fill="none" stroke="#d8b566" stroke-width="20" stroke-linecap="round"/><rect x="112" y="94" width="16" height="52" rx="5" fill="#d8b566"/><rect x="94" y="112" width="52" height="16" rx="5" fill="#d8b566"/></svg></span>
-    <b>Clan <em>Plus</em></b></a>
-  <span class="sp"></span>
-  <a class="lk" href="mod.html">The mod</a>
-  <a class="lk" href="/">Back to the site</a>
-</div></div>
+<header class="cpc-top"><div class="cpc-bar">
+    <a class="cpc-brand" href="/" aria-label="Clan Plus"><span class="mk"><svg viewBox="0 0 240 240" aria-hidden="true"><circle cx="120" cy="120" r="100" fill="none" stroke="#d8b566" stroke-width="7"/><circle cx="120" cy="120" r="88" fill="none" stroke="#d8b566" stroke-width="2.5" opacity=".5"/><rect x="81" y="8" width="18" height="18" fill="#d8b566"/><rect x="111" y="4" width="18" height="18" fill="#d8b566"/><rect x="141" y="8" width="18" height="18" fill="#d8b566"/><path d="M161,155 A54,54 0 1 1 161,85" fill="none" stroke="#d8b566" stroke-width="20" stroke-linecap="round"/><rect x="112" y="94" width="16" height="52" rx="5" fill="#d8b566"/><rect x="94" y="112" width="52" height="16" rx="5" fill="#d8b566"/></svg></span><b>Clan <em>Plus</em></b></a>
+    <nav class="cpc-links" aria-label="Site">
+      <a href="mod.html">The mod</a>
+      <a href="trouver-clan.html">Find a clan</a>
+      <a href="soutenir.html" aria-current="page">Support</a>
+    </nav>
+    <a class="cpc-signin" id="cpcSignin" href="/">Sign in</a>
+    <span class="cp-lang-slot"></span>
+  </div></header>
 
 <main id="main"><div class="sheet">
 
@@ -398,11 +379,14 @@ h1 .ln i{display:block;font-style:normal}
 
 </div></main>
 
-<footer><div class="sheet">
-  <nav class="fnav" aria-label="Site links">
-    <a href="/">Site</a><a href="mod.html">The mod</a> <a href="aide-editeur.html">Editor manual</a><a href="aide-sr.html">The SR explained</a> <a href="trouver-clan.html">Find a clan</a>
+<footer class="cpc-foot"><div class="cpc-foot-in">
+  <nav class="cpc-foot-nav" aria-label="Site links">
+    <a href="mod.html">The mod</a><a href="aide-editeur.html">Editor manual</a>
+    <a href="aide-sr.html">The SR explained</a><a href="soutenir.html">Support</a>
+    <a href="trouver-clan.html">Find a clan</a>
+    <a href="/#legal-mentions">Legal notice</a><a href="/#legal-privacy">Privacy</a><a href="/#legal-cookies">Cookies</a>
   </nav>
-  <p>Clan Plus is an independent community project, free and ad-free, built by a World of Tanks EU player. <strong>Not affiliated with Wargaming.</strong> World of Tanks is a trademark of Wargaming.net.</p>
+  <p>Clan Plus is an independent community project, free and ad-free, built by a World of Tanks EU player. <strong>Not affiliated with Wargaming.</strong> World of Tanks and Wargaming are trademarks of Wargaming.net.</p>
 </div></footer>
 
 <script>
@@ -482,5 +466,6 @@ const PALIERS = { 1:"Supporter", 2:"Regular supporter", 3:"Patron" };
   if (window.cpTraduit) cpTraduit(hote);
 })();
 </script>
+<script src="cadre.js?v=86881d84" defer></script>
 </body>
 </html>

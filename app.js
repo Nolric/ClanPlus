@@ -964,7 +964,10 @@ function placeSubbar(v){
 /* « Ma progression » a quitté index.html pour progression.html : son
    entrée ici ne visait plus aucun élément. Le portillon de cette page
    est désormais dans progression.js. */
-const WIP_VIEWS={ ranking:["Classements","Le classement des clans est en cours de refonte."] };
+/* Classements ouverts à tous le 09/11/2026 (décision de Robert) : l'accueil
+   les promettait déjà. Le mécanisme reste, vide, pour la prochaine vue en
+   chantier : { id:["Titre","Phrase"] }. */
+const WIP_VIEWS={};
 function wipGate(v){
   for(const id in WIP_VIEWS){
     const el=document.getElementById("view"+id.charAt(0).toUpperCase()+id.slice(1));
@@ -9803,8 +9806,12 @@ let SB_CLIENT=null, ST_ROOM=null, ST_BC_LOOP=null, ST_BC_LAST='';
 function stRtClient(){ if(SB_CLIENT) return SB_CLIENT; if(!(window.supabase&&window.supabase.createClient)) return null;
   try{ SB_CLIENT=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON,{realtime:{params:{eventsPerSecond:8}}}); }catch(_){ SB_CLIENT=null; } return SB_CLIENT; }
 function stMyName(){ const m=(MEMBERS||[]).find(x=>Number(x.account_id)===Number(STRAT_ME)); return (m&&(m.nickname||m.name))||'Moi'; }
-function stJoinRoom(sid,role){ const sb=stRtClient(); if(!sb||!sid) return; stLeaveRoom();
-  const ch=sb.channel('strat-'+sid,{config:{presence:{key:String(STRAT_ME||('g'+ST_CID))}}});
+// `room` = nom SECRET du canal, donné par la fonction `strategies` aux seuls
+// membres du clan. ⚠️ Ne jamais revenir à 'strat-'+id : les identifiants se
+// suivent, n'importe qui suivait (ou brouillait) le plan d'un autre clan.
+// Pas de nom (fonction serveur d'avant) = pas de direct, l'éditeur marche seul.
+function stJoinRoom(room,role){ const sb=stRtClient(); stLeaveRoom(); if(!sb||!room) return;
+  const ch=sb.channel('strat-'+room,{config:{presence:{key:String(STRAT_ME||('g'+ST_CID))}}});
   ch.on('presence',{event:'sync'},stRenderPresence);
   ch.on('presence',{event:'join'},stRenderPresence);
   ch.on('presence',{event:'leave'},stRenderPresence);
@@ -9862,7 +9869,7 @@ function stApplyRemoteEls(p){ if(!p||!ST_EDIT||p.by===ST_CID||ST_MOVE||ST_DRAW||
    pointe d'une flèche, cercle de portée…), plus une seule chose à
    retenir par geste.
    ============================================================ */
-let ST_EDIT=null;          // {id,name,map,mode,steps,els,editors,battleId}
+let ST_EDIT=null;          // {id,room,name,map,mode,steps,els,editors,battleId}
 let ST_TOOL='select', ST_DRAW=null, ST_MOVE=null;
 let ST_SELS=new Set();     // indices des éléments sélectionnés
 let ST_BOX=null;           // rectangle de sélection en cours
@@ -10117,7 +10124,7 @@ function openStratEditor(s, keepReplay){
   // sauf si on vient justement de l'ouvrir via « Débriefer dans l'éditeur ».
   if(!keepReplay){ stRpStop(); ST_RP=null; }
   stChatStop(); stLeaveRoom(); stInlineClose(); stHideCtxMenu();
-  ST_EDIT={ id:(s&&s.id)||null, name:(s&&s.name)||"Nouvelle stratégie", map:(s&&s.map)||"", mode:(s&&s.mode)||"ctf", steps:stStepsOf(s), editors:(s&&Array.isArray(s.editors))?s.editors.map(Number):[],
+  ST_EDIT={ id:(s&&s.id)||null, room:(s&&s.room)||null, name:(s&&s.name)||"Nouvelle stratégie", map:(s&&s.map)||"", mode:(s&&s.mode)||"ctf", steps:stStepsOf(s), editors:(s&&Array.isArray(s.editors))?s.editors.map(Number):[],
             // bataille d'origine : c'est ce qui permet de RETROUVER le replay plus tard
             battleId:(s&&s.battle_id!=null)?String(s.battle_id):((keepReplay&&ST_RP)?String(ST_RP.battleId):null) };
   ST_STEP=0; ST_EDIT.els=ST_EDIT.steps[0].els;
@@ -10133,7 +10140,7 @@ function openStratEditor(s, keepReplay){
       if(ok && ST_EDIT && String(ST_EDIT.battleId)===bid && document.getElementById('stSvg')) renderStratEditor();
     });
   }
-  if(ST_EDIT.id&&ST_EDIT.map) stJoinRoom(ST_EDIT.id,'edit');
+  if(ST_EDIT.id&&ST_EDIT.map) stJoinRoom(ST_EDIT.room,'edit');
 }
 // Ferme l'éditeur. Sans `force`, on DEMANDE avant de jeter des modifications :
 // un clic malheureux sur la croix perdait tout un plan sans un mot.
@@ -11277,7 +11284,8 @@ async function saveStrat(){
   }
   // L'éditeur RESTE ouvert : enregistrer n'est pas quitter.
   const nouveau=!ST_EDIT.id; ST_EDIT.id=id; stSetDirty(false);
-  if(nouveau) stJoinRoom(id,'edit');
+  if(r.j&&r.j.room) ST_EDIT.room=r.j.room;
+  if(nouveau) stJoinRoom(ST_EDIT.room,'edit');
   else if(ST_ROOM){ try{ ST_ROOM.send({type:'broadcast',event:'saved',payload:{by:ST_CID,sig:stSig(ST_EDIT.steps)}}); }catch(_){} }
   loadStrats();   // la liste, derrière, se met à jour
 }
@@ -11333,7 +11341,7 @@ function openStratView(s){
     const b=document.getElementById("stvBases"); if(!b) return;      // vue déjà fermée
     b.innerHTML=stBasesSvg(s.map,s.mode||'ctf'); draw();
   });
-  if(s.id){ stChatStart(Number(s.id)); stJoinRoom(Number(s.id),'view'); } ed.scrollIntoView({behavior:"smooth",block:"start"});
+  if(s.id){ stChatStart(Number(s.id)); stJoinRoom(s.room,'view'); } ed.scrollIntoView({behavior:"smooth",block:"start"});
 }
 // -- Chat par stratégie (sondage léger toutes les 5 s tant que la vue est ouverte) --
 let ST_CHAT_TIMER=null, ST_CHAT_SID=null, ST_CHAT_SEEN=0;

@@ -14,13 +14,17 @@
 <meta property="og:description" content="The game's real map elevation in 3D: rotate, zoom, read the ground.">
 <meta property="og:image" content="https://clanplus.eu/og.jpg">
 <meta name="twitter:card" content="summary_large_image">
-<script src="i18n/carte3d.fr.js?v=a2f3070b"></script>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20240%20240%22%3E%3Crect%20width%3D%22240%22%20height%3D%22240%22%20rx%3D%2254%22%20fill%3D%22%23141310%22%2F%3E%3Cg%20transform%3D%22translate%2830%2030%29%20scale%280.75%29%22%20fill%3D%22%23d8b566%22%3E%3Ccircle%20cx%3D%22120%22%20cy%3D%22120%22%20r%3D%22100%22%20fill%3D%22none%22%20stroke%3D%22%23d8b566%22%20stroke-width%3D%227%22%2F%3E%3Crect%20x%3D%2281%22%20y%3D%228%22%20width%3D%2218%22%20height%3D%2218%22%2F%3E%3Crect%20x%3D%22111%22%20y%3D%224%22%20width%3D%2218%22%20height%3D%2218%22%2F%3E%3Crect%20x%3D%22141%22%20y%3D%228%22%20width%3D%2218%22%20height%3D%2218%22%2F%3E%3Cpath%20d%3D%22M161%2C155%20A54%2C54%200%201%201%20161%2C85%22%20fill%3D%22none%22%20stroke%3D%22%23d8b566%22%20stroke-width%3D%2220%22%20stroke-linecap%3D%22round%22%2F%3E%3Crect%20x%3D%22112%22%20y%3D%2294%22%20width%3D%2216%22%20height%3D%2252%22%20rx%3D%225%22%2F%3E%3Crect%20x%3D%2294%22%20y%3D%22112%22%20width%3D%2252%22%20height%3D%2216%22%20rx%3D%225%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
+<script src="i18n/carte3d.fr.js?v=ded902f8"></script>
 <script src="i18n.js?v=ed3f8a4f"></script>
 <!-- Le client Supabase, UNIQUEMENT pour le temps réel : les appels de
      données passent par `fetch` et n'en ont pas besoin. Il est chargé en
      `defer` et son absence n'empêche rien — sans lui, l'éditeur marche,
-     on est simplement seul dessus. -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" defer></script>
+     on est simplement seul dessus.
+     Version FIGÉE, avec son empreinte : « @2 » prenait la dernière 2.x
+     publiée, sans contrôle, sur une page qui lit la session. Pour monter de
+     version, changer le numéro ET l'empreinte (sha384 du nouveau fichier). -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js" integrity="sha384-TcHRA3zBbn+Lexh5n+Oil4guNPOS3rjNDpGRAN46u/s/mB2IZ50ceC6TYDU2yvgK" crossorigin="anonymous" defer></script>
 <link rel="stylesheet" href="fonts/fonts.css?v=d81c6085">
 <style>
   /* ═══════════════════════════════════════════════════════════════
@@ -132,6 +136,12 @@
     font-variant-numeric:tabular-nums;white-space:nowrap}
 
   .acGrille{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(228px,1fr))}
+  /* La mention légale, sous la grille : la même phrase que le pied des autres pages. */
+  .acMention{margin:36px 0 0;padding-top:16px;border-top:1px solid var(--line);
+    font-size:12.5px;line-height:1.6;color:var(--muted);text-wrap:pretty;max-width:100ch}
+  .acMention strong{color:var(--ink);font-weight:600}
+  .acMention a{color:var(--ink);text-decoration:none;white-space:nowrap}
+  .acMention a:hover{color:var(--gold2)}
   .acCarte{position:relative;display:block;width:100%;text-align:left;padding:0;cursor:pointer;
     background:var(--chrome);border:1px solid var(--line);border-radius:5px;color:inherit;font:inherit;
     overflow:hidden;transition:border-color .18s,transform .18s,box-shadow .18s}
@@ -655,6 +665,7 @@
     </div>
 
     <div class="acGrille" id="acGrille"></div>
+    <p class="acMention">Clan Plus is an independent community project, free and ad-free, built by a World of Tanks EU player. <strong>Not affiliated with Wargaming.</strong> World of Tanks is a trademark of Wargaming.net. · <a href="/#legal-mentions">Legal notice</a> · <a href="/#legal-privacy">Privacy</a></p>
   </div>
 </div>
 
@@ -1018,12 +1029,42 @@ const NAMES = {
   tundra: "Toundra",
   westfeld: "Westfield",
 };
+/* Les noms ANGLAIS du jeu, là seulement où ils diffèrent du français
+   (les mêmes que l'appli, i18n/index.en.js ; « Ensk Region » : notes de
+   version Wargaming 1.28.1). Sans eux, la page lue en anglais disait
+   « Aérodrome » ou « Ville fantôme » quand l'appli dit « Airfield ». */
+const NAMES_EN = {
+  airfield: "Airfield",
+  asiagreatwall: "Empire's Border",
+  asiamiao: "Pearl River",
+  canadaa: "Serene Coast",
+  caucasus: "Mountain Pass",
+  cliff: "Cliff",
+  desert: "Sand River",
+  enskbig: "Ensk Region",
+  fishingbay: "Fisherman's Bay",
+  highway: "Highway",
+  japort: "Safe Haven",
+  karelia: "Karelia",
+  lastfrontierv: "Outpost",
+  lostcityctf: "Ghost Town",
+  lostparadisev: "Oyster Bay",
+  mannerheimline: "Mannerheim Line",
+  monastery: "Abbey",
+  munchen: "Widepark",
+  siegfriedline: "Siegfried Line",
+  tundra: "Tundra",
+};
+function nomCarte(k){
+  if(window.CP_LANG==="en" && NAMES_EN[k]) return NAMES_EN[k];
+  return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1));
+}
 /* Le nom d une variante de mode vient de l index, pas du dictionnaire :
    il se compose du nom de la carte et du nom du mode, tous deux traduits. */
 const LABELS={};
 function pretty(k){ const L=LABELS[k];
-  if(L) return t(NAMES[L.carte]||L.carte)+" · "+t(L.mode);
-  return t(NAMES[k]||k.charAt(0).toUpperCase()+k.slice(1)); }
+  if(L) return nomCarte(L.carte)+" · "+t(L.mode);
+  return nomCarte(k); }
 
 (function(){
   const cv=document.getElementById("c");
@@ -1624,7 +1665,7 @@ function pretty(k){ const L=LABELS[k];
      `ST.steps[ST.step].els`, jamais une copie. Toute réaffectation passe
      par `poseEls`, sinon le lien se rompt en silence et l'on édite une
      étape qui n'est plus enregistrée. */
-  let ST={ouvert:0, edition:0, id:null, nom:"", els:[], sel:-1, multi:[], outil:"char", camp:"ami",
+  let ST={ouvert:0, edition:0, id:null, room:null, nom:"", els:[], sel:-1, multi:[], outil:"char", camp:"ami",
           canEdit:0, liste:[], moi:null, refus:"",
           steps:[{els:[],note:"",vue:null}], step:0};
   const poseEls=(arr)=>{ ST.steps[ST.step].els=arr; ST.els=arr; };
@@ -3533,10 +3574,14 @@ function pretty(k){ const L=LABELS[k];
     if(SALON&&SB){ try{ SB.removeChannel(SALON); }catch(_){} }
     SALON=null; POINTEURS.clear(); majPresence(); majPointeurs();
   }
-  function rejointSalon(id,role){
+  /* `room` = nom SECRET du salon, donné par la fonction `strategies` aux
+     seuls membres du clan. ⚠ Ne jamais revenir à "strat3d-"+id : les
+     identifiants se suivent, n'importe qui suivait — ou brouillait — le
+     plan d'un autre clan. Sans nom (serveur d'avant), on reste seul. */
+  function rejointSalon(room,role){
     quitteSalon();
-    const sb=rtClient(); if(!sb||!id) return;
-    const ch=sb.channel("strat3d-"+id,{config:{presence:{key:monId()}}});
+    const sb=rtClient(); if(!sb||!room) return;
+    const ch=sb.channel("strat3d-"+room,{config:{presence:{key:monId()}}});
     const p=()=>majPresence();
     ch.on("presence",{event:"sync"},p);
     ch.on("presence",{event:"join"},p);
@@ -5756,6 +5801,7 @@ function pretty(k){ const L=LABELS[k];
   function stOuvre(s){
     ST.edition=1;
     ST.id=s?s.id:null;
+    ST.room=(s&&s.room)||null;
     ST.nom=s?s.name:"";
     ST.battleId=(s&&s.battle_id)?String(s.battle_id):null;
     /* ── RELIRE UN PLAN ────────────────────────────────────────────
@@ -5800,7 +5846,7 @@ function pretty(k){ const L=LABELS[k];
     /* Un salon par stratégie ENREGISTRÉE : un plan qui n'a pas encore
        d'identifiant n'existe pour personne d'autre, il n'y a donc
        personne avec qui le partager. */
-    if(ST.id) rejointSalon(ST.id, ST.canEdit?"edit":"vue");
+    if(ST.id) rejointSalon(ST.room, ST.canEdit?"edit":"vue");
   }
   function stFerme(){
     quitteSalon();

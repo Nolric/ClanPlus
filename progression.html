@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>My progress — Clan Plus</title>
+<title>My progress | Clan Plus</title>
 <meta name="description" content="Your personal Stronghold report: what's holding you back, where it happens, and whether the work is paying off.">
 <link rel="canonical" href="https://clanplus.eu/progression.html">
 <!-- Page privée : elle n'a rien à faire dans un moteur de recherche, et
@@ -12,11 +12,11 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Clan Plus">
 <meta property="og:locale" content="en_GB">
-<meta property="og:title" content="My progress — Clan Plus">
+<meta property="og:title" content="My progress | Clan Plus">
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20240%20240%22%3E%3Crect%20width%3D%22240%22%20height%3D%22240%22%20rx%3D%2254%22%20fill%3D%22%23141310%22%2F%3E%3Cg%20transform%3D%22translate%2830%2030%29%20scale%280.75%29%22%20fill%3D%22%23d8b566%22%3E%3Ccircle%20cx%3D%22120%22%20cy%3D%22120%22%20r%3D%22100%22%20fill%3D%22none%22%20stroke%3D%22%23d8b566%22%20stroke-width%3D%227%22%2F%3E%3Crect%20x%3D%2281%22%20y%3D%228%22%20width%3D%2218%22%20height%3D%2218%22%2F%3E%3Crect%20x%3D%22111%22%20y%3D%224%22%20width%3D%2218%22%20height%3D%2218%22%2F%3E%3Crect%20x%3D%22141%22%20y%3D%228%22%20width%3D%2218%22%20height%3D%2218%22%2F%3E%3Cpath%20d%3D%22M161%2C155%20A54%2C54%200%201%201%20161%2C85%22%20fill%3D%22none%22%20stroke%3D%22%23d8b566%22%20stroke-width%3D%2220%22%20stroke-linecap%3D%22round%22%2F%3E%3Crect%20x%3D%22112%22%20y%3D%2294%22%20width%3D%2216%22%20height%3D%2252%22%20rx%3D%225%22%2F%3E%3Crect%20x%3D%2294%22%20y%3D%22112%22%20width%3D%2252%22%20height%3D%2216%22%20rx%3D%225%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
-<script src="i18n/index.fr.js?v=c0085edf"></script>
-<script src="i18n/progression.fr.js?v=02209f81"></script>
-<script src="i18n/index.en.js?v=7e4afce8"></script>
+<script src="i18n/index.fr.js?v=4a14d661"></script>
+<script src="i18n/progression.fr.js?v=93515185"></script>
+<script src="i18n/index.en.js?v=99ce3138"></script>
 <script src="i18n.js?v=ed3f8a4f"></script>
 <link rel="stylesheet" href="fonts/fonts.css?v=d81c6085">
 <!-- La MÊME charte et le MÊME code que l'application : il ne doit exister
@@ -113,9 +113,17 @@
   color:var(--plane);background:var(--accent);transition:background .2s}
 .pg-porte a:hover{background:var(--accent-2)}
 @media(max-width:620px){ .pg-id{display:none} }
+/* La mention légale, la même phrase que le pied des autres pages. */
+.pg-foot{border-top:1px solid var(--border);color:var(--muted);font-size:12.5px;line-height:1.6;
+  padding:18px max(clamp(22px,4vw,64px), calc((100% - 1680px)/2)) 34px}
+.pg-foot p{margin:0;max-width:82ch;text-wrap:pretty}
+.pg-foot strong{color:var(--ink-2);font-weight:600}
+.pg-foot a{color:var(--ink-2);text-decoration:none;white-space:nowrap}
+.pg-foot a:hover{color:var(--ink)}
 </style>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" defer></script>
-<script src="app.js?v=c7b70bcc" defer></script>
+<!-- version FIGÉE + empreinte, comme index.html : les deux lignes vont ensemble -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js" integrity="sha384-TcHRA3zBbn+Lexh5n+Oil4guNPOS3rjNDpGRAN46u/s/mB2IZ50ceC6TYDU2yvgK" crossorigin="anonymous" defer></script>
+<script src="app.js?v=98ab86c9" defer></script>
 <script src="app-fin.js?v=4e570ee3" defer></script>
 <!-- Chargé APRÈS app.js : les scripts différés s'exécutent dans l'ordre
      du document, c'est ce qui garantit que les fonctions existent. -->
@@ -162,7 +170,7 @@
   <header class="pg-top">
     <a class="pg-back" href="index.html">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-      Back to Clan Plus</a>
+      Back to the site</a>
     <div class="pg-id"><b id="pgClan">Clan Plus</b><span id="pgSub">My progress</span></div>
     <div class="pg-tools">
       <span class="fld"><label>Player</label><select id="playerSel"></select></span>
@@ -323,6 +331,7 @@
     
       </div>
   </main>
+  <footer class="pg-foot"><p>Clan Plus is an independent community project, free and ad-free, built by a World of Tanks EU player. <strong>Not affiliated with Wargaming.</strong> World of Tanks is a trademark of Wargaming.net. · <a href="/#legal-mentions">Legal notice</a> · <a href="/#legal-privacy">Privacy</a></p></footer>
 </div>
 
 <div id="pgCharge" class="pg-porte">

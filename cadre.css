@@ -1,0 +1,92 @@
+/* ═══════════════════════════════════════════════════════════════════
+   LE CADRE COMMUN — la barre du haut et le pied de page des pages publiques
+   (mod, soutenir, aide-sr, aide-editeur, trouver-clan).
+
+   C'est la COPIE de ceux de l'accueil (app.css : #landing .vt-top,
+   .vt-bar, .vt-foot). L'accueil garde les siens parce qu'ils portent sa
+   bande de chapitres et ses animations. Si l'un change, changer l'autre.
+
+   La feuille apporte ses propres jetons (ceux de la charte, préfixés
+   --cpc-) : elle ne dépend d'aucune variable de la page qui l'accueille,
+   si bien que la barre est la même sur une page « manuel de terrain »
+   comme sur une page à l'allure de l'appli. Polices : fonts/fonts.css,
+   que la page doit charger.
+   ═══════════════════════════════════════════════════════════════════ */
+.cpc-top,.cpc-foot{
+  --cpc-plane:#0c0c0b; --cpc-line:rgba(255,255,255,.09);
+  --cpc-ink:#f6f5f1; --cpc-ink2:#bdb9af; --cpc-mut:#87847b;
+  --cpc-gold:#d8b566; --cpc-gold2:#ecd190;
+  --cpc-cond:"IBM Plex Sans Condensed",system-ui,sans-serif;
+  --cpc-sans:"IBM Plex Sans",system-ui,sans-serif;
+  font-family:var(--cpc-sans);-webkit-font-smoothing:antialiased}
+
+/* ── La barre du haut ─────────────────────────────────────────────── */
+.cpc-top{position:sticky;top:0;z-index:60;background:var(--cpc-plane);border-bottom:1px solid var(--cpc-line)}
+.cpc-bar{max-width:1180px;margin:0 auto;padding:0 24px;height:62px;display:flex;align-items:center;gap:10px;box-sizing:border-box}
+/* flex:none : le logo ne se laisse jamais écraser par les boutons */
+/* Les sélecteurs portent tous .cpc-top / .cpc-foot ET la balise : une page
+   qui écrit « .tc a{color:inherit} » (Trouver un clan) ne repeint plus la
+   barre. Ne pas les raccourcir. */
+.cpc-top a.cpc-brand{display:flex;align-items:center;gap:10px;margin-right:auto;text-decoration:none;color:var(--cpc-ink);white-space:nowrap;flex:none}
+.cpc-brand .mk{width:34px;height:34px;flex:none;border-radius:9px;background:#141310;display:grid;place-items:center;padding:4px;
+  box-sizing:border-box;box-shadow:inset 0 0 0 1px rgba(216,181,102,.28)}
+.cpc-brand .mk svg{width:100%;height:100%;display:block}
+.cpc-brand b{font:700 17px/1 var(--cpc-cond);letter-spacing:normal;color:var(--cpc-ink)}
+.cpc-brand em{font-style:normal;color:var(--cpc-gold)}
+.cpc-links{display:flex;gap:2px}
+.cpc-top .cpc-links a{color:var(--cpc-ink2);text-decoration:none;font-size:14px;font-weight:500;padding:0 12px;height:40px;
+  display:flex;align-items:center;border-radius:8px;transition:color .15s,background-color .15s}
+.cpc-top .cpc-links a:hover{color:var(--cpc-ink);background:rgba(255,255,255,.05)}
+/* la page où l'on est : l'or, sans soulignement ni pastille */
+.cpc-top .cpc-links a[aria-current="page"]{color:var(--cpc-gold)}
+/* Le bouton propre à une page (Télécharger sur Le mod, Espace recruteur
+   sur Trouver un clan) : le bouton secondaire de la charte. */
+.cpc-top a.cpc-act{font:700 14.5px/1 var(--cpc-cond);letter-spacing:.02em;color:var(--cpc-gold);white-space:nowrap;text-decoration:none;
+  height:40px;padding:0 15px;display:inline-flex;align-items:center;border:1px solid var(--cpc-gold);border-radius:10px;
+  box-sizing:border-box;transition:color .18s,border-color .18s,transform .18s cubic-bezier(.16,1,.3,1)}
+.cpc-top a.cpc-act:hover{color:var(--cpc-gold2);border-color:var(--cpc-gold2);transform:translateY(-1px)}
+.cpc-top a.cpc-signin{font:700 14.5px/1 var(--cpc-cond);letter-spacing:.02em;color:#1a1608;white-space:nowrap;text-decoration:none;
+  height:40px;padding:0 16px;display:inline-flex;align-items:center;border-radius:10px;
+  background:linear-gradient(180deg,var(--cpc-gold2),var(--cpc-gold));
+  transition:filter .18s,transform .18s cubic-bezier(.16,1,.3,1)}
+.cpc-top a.cpc-signin:hover{filter:brightness(1.06);transform:translateY(-1px)}
+.cpc-top :focus-visible,.cpc-foot :focus-visible{outline:2px solid var(--cpc-gold);outline-offset:2px}
+/* Le sélecteur de langue (posé par i18n.js dans .cp-lang-slot) prend ses
+   couleurs dans les variables de la page : on les fixe ici, pour qu'il
+   soit le même partout, y compris sur une page à l'or de l'appli. */
+.cpc-top .cp-lang{border-color:#232120}
+.cpc-top .cp-lang a{font-family:"IBM Plex Mono",ui-monospace,monospace;color:#8d8a80}
+.cpc-top .cp-lang a:hover{color:var(--cpc-ink);background:rgba(255,255,255,.05)}
+.cpc-top .cp-lang a[aria-current]{color:var(--cpc-gold);background:rgba(216,181,102,.12)}
+
+/* ── Le pied de page ─────────────────────────────────────────────── */
+.cpc-foot{border-top:1px solid var(--cpc-line);color:var(--cpc-mut);font-size:13.5px;background:transparent}
+.cpc-foot-in{max-width:1180px;margin:0 auto;padding:34px 24px 54px;box-sizing:border-box}
+.cpc-foot-nav{display:flex;flex-wrap:wrap;gap:2px;margin:0 0 14px -12px}
+.cpc-foot .cpc-foot-nav a{color:var(--cpc-ink2);text-decoration:none;font-size:14px;padding:12px;border-radius:8px;
+  transition:color .15s,background-color .15s}
+.cpc-foot .cpc-foot-nav a:hover{color:var(--cpc-ink);background:rgba(255,255,255,.045)}
+/* Tailles et couleurs écrites en toutes lettres : les pages ont leurs
+   propres règles sur p, a et strong, qui ne doivent pas déteindre ici. */
+.cpc-foot p{max-width:74ch;font-size:13.5px;line-height:1.7;color:var(--cpc-mut);margin:0;padding:0;text-align:left;text-wrap:pretty}
+.cpc-foot strong{color:inherit;font-weight:600}
+
+/* ── Adaptation : les mêmes seuils que l'accueil ─────────────────── */
+@media (max-width:760px){ .cpc-top .cpc-links{display:none} }
+@media (max-width:620px){
+  .cpc-bar{padding:0 16px;height:58px}
+  .cpc-brand b{font-size:16px}
+  .cpc-top a.cpc-signin,.cpc-top a.cpc-act{height:38px;padding:0 13px;font-size:14px}
+  .cpc-foot-in{padding:28px 16px 44px}
+}
+/* Sur un téléphone, une page qui a son propre bouton (Télécharger,
+   Espace recruteur) n'a pas la place pour tout : « Se connecter » s'efface
+   d'abord (le logo mène à l'accueil, où l'on se connecte), puis le nom.
+   Le logo reste toujours. Mesuré à 375 px (iPhone) et 360 px (Android),
+   avec le bouton le plus long, « Espace recruteur ». */
+@media (max-width:440px){ .cpc-top.cpc-has-act a.cpc-signin{display:none} }
+@media (max-width:370px){ .cpc-top.cpc-has-act .cpc-brand b{display:none} }
+@media (prefers-reduced-motion:reduce){
+  .cpc-top a.cpc-signin,.cpc-top a.cpc-act{transition:none}
+  .cpc-top a.cpc-signin:hover,.cpc-top a.cpc-act:hover{transform:none}
+}

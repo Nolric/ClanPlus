@@ -150,6 +150,7 @@ window.CP_FR = Object.assign(window.CP_FR || {}, {
 
   /* le pied de page */
   "Clan Plus · official Wargaming data (EU) · not affiliated with Wargaming": "Clan Plus · données officielles Wargaming (EU) · non affilié à Wargaming",
+  "<a href=\"/#legal-mentions\">Legal notice</a> · <a href=\"/#legal-privacy\">Privacy</a>": "<a href=\"/#legal-mentions\">Mentions légales</a> · <a href=\"/#legal-privacy\">Confidentialité</a>",
   "Back to Clan Plus →": "Retour à Clan Plus →",
   /* l'Espace recruteur (20/10/2026) */
   "Recruiter space": "Espace recruteur",
