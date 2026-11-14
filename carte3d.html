@@ -15,7 +15,7 @@
 <meta property="og:image" content="https://clanplus.eu/og.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20240%20240%22%3E%3Crect%20width%3D%22240%22%20height%3D%22240%22%20rx%3D%2254%22%20fill%3D%22%23141310%22%2F%3E%3Cg%20transform%3D%22translate%2830%2030%29%20scale%280.75%29%22%20fill%3D%22%23d8b566%22%3E%3Ccircle%20cx%3D%22120%22%20cy%3D%22120%22%20r%3D%22100%22%20fill%3D%22none%22%20stroke%3D%22%23d8b566%22%20stroke-width%3D%227%22%2F%3E%3Crect%20x%3D%2281%22%20y%3D%228%22%20width%3D%2218%22%20height%3D%2218%22%2F%3E%3Crect%20x%3D%22111%22%20y%3D%224%22%20width%3D%2218%22%20height%3D%2218%22%2F%3E%3Crect%20x%3D%22141%22%20y%3D%228%22%20width%3D%2218%22%20height%3D%2218%22%2F%3E%3Cpath%20d%3D%22M161%2C155%20A54%2C54%200%201%201%20161%2C85%22%20fill%3D%22none%22%20stroke%3D%22%23d8b566%22%20stroke-width%3D%2220%22%20stroke-linecap%3D%22round%22%2F%3E%3Crect%20x%3D%22112%22%20y%3D%2294%22%20width%3D%2216%22%20height%3D%2252%22%20rx%3D%225%22%2F%3E%3Crect%20x%3D%2294%22%20y%3D%22112%22%20width%3D%2252%22%20height%3D%2216%22%20rx%3D%225%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
-<script src="i18n/carte3d.fr.js?v=ded902f8"></script>
+<script src="i18n/carte3d.fr.js?v=4defac48"></script>
 <script src="i18n.js?v=ed3f8a4f"></script>
 <!-- Le client Supabase, UNIQUEMENT pour le temps réel : les appels de
      données passent par `fetch` et n'en ont pas besoin. Il est chargé en
@@ -5260,12 +5260,36 @@ function pretty(k){ const L=LABELS[k];
     return prec[n];
   }
   let rpTable=null;
+  /* ── LES COPIES « 7x7 » ──────────────────────────────────────────
+     Les Manœuvres de rang XI et le mode 7 contre 7 du jeu se jouent
+     avec des chars prêtés : des COPIES de chars existants, que le jeu
+     range sous une autre clé (R228_KR_1_7x7) et nomme « KR-1 7x7 »,
+     « Obj. 432U 7x7 »… Même caisse, même tourelle : seul le nom change.
+     Le jeu les tient secrets, l'encyclopédie Wargaming ne les connaît
+     pas, et ce suffixe les éloignait de tous les noms de la table :
+     aucune n'avait son modèle. Relevé dans le jeu 2.4.1.1 : 41 copies,
+     toutes sur un char de la bibliothèque.
+     Leurs noms français sont dans la table (chars-noms.js les lit dans
+     le jeu) ; pour les autres langues, on retire le suffixe et on
+     cherche le char d'origine. Le jeu coupe lui-même deux de ces noms
+     (« WZ-111 5A 7 ») et le mod coupe à vingt-quatre signes : un « 7 »
+     ou un « 7x » final se retire aussi. Ce retrait passe AVANT les
+     rapprochements : sinon le 7 resté collé faisait prendre le
+     « B-C 25 t 7x » pour l'Object 257, par ses chiffres. */
+  const RP_7X7=[/\s*7\s*[x×х]\s*7$/i, /\s+7\s*[x×х]?$/i];
   const rpModele=(nomChar)=>{
     if(!CHARS||!CHARS.chars) return null;      // pas encore : on redemandera
     if(!nomChar) return "";
+    const s=String(nomChar).trim();
+    const exact=rpExact(s); if(exact) return exact;
+    for(const re of RP_7X7) if(re.test(s)){
+      const m=rpCherche(s.replace(re,"")); if(m) return m; }
+    return rpCherche(s);
+  };
+  /* nom réduit → clé ; "" si deux chars le portaient (on ne tranche pas).
+     Le mod coupe à vingt-quatre signes : la forme coupée compte aussi. */
+  const rpExact=(nomChar)=>{
     if(!rpTable||rpTable.n!==CHARS.chars.length){
-      /* nom réduit → clé ; "" si deux chars le portaient (on ne tranche pas).
-         Le mod coupe à vingt-quatre signes : la forme coupée compte aussi. */
       const noms=new Map();
       for(const cle in (CHARS_NOMS||{})) if(charDe(cle)) for(const n of CHARS_NOMS[cle])
         for(const k of [platU(n), platU(n.slice(0,24))]){
@@ -5273,9 +5297,13 @@ function pretty(k){ const L=LABELS[k];
       rpTable={n:CHARS.chars.length, noms, l:CHARS.chars.map(x=>({
         cle:x.cle, a:platA(x.nom), lt:platL(x.nom), ch:platN(x.nom)}))};
     }
-    /* 0 · le nom court du jeu, tel que la table le connaît */
     const u=platU(nomChar);
-    if(u&&rpTable.noms.get(u)) return rpTable.noms.get(u);
+    return (u&&rpTable.noms.get(u))||"";
+  };
+  const rpCherche=(nomChar)=>{
+    if(!nomChar) return "";
+    /* 0 · le nom court du jeu, tel que la table le connaît */
+    const t0=rpExact(nomChar); if(t0) return t0;
     const L=rpTable.l, a=platA(nomChar), lt=platL(nomChar), ch=platN(nomChar);
     const seul=(v)=>v.length===1?v[0].cle:"";
     /* 1 · le même nom, aux accents et à la ponctuation près */
@@ -7041,6 +7069,9 @@ function pretty(k){ const L=LABELS[k];
       stDit(t("Loading the replay…"));
       fnAppel("replay",Object.assign({battle_id:bat},clan?{clan_id:clan}:{})).then(async(r)=>{
         if(r.status===401){ versLeSite(); return; }      // session expirée
+        /* la copie enregistrée par le clan d'en face reste de son côté
+           (fonction replay) : on le dit, plutôt que « aucun replay » */
+        if(r.ok&&r.j&&r.j.autre_camp){ stDit(t("This battle's replay was recorded by the opposing clan: it stays on their side.")); return; }
         const brut=r.ok&&r.j&&r.j.replay;
         const rep=brut?litReplay(Object.assign({battleId:bat},brut,camp>0?{myTeam:camp}:{}),ck,p.get("nom")||pretty(ck)):null;
         if(!rep){ stDit(t("No replay saved for this battle.")); return; }

@@ -365,6 +365,7 @@ window.CP_EN = Object.assign(window.CP_EN || {}, {
   "Dégâts à distance (sniper)": "Long-range damage (sniper)",
   "Dégâts évités": "Damage avoided",
   "Démo — positions simulées (le mod enverra bientôt les vraies).": "Demo — simulated positions (the mod will send the real ones soon).",
+  "Le replay de cette bataille a été enregistré par le clan adverse : il reste de son côté.": "This battle's replay was recorded by the opposing clan: it stays on their side.",
   "Déplacer": "Move",
   "Déplacer (V)": "Move (V)",
   "Déplier ▾": "Expand ▾",

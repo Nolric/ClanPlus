@@ -1809,8 +1809,14 @@ function blTab(btn, which, id){
     if(host && !host.dataset.loaded){ host.dataset.loaded="1"; startReplay(id, host); }
   }
 }
+/* Un replay reste dans le camp qui l'a enregistré : la copie envoyée par le
+   clan d'en face montrerait ses chars à chaque instant. Le serveur ne la
+   sert plus (fonction replay, « autre_camp ») ; on le dit plutôt que de
+   montrer une démo, qui laisserait croire à un replay manquant. */
+const RP_AUTRE_CAMP=`<p class="rp-note"><svg class="ic" aria-hidden="true"><use href="#i-alert"/></svg><span>Le replay de cette bataille a été enregistré par le clan adverse : il reste de son côté.</span></p>`;
 async function startReplay(id, host){
   const g=BL_BY_ID[id]; if(!g) return;
+  if(g.byFoe){ host.innerHTML=RP_AUTRE_CAMP; return; }
   host.innerHTML=rpSkeletonHTML();
   let rep=null, demo=false;
   try{
@@ -1818,6 +1824,7 @@ async function startReplay(id, host){
     const corps={session:localStorage.getItem(LS_SESSION), battle_id:g.id};
     if(g.mine) corps.clan_id=g.clanId;
     const r=await fnCall("replay",corps);
+    if(r.ok && r.j && r.j.autre_camp){ host.innerHTML=RP_AUTRE_CAMP; return; }
     if(r.ok && r.j && r.j.replay && (r.j.replay.vehicles||[]).length)
       rep=g.mine ? convertReplay(r.j.replay,{ myTeam:g.myTeam,
                      members:new Set(g.our.filter(x=>x.isMember||x.isSelf).map(x=>x.accId)) })

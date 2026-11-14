@@ -58,6 +58,7 @@ window.CP_FR = Object.assign(window.CP_FR || {}, {
   /* ── le débriefing de replay ── */
   "Loading the replay…": "Chargement du replay…",
   "No replay saved for this battle.": "Aucun replay enregistré pour cette bataille.",
+  "This battle's replay was recorded by the opposing clan: it stays on their side.": "Le replay de cette bataille a été enregistré par le clan adverse : il reste de son côté.",
   "Debrief": "Débrief",
   "Today": "Aujourd'hui",
   "Yesterday": "Hier",
