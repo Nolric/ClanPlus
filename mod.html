@@ -16,7 +16,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20240%20240%22%3E%3Crect%20width%3D%22240%22%20height%3D%22240%22%20rx%3D%2254%22%20fill%3D%22%23141310%22%2F%3E%3Cg%20transform%3D%22translate%2830%2030%29%20scale%280.75%29%22%20fill%3D%22%23d8b566%22%3E%3Ccircle%20cx%3D%22120%22%20cy%3D%22120%22%20r%3D%22100%22%20fill%3D%22none%22%20stroke%3D%22%23d8b566%22%20stroke-width%3D%227%22%2F%3E%3Crect%20x%3D%2281%22%20y%3D%228%22%20width%3D%2218%22%20height%3D%2218%22%2F%3E%3Crect%20x%3D%22111%22%20y%3D%224%22%20width%3D%2218%22%20height%3D%2218%22%2F%3E%3Crect%20x%3D%22141%22%20y%3D%228%22%20width%3D%2218%22%20height%3D%2218%22%2F%3E%3Cpath%20d%3D%22M161%2C155%20A54%2C54%200%201%201%20161%2C85%22%20fill%3D%22none%22%20stroke%3D%22%23d8b566%22%20stroke-width%3D%2220%22%20stroke-linecap%3D%22round%22%2F%3E%3Crect%20x%3D%22112%22%20y%3D%2294%22%20width%3D%2216%22%20height%3D%2252%22%20rx%3D%225%22%2F%3E%3Crect%20x%3D%2294%22%20y%3D%22112%22%20width%3D%2252%22%20height%3D%2216%22%20rx%3D%225%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
 <script src="i18n/cadre.fr.js?v=4e25be25"></script>
-<script src="i18n/mod.fr.js?v=9bf7c73c"></script>
+<script src="i18n/mod.fr.js?v=568e25c9"></script>
 <script src="i18n.js?v=ed3f8a4f"></script>
 <link rel="stylesheet" href="fonts/fonts.css?v=d81c6085">
 <link rel="stylesheet" href="cadre.css?v=f100187f">
@@ -409,6 +409,14 @@ p{margin:0 0 14px;max-width:68ch}
 .route .lbl{color:var(--gold);margin-bottom:8px}
 .route h3{margin-bottom:10px;font-size:23px}
 .route p{color:var(--ink-2);margin-bottom:0;font-size:15.5px}
+/* le launcher : bouton + fiche du fichier, l'avertissement de Windows */
+.route .dl{display:flex;flex-wrap:wrap;align-items:center;gap:12px 18px;margin-top:20px}
+.dl-meta{font-family:var(--d-mono);font-size:12.5px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.card ol{margin:0 0 14px;padding-left:22px;max-width:68ch}
+.card li{margin:0 0 6px}
+code.sha{display:block;width:fit-content;max-width:100%;margin-top:8px;word-break:break-all}
+.end .end-alt{margin:22px auto 0;font-size:14px;color:var(--ink-3)}
+.end .end-alt a{color:var(--gold)}
 .step{display:grid;grid-template-columns:64px 1fr;gap:26px;padding:34px 0;border-top:1px solid var(--rule)}
 /* sans ce plancher retiré, l'arborescence de dossiers (white-space:pre)
    impose sa min-content à la colonne et pousse la page hors de l'écran */
@@ -510,7 +518,7 @@ details p{color:var(--ink-2);font-size:15.5px;padding-bottom:6px}
       <a href="trouver-clan.html">Find a clan</a>
       <a href="soutenir.html">Support</a>
     </nav>
-    <a class="cpc-act" href="download/clanplus_1.0.49.wotmod" download>Download</a>
+    <a class="cpc-act" href="download/ClanPlus.exe?v=7102a7df" download>Download</a>
     <a class="cpc-signin" id="cpcSignin" href="/">Sign in</a>
     <span class="cp-lang-slot"></span>
   </div></header>
@@ -523,7 +531,7 @@ details p{color:var(--ink-2);font-size:15.5px;padding-bottom:6px}
     <h1>Nothing during<br>the fight.<br><span class="dim">Everything after.</span></h1>
     <p class="lede">A window that shows your slot for tonight and checks every tank before a clan battle, and a full recording of the battle itself. The site does the rest.</p>
     <div class="acts">
-      <a class="btn btn-go" href="download/clanplus_1.0.49.wotmod" download>Download the mod</a> <a class="btn btn-alt" href="#pose">How to install it</a>
+      <a class="btn btn-go" href="download/ClanPlus.exe?v=7102a7df" download>Download the launcher</a> <a class="btn btn-alt" href="#pose">How to install it</a>
     </div>
     <dl class="spec">
       <div><dt>Version</dt><dd class="mono">1.0.49</dd></div>
@@ -980,16 +988,32 @@ details p{color:var(--ink-2);font-size:15.5px;padding-bottom:6px}
 <section id="pose"><div class="sheet">
   <div class="rv">
     <div class="sec-h"><span class="sec-n">04</span><h2>Installing it</h2></div>
-    <p class="sec-sub">A World of Tanks mod is a file you drop into a folder. There is nothing to run. Two minutes.</p>
+    <p class="sec-sub">The Clan Plus launcher does it in one click and keeps the mod up to date. You can also do it by hand: a World of Tanks mod is a file you drop into a folder.</p>
   </div>
 
   <div class="route rv">
     <p class="lbl">The short way</p>
-    <h3>Using Aslain's modpack?</h3>
-    <p>Tick <strong>Clan Plus</strong> in the list while installing. Nothing else to do: no download, no folder to hunt for. If you've never installed a mod by hand, take this route. <strong>Don't also drop it in manually</strong> — you'd end up with two copies.</p>
+    <h3>The Clan Plus launcher</h3>
+    <p>A small Windows program. It finds World of Tanks on your PC, puts the mod in the right folder and keeps a single copy. Every time you open it, it fetches the latest version — including after a game update, when the mod would otherwise vanish. Its <strong>Play</strong> button then starts the game, just as Game Center does.</p>
+    <p class="dl"><a class="btn btn-go" href="download/ClanPlus.exe?v=7102a7df" download>Download the launcher</a> <span class="dl-meta">ClanPlus.exe · <span class="lsz">659 KB</span> · Windows 10 and 11</span></p>
   </div>
 
-  <p class="lbl rv">Otherwise, by hand</p>
+  <div class="card warn rv">
+    <p class="lbl">The first time, Windows warns you</p>
+    <p>The launcher isn't signed: a signing certificate costs a few hundred euros a year, and Clan Plus is free. So, the first time:</p>
+    <ol>
+      <li>your browser may say the file <strong>isn't commonly downloaded</strong>: choose <strong>Keep</strong> (in Edge: <strong>···</strong>, then <strong>Keep</strong>, then <strong>Keep anyway</strong>);</li>
+      <li>Windows shows <strong>“Windows protected your PC”</strong>: click <strong>More info</strong>, then <strong>Run anyway</strong>.</li>
+    </ol>
+    <p>Only once: the launcher then installs itself in your user folder, without administrator rights, puts a <strong>Clan Plus</strong> icon on the desktop and updates itself. To check the file, here is its SHA-256 fingerprint: <code class="sha">70645a59738a837aa94ff7d39b5db8bcc96908283230f449001696b7e9f016d1</code></p>
+  </div>
+
+  <div class="card rv">
+    <p class="lbl">Aslain's modpack</p>
+    <p>Already using it? Tick <strong>Clan Plus</strong> in the list while installing, nothing else to do. <strong>Don't also drop the file in by hand</strong>: you'd end up with two copies. The launcher, for its part, spots a second copy and keeps only the newest.</p>
+  </div>
+
+  <p class="lbl rv" style="margin-top:44px">Otherwise, by hand</p>
   <div>
     <div class="step rv">
       <div class="step-n">01</div>
@@ -1035,6 +1059,10 @@ details p{color:var(--ink-2);font-size:15.5px;padding-bottom:6px}
       </div>
     </div>
 
+  </div>
+
+  <p class="lbl rv" style="margin-top:44px">Then, whichever way you took</p>
+  <div>
     <div class="step rv">
       <div class="step-n">04</div>
       <div>
@@ -1062,15 +1090,15 @@ details p{color:var(--ink-2);font-size:15.5px;padding-bottom:6px}
 
   <div class="card rv" style="margin-top:34px">
     <p class="lbl">Every time World of Tanks updates</p>
-    <p style="margin:0">The game creates a new version folder inside <code>mods</code> and the mods in the old one stop loading. Copy the file into the new folder. That's all: your settings and your history live elsewhere and don't move.</p>
-    <p style="margin:10px 0 0">When a new version of Clan Plus comes out, the mod tells you in the garage.</p>
+    <p style="margin:0">The game creates a new version folder inside <code>mods</code> and the mods in the old one stop loading. <strong>With the launcher</strong>, open it or click <strong>Play</strong>: it puts the mod into the new folder by itself. By hand, copy the file into the new folder. Your settings and your history live elsewhere and don't move.</p>
+    <p style="margin:10px 0 0">When a new version of Clan Plus comes out, the mod tells you in the garage, and the launcher installs it the next time you open it.</p>
   </div>
 </div></section>
 
 <section id="versions"><div class="sheet">
   <div class="rv">
     <div class="sec-h"><span class="sec-n">05</span><h2>The changelog</h2></div>
-    <p class="sec-sub">Updating the mod means replacing the file. Nothing to uninstall.</p>
+    <p class="sec-sub">With the launcher, opening it is enough. By hand, updating the mod means replacing the file: nothing to uninstall.</p>
   </div>
   <div class="rel rv">
     <div class="rel-v now">1.0.49 · current</div>
@@ -1154,28 +1182,32 @@ details p{color:var(--ink-2);font-size:15.5px;padding-bottom:6px}
 <section id="secours"><div class="sheet">
   <div class="rv">
     <div class="sec-h"><span class="sec-n">06</span><h2>When something goes wrong</h2></div>
-    <p class="sec-sub" style="margin-bottom:28px">The six cases that keep coming up.</p>
+    <p class="sec-sub" style="margin-bottom:28px">The seven cases that keep coming up.</p>
   </div>
   <div class="rv">
     <details><summary>The window doesn't appear</summary>
       <p>In order: press <code>F2</code>, or the key you chose in the settings — it may simply have been closed. Check you're actually on a <strong>Stronghold, Advances or Skirmish</strong> screen. Finally, make sure the file is in <code>mods</code> and not <code>res_mods</code>, and that the version folder matches the version of the game you're launching.</p></details>
     <details><summary>The game updated and the mod vanished</summary>
-      <p>That's expected: each game version has its own folder inside <code>mods</code>. Copy the file into the new one. Your settings and your history are kept.</p></details>
+      <p>That's expected: each game version has its own folder inside <code>mods</code>. Open the launcher: it puts the mod back into the new folder. By hand, copy the file into the new one. Your settings and your history are kept.</p></details>
     <details><summary>My battles don't show up on the site</summary>
       <p>Only <strong>clan battles</strong> are recorded — random battles never count. Also check you're signed in with the World of Tanks account <em>you actually played on</em>. If an upload failed, the battle will go out again next time you launch.</p></details>
     <details><summary>The TONIGHT strip doesn't appear</summary>
       <p>Two possible reasons: your game isn't linked to your account yet (<strong>LINK TO CLANPLUS.EU</strong>, at the bottom of the window), or no officer has pinned tonight's composition on the site. Once one is pinned, the strip shows up within five minutes.</p></details>
     <details><summary>I have other mods — could they conflict?</summary>
       <p>The mod is self-contained and overwrites no game file. It uses ModsSettingsAPI and ModsList when they're there, but works without them. If it errors, it switches itself off quietly rather than crashing your game. If another mod already uses <code>F2</code>, the key can be changed in the settings.</p></details>
+    <details><summary>What does the launcher do on my PC?</summary>
+      <p>It talks only to clanplus.eu, to read the latest version and download it. It writes in the game's <code>mods\&lt;version&gt;</code> folder, Clan Plus files only, never another mod, and in its own folder, <code>%LOCALAPPDATA%\Programs\Clan Plus</code>, where it keeps a log, <code>launcher.log</code>. It adds a <strong>Clan Plus</strong> icon to the desktop and the Start menu, and an entry in Windows <strong>Settings › Apps</strong>. It never asks for administrator rights and doesn't run in the background: after <strong>Play</strong>, it closes once the game has started.</p></details>
     <details><summary>How do I uninstall it?</summary>
-      <p>Delete the <code>.wotmod</code> file from <code>mods/&lt;version&gt;/</code>. To wipe the settings and local history as well, delete the <code>mods/configs/clanplus/</code> folder.</p></details>
+      <p>Delete the <code>.wotmod</code> file from <code>mods/&lt;version&gt;/</code>. To wipe the settings and local history as well, delete the <code>mods/configs/clanplus/</code> folder.</p>
+      <p>The launcher: Windows <strong>Settings › Apps › Clan Plus › Uninstall</strong>. It asks whether to remove the mod from the game as well.</p></details>
   </div>
 </div></section>
 
 <div class="end"><div class="sheet rv">
-  <h2>Two minutes.</h2>
-  <p>One file, one folder. And every clan battle you play feeds the whole clan's analysis.</p>
-  <a class="btn btn-go" href="download/clanplus_1.0.49.wotmod" download>Download version 1.0.49</a>
+  <h2>One click.</h2>
+  <p>The launcher installs the mod and keeps it up to date. And every clan battle you play feeds the whole clan's analysis.</p>
+  <a class="btn btn-go" href="download/ClanPlus.exe?v=7102a7df" download>Download the launcher</a>
+  <p class="end-alt">Or the mod file itself: <a href="download/clanplus_1.0.49.wotmod" download>clanplus_1.0.49.wotmod</a></p>
 </div></div>
 
 </main>
