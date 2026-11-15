@@ -16,7 +16,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20240%20240%22%3E%3Crect%20width%3D%22240%22%20height%3D%22240%22%20rx%3D%2254%22%20fill%3D%22%23141310%22%2F%3E%3Cg%20transform%3D%22translate%2830%2030%29%20scale%280.75%29%22%20fill%3D%22%23d8b566%22%3E%3Ccircle%20cx%3D%22120%22%20cy%3D%22120%22%20r%3D%22100%22%20fill%3D%22none%22%20stroke%3D%22%23d8b566%22%20stroke-width%3D%227%22%2F%3E%3Crect%20x%3D%2281%22%20y%3D%228%22%20width%3D%2218%22%20height%3D%2218%22%2F%3E%3Crect%20x%3D%22111%22%20y%3D%224%22%20width%3D%2218%22%20height%3D%2218%22%2F%3E%3Crect%20x%3D%22141%22%20y%3D%228%22%20width%3D%2218%22%20height%3D%2218%22%2F%3E%3Cpath%20d%3D%22M161%2C155%20A54%2C54%200%201%201%20161%2C85%22%20fill%3D%22none%22%20stroke%3D%22%23d8b566%22%20stroke-width%3D%2220%22%20stroke-linecap%3D%22round%22%2F%3E%3Crect%20x%3D%22112%22%20y%3D%2294%22%20width%3D%2216%22%20height%3D%2252%22%20rx%3D%225%22%2F%3E%3Crect%20x%3D%2294%22%20y%3D%22112%22%20width%3D%2252%22%20height%3D%2216%22%20rx%3D%225%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
 <script src="i18n/cadre.fr.js?v=4e25be25"></script>
-<script src="i18n/aide-editeur.fr.js?v=e94d3c06"></script>
+<script src="i18n/aide-editeur.fr.js?v=437d55a5"></script>
 <script src="i18n.js?v=ed3f8a4f"></script>
 <link rel="stylesheet" href="fonts/fonts.css?v=d81c6085">
 <link rel="stylesheet" href="cadre.css?v=f100187f">
@@ -323,6 +323,16 @@
   </ul>
   <div class="note"><span class="lbl">Advice</span>
   <p>Three or four steps is almost always enough. Nobody remembers a ten-slide plan.</p></div>
+
+  <h3>Several maps in one strategy</h3>
+  <p>One strategy can cover <strong>up to 8 maps</strong> — the whole rotation of a Clan Wars evening, say. Each map keeps its own steps, notes and game mode.</p>
+  <ul>
+    <li>The <strong>Maps</strong> section, at the top of the panel, shows one tab per map. Click a tab to switch maps.</li>
+    <li><span class="btnref">+ Add a map</span> opens the map picker; the new map arrives with one empty step, and the other maps don't change.</li>
+    <li><strong>Remove this map</strong>, under the tabs, removes the map shown and its steps.</li>
+    <li>In view mode the tabs are there too, and <span class="btnref">▶ Present</span> presents the map on screen.</li>
+  </ul>
+  <p>A debrief stays on the map of its battle: as long as it has its replay, no other map can be added.</p>
 </section>
 
 <section id="s8">
@@ -426,6 +436,22 @@
   <p>A ticked member can <strong>edit that one strategy</strong>, even as a plain private. They can't create others, nor touch any where they aren't ticked. Only officers can change the list itself.</p>
   <p>For a debrief this is especially useful: you can invite the player in question to annotate their own mistake themselves.</p>
 
+  <h3>Sharing with a link</h3>
+  <p>The <span class="btnref">Share</span> button, in the top bar, gives <strong>two links</strong>. The person who created the strategy and the clan's officers decide which ones are on.</p>
+  <div class="tw"><table>
+    <thead><tr><th>Link</th><th>Who can open it</th><th>What they can do</th></tr></thead>
+    <tbody>
+      <tr><td><strong>View</strong></td><td>Anyone, even without an account or outside the clan</td><td>See every map and step, and present. Nothing else.</td></tr>
+      <tr><td><strong>Edit</strong></td><td>Anyone signed in with a Wargaming account</td><td>Edit the strategy. A clan member becomes a collaborator; a player from another clan edits it where it is.</td></tr>
+    </tbody>
+  </table></div>
+  <ul>
+    <li><strong>Nobody can keep the strategy in another clan.</strong> Whoever opens a link sees it, or edits it in place, like a file opened from someone else's folder.</li>
+    <li>Someone outside the clan gets neither the discussion nor the collaborators, and a debrief shows them its annotations without the replay's tanks: the battle stays with the clan.</li>
+    <li><strong>Turn link off</strong> stops it working at once. Turning it back on creates a new link: the old one stays dead.</li>
+    <li>The link shows the <strong>saved</strong> version. Save before sending it.</li>
+  </ul>
+
   <h3>The discussion</h3>
   <p>Under the map, a message thread attached to the strategy. It refreshes by itself while the view is open, and the whole clan can see it — no editing rights needed to post.</p>
 </section>
@@ -445,7 +471,7 @@
       <tr><td>Private · Recruit · Reservist</td><td class="no">No</td><td class="yes">Yes</td></tr>
     </tbody>
   </table></div>
-  <p>One exception only: a member <strong>ticked as a collaborator</strong> on a strategy can edit it, whatever their rank (<a href="#s11">section 11</a>).</p>
+  <p>Two exceptions: a member <strong>ticked as a collaborator</strong> on a strategy can edit it, whatever their rank, and so can anyone holding its <strong>edit link</strong> (<a href="#s11">section 11</a>).</p>
   <p>In view mode everyone sees the steps, the notes, <strong>the replay</strong> and the discussion, and can launch <span class="btnref">▶ Present</span>. Moving between steps shifts the tanks to each slide's moment.</p>
 </section>
 
@@ -510,7 +536,7 @@
     <li><strong>Re-importing enriches the past.</strong> Opening an old <kbd>.wotreplay</kbd> file in the game updates that battle on the site — so you can debrief battles from before you installed the mod. Random battles stay excluded.</li>
     <li><strong>A debrief saved before July 2026</strong> doesn't know its battle and will open without a replay. Just redo it once from <span class="btnref">✎ Debrief</span>.</li>
     <li><strong>Bases and spawn points</strong> are only known for some maps in a blank strategy. In a debrief they come from the replay: exact, and available on every map.</li>
-    <li><strong>12 steps maximum</strong> per strategy, 140 characters per note and 200 per text (line breaks included).</li>
+    <li><strong>8 maps and 12 steps per map</strong> at most, 140 characters per note and 200 per text (line breaks included).</li>
     <li><strong>On a phone</strong>, the editor keeps the essentials: the tools at the bottom, the panel in a drawer, Save always in reach. Presenting and the collaborators wait for a bigger screen.</li>
   </ul>
 </section>

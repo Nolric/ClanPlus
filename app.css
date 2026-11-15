@@ -3341,6 +3341,28 @@ i.pm-eq{width:8px;height:8px;background:var(--accent);opacity:.55;
   .st-marker{cursor:inherit}
   .st-svg-view{cursor:default;box-shadow:none}
   body.st-noscroll{overflow:hidden}
+  /* consultation : les cartes du fichier */
+  .st-viewplans{display:flex;gap:6px;padding:12px 14px 0;overflow-x:auto;scrollbar-width:thin}
+  .st-viewplan{display:inline-flex;align-items:center;gap:8px;flex:0 0 auto;height:38px;padding:0 12px 0 5px;border:1px solid #2b2d31;border-radius:9px;
+    background:#17181b;color:#c2c5cb;font:inherit;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+  .st-viewplan img{width:28px;height:28px;border-radius:6px;object-fit:cover}
+  .st-viewplan:hover{border-color:var(--gold-line);color:#fff}
+  .st-viewplan.on{border-color:var(--gold);background:var(--gold-soft);color:var(--gold-2)}
+  .st-viewnav[hidden]{display:none}
+  /* ouverte par un lien partagé : par-dessus tout le site */
+  #stEditor.st-partage{position:fixed;inset:0;z-index:850;overflow-y:auto;background:var(--plane);padding:24px 16px 48px}
+  #stEditor.st-partage>.st-shell{max-width:760px;margin:0 auto}
+  /* la carte tient dans l'écran, sous la barre, le bandeau et les onglets */
+  #stEditor.st-partage .st-svg-view{max-width:min(660px,calc(100dvh - 250px));min-width:260px}
+  .st-partage-band{display:flex;align-items:center;gap:9px;margin:12px 14px 0;padding:9px 12px;border:1px solid var(--gold-line);border-radius:10px;
+    background:var(--gold-soft);font-size:13px;color:#e8e6df;line-height:1.45}
+  .st-partage-band svg{width:16px;height:16px;flex:0 0 16px;fill:none;stroke:var(--gold);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .st-partage-band b{color:var(--gold-2);font-weight:700}
+  .st-partage-msg{padding:28px 26px;text-align:center}
+  .st-partage-msg h2{margin:0 0 8px;font:700 22px/1.2 "IBM Plex Sans Condensed",system-ui,sans-serif;color:var(--ink)}
+  .st-partage-msg p{margin:0 auto 18px;max-width:46ch;color:var(--ink-2);font-size:14px}
+  .st-card-lien{display:inline-flex;align-items:center;gap:4px;color:var(--gold)}
+  .st-card-lien svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
   /* ═══ ÉDITEUR DE STRATÉGIE 2D ═══════════════════════════════════════
      Même langage que l'éditeur 3D : la carte au centre, sur le fond de la
      page ; autour, des îlots de verre sombre. Un rail d'outils à gauche,
@@ -3472,6 +3494,22 @@ i.pm-eq{width:8px;height:8px;background:var(--accent);opacity:.55;
   .se-link{margin-top:8px;padding:0;background:none;border:0;color:var(--muted);font-size:12px;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
   .se-link:hover{color:var(--bad)}
   .se-link:disabled{display:none}
+  /* cartes du fichier : une vignette et le nom, deux par ligne */
+  .se-plans{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+  .se-plan{display:flex;align-items:center;gap:7px;min-width:0;height:36px;padding:0 8px 0 4px;border:1px solid var(--se-line);border-radius:8px;
+    background:rgba(0,0,0,.2);color:var(--ink-2);cursor:pointer;font:600 12px/1.2 "IBM Plex Sans",system-ui,sans-serif;text-align:left}
+  .se-plan img{width:26px;height:26px;flex:0 0 26px;border-radius:5px;object-fit:cover;opacity:.85}
+  .se-plan span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .se-plan:hover{color:var(--ink);border-color:rgba(255,255,255,.18)}
+  .se-plan.on{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+  .se-plan.on img{opacity:1}
+  .se-plan-add{grid-column:1/-1;border-style:dashed;justify-content:center;padding:0 8px;color:var(--muted)}
+  .se-plan-add svg{width:14px;height:14px;flex:0 0 14px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
+  .se-plan-add:only-child,.se-plan:only-child{grid-column:1/-1}
+  /* ouverte par un lien depuis un autre clan */
+  .se-lien-band{display:flex;align-items:center;gap:8px;margin:10px 12px 0;padding:8px 10px;border:1px solid var(--se-line);border-left:3px solid var(--accent);
+    border-radius:8px;background:var(--accent-soft);font-size:12px;color:var(--ink)}
+  .se-lien-band svg{width:15px;height:15px;flex:0 0 15px;fill:none;stroke:var(--accent);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
   /* propriétés */
   .se-ptitle{font:700 15px/1.25 "IBM Plex Sans Condensed",system-ui,sans-serif;color:var(--ink);overflow-wrap:anywhere}
   .se-psub{margin:3px 0 0;font-size:12px;color:var(--muted);line-height:1.45}
@@ -3604,6 +3642,24 @@ i.pm-eq{width:8px;height:8px;background:var(--accent);opacity:.55;
   .se-aide-f{display:flex;align-items:center;gap:8px;padding:12px 22px;border-top:1px solid var(--se-line)}
   .se-aide-f a.se-btn{text-decoration:none}
   .se-aide-f a.se-btn:hover{color:var(--accent)}
+  /* partager par un lien : la boîte du guide, plus étroite, deux liens */
+  .se-share .se-share-box{width:min(640px,100%)}
+  .se-share-c{padding-top:14px;display:flex;flex-direction:column;gap:12px}
+  .se-share-l{border:1px solid var(--se-line);border-radius:10px;padding:13px 14px;background:rgba(0,0,0,.18)}
+  .se-share-l.on{border-color:var(--gold-line,rgba(229,185,92,.32))}
+  .se-share-t{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+  .se-share-t h3{margin:0 0 4px;font:700 15px/1.2 "IBM Plex Sans",system-ui,sans-serif;color:var(--ink);letter-spacing:0;text-transform:none}
+  .se-share-t p{margin:0;font-size:12.5px;line-height:1.5;color:var(--ink-2);text-wrap:pretty}
+  .se-share-tog{flex:0 0 auto}
+  .se-share-tog.on{color:var(--bad);border-color:rgba(232,98,107,.4)}
+  .se-share-u{display:flex;gap:8px;margin-top:11px}
+  .se-share-u .se-in{flex:1 1 auto;min-width:0;font:500 12px/1 "IBM Plex Mono",ui-monospace,monospace}
+  .se-share-u .se-in:disabled{opacity:.55}
+  .se-share-u .se-btn{flex:0 0 auto}
+  .se-share-u .se-btn svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .se-share-note{margin:0;padding:9px 11px;border-left:3px solid var(--or,#e0904a);background:rgba(224,144,74,.1);border-radius:0 8px 8px 0;font-size:12.5px;color:var(--ink)}
+  .se-share-note[hidden]{display:none}
+  .se-share-pied{font-size:12px;color:var(--muted);max-width:40ch}
   .se-aide-f .se-aide-vbtn{flex:0 0 auto}
   .se-aide-f .se-aide-vbtn[aria-pressed="true"]{border-color:rgba(216,181,102,.5)}
   /* le tuto vidéo : il prend la place du guide, dans une boîte plus large */
@@ -3614,6 +3670,8 @@ i.pm-eq{width:8px;height:8px;background:var(--accent);opacity:.55;
     background:#000;border:1px solid var(--se-line);border-radius:10px}
   @media(max-width:700px){
     .se-aide-v{padding:12px 16px 14px}
+    .se-share-t{flex-direction:column;gap:10px}
+    .se-share-pied{font-size:11.5px}
     .se-aide{padding:8px}
     .se-aide-h,.se-aide-c,.se-aide-f{padding-left:16px;padding-right:16px}
     .se-aide-cols,.se-aide-keys{grid-template-columns:minmax(0,1fr)}
@@ -3643,8 +3701,8 @@ i.pm-eq{width:8px;height:8px;background:var(--accent);opacity:.55;
   /* ── tablette : la barre du haut se resserre. L'état « non enregistré »
      devient une pastille sur le bouton Enregistrer, qui reste toujours visible. */
   @media(max-width:1000px){
-    .se-etat,.se-presence,#stPresent span,#stAide span{display:none}
-    #stAide{width:32px;padding:0;justify-content:center}
+    .se-etat,.se-presence,#stPresent span,#stAide span,#stShare span{display:none}
+    #stAide,#stShare{width:32px;padding:0;justify-content:center}
     .se-name{width:130px}
     #stSave.sale::after{content:"";width:7px;height:7px;border-radius:50%;background:#1a1608;flex:0 0 7px}
   }

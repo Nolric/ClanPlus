@@ -147,13 +147,17 @@ async function boot(){
   }
   // 2) Session déjà présente ?
   if(localStorage.getItem(LS_SESSION)){
-    if(localStorage.getItem("cp_clan")===""){ location.href = "trouver-clan.html"; return; } // session sans clan → Trouver un clan
+    if(localStorage.getItem("cp_clan")===""){
+      // sans clan, mais venu par un lien de stratégie : on l'ouvre plutôt que de l'envoyer chercher un clan
+      if(stLienEnAttente()){ wireLanding(); showLanding(); stOuvrirLienEnAttente(); return; }
+      location.href = "trouver-clan.html"; return; } // session sans clan → Trouver un clan
     await openApp(); return;
   }
 
-  // 3) Sinon, page d'accueil publique
+  // 3) Sinon, page d'accueil publique (et, par-dessus, la stratégie d'un lien partagé)
   wireLanding();
   showLanding();
+  stOuvrirLienEnAttente();
 }
 
 async function openApp(){
@@ -229,6 +233,8 @@ async function openApp(){
   populatePlayerSel();
   // arrivé par le bouton DEBRIEF du mod : on ne lui barre pas la route avec une fenêtre
   if(openBattleFromLink()) return;
+  // arrivé par un lien de stratégie partagé : elle s'ouvre par-dessus l'application
+  if(stOuvrirLienEnAttente()) return;
   /* On arrive sur le Briefing. Sa liste « À faire » propose déjà de relier
      le jeu : la fenêtre d'accueil ne s'ouvre plus que sur la Vue clan. */
   if(accueil==="briefing"){ switchView("briefing"); return; }
@@ -2739,7 +2745,12 @@ async function connecteWg(ids){
     localStorage.removeItem("cp_retour");
     if(retour){ localStorage.setItem("cp_clan", res.j.clan ? String(res.j.clan.clan_id) : ""); location.href=retour; return; }
     if(res.j.clan){ localStorage.setItem("cp_clan", String(res.j.clan.clan_id)); await openApp(); }
-    else { localStorage.setItem("cp_clan", ""); location.href = "trouver-clan.html"; }
+    else {
+      localStorage.setItem("cp_clan", "");
+      // connecté pour modifier une stratégie partagée : on y retourne, pas vers « Trouver un clan »
+      if(stLienEnAttente()){ wireLanding(); showLanding(); stOuvrirLienEnAttente(); }
+      else location.href = "trouver-clan.html";
+    }
     return;
   }
   const code = (res && res.j && res.j.error) || (res ? "http_" + res.status : "reseau");
@@ -9830,13 +9841,16 @@ function stJoinRoom(room,role){ const sb=stRtClient(); stLeaveRoom(); if(!sb||!r
   ch.on('broadcast',{event:'req'},({payload})=>{ if(role!=='edit'||!payload||payload.by===ST_CID||!ST_EDIT) return; stBroadcastNow(); });
   // Un collaborateur vient d'enregistrer : si l'on a exactement le même plan,
   // on n'a plus rien « en attente ».
-  ch.on('broadcast',{event:'saved'},({payload})=>{ if(!payload||payload.by===ST_CID||!ST_EDIT) return; if(payload.sig===stSig(ST_EDIT.steps)) stSetDirty(false); });
+  ch.on('broadcast',{event:'saved'},({payload})=>{ if(!payload||payload.by===ST_CID||!ST_EDIT) return; if(payload.sig===stSig(stBcPlans())) stSetDirty(false); });
   ch.subscribe(async status=>{ if(status!=='SUBSCRIBED') return;
     try{ await ch.track({id:STRAT_ME,name:stMyName(),role,at:Date.now()}); }catch(_){}
     if(role==='edit'){ try{ ch.send({type:'broadcast',event:'req',payload:{by:ST_CID}}); }catch(_){} } });
   ST_ROOM=ch;
-  if(role==='edit'){ ST_BC_LAST=ST_EDIT?JSON.stringify(ST_EDIT.steps):''; stStartBroadcastLoop(); }
+  if(role==='edit'){ ST_BC_LAST=ST_EDIT?JSON.stringify(stBcPlans()):''; stStartBroadcastLoop(); }
 }
+// Ce qui part sur le canal : TOUTES les cartes du fichier (chacun peut être sur une
+// carte différente). La carte affichée est d'abord recopiée dans ST_EDIT.plans.
+function stBcPlans(){ stPlanFlush(); return (ST_EDIT&&ST_EDIT.plans)||[]; }
 function stLeaveRoom(){ stStopBroadcastLoop(); if(ST_ROOM&&SB_CLIENT){ try{ SB_CLIENT.removeChannel(ST_ROOM); }catch(_){} } ST_ROOM=null; document.querySelectorAll('.st-presence').forEach(b=>b.innerHTML=''); }
 function stPresenceUsers(){ if(!ST_ROOM) return []; let st={}; try{ st=ST_ROOM.presenceState(); }catch(_){ return []; }
   const seen={},out=[]; Object.values(st).forEach(a=>a.forEach(m=>{ const k=String(m.id!=null?m.id:m.name); if(!seen[k]){ seen[k]=1; out.push(m); } })); return out; }
@@ -9844,27 +9858,37 @@ function stRenderPresence(){ const boxes=document.querySelectorAll('.st-presence
   // seul, on ne s'affiche pas : la pastille ne dit quelque chose qu'à plusieurs
   const html=us.length<2?'':us.map(u=>`<span class="st-pres${u.role==='edit'?' editing':''}" title="${esc(u.name||'?')} — ${u.role==='edit'?'modifie':'regarde'}">${esc(String(u.name||'?').slice(0,14))}</span>`).join('');
   boxes.forEach(b=>b.innerHTML=html); }
-function stBroadcastNow(){ if(!ST_ROOM||!ST_EDIT) return; let j; try{ j=JSON.stringify(ST_EDIT.steps); }catch(_){ return; }
-  ST_BC_LAST=j; try{ ST_ROOM.send({type:'broadcast',event:'els',payload:{by:ST_CID,steps:ST_EDIT.steps}}); }catch(_){} }
-function stStartBroadcastLoop(){ stStopBroadcastLoop(); ST_BC_LOOP=setInterval(()=>{ if(!ST_ROOM||!ST_EDIT||ST_MOVE||ST_DRAW||ST_XFORM||ST_PATHBUILD) return; let j; try{ j=JSON.stringify(ST_EDIT.steps); }catch(_){ return; } if(j!==ST_BC_LAST) stBroadcastNow(); },400); }
+function stBroadcastNow(){ if(!ST_ROOM||!ST_EDIT) return; const plans=stBcPlans(); let j; try{ j=JSON.stringify(plans); }catch(_){ return; }
+  // `steps` (1re carte) reste dans le message pour un onglet resté sur l'ancienne version du site
+  ST_BC_LAST=j; try{ ST_ROOM.send({type:'broadcast',event:'els',payload:{by:ST_CID,plans,steps:plans[0]&&plans[0].steps}}); }catch(_){} }
+function stStartBroadcastLoop(){ stStopBroadcastLoop(); ST_BC_LOOP=setInterval(()=>{ if(!ST_ROOM||!ST_EDIT||ST_MOVE||ST_DRAW||ST_XFORM||ST_PATHBUILD) return; let j; try{ j=JSON.stringify(stBcPlans()); }catch(_){ return; } if(j!==ST_BC_LAST) stBroadcastNow(); },400); }
 function stStopBroadcastLoop(){ if(ST_BC_LOOP){ clearInterval(ST_BC_LOOP); ST_BC_LOOP=null; } }
 // petite empreinte d'un plan (djb2) : comparer deux états sans renvoyer tout le plan
 function stSig(steps){ let s; try{ s=JSON.stringify(steps); }catch(_){ return ''; } let h=5381; for(let i=0;i<s.length;i++) h=((h<<5)+h+s.charCodeAt(i))|0; return String(h>>>0)+':'+s.length; }
-function stApplyRemoteEls(p){ if(!p||!ST_EDIT||p.by===ST_CID||ST_MOVE||ST_DRAW||ST_XFORM||ST_PATHBUILD||!Array.isArray(p.steps)||!p.steps.length) return;
+function stApplyRemoteEls(p){ if(!p||!ST_EDIT||p.by===ST_CID||ST_MOVE||ST_DRAW||ST_XFORM||ST_PATHBUILD) return;
   // ⚠️ Tout ce qui arrive par le canal est NETTOYÉ, comme le fait le serveur :
   // le canal est ouvert, et son contenu part ensuite dans le SVG.
   // ⚠️ Conserver `note` ET `t` (stStepsOf le fait) : ne garder que `els`
   // effaçait les notes et les instants épinglés des diapos de débrief.
-  const steps=stStepsOf({steps:p.steps.slice(0,12)});
-  const j=JSON.stringify(steps); if(j===JSON.stringify(ST_EDIT.steps)){ ST_BC_LAST=j; return; }
-  ST_EDIT.steps=steps;
-  if(ST_STEP>=steps.length) ST_STEP=steps.length-1; ST_EDIT.els=steps[ST_STEP].els;
+  stPlanFlush();
+  let plans=null;
+  if(Array.isArray(p.plans)&&p.plans.length) plans=stPlansOf({plans:p.plans});
+  else if(Array.isArray(p.steps)&&p.steps.length){   // un onglet resté sur l'ancienne version : sa 1re carte seulement
+    plans=ST_EDIT.plans.map(x=>({...x})); plans[0].steps=stStepsOf({steps:p.steps.slice(0,12)}); }
+  if(!plans) return;
+  const j=JSON.stringify(plans); if(j===JSON.stringify(ST_EDIT.plans)){ ST_BC_LAST=j; return; }
+  const avant=ST_EDIT.map+'|'+ST_EDIT.mode+'|'+ST_EDIT.plans.length;
+  ST_EDIT.plans=plans; const pl=plans[Math.min(ST_PLAN,plans.length-1)]; ST_PLAN=plans.indexOf(pl);
+  ST_EDIT.map=pl.map; ST_EDIT.mode=pl.mode; ST_EDIT.steps=pl.steps;
+  if(ST_STEP>=ST_EDIT.steps.length) ST_STEP=ST_EDIT.steps.length-1; ST_EDIT.els=ST_EDIT.steps[ST_STEP].els;
   // La sélection survit si ses éléments existent encore. L'historique, lui,
   // repart de zéro : « annuler » ne doit pas défaire le travail d'un autre.
   [...ST_SELS].forEach(i=>{ if(i>=ST_EDIT.els.length) ST_SELS.delete(i); });
   ST_UNDO=[]; ST_REDO=[];
-  ST_BC_LAST=JSON.stringify(ST_EDIT.steps);
+  ST_BC_LAST=j;
   stSetDirty(true);
+  // une carte ajoutée, retirée ou changée par un autre : on redessine tout l'éditeur
+  if(avant!==ST_EDIT.map+'|'+ST_EDIT.mode+'|'+plans.length){ renderStratEditor(); return; }
   renderStepTabs(); stRedraw(); stMaj(); }
 
 /* ============================================================
@@ -9876,7 +9900,8 @@ function stApplyRemoteEls(p){ if(!p||!ST_EDIT||p.by===ST_CID||ST_MOVE||ST_DRAW||
    pointe d'une flèche, cercle de portée…), plus une seule chose à
    retenir par geste.
    ============================================================ */
-let ST_EDIT=null;          // {id,room,name,map,mode,steps,els,editors,battleId}
+let ST_EDIT=null;          // {id,room,name,plans,map,mode,steps,els,editors,battleId,share,lien,externe}
+let ST_PLAN=0;             // la carte affichée dans ST_EDIT.plans (map/mode/steps en sont le miroir)
 let ST_TOOL='select', ST_DRAW=null, ST_MOVE=null;
 let ST_SELS=new Set();     // indices des éléments sélectionnés
 let ST_BOX=null;           // rectangle de sélection en cours
@@ -10005,6 +10030,37 @@ function stClean(arr){
 function stStepsOf(s){ if(s&&Array.isArray(s.steps)&&s.steps.length) return s.steps.slice(0,12).map(st=>{ st=st||{}; const t=Number(st.t);
     return {els:stClean(st.els), note:st.note?String(st.note).slice(0,140):'', t:(st.t!=null&&Number.isFinite(t)&&t>=0?Math.round(t*10)/10:null)}; });
   return [{els:stClean(s&&s.elements),note:'',t:null}]; }
+/* PLUSIEURS CARTES dans une stratégie (15/11/2026) : plans = [{map,mode,steps}],
+   8 au plus. Une stratégie d'avant (sans plans) est un fichier à une seule
+   carte. Tout l'éditeur travaille sur ST_EDIT.map/mode/steps, qui sont ceux de
+   la carte affichée (ST_PLAN) : stPlanFlush les recopie dans plans avant tout
+   ce qui lit le fichier entier (enregistrer, partager en direct). */
+const ST_MAX_PLANS=8;
+const stMapKey=v=>String(v||'').slice(0,40).replace(/[^a-z0-9]/gi,'');
+function stPlansOf(s){
+  const raw=s&&Array.isArray(s.plans)&&s.plans.length?s.plans:null;
+  if(raw){ const out=raw.slice(0,ST_MAX_PLANS).filter(p=>p&&stMapKey(p.map)).map(p=>({map:stMapKey(p.map),mode:stMapKey(p.mode)||'ctf',steps:stStepsOf(p)}));
+    if(out.length) return out; }
+  return [{map:stMapKey(s&&s.map),mode:stMapKey(s&&s.mode)||'ctf',steps:stStepsOf(s)}]; }
+function stPlanFlush(){ if(!ST_EDIT||!ST_EDIT.plans) return; const p=ST_EDIT.plans[ST_PLAN]; if(!p) return; p.map=ST_EDIT.map; p.mode=ST_EDIT.mode; p.steps=ST_EDIT.steps; }
+function stPlanLoad(i){ ST_PLAN=Math.max(0,Math.min(ST_EDIT.plans.length-1,i)); const p=ST_EDIT.plans[ST_PLAN];
+  ST_EDIT.map=p.map; ST_EDIT.mode=p.mode; ST_EDIT.steps=p.steps; ST_STEP=0; ST_EDIT.els=ST_EDIT.steps[0].els; }
+// un débriefing reste sur la carte de sa bataille : pas d'autre carte tant qu'il a son replay
+function stPlanOk(){ return !!(ST_EDIT&&!ST_EDIT.battleId&&!ST_RP); }
+function stMapNom(k){ return ST_MAPNAME[k]||prettyMap(k); }
+function renderPlanTabs(){ const c=document.getElementById('stPlanTabs'); if(!c||!ST_EDIT||!ST_EDIT.plans) return;
+  stPlanFlush(); const n=ST_EDIT.plans.length;
+  c.innerHTML=ST_EDIT.plans.map((p,i)=>`<button type="button" class="se-plan${i===ST_PLAN?' on':''}" data-plan="${i}" aria-pressed="${i===ST_PLAN}"><img src="maps/top/${esc(p.map)}.jpg" alt="" loading="lazy" onerror="this.style.opacity='.12'"><span>${esc(stMapNom(p.map))}</span></button>`).join('')
+    +(stPlanOk()&&n<ST_MAX_PLANS?`<button type="button" class="se-plan se-plan-add" id="stPlanAdd" aria-label="${esc(t('Ajouter une carte'))}">${stIc('plus')}<span>${esc(t('Ajouter une carte'))}</span></button>`:'');
+  c.querySelectorAll('.se-plan[data-plan]').forEach(b=>b.onclick=()=>stGoPlan(+b.dataset.plan));
+  const add=c.querySelector('#stPlanAdd'); if(add) add.onclick=()=>{ if(ST_PATHBUILD) stFinishPath(true); renderMapPicker('add'); };
+  const del=document.getElementById('stPlanDel'); if(del) del.disabled=n<=1; }
+function stGoPlan(i){ if(!ST_EDIT||i===ST_PLAN||i<0||i>=ST_EDIT.plans.length) return; if(ST_PATHBUILD) stFinishPath(true);
+  stPlanFlush(); stPlanLoad(i); stSelClear(); ST_UNDO=[]; ST_REDO=[]; renderStratEditor(); }
+function stDelPlan(){ if(!ST_EDIT||ST_EDIT.plans.length<=1) return; const p=ST_EDIT.plans[ST_PLAN];
+  if(!confirm(t('Retirer la carte')+' « '+stMapNom(p.map)+' » '+t('et ses étapes ?'))) return;
+  stPlanFlush(); ST_EDIT.plans.splice(ST_PLAN,1); stPlanLoad(Math.max(0,ST_PLAN-1));
+  stSelClear(); ST_UNDO=[]; ST_REDO=[]; stSetDirty(true); renderStratEditor(); }
 /* Les cartes de l'éditeur 2D : les MÊMES que la carte 3D (web/maps3d/index.json),
    sous le nom que le jeu leur donne (catalogue arenas.mo, jeu 2.4.1), triées par
    nom. La clé est celle de maps/top/<clé>.jpg. Une carte ajoutée à la 3D doit
@@ -10072,7 +10128,9 @@ const ST_IC={
   fsup:'<path d="M2.5 16L7 4.5 11.5 16M4.2 12h5.6"/><path d="M15.5 6.5v6M12.5 9.5h6"/>',
   fsdn:'<path d="M2.5 16L7 4.5 11.5 16M4.2 12h5.6"/><path d="M12.5 9.5h6"/>',
   ext:'<path d="M8.5 4.5H4.5v11h11v-4"/><path d="M11.5 4.5h4v4M15.5 4.5L9 11"/>',
-  retour:'<path d="M16 10H4.5M9 5.5L4.5 10 9 14.5"/>'
+  retour:'<path d="M16 10H4.5M9 5.5L4.5 10 9 14.5"/>',
+  lien:'<path d="M8.6 11.4a3.4 3.4 0 0 0 4.8 0l2.6-2.6a3.4 3.4 0 0 0-4.8-4.8l-1.1 1.1"/><path d="M11.4 8.6a3.4 3.4 0 0 0-4.8 0L4 11.2a3.4 3.4 0 0 0 4.8 4.8l1.1-1.1"/>',
+  copie:'<rect x="7" y="7" width="9.5" height="9.5" rx="1.6"/><path d="M13 7V5a1.5 1.5 0 0 0-1.5-1.5h-6A1.5 1.5 0 0 0 4 5v6a1.5 1.5 0 0 0 1.5 1.5H7"/>'
 };
 function stIc(k){ return `<svg viewBox="0 0 20 20" aria-hidden="true" focusable="false">${ST_IC[k]||''}</svg>`; }
 let ST_BASES=null;   // positions officielles des bases (web/maps_bases.json)
@@ -10136,24 +10194,33 @@ function renderStrats(){
   if(!STRATS.length){ el.innerHTML=`<div class="lo-empty"><div class="lo-empty-ic">🗺️</div><div class="lo-empty-t">Aucune stratégie</div><div class="lo-empty-s">${STRAT_CANEDIT?'Clique « Nouvelle stratégie » pour en dessiner une.':'Les officiers n’ont pas encore préparé de stratégie.'}</div></div>`; return; }
   el.innerHTML='<div class="tl-cards">'+STRATS.map(s=>{
     const canE=stCanEdit(s); const btns=canE?`<div class="tl-cardact"><button class="lo-mini" data-stedit="${s.id}" title="Modifier">✎</button>${STRAT_CANEDIT?`<button class="lo-mini lo-minidel" data-stdel="${s.id}" title="Supprimer">✕</button>`:''}</div>`:"";
-    const nst=(s.steps&&s.steps.length)||1; const meta=nst>1?`${nst} étapes`:`${(s.elements||[]).length} éléments`;
-    return `<div class="tl-card st-card" data-stopen="${s.id}"><div class="st-card-map"><img src="maps/top/${esc(s.map||'')}.jpg" onerror="this.style.opacity='.12'"><span class="st-card-mapn">${esc(ST_MAPNAME[s.map]||prettyMap(s.map))}</span></div><div class="tl-card-h"><b>${esc(s.name||"Stratégie")}</b>${btns}</div><div class="tl-card-by">${meta} · par ${esc(s.created_by_name||"?")}</div></div>`;
+    const nst=(s.steps&&s.steps.length)||1; const npl=(Array.isArray(s.plans)&&s.plans.length)||1;
+    const meta=npl>1?`${npl} ${t('cartes')}`:(nst>1?`${nst} étapes`:`${(s.elements||[]).length} éléments`);
+    const partagee=s.share&&(s.share.view||s.share.edit)?` · <span class="st-card-lien" title="${esc(t('Un lien de partage est actif'))}">${stIc('lien')}${esc(t('partagée'))}</span>`:'';
+    return `<div class="tl-card st-card" data-stopen="${s.id}"><div class="st-card-map"><img src="maps/top/${esc(s.map||'')}.jpg" onerror="this.style.opacity='.12'"><span class="st-card-mapn">${esc(ST_MAPNAME[s.map]||prettyMap(s.map))}${npl>1?` +${npl-1}`:''}</span></div><div class="tl-card-h"><b>${esc(s.name||"Stratégie")}</b>${btns}</div><div class="tl-card-by">${meta} · par ${esc(s.created_by_name||"?")}${partagee}</div></div>`;
   }).join("")+'</div>';
   el.querySelectorAll("[data-stopen]").forEach(c=>c.onclick=e=>{ if(e.target.closest("[data-stedit],[data-stdel]"))return; openStratView(STRATS.find(x=>String(x.id)===c.dataset.stopen)); });
   el.querySelectorAll("[data-stedit]").forEach(b=>b.onclick=e=>{e.stopPropagation();openStratEditor(STRATS.find(x=>String(x.id)===b.dataset.stedit));});
   el.querySelectorAll("[data-stdel]").forEach(b=>b.onclick=e=>{e.stopPropagation();deleteStrat(b.dataset.stdel);});
 }
-function openStratEditor(s, keepReplay){
-  if(!stCanEdit(s)){ alert("Réservé aux officiers de combat et aux collaborateurs de cette stratégie."); return; }
+/* `lien` : ouverte par un lien de modification ({token, externe, clan}). Le serveur
+   a déjà vérifié le lien ; un joueur d'un autre clan (externe) modifie la stratégie
+   là où elle est, sans collaborateurs ni liens à gérer. */
+function openStratEditor(s, keepReplay, lien){
+  if(!lien && !stCanEdit(s)){ alert("Réservé aux officiers de combat et aux collaborateurs de cette stratégie."); return; }
   if(ST_EDIT && ST_DIRTY && !confirm(t("Une stratégie est en cours de modification et n'est pas enregistrée. L'abandonner ?"))) return;
   // Le REPLAY est une fonctionnalité à part (débriefing) : on le retire de l'éditeur
   // sauf si on vient justement de l'ouvrir via « Débriefer dans l'éditeur ».
   if(!keepReplay){ stRpStop(); ST_RP=null; }
   stChatStop(); stLeaveRoom(); stInlineClose(); stHideCtxMenu();
-  ST_EDIT={ id:(s&&s.id)||null, room:(s&&s.room)||null, name:(s&&s.name)||"Nouvelle stratégie", map:(s&&s.map)||"", mode:(s&&s.mode)||"ctf", steps:stStepsOf(s), editors:(s&&Array.isArray(s.editors))?s.editors.map(Number):[],
+  const plans=stPlansOf(s);
+  ST_EDIT={ id:(s&&s.id)||null, room:(s&&s.room)||null, name:(s&&s.name)||"Nouvelle stratégie", plans, map:plans[0].map, mode:plans[0].mode, steps:plans[0].steps, editors:(s&&Array.isArray(s.editors))?s.editors.map(Number):[],
             // bataille d'origine : c'est ce qui permet de RETROUVER le replay plus tard
-            battleId:(s&&s.battle_id!=null)?String(s.battle_id):((keepReplay&&ST_RP)?String(ST_RP.battleId):null) };
-  ST_STEP=0; ST_EDIT.els=ST_EDIT.steps[0].els;
+            battleId:(s&&s.battle_id!=null)?String(s.battle_id):((keepReplay&&ST_RP)?String(ST_RP.battleId):null),
+            // l'état des liens de partage : donné par le serveur au créateur et aux officiers
+            share:lien?null:(s?(s.share||null):((STRAT_CANEDIT||isAppAdmin())?{view:null,edit:null}:null)),
+            lien:(lien&&lien.token)||null, externe:!!(lien&&lien.externe), clan:(lien&&lien.clan)||null };
+  ST_PLAN=0; ST_STEP=0; ST_EDIT.els=ST_EDIT.steps[0].els;
   stSelClear(); ST_UNDO=[]; ST_REDO=[]; ST_DIRTY=false; ST_PATHBUILD=null; ST_DRAW=null; ST_MOVE=null; ST_LASER=false; ST_LASTDOWN=null;
   // une page blanche appelle un char ; un plan existant ou un débrief, la sélection
   ST_TOOL=(ST_EDIT.id||keepReplay)?'select':'tank';
@@ -10176,25 +10243,29 @@ function stCloseEditor(force){
   const ed=document.getElementById("stEditor"); ed.classList.add("hidden"); ed.innerHTML="";
   document.body.classList.remove("st-noscroll");
   ST_EDIT=null; ST_DIRTY=false; ST_PATHBUILD=null; ST_DRAW=null; ST_MOVE=null; ST_LASER=false;
+  stPartageMode(false);   // ouverte par un lien : l'éditeur retourne à sa place
   return true;
 }
 /* Choix de la carte. Deux cas :
    - nouvelle stratégie : « Annuler » ferme l'éditeur ;
    - changement de carte : « Annuler » RAMÈNE à l'éditeur, intact. Avant, il
      effaçait toute la stratégie en cours et retirait le replay au passage. */
-function renderMapPicker(){
+/* `quoi` = 'add' : AJOUTER une carte au fichier (elle arrive avec une étape vide). */
+function renderMapPicker(quoi){
   const ed=document.getElementById("stEditor"); ed.classList.remove("hidden"); document.body.classList.add("st-noscroll");
   stInlineClose(); stHideCtxMenu(); stTipHide();
+  const ajout=quoi==='add'&&!!(ST_EDIT&&ST_EDIT.map);
   const back=!!(ST_EDIT&&ST_EDIT.map);
   ed.innerHTML=`<div class="se se-pickwrap" id="stShell" role="dialog" aria-modal="true" aria-labelledby="stPickT">
     <div class="se-pick">
       <div class="se-pick-h">
-        <div><div class="se-kick">${back?'Changer de carte':'Nouvelle stratégie'}</div><h2 id="stPickT">Choisis une carte</h2></div>
+        <div><div class="se-kick">${ajout?'Ajouter une carte':back?'Changer de carte':'Nouvelle stratégie'}</div><h2 id="stPickT">Choisis une carte</h2></div>
         <button type="button" class="se-ic se-ic-lg" id="stPickCancel" aria-label="${back?"Revenir à l'éditeur":"Annuler"}">${stIc('close')}</button>
       </div>
       <input class="se-in se-pick-q" id="stPickQ" type="search" placeholder="Rechercher une carte…" aria-label="Rechercher une carte" autocomplete="off">
-      ${back?`<p class="se-pick-note">${esc(t('Ce qui est déjà dessiné est conservé.'))}${ST_RP?' '+esc(t('Le replay sera retiré : il appartient à la carte actuelle.')):''}</p>`:''}
-      <div class="se-pick-grid" id="stPickGrid">${ST_MAPS.map(m=>`<button type="button" class="se-map${ST_EDIT&&ST_EDIT.map===m[0]?' on':''}" data-map="${m[0]}" data-q="${esc((m[1]+' '+m[0]).toLowerCase())}"><img src="maps/top/${m[0]}.jpg" alt="" loading="lazy" onerror="this.style.opacity='.12'"><span>${esc(m[1])}</span></button>`).join("")}</div>
+      ${ajout?`<p class="se-pick-note">${esc(t("La carte s'ajoute à la stratégie avec une étape vide ; les autres cartes ne changent pas."))}</p>`
+        :back?`<p class="se-pick-note">${esc(t('Ce qui est déjà dessiné est conservé.'))}${ST_RP?' '+esc(t('Le replay sera retiré : il appartient à la carte actuelle.')):''}</p>`:''}
+      <div class="se-pick-grid" id="stPickGrid">${ST_MAPS.map(m=>`<button type="button" class="se-map${!ajout&&ST_EDIT&&ST_EDIT.map===m[0]?' on':''}" data-map="${m[0]}" data-q="${esc((m[1]+' '+m[0]).toLowerCase())}"><img src="maps/top/${m[0]}.jpg" alt="" loading="lazy" onerror="this.style.opacity='.12'"><span>${esc(m[1])}</span></button>`).join("")}</div>
       <p class="se-vide" id="stPickVide" hidden>Aucune carte ne correspond.</p>
     </div></div>`;
   const cancel=()=>{ if(back) renderStratEditor(); else stCloseEditor(true); };
@@ -10207,6 +10278,10 @@ function renderMapPicker(){
     document.getElementById("stPickVide").hidden=n>0; };
   sh.querySelectorAll(".se-map").forEach(b=>b.onclick=()=>{
     const k=b.dataset.map;
+    if(ajout){
+      stPlanFlush(); ST_EDIT.plans.push({map:k,mode:'ctf',steps:[{els:[],note:'',t:null}]}); stPlanLoad(ST_EDIT.plans.length-1);
+      stSelClear(); ST_UNDO=[]; ST_REDO=[]; stSetDirty(true); ST_TOOL='tank'; renderStratEditor(); return;
+    }
     if(k!==ST_EDIT.map){
       if(back){ stRpStop(); ST_RP=null; stSetDirty(true); }   // le replay appartient à l'ancienne carte
       ST_EDIT.map=k;
@@ -10232,7 +10307,9 @@ function renderStratEditor(){
   const rail=ST_TOOLS.map(([k,l,key],i)=>(ST_RAIL_SEP.includes(i)?'<span class="se-rail-sep"></span>':'')
       +`<button type="button" class="se-tool${ST_TOOL===k?' on':''}" data-tool="${k}" aria-label="${l}" data-key="${key}" aria-pressed="${ST_TOOL===k}">${stIc(k)}<span class="se-key" aria-hidden="true">${key}</span></button>`).join("")
     +`<span class="se-rail-sep"></span><button type="button" class="se-tool se-camp" id="stCamp" data-key="C"></button>`;
-  const canCollab=STRAT_CANEDIT||isAppAdmin();
+  // ouverte par un lien depuis un autre clan : ni collaborateurs ni liens, ils appartiennent au clan
+  const canCollab=(STRAT_CANEDIT||isAppAdmin())&&!ST_EDIT.externe&&!ST_EDIT.lien;
+  const canShare=!!ST_EDIT.share&&!ST_EDIT.externe;
   ed.innerHTML=`<div class="se${ST_PANEL.off?' insp-off':''}" id="stShell">
     <div class="se-stage" id="stStage">
       <svg class="se-svg" id="stSvg" data-tool="${ST_TOOL}" viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${esc(t('Carte'))} ${esc(mapName)}">
@@ -10266,12 +10343,15 @@ function renderStratEditor(){
         <button type="button" class="se-ic" id="stRedo" aria-label="Rétablir (Ctrl+Y)" disabled>${stIc('redo')}</button>
         <span class="se-sep"></span>
         <button type="button" class="se-ic" id="stPanelBtn" aria-label="Afficher ou masquer le panneau">${stIc('panel')}</button>
+        ${canShare?`<button type="button" class="se-btn" id="stShare" aria-label="Partager par un lien" aria-haspopup="dialog">${stIc('lien')}<span>Partager</span></button>`:''}
         <button type="button" class="se-btn" id="stPresent">${stIc('play')}<span>Présenter</span></button>
         <button type="button" class="se-btn se-btn-pri" id="stSave">Enregistrer</button>
       </div>
     </div>
     <div class="se-rail" role="toolbar" aria-label="Outils" aria-orientation="vertical">${rail}</div>
     <aside class="se-insp" id="stInsp" aria-label="Panneau de la stratégie">
+      ${ST_EDIT.externe?`<div class="se-lien-band">${stIc('lien')}<span>${esc(t('Ouverte par un lien'))}${ST_EDIT.clan&&ST_EDIT.clan.tag?` · [${esc(ST_EDIT.clan.tag)}]`:''}</span></div>`:''}
+      ${stSec('plans','Cartes',`<div class="se-plans" id="stPlanTabs"></div><button type="button" class="se-link" id="stPlanDel">Retirer cette carte</button>`)}
       ${stSec('steps','Étapes',`<div class="se-steps" id="stStepTabs"></div><input class="se-in" id="stStepNote" maxlength="140" placeholder="Ce qui se passe à cette étape" aria-label="Note de l'étape (affichée en présentation)"><button type="button" class="se-link" id="stStepDel">Supprimer cette étape</button>`)}
       ${stSec('props','Propriétés','<div id="stProps"></div>')}
       ${stSec('els','Éléments','<div class="se-tally" id="stTally"></div><div class="se-list" id="stElList"></div>','<span class="se-count" id="stElCount"></span>')}
@@ -11203,9 +11283,11 @@ function stBeginMove(p,e,svg){ const orig=new Map(); let ax=Infinity,ay=Infinity
 // Les raccourcis ne valent QUE quand l'éditeur est à l'écran. Avant, ils
 // restaient actifs dans les autres onglets du site : Suppr effaçait un élément
 // de la stratégie cachée, Ctrl+C et Espace étaient bloqués partout.
-function stEdActif(){ const v=document.getElementById('viewStrats');
-  return !!(ST_EDIT && document.getElementById('stSvg') && v && !v.classList.contains('hidden')
-    && !document.getElementById('stPresentOv') && !document.getElementById('stCollabOv') && !document.getElementById('stAideOv')); }
+function stEdActif(){ const v=document.getElementById('viewStrats'), ed=document.getElementById('stEditor');
+  // ouvert par un lien, l'éditeur est sorti de l'onglet Stratégie (qui peut être caché)
+  const visible=(v && !v.classList.contains('hidden')) || (ed && ed.classList.contains('st-partage'));
+  return !!(ST_EDIT && document.getElementById('stSvg') && visible
+    && !document.getElementById('stPresentOv') && !document.getElementById('stCollabOv') && !document.getElementById('stAideOv') && !document.getElementById('stShareOv')); }
 let ST_GLOBAL_WIRED=false;
 function stWireGlobal(){ if(ST_GLOBAL_WIRED) return; ST_GLOBAL_WIRED=true;
   document.addEventListener("keydown",e=>{
@@ -11263,7 +11345,7 @@ const ST_AIDE_OUTILS={
 const ST_AIDE_TEXTE=[
   ["Le panneau de droite",[
     "Il règle <b>ce qui est sélectionné</b>. Sans sélection, il règle ce que posera l'outil actif : pose d'abord, ajuste ensuite.",
-    "Quatre rubriques repliables : <b>Étapes</b>, <b>Propriétés</b>, <b>Éléments</b> (tout ce qu'il y a sur l'étape) et <b>Affichage</b> (grille, aimantation, animation)."]],
+    "Cinq rubriques repliables : <b>Cartes</b>, <b>Étapes</b>, <b>Propriétés</b>, <b>Éléments</b> (tout ce qu'il y a sur l'étape) et <b>Affichage</b> (grille, aimantation, animation)."]],
   ["Sélectionner et modifier",[
     "<b>Plusieurs éléments</b> : glisse un cadre dans le vide, ou <kbd>Maj</kbd> + clic pour en ajouter ou en retirer.",
     "<b>Poignées</b> : les coins changent la taille, le rond du haut fait tourner.",
@@ -11271,12 +11353,14 @@ const ST_AIDE_TEXTE=[
     "<b>Clic droit</b> : renommer, dupliquer, copier, passer devant ou derrière, supprimer."]],
   ["Étapes et présentation",[
     "Jusqu'à <b>12 étapes</b>, chacune avec son dessin et sa note. <b>+</b> ajoute une copie de l'étape actuelle.",
+    "Jusqu'à <b>8 cartes</b> dans une même stratégie : <b>Ajouter une carte</b>, dans la rubrique Cartes, puis passe de l'une à l'autre par leurs onglets. Chaque carte a ses propres étapes.",
     "<b>Présenter</b> passe en plein écran : <kbd>←</kbd> <kbd>→</kbd> pour changer d'étape, <kbd>L</kbd> pour le pointeur laser, <kbd>Échap</kbd> pour sortir.",
     "<b>Enregistrer</b> laisse l'éditeur ouvert. La croix demande avant de jeter un plan non enregistré."]],
   ["Débriefing et travail à plusieurs",[
     "Ouvert depuis une bataille, l'éditeur montre le <b>replay</b> : <b>Étape ici</b> épingle une étape à l'instant affiché, <b>Proposer</b> place la position où un char aurait dû être.",
     "Une stratégie <b>enregistrée</b> se modifie à plusieurs, en direct. Le <b>pointeur</b> montre sans dessiner.",
-    "<b>Collaborateurs</b> donne à un membre le droit de modifier ce plan. Pense à enregistrer ensuite."]]
+    "<b>Collaborateurs</b> donne à un membre le droit de modifier ce plan. Pense à enregistrer ensuite.",
+    "<b>Partager</b> donne deux liens : <b>consulter</b> (n'importe qui, même sans compte) et <b>modifier</b> (avec un compte Wargaming). Personne ne peut garder la stratégie dans un autre clan ; couper un lien le rend inutilisable."]]
 ];
 // [touches, action] — une touche est un tableau de libellés, « / » sépare deux variantes
 const ST_AIDE_TOUCHES=[
@@ -11359,6 +11443,8 @@ function stWireEditor(){
   $("stSave").onclick=saveStrat;
   $("stPresent").onclick=()=>{ if(ST_PATHBUILD) stFinishPath(true); stPresent(ST_EDIT.steps,ST_EDIT.map,ST_EDIT.mode,ST_EDIT.name,ST_STEP); };
   const cb=$("stCollab"); if(cb) cb.onclick=stCollabPicker;
+  const shb=$("stShare"); if(shb) shb.onclick=stShareOpen;
+  $("stPlanDel").onclick=stDelPlan;
   $("stLaserBtn").onclick=stLaserToggle;
   $("stUndo").onclick=stUndo; $("stRedo").onclick=stRedo;
   $("stPanelBtn").onclick=()=>{ if(matchMedia("(max-width:760px)").matches){ sh.classList.toggle("insp-open"); return; }
@@ -11498,22 +11584,26 @@ function stWireEditor(){
     const hit=e.target.closest("[data-eid]"); const eid=hit?+hit.dataset.eid:null;
     if(eid!=null&&!ST_SELS.has(eid)){ stSelOnly(eid); stRedraw(); }
     stShowCtxMenu(e.clientX,e.clientY); };
-  renderStepTabs(); stMaj();
+  renderPlanTabs(); renderStepTabs(); stMaj();
 }
 async function saveStrat(){
   if(!ST_EDIT) return;
   if(!ST_EDIT.map){ alert("Choisis une carte."); return; }
   if(ST_PATHBUILD) stFinishPath(true);
-  const steps=ST_EDIT.steps.map(st=>({els:st.els, note:st.note||'', t:(st.t!=null?st.t:null)}));
-  const payload={ id:ST_EDIT.id||null, name:(ST_EDIT.name||"Stratégie").trim()||"Stratégie", map:ST_EDIT.map, mode:ST_EDIT.mode||"ctf", steps, elements:steps[0].els, editors:ST_EDIT.editors||[],
+  // toutes les cartes du fichier ; la 1re reste aussi dans map/mode/steps (liste, 3D, anciens sites)
+  stPlanFlush();
+  const plans=ST_EDIT.plans.map(p=>({ map:p.map, mode:p.mode||"ctf", steps:p.steps.map(st=>({els:st.els, note:st.note||'', t:(st.t!=null?st.t:null)})) }));
+  const steps=plans[0].steps;
+  const payload={ id:ST_EDIT.id||null, name:(ST_EDIT.name||"Stratégie").trim()||"Stratégie", map:plans[0].map, mode:plans[0].mode, steps, elements:steps[0].els, plans, editors:ST_EDIT.editors||[],
                   battle_id:ST_EDIT.battleId||null };   // pour retrouver le replay à la réouverture
   const btn=document.getElementById("stSave"); if(btn){ btn.disabled=true; btn.textContent="Enregistrement…"; }
-  let r; try{ r=await fnCall("strategies",{session:localStorage.getItem(LS_SESSION),action:"save",strategy:payload}); }
+  let r; try{ r=await fnCall("strategies",{session:localStorage.getItem(LS_SESSION),action:"save",strategy:payload,...(ST_EDIT.lien?{token:ST_EDIT.lien}:{})}); }
   catch(e){ r={ok:false,status:0,j:{error:String(e)}}; }
   if(btn){ btn.disabled=false; btn.textContent="Enregistrer"; }
   if(!r.ok){
     const e=r.j&&r.j.error;
-    alert(e==="no_clan" ? "Impossible d'enregistrer : ton compte n'est rattaché à aucun clan. Une stratégie appartient toujours à un clan."
+    alert(e==="link_off" ? t("Ce lien de modification a été coupé : tu ne peux plus enregistrer. Ton dessin est toujours à l'écran.")
+        : e==="no_clan" ? "Impossible d'enregistrer : ton compte n'est rattaché à aucun clan. Une stratégie appartient toujours à un clan."
         : e==="forbidden" ? "Enregistrement refusé : il faut être officier de combat (ou collaborateur de cette stratégie)."
         : e==="not_found" ? t("Cette stratégie n'existe plus : elle a sans doute été supprimée entre-temps. Ton dessin est toujours à l'écran.")
         : e==="invalid_session"||e==="missing_session" ? t("Ta session a expiré : reconnecte-toi, puis enregistre à nouveau (ne ferme pas cette page).")
@@ -11531,8 +11621,8 @@ async function saveStrat(){
   const nouveau=!ST_EDIT.id; ST_EDIT.id=id; stSetDirty(false);
   if(r.j&&r.j.room) ST_EDIT.room=r.j.room;
   if(nouveau) stJoinRoom(ST_EDIT.room,'edit');
-  else if(ST_ROOM){ try{ ST_ROOM.send({type:'broadcast',event:'saved',payload:{by:ST_CID,sig:stSig(ST_EDIT.steps)}}); }catch(_){} }
-  loadStrats();   // la liste, derrière, se met à jour
+  else if(ST_ROOM){ try{ ST_ROOM.send({type:'broadcast',event:'saved',payload:{by:ST_CID,sig:stSig(stBcPlans())}}); }catch(_){} }
+  if(!ST_EDIT.externe) loadStrats();   // la liste, derrière, se met à jour (un autre clan n'en a pas)
 }
 async function deleteStrat(id){
   if(!confirm("Supprimer cette stratégie ?")) return;
@@ -11540,9 +11630,14 @@ async function deleteStrat(id){
   if(!r.ok){ alert("Erreur : "+(r.j.error||r.status)); return; }
   loadStrats();
 }
-function openStratView(s){
+/* Consulter une stratégie. `partage` = ouverte par un lien ({token, role, member,
+   loggedIn, canEdit, clan}) : alors pas de discussion ni de présence hors du clan,
+   un bandeau dit d'où elle vient, et « Modifier » passe par le lien. */
+function openStratView(s, partage){
   if(!s) return;
   stChatStop(); stLeaveRoom();
+  const plans=stPlansOf(s); let pi=0, idx=0;
+  const P=()=>plans[pi];
   // Débrief consulté en lecture seule : il faut son replay, à l'écran ET pour
   // « Présenter ». Le vidage doit se faire AVANT de construire le HTML, sinon
   // stBasesSvg utiliserait les bases d'un autre replay.
@@ -11550,43 +11645,164 @@ function openStratView(s){
   const rpAcharger = (s.battle_id!=null && (!ST_RP || String(ST_RP.battleId)!==String(s.battle_id)))
                      ? String(s.battle_id) : null;
   const ed=document.getElementById("stEditor"); ed.classList.remove("hidden");
-  const steps=stStepsOf(s); let idx=0;
-  const nav=steps.length>1?`<div class="st-viewnav"><button class="btn st-navbtn" id="stvPrev">‹</button><span class="st-viewind" id="stvInd"></span><button class="btn st-navbtn" id="stvNext">›</button></div>`:'';
-  ed.innerHTML=`<div class="card st-shell dashx st-editor"><div class="st-bar"><b class="tl-view-name">${esc(s.name||"Stratégie")} <span class="st-view-map">· ${esc(ST_MAPNAME[s.map]||prettyMap(s.map))}</span></b><div class="st-presence"></div><div class="st-bar-act"><button class="st-btn${ST_GRID?' st-btn-gold':''}" id="stvGridBtn" title="Grille A-K / 1-0">▦ <span>Grille</span></button><button class="st-btn st-btn-gold" id="stvPresent" title="Plein écran">⛶ <span>Présenter</span></button>${stCanEdit(s)?`<button class="st-btn" id="stEditThis">✎ <span>Modifier</span></button>`:""}<button class="st-x" id="stCloseView" title="Fermer">✕</button></div></div>
-    ${nav}
+  const dansLeClan=!partage||partage.member;
+  const peutModifier=partage?!!partage.canEdit:stCanEdit(s);
+  const seConnecter=!!partage&&partage.role==='edit'&&!partage.loggedIn;
+  const clanTxt=partage&&partage.clan&&(partage.clan.tag||partage.clan.name)?(partage.clan.tag?`[${partage.clan.tag}] `:'')+(partage.clan.name||''):'';
+  const bandeau=partage?`<div class="st-partage-band">${stIc('lien')}<span>${esc(peutModifier?t('Partagée avec toi : tu peux la modifier.'):t('Lecture seule : tu peux la regarder et la présenter.'))}${clanTxt?` <b>${esc(t('Clan'))} ${esc(clanTxt)}</b>`:''}</span></div>`:'';
+  const onglets=plans.length>1?`<div class="st-viewplans" role="group" aria-label="${esc(t('Cartes de la stratégie'))}">${plans.map((p,i)=>`<button type="button" class="st-viewplan" data-vplan="${i}"><img src="maps/top/${esc(p.map)}.jpg" alt="" loading="lazy" onerror="this.style.opacity='.12'"><span>${esc(stMapNom(p.map))}</span></button>`).join('')}</div>`:'';
+  ed.innerHTML=`<div class="card st-shell dashx st-editor"><div class="st-bar"><b class="tl-view-name">${esc(s.name||"Stratégie")} <span class="st-view-map" id="stvMapName"></span></b><div class="st-presence"></div><div class="st-bar-act"><button class="st-btn${ST_GRID?' st-btn-gold':''}" id="stvGridBtn" title="Grille A-K / 1-0">▦ <span>Grille</span></button><button class="st-btn st-btn-gold" id="stvPresent" title="Plein écran">⛶ <span>Présenter</span></button>${peutModifier?`<button class="st-btn" id="stEditThis">✎ <span>Modifier</span></button>`:""}${seConnecter?`<button class="st-btn" id="stvLogin">${esc(t('Se connecter pour modifier'))}</button>`:''}<button class="st-x" id="stCloseView" title="Fermer">✕</button></div></div>
+    ${bandeau}${onglets}
+    <div class="st-viewnav" id="stvNav"><button class="btn st-navbtn" id="stvPrev" aria-label="Étape précédente">‹</button><span class="st-viewind" id="stvInd"></span><button class="btn st-navbtn" id="stvNext" aria-label="Étape suivante">›</button></div>
     <div class="st-stage-wrap"><svg class="st-svg st-svg-view" viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg">
       <defs><marker id="st-ah" markerWidth="4.5" markerHeight="4.5" refX="3" refY="2.25" orient="auto"><path d="M0,0 L4.5,2.25 L0,4.5 z" fill="context-stroke"/></marker></defs>
-      <image href="maps/top/${esc(s.map||'')}.jpg" x="0" y="0" width="1000" height="1000" preserveAspectRatio="none"/>
-      <g id="stvBases" style="pointer-events:none">${stBasesSvg(s.map,s.mode||'ctf')}</g>
+      <image id="stvImg" href="" x="0" y="0" width="1000" height="1000" preserveAspectRatio="none"/>
+      <g id="stvBases" style="pointer-events:none"></g>
       <g id="stvGrid" style="pointer-events:none">${ST_GRID?stGridInner():''}</g>
       <g id="stvReplay" style="pointer-events:none"></g>
       <g id="stvEls"></g></svg></div>
-    <div class="tl-card-by">Par ${esc(s.created_by_name||"?")}</div>
-    <div class="st-chat"><div class="st-chat-h">💬 Discussion</div><div class="st-chat-list" id="stChatList"><div class="st-chat-empty">Chargement…</div></div><form class="st-chat-form" id="stChatForm"><input class="st-chat-in" id="stChatIn" maxlength="500" placeholder="Écrire un message au clan…" autocomplete="off"><button class="btn tl-save" type="submit">Envoyer</button></form></div></div>`;
-  function draw(){ document.getElementById("stvEls").innerHTML=steps[idx].els.map((e,i)=>stElSvg(e,i,'v')).join("");
+    <div class="tl-card-by">${esc(t('Par'))} ${esc(s.created_by_name||"?")}</div>
+    ${dansLeClan&&s.id?`<div class="st-chat"><div class="st-chat-h">💬 Discussion</div><div class="st-chat-list" id="stChatList"><div class="st-chat-empty">Chargement…</div></div><form class="st-chat-form" id="stChatForm"><input class="st-chat-in" id="stChatIn" maxlength="500" placeholder="Écrire un message au clan…" autocomplete="off"><button class="btn tl-save" type="submit">Envoyer</button></form></div>`:''}</div>`;
+  // une carte : son image, ses bases, son nom ; l'étape repart de la première
+  function carte(){ const p=P();
+    document.getElementById("stvImg").setAttribute("href",`maps/top/${stMapKey(p.map)}.jpg`);
+    document.getElementById("stvBases").innerHTML=stBasesSvg(p.map,p.mode||'ctf');
+    document.getElementById("stvMapName").textContent='· '+stMapNom(p.map)+(plans.length>1?` (${pi+1}/${plans.length})`:'');
+    ed.querySelectorAll(".st-viewplan").forEach(b=>{ const on=+b.dataset.vplan===pi; b.classList.toggle("on",on); b.setAttribute("aria-pressed",String(on)); });
+    document.getElementById("stvNav").hidden=P().steps.length<2; }
+  function draw(){ const steps=P().steps;
+    document.getElementById("stvEls").innerHTML=steps[idx].els.map((e,i)=>stElSvg(e,i,'v')).join("");
     // DÉBRIEF EN CONSULTATION : on place les chars du replay à l'instant de l'étape.
     // Sans ça on ne voyait que les annotations, donc on ne comprenait rien.
-    if(ST_RP && ST_RP.map===s.map){
+    const rp=document.getElementById("stvReplay"); if(rp) rp.innerHTML="";
+    if(ST_RP && ST_RP.map===P().map){
       if(steps[idx] && steps[idx].t!=null) ST_RP.t=Math.max(0,Math.min(ST_RP.dur,steps[idx].t));
       stRpDraw("stvReplay");
     }
-    const ind=document.getElementById("stvInd"); if(ind) ind.textContent=`Étape ${idx+1} / ${steps.length}`;
+    const ind=document.getElementById("stvInd"); if(ind) ind.textContent=`${t('Étape')} ${idx+1} / ${steps.length}`;
     const p=document.getElementById("stvPrev"),n=document.getElementById("stvNext"); if(p)p.disabled=idx===0; if(n)n.disabled=idx===steps.length-1; }
-  const pv=document.getElementById("stvPrev"); if(pv) pv.onclick=()=>{ if(idx>0){idx--;draw();} };
-  const nx=document.getElementById("stvNext"); if(nx) nx.onclick=()=>{ if(idx<steps.length-1){idx++;draw();} };
-  document.getElementById("stvPresent").onclick=()=>stPresent(steps,s.map,s.mode,s.name,idx);
+  document.getElementById("stvPrev").onclick=()=>{ if(idx>0){idx--;draw();} };
+  document.getElementById("stvNext").onclick=()=>{ if(idx<P().steps.length-1){idx++;draw();} };
+  ed.querySelectorAll(".st-viewplan").forEach(b=>b.onclick=()=>{ pi=+b.dataset.vplan; idx=0; carte(); draw(); });
+  document.getElementById("stvPresent").onclick=()=>stPresent(P().steps,P().map,P().mode,s.name,idx);
   document.getElementById("stvGridBtn").onclick=e=>{ ST_GRID=!ST_GRID; try{localStorage.setItem('cp_stgrid',ST_GRID?'1':'0');}catch(_){}  e.currentTarget.classList.toggle("on",ST_GRID); document.getElementById("stvGrid").innerHTML=ST_GRID?stGridInner():''; };
-  document.getElementById("stCloseView").onclick=()=>{ stChatStop(); stLeaveRoom(); ed.classList.add("hidden"); ed.innerHTML=""; };
-  const eb=document.getElementById("stEditThis"); if(eb) eb.onclick=()=>{ stChatStop(); openStratEditor(s); };
-  draw();
+  document.getElementById("stCloseView").onclick=()=>{ stChatStop(); stLeaveRoom(); ed.classList.add("hidden"); ed.innerHTML=""; if(partage) stPartageMode(false); };
+  const eb=document.getElementById("stEditThis");
+  if(eb) eb.onclick=()=>{ stChatStop(); if(partage) openStratEditor(s,false,{token:partage.token,externe:!partage.member,clan:partage.clan}); else openStratEditor(s); };
+  const lg=document.getElementById("stvLogin");
+  if(lg) lg.onclick=()=>{ stLienRetenir(partage.token); location.href=wgLoginUrl(); };
+  carte(); draw();
   // Le replay arrive de façon asynchrone : on rafraîchit alors les bases (elles
   // viennent du replay) et les chars, sans reconstruire toute la vue.
-  if(rpAcharger) stRpLoad(rpAcharger, s.map, s.name||"").then(ok=>{
+  if(rpAcharger) stRpLoad(rpAcharger, plans[0].map, s.name||"").then(ok=>{
     if(!ok || !ST_RP || String(ST_RP.battleId)!==rpAcharger) return;
-    const b=document.getElementById("stvBases"); if(!b) return;      // vue déjà fermée
-    b.innerHTML=stBasesSvg(s.map,s.mode||'ctf'); draw();
+    if(!document.getElementById("stvBases")) return;      // vue déjà fermée
+    carte(); draw();
   });
-  if(s.id){ stChatStart(Number(s.id)); stJoinRoom(s.room,'view'); } ed.scrollIntoView({behavior:"smooth",block:"start"});
+  if(s.id&&dansLeClan){ stChatStart(Number(s.id)); stJoinRoom(s.room,'view'); }
+  if(!partage) ed.scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+/* ═══════ PARTAGER PAR UN LIEN (15/11/2026) ═══════
+   Deux liens par stratégie, que le créateur et les officiers activent ou coupent :
+   « consulter » (sans compte) et « modifier » (compte Wargaming). L'adresse porte le
+   jeton après #strat= : la partie après # ne part jamais vers un serveur, donc ni
+   dans les journaux de l'hébergeur, ni dans l'en-tête Referer. */
+const ST_LIEN_KEY="cp_open_strat";
+(function keepStratLink(){
+  try{ const m=/^#strat=([0-9a-f]{32})$/.exec(location.hash||"");
+    if(m){ sessionStorage.setItem(ST_LIEN_KEY,m[1]); history.replaceState(null,"",location.pathname+location.search); } }catch(e){}
+})();
+function stLienRetenir(tok){ try{ sessionStorage.setItem(ST_LIEN_KEY,tok); }catch(e){} }
+function stLienEnAttente(){ try{ return sessionStorage.getItem(ST_LIEN_KEY); }catch(e){ return null; } }
+function stOuvrirLienEnAttente(){ let tok=null; try{ tok=sessionStorage.getItem(ST_LIEN_KEY); sessionStorage.removeItem(ST_LIEN_KEY); }catch(e){}
+  if(tok) stOuvrirLien(tok); return !!tok; }
+// un lien collé dans l'onglet déjà ouvert
+addEventListener("hashchange",()=>{ const m=/^#strat=([0-9a-f]{32})$/.exec(location.hash||""); if(!m) return;
+  history.replaceState(null,"",location.pathname+location.search); stOuvrirLien(m[1]); });
+function stShareUrl(tok){ return location.origin+location.pathname+"#strat="+tok; }
+/* L'éditeur vit dans l'onglet Stratégie, caché tant que l'application ne l'est pas
+   (visiteur sans compte, autre clan). Ouverte par un lien, la stratégie s'affiche
+   par-dessus tout le reste : on déplace l'éditeur dans la page, puis on le remet. */
+let ST_ED_HOME=null;
+function stPartageMode(on){ const ed=document.getElementById("stEditor"); if(!ed) return;
+  if(on){ if(!ed.classList.contains("st-partage")){ ST_ED_HOME={p:ed.parentNode,n:ed.nextSibling}; document.body.appendChild(ed); ed.classList.add("st-partage","dashx"); }
+    ed.classList.remove("hidden"); document.body.classList.add("st-noscroll"); return; }
+  if(!ed.classList.contains("st-partage")) return;
+  ed.classList.remove("st-partage","dashx"); ed.classList.add("hidden"); ed.innerHTML="";
+  if(ST_ED_HOME&&ST_ED_HOME.p) ST_ED_HOME.p.insertBefore(ed,ST_ED_HOME.n&&ST_ED_HOME.n.parentNode===ST_ED_HOME.p?ST_ED_HOME.n:null);
+  ST_ED_HOME=null; document.body.classList.remove("st-noscroll"); }
+async function stOuvrirLien(tok){
+  if(ST_EDIT && ST_DIRTY && !confirm(t("Une stratégie est en cours de modification et n'est pas enregistrée. L'abandonner ?"))) return;
+  if(ST_EDIT) stCloseEditor(true);
+  stPartageMode(true);
+  const ed=document.getElementById("stEditor");
+  ed.innerHTML=`<div class="card st-shell dashx st-partage-msg">${cpLoader()}</div>`;
+  if(!ST_BASES){ try{ const b=await fetch('maps_bases.json',{cache:'no-cache'}); if(b.ok) ST_BASES=await b.json(); }catch(e){ ST_BASES={}; } }
+  const sess=localStorage.getItem(LS_SESSION);
+  let r; try{ r=await fnCall("strategies",{action:"shared",token:tok,...(sess?{session:sess}:{})}); }catch(e){ r={ok:false,status:0,j:{}}; }
+  if(!r.ok||!r.j||!r.j.strategy){
+    const coupe=r.status===404;
+    ed.innerHTML=`<div class="card st-shell dashx st-partage-msg"><h2>${esc(coupe?t("Ce lien ne fonctionne plus"):t("Impossible d'ouvrir ce lien"))}</h2>
+      <p>${esc(coupe?t("Celui qui l'a partagé l'a coupé, ou la stratégie a été supprimée. Demande-lui un nouveau lien."):t("Le serveur n'a pas pu l'ouvrir. Réessaie dans un instant."))}</p>
+      <button type="button" class="btn" id="stPartageX">${esc(t("Fermer"))}</button></div>`;
+    document.getElementById("stPartageX").onclick=()=>stPartageMode(false);
+    return;
+  }
+  const j=r.j; if(STRAT_ME==null&&ME_ID!=null) STRAT_ME=Number(ME_ID);
+  openStratView(j.strategy,{token:tok,role:j.role,member:!!j.member,loggedIn:!!j.loggedIn,canEdit:!!j.canEdit,clan:j.clan||null});
+}
+function stShareOpen(){
+  if(!ST_EDIT||!ST_EDIT.share) return;
+  if(!ST_EDIT.id){ alert(t("Enregistre d'abord la stratégie : on ne partage que ce qui est enregistré.")); return; }
+  const sh=document.getElementById("stShell"); if(!sh||document.getElementById("stShareOv")) return;
+  if(ST_PATHBUILD) stFinishPath(true);
+  stTipHide(); stHideCtxMenu(); stInlineClose();
+  const ov=document.createElement("div"); ov.className="se-aide se-share"; ov.id="stShareOv";
+  const ligne=(role,titre,texte)=>`<section class="se-share-l" data-role="${role}"><div class="se-share-t"><div><h3>${esc(t(titre))}</h3><p>${esc(t(texte))}</p></div>
+      <button type="button" class="se-btn se-share-tog" data-share-tog="${role}" aria-pressed="false"></button></div>
+    <div class="se-share-u"><input class="se-in" readonly data-share-url="${role}" aria-label="${esc(t("Adresse du lien"))}"><button type="button" class="se-btn se-btn-pri" data-share-copy="${role}">${stIc('copie')}<span>${esc(t("Copier"))}</span></button></div></section>`;
+  ov.innerHTML=`<div class="se-aide-box se-share-box" role="dialog" aria-modal="true" aria-labelledby="stShareT">
+    <div class="se-aide-h"><div><div class="se-kick">${esc(t("Partager"))}</div><h2 id="stShareT">${esc(t("Partager par un lien"))}</h2>
+      <p class="se-aide-sub">${esc(t("Celui qui ouvre le lien voit toute la stratégie, avec toutes ses cartes. Il ne peut pas la garder dans son clan."))}</p></div>
+      <button type="button" class="se-ic se-ic-lg" data-share-x aria-label="${esc(t("Fermer"))}">${stIc('close')}</button></div>
+    <div class="se-aide-c se-share-c">
+      ${ligne("view","Consulter","N'importe qui, même sans compte et hors du clan. Il regarde et présente, sans rien modifier.")}
+      ${ligne("edit","Modifier","Il faut se connecter avec un compte Wargaming. Un membre du clan devient collaborateur ; un joueur d'un autre clan modifie la stratégie ici, sans pouvoir la garder chez lui.")}
+      <p class="se-share-note" id="stShareNote" hidden></p>
+    </div>
+    <div class="se-aide-f"><span class="se-share-pied">${esc(t("Couper un lien le rend inutilisable tout de suite. Le réactiver en crée un nouveau."))}</span><span class="se-pousse"></span><button type="button" class="se-btn se-btn-pri" data-share-x>${esc(t("Fermer"))}</button></div></div>`;
+  sh.appendChild(ov);
+  const maj=()=>{ const s=ST_EDIT&&ST_EDIT.share||{};
+    ["view","edit"].forEach(role=>{ const on=!!s[role];
+      const b=ov.querySelector(`[data-share-tog="${role}"]`); b.textContent=on?t("Couper le lien"):t("Activer le lien"); b.classList.toggle("on",on); b.setAttribute("aria-pressed",String(on));
+      const u=ov.querySelector(`[data-share-url="${role}"]`); u.value=on?stShareUrl(s[role]):""; u.placeholder=on?"":t("Lien inactif"); u.disabled=!on;
+      ov.querySelector(`[data-share-copy="${role}"]`).disabled=!on; ov.querySelector(`.se-share-l[data-role="${role}"]`).classList.toggle("on",on); });
+    const n=ov.querySelector("#stShareNote"); n.hidden=!ST_DIRTY; n.textContent=ST_DIRTY?t("Le lien montre la version enregistrée : enregistre pour partager tes dernières modifications."):""; };
+  ov.querySelectorAll("[data-share-tog]").forEach(b=>b.onclick=async()=>{
+    const role=b.dataset.shareTog, on=!(ST_EDIT.share&&ST_EDIT.share[role]);
+    if(!on&&!confirm(t("Couper ce lien ? Ceux qui l'ont reçu ne pourront plus l'ouvrir."))) return;
+    b.disabled=true;
+    let r; try{ r=await fnCall("strategies",{session:localStorage.getItem(LS_SESSION),action:"share",id:Number(ST_EDIT.id),role,on}); }catch(e){ r={ok:false,j:{error:String(e)}}; }
+    b.disabled=false;
+    if(!r.ok||!r.j||!r.j.share){ alert(t("Le lien n'a pas pu être modifié")+" ("+((r.j&&r.j.error)||r.status)+")."); return; }
+    if(!ST_EDIT) return;
+    ST_EDIT.share=r.j.share; const it=STRATS.find(x=>Number(x.id)===Number(ST_EDIT.id)); if(it) it.share=r.j.share;
+    maj(); });
+  ov.querySelectorAll("[data-share-copy]").forEach(b=>b.onclick=()=>{
+    const u=ov.querySelector(`[data-share-url="${b.dataset.shareCopy}"]`); if(!u.value) return;
+    const fait=()=>{ const sp=b.querySelector("span"); sp.textContent=t("Copié"); setTimeout(()=>{ sp.textContent=t("Copier"); },1600); };
+    if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(u.value).then(fait,()=>{ u.select(); });
+    else { u.select(); try{ document.execCommand("copy"); fait(); }catch(_){} } });
+  ov.querySelectorAll("[data-share-url]").forEach(u=>u.onfocus=()=>u.select());
+  const close=()=>{ document.removeEventListener("keydown",onKey,true); ov.remove(); const b=document.getElementById("stShare"); if(b) try{ b.focus({preventScroll:true}); }catch(_){} };
+  const onKey=e=>{ if(!ov.isConnected){ document.removeEventListener("keydown",onKey,true); return; }
+    if(e.key==="Escape"){ e.preventDefault(); e.stopPropagation(); close(); } };
+  document.addEventListener("keydown",onKey,true);
+  ov.addEventListener("pointerdown",e=>{ if(e.target===ov) close(); });
+  ov.querySelectorAll("[data-share-x]").forEach(b=>b.onclick=close);
+  maj();
+  const first=ov.querySelector("[data-share-tog]"); if(first) try{ first.focus({preventScroll:true}); }catch(_){}
 }
 // -- Chat par stratégie (sondage léger toutes les 5 s tant que la vue est ouverte) --
 let ST_CHAT_TIMER=null, ST_CHAT_SID=null, ST_CHAT_SEEN=0;
@@ -11596,6 +11812,8 @@ function stChatStop(){ if(ST_CHAT_TIMER){ clearInterval(ST_CHAT_TIMER); ST_CHAT_
 // affiché « regarde » chez les autres. (L'éditeur, lui, couvre tout l'écran :
 // on ne le quitte que par sa croix.)
 function stQuitteVue(){ if(ST_EDIT) return; const ed=document.getElementById("stEditor");
+  // une stratégie ouverte par un lien est par-dessus le site, pas dans l'onglet : elle reste
+  if(ed&&ed.classList.contains("st-partage")) return;
   stChatStop(); stLeaveRoom();
   if(ed&&!ed.classList.contains("hidden")){ ed.classList.add("hidden"); ed.innerHTML=""; } }
 async function stChatStart(sid){ stChatStop(); ST_CHAT_SID=sid; ST_CHAT_SEEN=0;
