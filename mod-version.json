@@ -4,10 +4,21 @@
   "file": "download/clanplus_1.0.49.wotmod",
   "size": 233957,
   "sha256": "e4374db26a1b0d317d0dbcc7ab289f1b9fc5af6a680090e1c0a1b9cb2d7a408e",
+  "notes": {
+    "version": "1.0.49",
+    "en": {
+      "title": "Every tank's price, tonight's score",
+      "text": "During Advances, every tank now shows what restoring it would cost, destroyed or not, behind the game's Repair Parts icon. The game sets one price per tank model for the whole clan, and it goes up as the clan restores that model; a price not seen yet shows as ~10. In that mode, the price takes the place of the setup and not-ready pills. The tier XI tanks rented for the event appear in the list, marked RENTAL. And the title bar keeps the score of the evening: win rate, wins and losses of your clan battles since 6 a.m., for example TONIGHT 60% 9W · 6L."
+    },
+    "fr": {
+      "title": "Le prix de chaque char, le bilan de la soirée",
+      "text": "Pendant les Manœuvres, chaque char affiche maintenant ce que coûterait sa restauration, détruit ou non, derrière l'icône des Pièces de réparation du jeu. Le jeu fixe un prix par modèle de char pour tout le clan, qui monte à mesure que le clan restaure ce modèle ; un prix pas encore vu s'affiche ~10. Dans ce mode, le prix prend la place des pastilles de setup et de char pas prêt. Les chars de rang XI loués pour l'événement apparaissent dans la liste, marqués RENTAL. Et la barre de titre garde le bilan de la soirée : taux de victoire, victoires et défaites de tes batailles de clan depuis 6 h, par exemple TONIGHT 60% 9W · 6L."
+    }
+  },
   "launcher": {
-    "version": "1.0.0",
-    "file": "download/ClanPlus.exe?v=7102a7df",
-    "size": 674304,
-    "sha256": "70645a59738a837aa94ff7d39b5db8bcc96908283230f449001696b7e9f016d1"
+    "version": "1.0.1",
+    "file": "download/ClanPlus.exe?v=42ccbf2a",
+    "size": 947200,
+    "sha256": "cae36a84928e83722e44f1b2a92b0610f0343b4c35fca7d2126e5204d2225a2f"
   }
 }
