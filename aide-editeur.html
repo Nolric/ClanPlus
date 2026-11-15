@@ -16,7 +16,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20240%20240%22%3E%3Crect%20width%3D%22240%22%20height%3D%22240%22%20rx%3D%2254%22%20fill%3D%22%23141310%22%2F%3E%3Cg%20transform%3D%22translate%2830%2030%29%20scale%280.75%29%22%20fill%3D%22%23d8b566%22%3E%3Ccircle%20cx%3D%22120%22%20cy%3D%22120%22%20r%3D%22100%22%20fill%3D%22none%22%20stroke%3D%22%23d8b566%22%20stroke-width%3D%227%22%2F%3E%3Crect%20x%3D%2281%22%20y%3D%228%22%20width%3D%2218%22%20height%3D%2218%22%2F%3E%3Crect%20x%3D%22111%22%20y%3D%224%22%20width%3D%2218%22%20height%3D%2218%22%2F%3E%3Crect%20x%3D%22141%22%20y%3D%228%22%20width%3D%2218%22%20height%3D%2218%22%2F%3E%3Cpath%20d%3D%22M161%2C155%20A54%2C54%200%201%201%20161%2C85%22%20fill%3D%22none%22%20stroke%3D%22%23d8b566%22%20stroke-width%3D%2220%22%20stroke-linecap%3D%22round%22%2F%3E%3Crect%20x%3D%22112%22%20y%3D%2294%22%20width%3D%2216%22%20height%3D%2252%22%20rx%3D%225%22%2F%3E%3Crect%20x%3D%2294%22%20y%3D%22112%22%20width%3D%2252%22%20height%3D%2216%22%20rx%3D%225%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
 <script src="i18n/cadre.fr.js?v=4e25be25"></script>
-<script src="i18n/aide-editeur.fr.js?v=d0bf47f5"></script>
+<script src="i18n/aide-editeur.fr.js?v=e94d3c06"></script>
 <script src="i18n.js?v=ed3f8a4f"></script>
 <link rel="stylesheet" href="fonts/fonts.css?v=d81c6085">
 <link rel="stylesheet" href="cadre.css?v=f100187f">
@@ -143,6 +143,18 @@
     color:var(--accent);font-size:12.5px;font-weight:700;display:flex;align-items:center;
     justify-content:center;font-variant-numeric:tabular-nums}
 
+  /* ---------- le tuto vidéo, en tête ---------- */
+  .tuto{margin:26px 0 0;max-width:860px}
+  .tuto-v{position:relative;aspect-ratio:16/9;background:#000;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+  .tuto video{display:block;width:100%;height:100%}
+  .tuto-play{position:absolute;left:50%;top:50%;width:74px;height:74px;margin:-37px 0 0 -37px;padding:0;border:0;border-radius:50%;
+    background:var(--accent);color:#14120c;display:flex;align-items:center;justify-content:center;cursor:pointer;
+    box-shadow:0 10px 30px rgba(0,0,0,.55);transition:background .15s,transform .15s}
+  .tuto-play:hover{background:var(--accent-2);transform:scale(1.05)}
+  .tuto-play[hidden]{display:none}
+  .tuto-play svg{width:28px;height:28px;margin-left:4px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linejoin:round}
+  .tuto figcaption{margin-top:10px;font-size:13.5px;color:var(--muted);max-width:68ch;text-wrap:pretty}
+
   :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:var(--radius)}
   @media (prefers-reduced-motion:reduce){ *{transition:none!important;animation:none!important} }
 </style>
@@ -165,6 +177,16 @@
   <p class="eyebrow">Help · World of Tanks</p>
   <h1>Strategy editor manual</h1>
   <p class="lede">Everything the editor does: draw a plan on the minimap, debrief a real battle from its replay, and present the result to the clan. Including live collaboration and who is allowed to do what.</p>
+  <figure class="tuto" id="tuto">
+    <div class="tuto-v">
+      <video controls playsinline preload="none" poster="video/tuto-editeur-en.jpg?v=fc78bff9" aria-label="Editor video tutorial"
+        data-fr="video/tuto-editeur-fr.mp4?v=5ae668b4" data-fr-poster="video/tuto-editeur-fr.jpg?v=cbad9946">
+        <source src="video/tuto-editeur-en.mp4?v=a6bedf12" type="video/mp4">
+      </video>
+      <button class="tuto-play" type="button" aria-label="Play the video tutorial"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 5.2l11 6.8-11 6.8z"/></svg></button>
+    </div>
+    <figcaption>Video tutorial: every tool, shown in the real editor. A plan built step by step, presented, then a replay debriefed.</figcaption>
+  </figure>
 </header>
 
 <div class="cols">
@@ -227,7 +249,7 @@
   <h2><span class="n">03</span> The interface</h2>
   <p>The editor takes the whole screen, built like the 3D map editor: the map in the middle, and around it a few floating panels.</p>
   <ul>
-    <li><strong>The top bar</strong> — on the left, the close cross, the game mode for the official bases and the button to change map. On the right, the strategy name, whether it's saved, who else is here, the pointer, the collaborators, undo/redo, the button that shows or hides the panel, <span class="btnref">▶ Present</span> and <span class="btnref">Save</span>.</li>
+    <li><strong>The top bar</strong> — on the left, the close cross, the game mode for the official bases, the button to change map and <span class="btnref">? Help</span>, which opens a one-page guide to the editor (or press <kbd>?</kbd>). On the right, the strategy name, whether it's saved, who else is here, the pointer, the collaborators, undo/redo, the button that shows or hides the panel, <span class="btnref">▶ Present</span> and <span class="btnref">Save</span>.</li>
     <li><strong>The tool rail</strong> — the 9 tools, on the left of the map, and under them the side of the next tanks: allies or enemies.</li>
     <li><strong>The panel</strong> — on the right, four sections you can fold: <strong>Steps</strong>, <strong>Properties</strong>, <strong>Elements</strong> (everything on the step, with the tank count per side) and <strong>Display</strong>.</li>
     <li><strong>The Replay bar</strong> — only in debrief mode, under the map. Detailed in <a href="#s8">section 8</a>.</li>
@@ -250,8 +272,8 @@
       <tr><td class="g"><svg class="ico" viewBox="0 0 20 20"><path d="M3 16c4 0 3-6 7-6s3-5 7-5"/><circle cx="3" cy="16" r="1.6"/><circle cx="17" cy="5" r="1.6"/></svg></td><td>Route</td><td class="k"><kbd>J</kbd></td><td>A multi-point path. Click each waypoint, double-click or <kbd>Enter</kbd> to finish, <kbd>Esc</kbd> to cancel.</td></tr>
       <tr><td class="g"><svg class="ico" viewBox="0 0 20 20"><path d="M4 6l6-2 6 3-2 8-8 1z"/></svg></td><td>Area</td><td class="k"><kbd>Z</kbd></td><td>Drag to mark out a sector to hold or a zone to avoid: rectangle or ellipse, solid or dashed outline.</td></tr>
       <tr><td class="g"><svg class="ico" viewBox="0 0 20 20"><circle cx="10" cy="10" r="6.5"/><circle cx="10" cy="10" r="2.2"/><path d="M10 1.5v2M10 16.5v2M1.5 10h2M16.5 10h2"/></svg></td><td>Symbol</td><td class="k"><kbd>S</kbd></td><td>A pictogram that speaks for itself: Focus, Spotting, Hold, Danger, Objective, Push, Fall back, No-go, Regroup, Pin — or a <strong>numbered token</strong> that counts up by itself, for an order of execution.</td></tr>
-      <tr><td class="g"><svg class="ico" viewBox="0 0 20 20"><path d="M4 5.5V3.5h12v2M10 3.5v13M7.5 16.5h5"/></svg></td><td>Text</td><td class="k"><kbd>N</kbd></td><td>Click the map and type. Double-click a text to rewrite it.</td></tr>
-      <tr><td class="g"><svg class="ico" viewBox="0 0 20 20"><path d="M3.5 16.5l1-3.6L13.6 3.8l2.6 2.6-9.1 9.1z"/><path d="M12 5.4l2.6 2.6"/></svg></td><td>Pencil</td><td class="k"><kbd>P</kbd></td><td>Freehand drawing.</td></tr>
+      <tr><td class="g"><svg class="ico" viewBox="0 0 20 20"><path d="M4 5.5V3.5h12v2M10 3.5v13M7.5 16.5h5"/></svg></td><td>Text</td><td class="k"><kbd>N</kbd></td><td>Click the map and type. <kbd>Enter</kbd> starts a new line; <kbd>Ctrl</kbd>+<kbd>Enter</kbd> or a click elsewhere confirms, <kbd>Esc</kbd> cancels. In the panel: the size, picked from a list as in a word processor (or with the A− / A+ buttons), and left or centred alignment. Double-click a text to rewrite it.</td></tr>
+      <tr><td class="g"><svg class="ico" viewBox="0 0 20 20"><path d="M3.5 16.5l1-3.6L13.6 3.8l2.6 2.6-9.1 9.1z"/><path d="M12 5.4l2.6 2.6"/></svg></td><td>Pencil</td><td class="k"><kbd>P</kbd></td><td>Freehand drawing. In the panel, <strong>Line end: Arrow</strong> finishes the stroke with an arrowhead.</td></tr>
       <tr><td class="g"><svg class="ico" viewBox="0 0 20 20"><path d="M3 13l10-10 4 4-10 10z"/><path d="M6 10l1.6 1.6M9 7l1.6 1.6M12 4l1.6 1.6"/></svg></td><td>Measure</td><td class="k"><kbd>M</kbd></td><td>The real distance between two points, <strong>in metres</strong> — or, set in the panel, a range circle around a point.</td></tr>
     </tbody>
   </table></div>
@@ -445,8 +467,10 @@
       <tr><td class="k"><kbd>Del</kbd></td><td>Delete the selection</td></tr>
       <tr><td class="k"><kbd>arrow keys</kbd></td><td>Nudge (<kbd>Shift</kbd> = bigger step)</td></tr>
       <tr><td class="k"><kbd>]</kbd> / <kbd>[</kbd></td><td>Bring to front / send to back</td></tr>
-      <tr><td class="k"><kbd>Enter</kbd></td><td>Finish a route</td></tr>
-      <tr><td class="k"><kbd>Esc</kbd></td><td>Cancel the route, deselect, then back to Select</td></tr>
+      <tr><td class="k"><kbd>Enter</kbd></td><td>Finish a route; in a text, start a new line</td></tr>
+      <tr><td class="k"><kbd>Ctrl</kbd>+<kbd>Enter</kbd></td><td>Confirm a text</td></tr>
+      <tr><td class="k"><kbd>Esc</kbd></td><td>Cancel the route or the text being typed, deselect, then back to Select</td></tr>
+      <tr><td class="k"><kbd>?</kbd></td><td>Open the editor guide</td></tr>
     </tbody>
   </table></div>
   <h3>View</h3>
@@ -486,7 +510,7 @@
     <li><strong>Re-importing enriches the past.</strong> Opening an old <kbd>.wotreplay</kbd> file in the game updates that battle on the site — so you can debrief battles from before you installed the mod. Random battles stay excluded.</li>
     <li><strong>A debrief saved before July 2026</strong> doesn't know its battle and will open without a replay. Just redo it once from <span class="btnref">✎ Debrief</span>.</li>
     <li><strong>Bases and spawn points</strong> are only known for some maps in a blank strategy. In a debrief they come from the replay: exact, and available on every map.</li>
-    <li><strong>12 steps maximum</strong> per strategy, and 140 characters per note.</li>
+    <li><strong>12 steps maximum</strong> per strategy, 140 characters per note and 200 per text (line breaks included).</li>
     <li><strong>On a phone</strong>, the editor keeps the essentials: the tools at the bottom, the panel in a drawer, Save always in reach. Presenting and the collaborators wait for a bigger screen.</li>
   </ul>
 </section>
@@ -507,5 +531,15 @@
 </div></footer>
 
 <script src="cadre.js?v=86881d84" defer></script>
+<script>
+/* Le tuto vidéo dans la langue de la page (i18n.js a posé CP_LANG) ; rien n'est téléchargé avant le clic. */
+(function () {
+  var f = document.getElementById("tuto"); if (!f) return;
+  var v = f.querySelector("video"), b = f.querySelector(".tuto-play");
+  if (window.CP_LANG === "fr") { v.poster = v.getAttribute("data-fr-poster"); v.querySelector("source").src = v.getAttribute("data-fr"); v.load(); }
+  b.onclick = function () { var p = v.play(); if (p && p.catch) p.catch(function () {}); };
+  v.addEventListener("play", function () { b.hidden = true; });
+})();
+</script>
 </body>
 </html>

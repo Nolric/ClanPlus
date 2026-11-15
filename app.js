@@ -9900,6 +9900,17 @@ let ST_STAMP={kind:'focus',size:0.75};   // kind 'num' = jeton numéroté
 const ST_STAMP_SIZES=[["Petit",0.75],["Moyen",1.05],["Grand",1.4]];
 let ST_MEAS={circle:false};              // mesure : distance, ou cercle de portée
 let ST_PATHBUILD=null;                   // trajet multipoint en cours de construction
+/* Texte : taille et alignement des prochains textes. La taille est dans le
+   repère de la carte (0-1000) : 34, celle de toujours, reste la valeur par
+   défaut et n'est pas écrite dans l'élément — un texte d'avant s'affiche
+   donc exactement comme avant. Les tailles proposées sont une liste, comme
+   dans un traitement de texte. Entrée va à la ligne : `text` peut contenir
+   des « \n », chaque ligne est un <tspan> placé à ST_LH × la taille. */
+const ST_FS=[14,16,18,20,24,28,34,40,48,56,64,72,96,120], ST_FS_DEF=34, ST_FS_MIN=10, ST_FS_MAX=160;
+const ST_LH=1.2;                         // interligne, en hauteur de police
+const ST_TXT_MAX=200;                    // caractères d'un texte (retours à la ligne compris) — même borne que le serveur
+let ST_TEXT={fs:ST_FS_DEF,al:'l'};       // al : 'l' à gauche (défaut) | 'c' centré
+let ST_PEN_HEAD=false;                   // crayon : terminer le tracé par une flèche
 /* Symboles tactiques. Redessinés d'un seul trait, sur une même grille de 24
    (-12..12) : même épaisseur, extrémités arrondies, même encombrement pour
    tous. Plus de disque sombre derrière : sur la carte, le symbole seul, dans
@@ -9973,9 +9984,12 @@ function stClean(arr){
     const rn=Number(o.rot), R=x=>{ if(Number.isFinite(rn)&&Math.round(rn)) x.rot=Math.max(-180,Math.min(180,Math.round(rn))); return x; };
     if(type==='arrow'||type==='line') out.push(R({type,color,x1:stN(o.x1),y1:stN(o.y1),x2:stN(o.x2),y2:stN(o.y2),w:W(o.w),dash:!!o.dash,curve:!!o.curve}));
     else if(type==='rect'||type==='circle') out.push(R({type,color,x1:stN(o.x1),y1:stN(o.y1),x2:stN(o.x2),y2:stN(o.y2),w:W(o.w),dash:!!o.dash}));
-    else if(type==='pen'||type==='path'){ const pts=P(o.pts,300); if(pts.length>1) out.push(R({type,color,pts,w:W(o.w),dash:!!o.dash})); }
+    else if(type==='pen'||type==='path'){ const pts=P(o.pts,300); if(pts.length>1){ const p={type,color,pts,w:W(o.w),dash:!!o.dash}; if(type==='pen'&&o.head) p.head=true; out.push(R(p)); } }
     else if(type==='marker') out.push(R({type,color,x:stN(o.x),y:stN(o.y),label:S(o.label,4)}));
-    else if(type==='text') out.push(R({type,color,x:stN(o.x),y:stN(o.y),text:S(o.text,60)}));
+    else if(type==='text'){ const t={type,color,x:stN(o.x),y:stN(o.y),text:S(o.text,ST_TXT_MAX).replace(/\r\n?/g,'\n')};
+      const fs=Number(o.fs); if(o.fs!=null&&Number.isFinite(fs)) t.fs=Math.max(ST_FS_MIN,Math.min(ST_FS_MAX,Math.round(fs)));
+      if(o.al==='c') t.al='c';
+      out.push(R(t)); }
     else if(type==='tank'){ const t={type,color,cls:cls(o.cls),x:stN(o.x),y:stN(o.y),name:S(o.name,18),size:sz(o.size,0.78)};
       const cap=Number(o.cap); if(Number.isFinite(cap)) t.cap=((Math.round(cap)%360)+360)%360;
       const sec=Number(o.secteur); if(Number.isFinite(sec)&&sec>0) t.secteur=Math.min(90,Math.round(sec));
@@ -10053,7 +10067,12 @@ const ST_IC={
   pin:'<path d="M10 17v-5"/><path d="M6.5 3h7l-1 4 2.5 3H5l2.5-3z"/>',
   ghost:'<circle cx="6.5" cy="13" r="3"/><circle cx="14" cy="6.5" r="3" stroke-dasharray="2 2"/><path d="M8.8 11l2.8-2.4"/>',
   grid:'<path d="M3 3h14v14H3zM3 7.7h14M3 12.3h14M7.7 3v14M12.3 3v14"/>',
-  anim:'<path d="M3 10h4M13 10h4"/><circle cx="10" cy="10" r="2.5"/><path d="M5 6l2 2M15 6l-2 2M5 14l2-2M15 14l-2-2"/>'
+  anim:'<path d="M3 10h4M13 10h4"/><circle cx="10" cy="10" r="2.5"/><path d="M5 6l2 2M15 6l-2 2M5 14l2-2M15 14l-2-2"/>',
+  help:'<circle cx="10" cy="10" r="7.5"/><path d="M7.9 7.9a2.2 2.2 0 1 1 3.1 2c-.65.3-1 .8-1 1.45v.35"/><path d="M10 14.2v.01"/>',
+  fsup:'<path d="M2.5 16L7 4.5 11.5 16M4.2 12h5.6"/><path d="M15.5 6.5v6M12.5 9.5h6"/>',
+  fsdn:'<path d="M2.5 16L7 4.5 11.5 16M4.2 12h5.6"/><path d="M12.5 9.5h6"/>',
+  ext:'<path d="M8.5 4.5H4.5v11h11v-4"/><path d="M11.5 4.5h4v4M15.5 4.5L9 11"/>',
+  retour:'<path d="M16 10H4.5M9 5.5L4.5 10 9 14.5"/>'
 };
 function stIc(k){ return `<svg viewBox="0 0 20 20" aria-hidden="true" focusable="false">${ST_IC[k]||''}</svg>`; }
 let ST_BASES=null;   // positions officielles des bases (web/maps_bases.json)
@@ -10232,6 +10251,7 @@ function renderStratEditor(){
         <span class="se-mapname">${esc(mapName)}</span>
         ${modeSel}
         <button type="button" class="se-ic" id="stChangeMap" aria-label="Changer de carte">${stIc('map')}</button>
+        <button type="button" class="se-btn se-aide-btn" id="stAide" aria-label="Aide : guide de l'éditeur" data-key="?" aria-haspopup="dialog">${stIc('help')}<span>Aide</span></button>
       </div>
       <div class="se-pousse"></div>
       <div class="se-ilot se-ilot-main">
@@ -10292,8 +10312,8 @@ const ST_HINTS={
   path:"Clique pour poser chaque point. Double-clic ou Entrée pour finir, Échap pour annuler.",
   zone:"Glisse pour délimiter une zone.",
   stamp:"Clique sur la carte pour poser le symbole choisi à droite.",
-  text:"Clique sur la carte, écris, puis Entrée.",
-  pen:"Dessine à main levée.",
+  text:"Clique sur la carte et écris. Entrée va à la ligne ; Ctrl+Entrée ou un clic ailleurs pour valider.",
+  pen:"Dessine à main levée. « Fin du trait » à droite pour le terminer par une flèche.",
   measure:"Glisse d'un point à un autre : la distance s'affiche en mètres."
 };
 function stTranslate(el,dx,dy){
@@ -10306,8 +10326,27 @@ function stTranslate(el,dx,dy){
 // ---- sélection multiple, calques, presse-papier ----
 function stSelClear(){ ST_SELS.clear(); }
 function stSelEls(){ return [...ST_SELS].map(i=>ST_EDIT.els[i]).filter(Boolean); }
+// ---- texte : taille, lignes, largeur ----
+function stTxtFs(el){ const n=Number(el&&el.fs); return Number.isFinite(n)&&n>0?n:ST_FS_DEF; }
+function stTxtLines(el){ return String((el&&el.text)||'').split('\n'); }
+/* Largeur d'une ligne, mesurée avec la police de la carte. Elle ne sert
+   qu'à l'éditeur (cadre de sélection, poignées, sélection au lasso,
+   passage gauche/centré) : le dessin, lui, n'en dépend jamais, pour que
+   la consultation et la présentation — qui n'ont pas la même police —
+   montrent le texte au même endroit. */
+let ST_MCTX=null; const ST_MCACHE=new Map();
+function stTxtW(s,fs){ if(!s) return 0; const k=fs+'|'+s; let w=ST_MCACHE.get(k); if(w!=null) return w;
+  try{ if(!ST_MCTX) ST_MCTX=document.createElement('canvas').getContext('2d');
+    const svg=document.getElementById('stSvg'), fam=(svg&&getComputedStyle(svg).fontFamily)||'system-ui,sans-serif';
+    ST_MCTX.font=`800 ${fs}px ${fam}`; w=ST_MCTX.measureText(s).width; }
+  catch(_){ w=s.length*fs*0.58; }
+  if(ST_MCACHE.size>800) ST_MCACHE.clear(); ST_MCACHE.set(k,w); return w; }
+function stTxtMeasure(el){ const fs=stTxtFs(el), L=stTxtLines(el); return {fs, n:L.length, w:Math.max(fs*0.5,...L.map(l=>stTxtW(l,fs)))}; }
 function stElBounds(el){
   if(el.type==='pen'||el.type==='path'){ const xs=el.pts.map(p=>p[0]),ys=el.pts.map(p=>p[1]); return [Math.min(...xs),Math.min(...ys),Math.max(...xs),Math.max(...ys)]; }
+  // (x,y) = début de la ligne de base de la 1re ligne ; centré, x en est le milieu
+  if(el.type==='text'){ const m=stTxtMeasure(el), x0=el.al==='c'?el.x-m.w/2:el.x;
+    return [x0, el.y-m.fs*0.82, x0+m.w, el.y+(m.n-1)*m.fs*ST_LH+m.fs*0.26]; }
   if(el.x1!=null){ return [Math.min(el.x1,el.x2),Math.min(el.y1,el.y2),Math.max(el.x1,el.x2),Math.max(el.y1,el.y2)]; }
   if(el.type==='range'||el.type==='cone'){ const r=el.r||0; return [el.x-r,el.y-r,el.x+r,el.y+r]; }
   if(el.type==='stamp'){ const r=12*ST_STAMP_K*(el.size||0.75)+2; return [el.x-r,el.y-r,el.x+r,el.y+r]; }
@@ -10340,12 +10379,15 @@ function stScaleEl(el,f,cx,cy){ const c=JSON.parse(JSON.stringify(el)); f=Math.m
 function stHandlesSvg(){ if(ST_TOOL!=='select'||ST_SELS.size!==1||ST_BOX||ST_MOVE) return '';
   const i=[...ST_SELS][0]; const el=ST_EDIT.els[i]; if(!el) return '';
   const k=ST_ZOOM.w/1000;   // les poignées gardent la même taille à l'écran, quel que soit le zoom
-  let [x0,y0,x1,y1]=stElBounds(el); const cx=(x0+x1)/2, cy=(y0+y1)/2, pad=10*k;
+  let [x0,y0,x1,y1]=stElBounds(el); const cx=(x0+x1)/2, pad=10*k;
   x0-=pad;y0-=pad;x1+=pad;y1+=pad; const rot=el.rot||0;
+  // le cadre tourne autour du MÊME pivot que l'élément (stElCenter) : pour un
+  // texte, ce n'est pas le milieu de son cadre
+  const [pcx,pcy]=stElCenter(el);
   const resizable=!['marker','text','measure'].includes(el.type);
   const rotatable=!['tank','ghost','marker','measure','range'].includes(el.type);
   const ry=y0-40*k, r=(9*k).toFixed(1);
-  let s=`<g transform="rotate(${rot} ${cx} ${cy})" style="pointer-events:none">`;
+  let s=`<g transform="rotate(${rot} ${pcx} ${pcy})" style="pointer-events:none">`;
   s+=`<rect class="st-hbox" x="${x0}" y="${y0}" width="${x1-x0}" height="${y1-y0}"/>`;
   if(resizable){ [['nw',x0,y0],['ne',x1,y0],['se',x1,y1],['sw',x0,y1]].forEach(c=>{ s+=`<circle class="st-handle" data-h="${c[0]}" cx="${c[1]}" cy="${c[2]}" r="${r}" style="pointer-events:all;cursor:nwse-resize"/>`; }); }
   if(rotatable) s+=`<line class="st-hline" x1="${cx}" y1="${y0}" x2="${cx}" y2="${ry}"/><circle class="st-handle st-handle-rot" data-h="rot" cx="${cx}" cy="${ry}" r="${r}" style="pointer-events:all;cursor:grab"/>`;
@@ -10385,13 +10427,30 @@ function stShowCtxMenu(cx,cy){
 }
 function stCtxOutside(e){ const m=document.getElementById("stCtxMenu"); if(m&&!m.contains(e.target)) stHideCtxMenu(); }
 // Centre géométrique d'un élément (pour rotation/poignées).
-function stElCenter(el){ const b=stElBounds(el); return [(b[0]+b[2])/2,(b[1]+b[3])/2]; }
+/* Un texte tourne autour de son point d'ancrage (x), à mi-hauteur de ses
+   lignes : pour un texte d'une ligne, c'est (x,y), le pivot de toujours —
+   un texte tourné avant ce changement reste à sa place. Ce pivot ne dépend
+   pas de la largeur mesurée, donc pas de la police. */
+function stElCenter(el){ if(el.type==='text'){ const n=stTxtLines(el).length; return [el.x, el.y+(n-1)*stTxtFs(el)*ST_LH/2]; }
+  const b=stElBounds(el); return [(b[0]+b[2])/2,(b[1]+b[3])/2]; }
 // Wrapper : applique une rotation `rot` (deg) autour du centre si présente.
 // `pfx` préfixe les identifiants de filtre : l'éditeur, la consultation et la
 // présentation coexistent dans la page, et un identifiant en double faisait
 // prendre au char la couleur d'un AUTRE char (constaté en présentation).
 function stElSvg(el,i,pfx){ const s=stElInner(el,i,pfx||'e'); if(el.rot){ const c=stElCenter(el); return `<g transform="rotate(${el.rot} ${c[0]} ${c[1]})">${s}</g>`; } return s; }
 // Secteur surveillé d'un char : cap (0 = nord, sens horaire) et demi-ouverture.
+/* Pointe au bout d'un tracé à main levée. La direction est prise sur la fin
+   du tracé (quatre épaisseurs au moins), pas sur son dernier segment : la
+   main tremble en lâchant le bouton et ce segment part souvent de travers.
+   Mêmes proportions que la pointe des flèches (marqueur st-ah) : longueur et
+   largeur 4,5 × l'épaisseur, la pointe dépassant de 1,5 × le bout du trait. */
+function stPenHead(pts,w,color){ const n=pts?pts.length:0; if(n<2) return '';
+  const E=pts[n-1], D=Math.max(14,w*4); let B=pts[0], acc=0;
+  for(let k=n-1;k>0;k--){ const a=pts[k], b=pts[k-1], s=Math.hypot(a[0]-b[0],a[1]-b[1]);
+    if(acc+s>=D){ const f=(D-acc)/(s||1); B=[a[0]+(b[0]-a[0])*f, a[1]+(b[1]-a[1])*f]; break; } acc+=s; B=b; }
+  let dx=E[0]-B[0], dy=E[1]-B[1]; const L=Math.hypot(dx,dy); if(L<0.5) return ''; dx/=L; dy/=L;
+  const f=v=>v.toFixed(1), tx=E[0]+dx*1.5*w, ty=E[1]+dy*1.5*w, bx=E[0]-dx*3*w, by=E[1]-dy*3*w, hw=2.25*w;
+  return `<path d="M${f(tx)} ${f(ty)}L${f(bx-dy*hw)} ${f(by+dx*hw)}L${f(bx+dy*hw)} ${f(by-dx*hw)}Z" fill="${esc(color)}"/>`; }
 function stSectorPath(x,y,cap,sec,R){ const a0=(cap-90-sec)*Math.PI/180, a1=(cap-90+sec)*Math.PI/180;
   return `M ${x} ${y} L ${(x+R*Math.cos(a0)).toFixed(1)} ${(y+R*Math.sin(a0)).toFixed(1)} A ${R} ${R} 0 ${2*sec>180?1:0} 1 ${(x+R*Math.cos(a1)).toFixed(1)} ${(y+R*Math.sin(a1)).toFixed(1)} Z`; }
 function stElInner(el,i,pfx){
@@ -10403,9 +10462,17 @@ function stElInner(el,i,pfx){
     return `<rect class="st-el${sel}" data-eid="${i}" x="${x}" y="${y}" width="${w}" height="${h}" rx="8" fill="${esc(el.color)}" fill-opacity=".16" stroke="${esc(el.color)}" stroke-width="${sw}"${dash}/>`; }
   if(el.type==='circle'){ const cx=(el.x1+el.x2)/2,cy=(el.y1+el.y2)/2,rx=Math.abs(el.x2-el.x1)/2,ry=Math.abs(el.y2-el.y1)/2,sw=el.w||6,dash=el.dash?` stroke-dasharray="${sw*2.4} ${sw*1.8}"`:'';
     return `<ellipse class="st-el${sel}" data-eid="${i}" cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${esc(el.color)}" fill-opacity=".16" stroke="${esc(el.color)}" stroke-width="${sw}"${dash}/>`; }
-  if(el.type==='pen'){ const w=el.w||7, dash=el.dash?` stroke-dasharray="${w*2.1} ${w*1.6}"`:''; return `<polyline class="st-el${sel}" data-eid="${i}" points="${el.pts.map(p=>p.map(n=>Math.round(n)).join(',')).join(' ')}" fill="none" stroke="${esc(el.color)}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"${dash}/>`; }
+  if(el.type==='pen'){ const w=el.w||7, dash=el.dash?` stroke-dasharray="${w*2.1} ${w*1.6}"`:'';
+    // sans flèche : exactement le dessin d'avant
+    if(!el.head) return `<polyline class="st-el${sel}" data-eid="${i}" points="${el.pts.map(p=>p.map(n=>Math.round(n)).join(',')).join(' ')}" fill="none" stroke="${esc(el.color)}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"${dash}/>`;
+    return `<g class="st-el${sel}" data-eid="${i}"><polyline points="${el.pts.map(p=>p.map(n=>Math.round(n)).join(',')).join(' ')}" fill="none" stroke="${esc(el.color)}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"${dash}/>${stPenHead(el.pts,w,el.color)}</g>`; }
   if(el.type==='marker'){ return `<g class="st-el st-marker${sel}" data-eid="${i}"><circle cx="${el.x}" cy="${el.y}" r="24" fill="${esc(el.color)}" stroke="#0009" stroke-width="3"/><text x="${el.x}" y="${el.y+9}" font-size="26" font-weight="800" text-anchor="middle" fill="${stTextOn(el.color)}" style="pointer-events:none">${esc(el.label||'')}</text></g>`; }
-  if(el.type==='text'){ return `<text class="st-el${sel}" data-eid="${i}" x="${el.x}" y="${el.y}" font-size="34" font-weight="800" fill="${esc(el.color)}" stroke="#000" stroke-width="1" paint-order="stroke">${esc(el.text||'')}</text>`; }
+  /* Texte : une ligne = le dessin d'avant, à l'identique ; plusieurs lignes =
+     un <tspan> par ligne, à une ordonnée ABSOLUE (un dy sur une ligne vide
+     ne compte pas : les lignes suivantes remontaient). */
+  if(el.type==='text'){ const fs=stTxtFs(el), L=stTxtLines(el), mid=el.al==='c'?' text-anchor="middle"':'', sw=fs===ST_FS_DEF?1:+(fs/ST_FS_DEF).toFixed(2);
+    const body=L.length<2?esc(L[0]):L.map((l,k)=>l?`<tspan x="${el.x}" y="${+(el.y+k*fs*ST_LH).toFixed(1)}">${esc(l)}</tspan>`:'').join('');
+    return `<text class="st-el${sel}" data-eid="${i}" x="${el.x}" y="${el.y}" font-size="${fs}" font-weight="800"${mid} fill="${esc(el.color)}" stroke="#000" stroke-width="${sw}" paint-order="stroke">${body}</text>`; }
   // POSITION PROPOSÉE (débriefing) : fantôme relié par une flèche pointillée à la
   // position RÉELLE du char dans le replay (x0,y0 ne bougent jamais).
   if(el.type==='ghost'){ const col=el.color||'#d8b566'; const s=Math.round(66*(el.size||0.72)),h=s/2,
@@ -10880,7 +10947,7 @@ function stElLabel(el){
     case 'rect': return 'Zone'; case 'circle': return 'Zone ronde';
     case 'stamp': { const k=ST_STAMP_LIST.find(x=>x[0]===el.kind); return t('Symbole')+' · '+(k?t(k[1]):''); }
     case 'marker': return t('Jeton')+' '+(el.label||'');
-    case 'text': return '« '+(el.text||'')+' »';
+    case 'text': return '« '+String(el.text||'').replace(/\s*\n\s*/g,' / ')+' »';
     case 'measure': return 'Mesure · '+el.m+' m'; case 'range': return 'Portée · '+el.m+' m';
     case 'cone': return 'Cône de tir';
   } return 'Élément'; }
@@ -10906,6 +10973,23 @@ function stFSector(el){ const sec=el.secteur||0, cap=el.cap||0;
   return `<div class="se-f"><div class="se-fl"><span>Secteur surveillé</span><b id="stSecV">${sec?'±'+sec+'°':'Aucun'}</b></div><input type="range" class="se-range" data-p="secteur" min="0" max="90" step="5" value="${sec}" aria-label="Ouverture du secteur surveillé"></div>`
     +`<div class="se-f" id="stCapRow"${sec?'':' hidden'}><div class="se-fl"><span>Orientation</span><b id="stCapV">${cap}°</b></div><input type="range" class="se-range" data-p="cap" min="0" max="355" step="5" value="${cap}" aria-label="Orientation du secteur, en degrés"></div>`; }
 const ST_W_OPTS=[[4,'Fin'],[7,'Moyen'],[12,'Épais']], ST_DASH_OPTS=[['0','Plein'],['1','Pointillé']];
+const ST_PHEAD_OPTS=[['0','Simple'],['1','Flèche']], ST_AL_OPTS=[['l','À gauche'],['c','Centré']];
+/* Taille et alignement d'un texte, comme dans un traitement de texte : la
+   liste des tailles entre « plus petit » et « plus grand ». `fs` vaut null
+   quand la sélection mêle plusieurs tailles. */
+function stFTextFmt(fs,al){
+  const list=ST_FS.slice(); if(fs!=null&&!list.includes(fs)){ list.push(fs); list.sort((a,b)=>a-b); }
+  const sel=`<select class="se-sel" data-p="fs" aria-label="Taille du texte">${fs==null?'<option value="" selected>—</option>':''}${list.map(v=>`<option value="${v}"${v===fs?' selected':''}>${v}</option>`).join('')}</select>`;
+  return stFRow('Taille',`<div class="se-fsz"><button type="button" class="se-ic" data-act="fsdn" aria-label="Réduire la taille du texte">${stIc('fsdn')}</button>${sel}<button type="button" class="se-ic" data-act="fsup" aria-label="Agrandir la taille du texte">${stIc('fsup')}</button></div>`)
+    +stFRow('Alignement',stFSeg('al',al,ST_AL_OPTS)); }
+// la taille suivante (d=+1) ou précédente (d=-1) de la liste
+function stFsNext(cur,d){ if(d>0){ const n=ST_FS.find(v=>v>cur); return n!=null?n:ST_FS[ST_FS.length-1]; } const l=ST_FS.filter(v=>v<cur); return l.length?l[l.length-1]:ST_FS[0]; }
+function stFsStep(d){ const idx=[...ST_SELS].filter(i=>ST_EDIT.els[i]&&ST_EDIT.els[i].type==='text');
+  const base=idx.length?stTxtFs(ST_EDIT.els[idx[0]]):ST_TEXT.fs;
+  const ch=idx.filter(i=>stFsNext(stTxtFs(ST_EDIT.els[i]),d)!==stTxtFs(ST_EDIT.els[i]));
+  if(ch.length){ stSnapshot(); ch.forEach(i=>{ const el=ST_EDIT.els[i]; ST_EDIT.els[i]=stApplyProp(el,'fs',stFsNext(stTxtFs(el),d)); }); stRedraw(); }
+  if(!idx.length||ST_TOOL!=='select') ST_TEXT.fs=stFsNext(base,d);
+  stMaj(); }
 function stRenderProps(){
   const box=document.getElementById('stProps'); if(!box||!ST_EDIT) return;
   const sel=stSelEls(); let h='';
@@ -10927,6 +11011,7 @@ function stRenderProps(){
         +stFRow('Forme',stFSeg('curve',bo('curve'),[['0','Droite'],['1','Courbe']]))+stFRow('Pointe',stFSeg('head',T==='arrow'?'1':'0',[['1','Avec'],['0','Sans']]));
     } else if(T==='path'||T==='pen'){
       h+=C(com('color'))+stFRow('Trait',stFSeg('dash',bo('dash'),ST_DASH_OPTS))+stFRow('Épaisseur',stFSeg('w',com('w'),ST_W_OPTS));
+      if(T==='pen'){ const hv=sel.map(e=>!!e.head); h+=stFRow('Fin du trait',stFSeg('phead',hv.every(x=>x===hv[0])?(hv[0]?'1':'0'):undefined,ST_PHEAD_OPTS)); }
     } else if(T==='rect'||T==='circle'){
       h+=C(com('color'))+stFRow('Forme',stFSeg('shape',T==='circle'?'ellipse':'rect',[['rect','Rectangle'],['ellipse','Ellipse']]))+stFRow('Contour',stFSeg('dash',bo('dash'),ST_DASH_OPTS));
     } else if(types.every(t=>t==='stamp'||t==='marker')){
@@ -10935,8 +11020,10 @@ function stRenderProps(){
       if(T==='stamp') h+=stFRow('Taille',stFSeg('ssize',com('size'),ST_STAMP_SIZES.map(([l,v])=>[v,l])));
       if(T==='marker'&&one) h+=stFRow('Numéro',`<input class="se-in" data-p="label" maxlength="4" value="${esc(one.label||'')}" aria-label="Numéro du jeton">`);
     } else if(T==='text'){
-      if(one) h+=stFRow('Texte',`<input class="se-in" data-p="text" maxlength="60" value="${esc(one.text||'')}" aria-label="Texte">`);
-      h+=C(com('color'));
+      // une zone de texte : Entrée y va à la ligne, comme sur la carte
+      if(one) h+=stFRow('Texte',`<textarea class="se-in se-ta" data-p="text" maxlength="${ST_TXT_MAX}" rows="3" aria-label="Texte" data-i18n-skip>${esc(one.text||'')}</textarea>`);
+      const fv=sel.map(stTxtFs), av=sel.map(e=>e.al==='c'?'c':'l');
+      h+=stFTextFmt(fv.every(x=>x===fv[0])?fv[0]:null, av.every(x=>x===av[0])?av[0]:undefined)+C(com('color'));
     } else if(T==='measure'||T==='range'){
       h+=stFRow('Affichage',stFSeg('meas',T==='range'?'1':'0',[['0','Distance'],['1','Cercle de portée']]));
       if(T==='range') h+=C(com('color'));
@@ -10953,10 +11040,11 @@ function stRenderProps(){
     if(ST_TOOL==='tank') h+=stFRow('Classe',stFCls(ST_TANK.cls))+stFRow('Couleur',stFColors('tcolor',ST_TANK.color,ST_TANK_COLORS))+stFRow('Taille',stFSeg('tsize',ST_TANK.size,ST_TANK_SIZES.map(([l,v])=>[v,l])));
     else if(ST_TOOL==='arrow') h+=C(ST_COLOR)+stFRow('Trait',stFSeg('dash',ST_STROKE.dash?'1':'0',ST_DASH_OPTS))+stFRow('Épaisseur',stFSeg('w',ST_STROKE.w,ST_W_OPTS))
         +stFRow('Forme',stFSeg('curve',ST_STROKE.curve?'1':'0',[['0','Droite'],['1','Courbe']]))+stFRow('Pointe',stFSeg('head',ST_STROKE.head?'1':'0',[['1','Avec'],['0','Sans']]));
-    else if(ST_TOOL==='path'||ST_TOOL==='pen') h+=C(ST_COLOR)+stFRow('Trait',stFSeg('dash',ST_STROKE.dash?'1':'0',ST_DASH_OPTS))+stFRow('Épaisseur',stFSeg('w',ST_STROKE.w,ST_W_OPTS));
+    else if(ST_TOOL==='path'||ST_TOOL==='pen'){ h+=C(ST_COLOR)+stFRow('Trait',stFSeg('dash',ST_STROKE.dash?'1':'0',ST_DASH_OPTS))+stFRow('Épaisseur',stFSeg('w',ST_STROKE.w,ST_W_OPTS));
+      if(ST_TOOL==='pen') h+=stFRow('Fin du trait',stFSeg('phead',ST_PEN_HEAD?'1':'0',ST_PHEAD_OPTS)); }
     else if(ST_TOOL==='zone') h+=C(ST_COLOR)+stFRow('Forme',stFSeg('shape',ST_ZONE.shape,[['rect','Rectangle'],['ellipse','Ellipse']]))+stFRow('Contour',stFSeg('dash',ST_ZONE.dash?'1':'0',ST_DASH_OPTS));
     else if(ST_TOOL==='stamp'){ h+=stFRow('Symbole',stFSym(ST_STAMP.kind),stSymName(ST_STAMP.kind))+C(ST_COLOR); if(ST_STAMP.kind!=='num') h+=stFRow('Taille',stFSeg('ssize',ST_STAMP.size,ST_STAMP_SIZES.map(([l,v])=>[v,l]))); }
-    else if(ST_TOOL==='text') h+=C(ST_COLOR);
+    else if(ST_TOOL==='text') h+=stFTextFmt(ST_TEXT.fs,ST_TEXT.al)+C(ST_COLOR);
     else if(ST_TOOL==='measure'){ h+=stFRow('Affichage',stFSeg('meas',ST_MEAS.circle?'1':'0',[['0','Distance'],['1','Cercle de portée']])); if(ST_MEAS.circle) h+=C(ST_COLOR); }
   } else {
     h=`<p class="se-vide">Clique un élément de la carte pour le régler, ou choisis un outil à gauche.</p>`;
@@ -10975,6 +11063,14 @@ function stApplyProp(el,p,v){ const c=JSON.parse(JSON.stringify(el));
   else if(p==='cls') c.cls=v;
   else if(p==='tsize'||p==='ssize') c.size=+v;
   else if(p==='spread') c.spread=+v;
+  else if(p==='phead'){ if(c.type==='pen'){ if(v==='1') c.head=true; else delete c.head; } }
+  else if(p==='fs'){ const n=Math.round(+v); if(c.type==='text'&&Number.isFinite(n)){ const fs=Math.max(ST_FS_MIN,Math.min(ST_FS_MAX,n)); if(fs===ST_FS_DEF) delete c.fs; else c.fs=fs; } }
+  /* Passer de gauche à centré (ou l'inverse) ne déplace pas le texte : le
+     point d'ancrage glisse d'une demi-largeur, le long de la ligne s'il est
+     tourné (le pivot de rotation suit l'ancrage, voir stElCenter). */
+  else if(p==='al'){ if(c.type==='text'){ const was=c.al==='c'?'c':'l', nv=v==='c'?'c':'l';
+      if(nv!==was){ const d=stTxtMeasure(c).w/2*(nv==='c'?1:-1), r=(c.rot||0)*Math.PI/180;
+        c.x=stN(c.x+d*Math.cos(r)); c.y=stN(c.y+d*Math.sin(r)); if(nv==='c') c.al='c'; else delete c.al; } } }
   else if(p==='kind'){
     if(v==='num'&&c.type==='stamp') return {type:'marker',color:c.color,x:c.x,y:c.y,label:stNextMarkerLabel()};
     if(v!=='num'&&c.type==='marker') return {type:'stamp',kind:v,color:c.color,x:c.x,y:c.y,size:ST_STAMP.size};
@@ -10988,7 +11084,10 @@ function stSetToolProp(p,v){
   else if(p==='dash'){ if(ST_TOOL==='zone') ST_ZONE.dash=v==='1'; else ST_STROKE.dash=v==='1'; }
   else if(p==='w') ST_STROKE.w=+v; else if(p==='curve') ST_STROKE.curve=v==='1'; else if(p==='head') ST_STROKE.head=v==='1';
   else if(p==='shape') ST_ZONE.shape=v; else if(p==='cls') ST_TANK.cls=v; else if(p==='tsize') ST_TANK.size=+v;
-  else if(p==='kind') ST_STAMP.kind=v; else if(p==='ssize') ST_STAMP.size=+v; else if(p==='meas') ST_MEAS.circle=v==='1'; }
+  else if(p==='kind') ST_STAMP.kind=v; else if(p==='ssize') ST_STAMP.size=+v; else if(p==='meas') ST_MEAS.circle=v==='1';
+  else if(p==='phead') ST_PEN_HEAD=v==='1';
+  else if(p==='fs'){ const n=Math.round(+v); if(Number.isFinite(n)) ST_TEXT.fs=Math.max(ST_FS_MIN,Math.min(ST_FS_MAX,n)); }
+  else if(p==='al') ST_TEXT.al=v==='c'?'c':'l'; }
 function stSetProp(p,v){
   const idx=[...ST_SELS].filter(i=>ST_EDIT.els[i]);
   if(idx.length){ stSnapshot(); idx.forEach(i=>{ ST_EDIT.els[i]=stApplyProp(ST_EDIT.els[i],p,v); }); stRedraw(); }
@@ -11002,7 +11101,7 @@ function stSetPropInput(inp){ const p=inp.dataset.p, idx=[...ST_SELS].filter(i=>
   const v=inp.value;
   idx.forEach(i=>{ const el=ST_EDIT.els[i];
     if(p==='name') el.name=v.slice(0,18);
-    else if(p==='text') el.text=v.slice(0,60);
+    else if(p==='text') el.text=v.replace(/\r\n?/g,'\n').slice(0,ST_TXT_MAX);
     else if(p==='label') el.label=v.slice(0,4);
     else if(p==='secteur'){ const n=+v; if(n>0){ el.secteur=n; if(el.cap==null) el.cap=0; } else delete el.secteur; }
     else if(p==='cap') el.cap=+v; });
@@ -11026,32 +11125,58 @@ function stTipShow(b){ if(b===ST_TIP_EL) return; const lbl=b.getAttribute('aria-
   if(side){ x=r.right+10; y=r.top+r.height/2-th/2; } else { x=r.left+r.width/2-tw/2; y=r.bottom+8; if(y+th>innerHeight-6) y=r.top-th-8; }
   t.style.left=Math.round(Math.max(6,Math.min(innerWidth-tw-6,x)))+'px'; t.style.top=Math.round(Math.max(6,y))+'px'; }
 // -- champ de saisie posé SUR la carte (texte, nom d'un char, numéro d'un jeton) --
-function stInlineClose(){ const o=document.getElementById("stTextIn"); if(o) o.remove(); }
+/* Retirer le champ alors qu'il a le focus déclenche sa validation (blur), qui le
+   retire déjà : le second retrait levait une erreur et le clic qui fermait le
+   champ était perdu. On valide d'abord, on retire ensuite ce qui reste. */
+function stInlineClose(){ const o=document.getElementById("stTextIn"); if(!o) return;
+  if(document.activeElement===o) o.blur();
+  if(o.isConnected) o.remove(); }
+/* `o.multi` : une zone de plusieurs lignes, pour l'outil Texte. Entrée y va
+   à la ligne ; Ctrl+Entrée, ou un clic ailleurs, valide ; Échap abandonne la
+   saisie. Elle grandit avec ce qu'on écrit et reprend la taille, la couleur
+   et l'alignement du texte, à sa place sur la carte. */
 function stInline(wx,wy,o){
   const svg=document.getElementById("stSvg"); if(!svg) return;
   const m=stMetrics(svg), fs=Math.max(13,Math.round((o.size||34)*m.s));
   const sx=m.r.left+m.offX+(wx-ST_ZOOM.x)*m.s, sy=m.r.top+m.offY+(wy-ST_ZOOM.y)*m.s;
   stInlineClose();
-  const inp=document.createElement("input");
-  inp.id="stTextIn"; inp.className="se-inline"+(o.center?' centre':''); inp.maxLength=o.max||60; inp.autocomplete="off";
+  const multi=!!o.multi, inp=document.createElement(multi?"textarea":"input");
+  inp.id="stTextIn"; inp.className="se-inline"+(o.center?' centre':'')+(multi?' multi':''); inp.maxLength=o.max||60; inp.autocomplete="off";
+  if(multi){ inp.rows=1; inp.wrap="off"; inp.setAttribute("data-i18n-skip",""); }
   inp.value=o.value||""; inp.placeholder=o.ph||""; inp.setAttribute("aria-label",o.ph||"Texte");
-  inp.style.left=Math.round(sx)+"px"; inp.style.top=Math.round(o.center?sy:sy-fs*0.95)+"px";
+  // zone multiligne : sa 1re ligne de base tombe sur celle du texte (bord 1 + marge 4/10 px)
+  if(multi){ inp.style.left=Math.round(o.center?sx:sx-11)+"px"; inp.style.top=Math.round(sy-fs*0.97-5)+"px"; }
+  else { inp.style.left=Math.round(sx)+"px"; inp.style.top=Math.round(o.center?sy:sy-fs*0.95)+"px"; }
   inp.style.color=o.color||"#f6f5f1"; inp.style.fontSize=fs+"px";
-  document.body.appendChild(inp); inp.focus(); inp.select();
+  document.body.appendChild(inp);
+  const fit=()=>{ if(!multi) return; const L=inp.value.split('\n'); inp.rows=Math.max(1,L.length);
+    let w=0; try{ const cs=getComputedStyle(inp); if(!ST_MCTX) ST_MCTX=document.createElement('canvas').getContext('2d');
+      ST_MCTX.font=`${cs.fontWeight} ${fs}px ${cs.fontFamily}`; w=Math.max(...L.map(l=>ST_MCTX.measureText(l).width), inp.value?0:ST_MCTX.measureText(inp.placeholder).width); }
+    catch(_){ w=Math.max(...L.map(l=>l.length))*fs*0.6; }
+    inp.style.width=Math.ceil(w+28)+"px"; inp.style.height="auto"; inp.style.height=inp.scrollHeight+"px"; };
+  fit(); inp.addEventListener("input",fit);
+  inp.focus(); inp.select();
   let done=false;
-  const commit=save=>{ if(done) return; done=true; const v=inp.value.trim().slice(0,o.max||60); inp.remove(); if(ST_EDIT) o.onDone(save?v:null); };
-  inp.onkeydown=e=>{ e.stopPropagation(); if(e.key==="Enter"){ e.preventDefault(); commit(true); } else if(e.key==="Escape"){ e.preventDefault(); commit(false); } };
+  const commit=save=>{ if(done) return; done=true;
+    const v=(multi?inp.value.replace(/\r\n?/g,'\n').replace(/[ \t]+$/gm,'').trim():inp.value.trim()).slice(0,o.max||60);
+    inp.remove(); if(ST_EDIT) o.onDone(save?v:null); };
+  inp.onkeydown=e=>{ e.stopPropagation();
+    if(e.key==="Enter"){ if(multi&&!(e.ctrlKey||e.metaKey)) return;   // Entrée seule : retour à la ligne
+      e.preventDefault(); commit(true); }
+    else if(e.key==="Escape"){ e.preventDefault(); commit(false); } };
   inp.onblur=()=>commit(true);
 }
-function stTextNew(p){ stInline(p[0],p[1],{max:60,ph:"Écris ton texte",color:ST_COLOR,size:34,onDone:v=>{ if(!v) return;
-  stSnapshot(); ST_EDIT.els.push({type:'text',color:ST_COLOR,x:p[0],y:p[1],text:v}); stSelOnly(ST_EDIT.els.length-1); stRedraw(); stMaj(); }}); }
+function stTextNew(p){ const fs=ST_TEXT.fs, al=ST_TEXT.al, color=ST_COLOR;
+  stInline(p[0],p[1],{multi:true,max:ST_TXT_MAX,ph:"Écris ton texte",color,size:fs,center:al==='c',onDone:v=>{ if(!v) return;
+    const n={type:'text',color,x:p[0],y:p[1],text:v}; if(fs!==ST_FS_DEF) n.fs=fs; if(al==='c') n.al='c';
+    stSnapshot(); ST_EDIT.els.push(n); stSelOnly(ST_EDIT.els.length-1); stRedraw(); stMaj(); }}); }
 // Nommer un char, réécrire un texte, renuméroter un jeton — sur place, sans boîte de dialogue.
 function stRename(eid){ const el=ST_EDIT&&ST_EDIT.els[eid]; if(!el) return;
   const fini=()=>{ stRedraw(); stMaj(); };
   if(el.type==='tank'||el.type==='ghost'){ const h=33*(el.size||0.78);
     stInline(el.x, el.y+h+4, {value:el.name||'', max:18, ph:"Nom du char", size:15, center:true, onDone:v=>{ if(v===null||v===(el.name||'')) return; stSnapshot(); el.name=v; fini(); }}); }
   else if(el.type==='text'){
-    stInline(el.x, el.y, {value:el.text||'', max:60, color:el.color, size:34, onDone:v=>{ if(v===null||v===el.text) return; stSnapshot();
+    stInline(el.x, el.y, {multi:true, value:el.text||'', max:ST_TXT_MAX, color:el.color, size:stTxtFs(el), center:el.al==='c', onDone:v=>{ if(v===null||v===el.text) return; stSnapshot();
       if(v) el.text=v; else { const i=ST_EDIT.els.indexOf(el); if(i>=0) ST_EDIT.els.splice(i,1); stSelClear(); } fini(); }}); }
   else if(el.type==='marker'){
     stInline(el.x, el.y-14, {value:el.label||'', max:4, ph:"N°", size:22, center:true, onDone:v=>{ if(v===null||v===el.label) return; stSnapshot(); el.label=v; fini(); }}); }
@@ -11080,7 +11205,7 @@ function stBeginMove(p,e,svg){ const orig=new Map(); let ax=Infinity,ay=Infinity
 // de la stratégie cachée, Ctrl+C et Espace étaient bloqués partout.
 function stEdActif(){ const v=document.getElementById('viewStrats');
   return !!(ST_EDIT && document.getElementById('stSvg') && v && !v.classList.contains('hidden')
-    && !document.getElementById('stPresentOv') && !document.getElementById('stCollabOv')); }
+    && !document.getElementById('stPresentOv') && !document.getElementById('stCollabOv') && !document.getElementById('stAideOv')); }
 let ST_GLOBAL_WIRED=false;
 function stWireGlobal(){ if(ST_GLOBAL_WIRED) return; ST_GLOBAL_WIRED=true;
   document.addEventListener("keydown",e=>{
@@ -11096,6 +11221,7 @@ function stWireGlobal(){ if(ST_GLOBAL_WIRED) return; ST_GLOBAL_WIRED=true;
     if(mod&&k==='d'){ if(ST_SELS.size){ e.preventDefault(); stDupSel(); } return; }
     if(mod&&k==='a'){ e.preventDefault(); stSetTool('select'); ST_EDIT.els.forEach((_,i)=>ST_SELS.add(i)); stRedraw(); return; }
     if(mod||e.altKey) return;
+    if(e.key==='?'){ e.preventDefault(); stAideOpen(); return; }
     if(e.key===' '){ e.preventDefault(); if(!ST_SPACE){ ST_SPACE=true; const s=document.getElementById("stSvg"); if(s) s.classList.add("spacing"); } return; }
     if(k==='enter'){ if(ST_PATHBUILD){ e.preventDefault(); stFinishPath(true); } return; }
     if(k==='delete'||k==='backspace'){ if(ST_SELS.size){ e.preventDefault(); stDeleteSel(); } return; }
@@ -11116,12 +11242,119 @@ function stWireGlobal(){ if(ST_GLOBAL_WIRED) return; ST_GLOBAL_WIRED=true;
   window.addEventListener("beforeunload",e=>{ if(ST_EDIT&&ST_DIRTY){ e.preventDefault(); e.returnValue=""; } });
   window.addEventListener("resize",()=>{ stTipHide(); stInlineClose(); });
 }
+/* ============================================================
+   LE GUIDE DE L'ÉDITEUR — bouton « Aide » de la barre du haut, touche ?
+   L'essentiel en une fenêtre, par-dessus la carte. La liste des outils
+   est tirée du rail lui-même (ST_TOOLS) : un outil ajouté ou renommé
+   change aussi ici. Le détail reste dans le manuel (aide-editeur.html).
+   Textes en français passés par t() : l'anglais est dans index.en.js.
+   ============================================================ */
+const ST_AIDE_OUTILS={
+  select:"Clique un élément pour le régler, glisse pour le déplacer. Glisse dans le vide pour en prendre plusieurs.",
+  tank:"Clique pour poser un char. Classe, couleur, taille, nom et secteur surveillé se règlent dans le panneau.",
+  arrow:"Glisse pour tracer un mouvement : droit ou courbe, plein ou pointillé, avec ou sans pointe.",
+  path:"Un trajet en plusieurs points : clique chaque point, double-clic ou Entrée pour finir, Échap pour annuler.",
+  zone:"Glisse pour délimiter un secteur : rectangle ou ellipse, contour plein ou pointillé.",
+  stamp:"Un pictogramme (Focus, Vision, Tenir, Danger…) ou un jeton numéroté qui se compte tout seul.",
+  text:"Clique et écris. Entrée va à la ligne ; Ctrl+Entrée ou un clic ailleurs valide. Taille et alignement dans le panneau.",
+  pen:"Dessin à main levée. « Fin du trait : Flèche », dans le panneau, le termine par une pointe.",
+  measure:"La distance réelle, en mètres, entre deux points — ou un cercle de portée autour d'un point."
+};
+const ST_AIDE_TEXTE=[
+  ["Le panneau de droite",[
+    "Il règle <b>ce qui est sélectionné</b>. Sans sélection, il règle ce que posera l'outil actif : pose d'abord, ajuste ensuite.",
+    "Quatre rubriques repliables : <b>Étapes</b>, <b>Propriétés</b>, <b>Éléments</b> (tout ce qu'il y a sur l'étape) et <b>Affichage</b> (grille, aimantation, animation)."]],
+  ["Sélectionner et modifier",[
+    "<b>Plusieurs éléments</b> : glisse un cadre dans le vide, ou <kbd>Maj</kbd> + clic pour en ajouter ou en retirer.",
+    "<b>Poignées</b> : les coins changent la taille, le rond du haut fait tourner.",
+    "<b>Double-clic</b> : nommer un char, réécrire un texte, renuméroter un jeton.",
+    "<b>Clic droit</b> : renommer, dupliquer, copier, passer devant ou derrière, supprimer."]],
+  ["Étapes et présentation",[
+    "Jusqu'à <b>12 étapes</b>, chacune avec son dessin et sa note. <b>+</b> ajoute une copie de l'étape actuelle.",
+    "<b>Présenter</b> passe en plein écran : <kbd>←</kbd> <kbd>→</kbd> pour changer d'étape, <kbd>L</kbd> pour le pointeur laser, <kbd>Échap</kbd> pour sortir.",
+    "<b>Enregistrer</b> laisse l'éditeur ouvert. La croix demande avant de jeter un plan non enregistré."]],
+  ["Débriefing et travail à plusieurs",[
+    "Ouvert depuis une bataille, l'éditeur montre le <b>replay</b> : <b>Étape ici</b> épingle une étape à l'instant affiché, <b>Proposer</b> place la position où un char aurait dû être.",
+    "Une stratégie <b>enregistrée</b> se modifie à plusieurs, en direct. Le <b>pointeur</b> montre sans dessiner.",
+    "<b>Collaborateurs</b> donne à un membre le droit de modifier ce plan. Pense à enregistrer ensuite."]]
+];
+// [touches, action] — une touche est un tableau de libellés, « / » sépare deux variantes
+const ST_AIDE_TOUCHES=[
+  [[["Ctrl","S"]],"Enregistrer"],
+  [[["Ctrl","Z"],["Ctrl","Y"]],"Annuler / rétablir"],
+  [[["Ctrl","C"],["Ctrl","V"]],"Copier / coller"],
+  [[["Ctrl","X"]],"Couper"],
+  [[["Ctrl","D"]],"Dupliquer"],
+  [[["Ctrl","A"]],"Tout sélectionner"],
+  [[["Suppr"]],"Supprimer la sélection"],
+  [[["Flèches"]],"Déplacer la sélection (Maj : plus loin)"],
+  [[["]"],["["]],"Premier plan / arrière-plan"],
+  [[["C"]],"Changer le camp des chars"],
+  [[["+"],["−"],["0"]],"Zoomer / dézoomer / 100 %"],
+  [[["Espace"]],"Maintenir et glisser pour se déplacer sur la carte"],
+  [[["Entrée"]],"Finir un trajet ; dans un texte, aller à la ligne"],
+  [[["Ctrl","Entrée"]],"Valider un texte"],
+  [[["Échap"]],"Annuler, désélectionner, revenir à la Sélection"],
+  [[["?"]],"Ouvrir ce guide"]
+];
+// Le tuto vidéo de l'éditeur, une version par langue (fabriqué dans video/ : fabriquer-tuto.cmd puis exporter-web.js)
+const ST_TUTO={fr:['video/tuto-editeur-fr.mp4?v=5ae668b4','video/tuto-editeur-fr.jpg?v=cbad9946'],en:['video/tuto-editeur-en.mp4?v=a6bedf12','video/tuto-editeur-en.jpg?v=fc78bff9']};
+function stAideHtml(){
+  const outils=ST_TOOLS.map(([k,l,key])=>`<div class="se-aide-t">${stIc(k)}<b>${esc(t(l))}</b><kbd>${esc(key)}</kbd><span>${t(ST_AIDE_OUTILS[k]||'')}</span></div>`).join('')
+    +`<div class="se-aide-t"><i class="se-aide-camp" aria-hidden="true"></i><b>${esc(t('Camp'))}</b><kbd>C</kbd><span>${t("Alliés ou ennemis : le camp des prochains chars, et des chars sélectionnés.")}</span></div>`;
+  const blocs=ST_AIDE_TEXTE.map(([h,l])=>`<section><h3>${esc(t(h))}</h3><ul>${l.map(x=>`<li>${t(x)}</li>`).join('')}</ul></section>`).join('');
+  const touches=ST_AIDE_TOUCHES.map(([ks,a])=>`<div class="se-aide-k"><dt>${ks.map(k=>k.map(x=>`<kbd>${esc(t(x))}</kbd>`).join('+')).join(' / ')}</dt><dd>${esc(t(a))}</dd></div>`).join('');
+  return `<div class="se-aide-box" role="dialog" aria-modal="true" aria-labelledby="stAideT">
+    <div class="se-aide-h">
+      <div><div class="se-kick">${esc(t('Aide'))}</div><h2 id="stAideT">${esc(t("Guide de l'éditeur"))}</h2>
+        <p class="se-aide-sub">${esc(t("L'essentiel en une page. Le manuel complet détaille chaque outil, le débriefing et les droits."))}</p></div>
+      <button type="button" class="se-ic se-ic-lg" data-aide-x aria-label="${esc(t('Fermer le guide'))}">${stIc('close')}</button>
+    </div>
+    <div class="se-aide-c">
+      <section><h3>${esc(t('Les outils'))}</h3><p>${esc(t("Chaque outil a sa lettre : tape-la au lieu de viser le bouton."))}</p><div class="se-aide-tools">${outils}</div></section>
+      <div class="se-aide-cols">${blocs}</div>
+      <section><h3>${esc(t('Raccourcis clavier'))}</h3><dl class="se-aide-keys">${touches}</dl></section>
+    </div>
+    <div class="se-aide-v" hidden></div>
+    <div class="se-aide-f">
+      <a class="se-btn" href="aide-editeur.html" target="_blank" rel="noopener">${stIc('ext')}<span>${esc(t("Manuel complet de l'éditeur"))}</span></a>
+      <button type="button" class="se-btn se-aide-vbtn" data-aide-v aria-pressed="false">${stIc('play')}<span>${esc(t('Tuto vidéo'))}</span></button>
+      <span class="se-pousse"></span>
+      <button type="button" class="se-btn se-btn-pri" data-aide-x>${esc(t('Compris'))}</button>
+    </div></div>`; }
+function stAideOpen(){ if(document.getElementById('stAideOv')) return; const sh=document.getElementById('stShell'); if(!sh||!ST_EDIT||!document.getElementById('stSvg')) return;
+  if(ST_PATHBUILD) stFinishPath(true);
+  stTipHide(); stHideCtxMenu(); stInlineClose();
+  const ov=document.createElement('div'); ov.className='se-aide'; ov.id='stAideOv'; ov.innerHTML=stAideHtml(); sh.appendChild(ov);
+  const close=()=>{ document.removeEventListener('keydown',onKey,true); ov.remove(); const b=document.getElementById('stAide'); if(b) try{ b.focus({preventScroll:true}); }catch(_){} };
+  // l'éditeur peut être refermé (ou redessiné) guide ouvert : l'écoute s'en va avec lui
+  // le tuto vidéo prend la place du guide dans la même boîte ; la vidéo n'est créée (donc téléchargée) qu'au clic
+  const vbtn=ov.querySelector('[data-aide-v]'), vbox=ov.querySelector('.se-aide-v'), cont=ov.querySelector('.se-aide-c'),
+    h2=ov.querySelector('#stAideT'), sub=ov.querySelector('.se-aide-sub'), h2g=h2.textContent, subg=sub.textContent;
+  const vid=on=>{ ov.classList.toggle('vid',on); cont.hidden=on; vbox.hidden=!on; vbtn.setAttribute('aria-pressed',String(on));
+    vbtn.innerHTML=on?`${stIc('retour')}<span>${esc(t('Retour au guide'))}</span>`:`${stIc('play')}<span>${esc(t('Tuto vidéo'))}</span>`;
+    h2.textContent=on?t("Tuto vidéo de l'éditeur"):h2g;
+    sub.textContent=on?t("Chaque outil montré dans le vrai éditeur : un plan construit pas à pas, présenté, puis un replay débriefé."):subg;
+    if(on){ const [src,poster]=ST_TUTO[window.CP_LANG==='en'?'en':'fr'];
+      vbox.innerHTML=`<video controls playsinline preload="metadata" poster="${poster}" src="${src}" aria-label="${esc(t("Tuto vidéo de l'éditeur"))}"></video>`;
+      const v=vbox.querySelector('video'); try{ v.focus({preventScroll:true}); }catch(_){} const p=v.play(); if(p&&p.catch) p.catch(()=>{}); }
+    else vbox.innerHTML=''; };
+  vbtn.onclick=()=>vid(!ov.classList.contains('vid'));
+  const onKey=e=>{ if(!ov.isConnected){ document.removeEventListener('keydown',onKey,true); return; }
+    if(e.key==='Escape'&&ov.classList.contains('vid')){ e.preventDefault(); e.stopPropagation(); vid(false); return; }
+    if(e.key==='Escape'||(e.key==='?'&&!(e.target&&/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)))){ e.preventDefault(); e.stopPropagation(); close(); } };
+  document.addEventListener('keydown',onKey,true);
+  ov.addEventListener('pointerdown',e=>{ if(e.target===ov) close(); });
+  ov.querySelectorAll('[data-aide-x]').forEach(b=>b.onclick=close);
+  const x=ov.querySelector('[data-aide-x]'); if(x) try{ x.focus({preventScroll:true}); }catch(_){ x.focus(); }
+}
 function stWireEditor(){
   stWireGlobal();
   const sh=document.getElementById("stShell"), svg=document.getElementById("stSvg"), $=id=>document.getElementById(id);
   // -- barre du haut --
   $("stName").oninput=e=>{ ST_EDIT.name=e.target.value; stSetDirty(true); };
   $("stChangeMap").onclick=()=>renderMapPicker();
+  $("stAide").onclick=stAideOpen;
   $("stCancel").onclick=()=>stCloseEditor(false);
   $("stSave").onclick=saveStrat;
   $("stPresent").onclick=()=>{ if(ST_PATHBUILD) stFinishPath(true); stPresent(ST_EDIT.steps,ST_EDIT.map,ST_EDIT.mode,ST_EDIT.name,ST_STEP); };
@@ -11149,10 +11382,12 @@ function stWireEditor(){
   pr.addEventListener("click",e=>{ const b=e.target.closest("button[data-p],button[data-act]"); if(!b) return;
     const a=b.dataset.act;
     if(a==='dup') stDupSel(); else if(a==='front') stZOrder(true); else if(a==='back') stZOrder(false); else if(a==='del') stDeleteSel();
+    else if(a==='fsup'||a==='fsdn') stFsStep(a==='fsup'?1:-1);
     else stSetProp(b.dataset.p,b.dataset.v); });
-  pr.addEventListener("input",e=>{ if(e.target.matches("input[data-p]")) stSetPropInput(e.target); });
-  pr.addEventListener("focusin",e=>{ if(e.target.matches("input[data-p]")) ST_PROP_SNAP=false; });
-  pr.addEventListener("change",()=>{ ST_PROP_SNAP=false; });
+  pr.addEventListener("input",e=>{ if(e.target.matches("input[data-p],textarea[data-p]")) stSetPropInput(e.target); });
+  pr.addEventListener("focusin",e=>{ if(e.target.matches("input[data-p],textarea[data-p]")) ST_PROP_SNAP=false; });
+  // la liste des tailles du texte
+  pr.addEventListener("change",e=>{ ST_PROP_SNAP=false; if(e.target.matches("select[data-p]")&&e.target.value!=='') stSetProp(e.target.dataset.p,e.target.value); });
   // -- liste des éléments --
   $("stElList").addEventListener("click",e=>{ const b=e.target.closest(".se-li"); if(!b) return; const i=+b.dataset.i;
     if(ST_TOOL!=='select') stSetTool('select');
@@ -11175,7 +11410,10 @@ function stWireEditor(){
   svg.onwheel=e=>{ e.preventDefault(); const p=stPt(e,svg); stZoomAt(e.deltaY<0?0.85:1.18, p[0], p[1]); };
   svg.onpointerdown=e=>{
     if(e.button===2) return;                      // le clic droit ouvre le menu
-    e.preventDefault(); stHideCtxMenu(); stInlineClose();
+    e.preventDefault(); stHideCtxMenu();
+    // un champ de saisie ouvert : ce clic le valide, et ne fait rien d'autre
+    // (sinon l'outil Texte rouvrait aussitôt un second texte sous le curseur)
+    if(document.getElementById("stTextIn")){ stInlineClose(); return; }
     // Pointeur actif : on MONTRE, on ne dessine pas. Le clic fait un ping.
     if(ST_LASER && !ST_SPACE && e.button!==1){ stLaserPing(stPt(e,svg)); return; }
     if(ST_SPACE || e.button===1){ ST_PANNING={sx:e.clientX,sy:e.clientY,vx:ST_ZOOM.x,vy:ST_ZOOM.y}; svg.classList.add("panning"); svg.setPointerCapture(e.pointerId); return; }
@@ -11210,7 +11448,7 @@ function stWireEditor(){
     if(ST_TOOL==='stamp'){ pose(ST_STAMP.kind==='num'?{type:'marker',color:ST_COLOR,x:p[0],y:p[1],label:stNextMarkerLabel()}:{type:'stamp',kind:ST_STAMP.kind,color:ST_COLOR,x:p[0],y:p[1],size:ST_STAMP.size}); return; }
     if(ST_TOOL==='text'){ stTextNew(p); return; }
     if(ST_TOOL==='path'){ stSelClear(); ST_PATHBUILD={type:'path',color:ST_COLOR,w:ST_STROKE.w,dash:ST_STROKE.dash,pts:[[p[0],p[1]]],cursor:[p[0],p[1]]}; stRedraw(); return; }
-    if(ST_TOOL==='pen') ST_DRAW={type:'pen',color:ST_COLOR,w:ST_STROKE.w,dash:ST_STROKE.dash,pts:[[p[0],p[1]]]};
+    if(ST_TOOL==='pen'){ ST_DRAW={type:'pen',color:ST_COLOR,w:ST_STROKE.w,dash:ST_STROKE.dash,pts:[[p[0],p[1]]]}; if(ST_PEN_HEAD) ST_DRAW.head=true; }
     else if(ST_TOOL==='measure'&&ST_MEAS.circle) ST_DRAW={type:'range',color:ST_COLOR,x:p[0],y:p[1],r:0,m:0};
     else if(ST_TOOL==='measure') ST_DRAW={type:'measure',color:'#ecd190',x1:p[0],y1:p[1],x2:p[0],y2:p[1],m:0};
     else if(ST_TOOL==='zone') ST_DRAW={type:ST_ZONE.shape==='ellipse'?'circle':'rect',color:ST_COLOR,w:5,dash:ST_ZONE.dash,x1:p[0],y1:p[1],x2:p[0],y2:p[1]};
