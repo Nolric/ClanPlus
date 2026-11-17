@@ -1712,6 +1712,33 @@
    "type": "wotmod"
   },
   {
+   "nom": "Mashka MoE",
+   "auteur": "ZxcMashkaUwU",
+   "page": "https://wgmods.net/8090/",
+   "url": "https://modp.wgcdn.co/media/mod_files/mashkaMoE.zip",
+   "taille": 809725,
+   "sha256": "3d9797ea97a0999daf44dbb14050e6e02e02fd6930b8f2415615d09d42ededfb",
+   "principal": "com.mashka.marks",
+   "mods": [
+    {
+     "id": "com.mashka.marks",
+     "version": "1.0.1",
+     "nom": "Mashka marks of excellence",
+     "chemin": "mashkamoe_1.0.1.wotmod",
+     "entree": "mashkaMoE/mods/2.4.1.1/mashkamoe_1.0.1.wotmod"
+    },
+    {
+     "id": "net.openwg.gameface",
+     "version": "1.2.2",
+     "nom": "net.openwg.gameface",
+     "chemin": "net.openwg/net.openwg.gameface_1.2.2.wotmod",
+     "entree": "mashkaMoE/mods/2.4.1.1/net.openwg/net.openwg.gameface_1.2.2.wotmod"
+    }
+   ],
+   "configs": [],
+   "type": "zip"
+  },
+  {
    "nom": "Fast Reconnect",
    "auteur": "Pruszko",
    "page": "https://wgmods.net/5473/",
