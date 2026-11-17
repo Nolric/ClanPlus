@@ -16,9 +16,9 @@
     }
   },
   "launcher": {
-    "version": "1.0.1",
-    "file": "download/ClanPlus.exe?v=42ccbf2a",
-    "size": 947200,
-    "sha256": "cae36a84928e83722e44f1b2a92b0610f0343b4c35fca7d2126e5204d2225a2f"
+    "version": "1.0.2",
+    "file": "download/ClanPlus.exe?v=c54056af",
+    "size": 984064,
+    "sha256": "6b7e2f68684d29a181ec0bd11fb4b7d4e0470adfde8cf4b928b0df63592a1a4e"
   }
 }

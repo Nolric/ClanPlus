@@ -1,0 +1,1964 @@
+{
+ "jeu": "2.4.1.1",
+ "releve": "2026-11-17",
+ "genere": "2026-11-17",
+ "paquets": [
+  {
+   "nom": "Battle Hits",
+   "auteur": "POLIROID",
+   "page": "https://wgmods.net/5912/",
+   "url": "https://modp.wgcdn.co/media/mod_files/2.4.1.1_BattleHits_2.4.2.zip",
+   "taille": 5333407,
+   "sha256": "fd9461b11be45e61508812cf385d6e043c8897e0f52d39e3e67cbfe332ea1345",
+   "principal": "me.poliroid.battlehits",
+   "mods": [
+    {
+     "id": "me.poliroid.battlehits",
+     "version": "2.4.2",
+     "nom": "Battle Hits",
+     "chemin": "me.poliroid.battlehits_2.4.2.wotmod",
+     "entree": "mods/2.4.1.1/me.poliroid.battlehits_2.4.2.wotmod"
+    },
+    {
+     "id": "me.poliroid.modslistapi",
+     "version": "1.8.0",
+     "nom": "Modifications list",
+     "chemin": "me.poliroid.modslistapi_1.8.0.wotmod",
+     "entree": "mods/2.4.1.1/me.poliroid.modslistapi_1.8.0.wotmod"
+    },
+    {
+     "id": "net.openwg.gameface",
+     "version": "1.2.2",
+     "nom": "net.openwg.gameface",
+     "chemin": "net.openwg/net.openwg.gameface_1.2.2.wotmod",
+     "entree": "mods/2.4.1.1/net.openwg/net.openwg.gameface_1.2.2.wotmod"
+    }
+   ],
+   "configs": [],
+   "type": "zip"
+  },
+  {
+   "nom": "Tomato.gg",
+   "auteur": "POLIROID",
+   "page": "https://wgmods.net/6391/",
+   "url": "https://modp.wgcdn.co/media/mod_files/tomatogg_2026.10.12.1_7zPMYcL.zip",
+   "taille": 7881177,
+   "sha256": "4edac67b1720cef0caf626f845f86e4004d88321195851f00849f59414ed645f",
+   "principal": "me.poliroid.tomatogg",
+   "mods": [
+    {
+     "id": "me.poliroid.modslistapi",
+     "version": "1.8.0",
+     "nom": "Modifications list",
+     "chemin": "me.poliroid.modslistapi_1.8.0.wotmod",
+     "entree": "manual-install/me.poliroid.modslistapi_1.8.0.wotmod"
+    },
+    {
+     "id": "me.poliroid.tomatogg",
+     "version": "2.2.04",
+     "nom": "tomatogg",
+     "chemin": "me.poliroid.tomatogg_2.2.04.wotmod",
+     "entree": "manual-install/me.poliroid.tomatogg_2.2.04.wotmod"
+    },
+    {
+     "id": "net.openwg.fix.battleresultscache",
+     "version": "1.9.0",
+     "nom": "net.openwg.fix.battleresultscache",
+     "chemin": "net.openwg/net.openwg.fix.battleresultscache_1.9.0.wotmod",
+     "entree": "manual-install/net.openwg/net.openwg.fix.battleresultscache_1.9.0.wotmod"
+    },
+    {
+     "id": "net.openwg.fix.battleresultsreplays",
+     "version": "1.1.0",
+     "nom": "net.openwg.fix.battleresultsreplays",
+     "chemin": "net.openwg/net.openwg.fix.battleresultsreplays_1.1.0.wotmod",
+     "entree": "manual-install/net.openwg/net.openwg.fix.battleresultsreplays_1.1.0.wotmod"
+    },
+    {
+     "id": "net.openwg.gameface",
+     "version": "1.2.2",
+     "nom": "net.openwg.gameface",
+     "chemin": "net.openwg/net.openwg.gameface_1.2.2.wotmod",
+     "entree": "manual-install/net.openwg/net.openwg.gameface_1.2.2.wotmod"
+    }
+   ],
+   "configs": [],
+   "type": "zip"
+  },
+  {
+   "nom": "PMOD",
+   "auteur": "POLIROID",
+   "page": "https://wgmods.net/50/",
+   "url": "https://modp.wgcdn.co/media/mod_files/PMOD_ver_81-16_hTzalrU.zip",
+   "taille": 3315629,
+   "sha256": "ad573f0e1dd9e56f56d8123e8fbcb4d0555eb2a2d4bd8ca4e1b9d26fbcb06de9",
+   "principal": "me.poliroid.pmod",
+   "mods": [
+    {
+     "id": "me.poliroid.pmod",
+     "version": "1.81.16",
+     "nom": "PMOD",
+     "chemin": "me.poliroid.pmod_1.81.16.wotmod",
+     "entree": "mods/2.4.1.1/me.poliroid.pmod_1.81.16.wotmod"
+    },
+    {
+     "id": "net.openwg.fix.battleresultscache",
+     "version": "1.9.0",
+     "nom": "net.openwg.fix.battleresultscache",
+     "chemin": "net.openwg/net.openwg.fix.battleresultscache_1.9.0.wotmod",
+     "entree": "mods/2.4.1.1/net.openwg/net.openwg.fix.battleresultscache_1.9.0.wotmod"
+    },
+    {
+     "id": "net.openwg.fix.battleresultsreplays",
+     "version": "1.1.0",
+     "nom": "net.openwg.fix.battleresultsreplays",
+     "chemin": "net.openwg/net.openwg.fix.battleresultsreplays_1.1.0.wotmod",
+     "entree": "mods/2.4.1.1/net.openwg/net.openwg.fix.battleresultsreplays_1.1.0.wotmod"
+    }
+   ],
+   "configs": [
+    {
+     "entree": "mods/configs/pmod/battleChat.json",
+     "chemin": "pmod/battleChat.json"
+    },
+    {
+     "entree": "mods/configs/pmod/battleGui.json",
+     "chemin": "pmod/battleGui.json"
+    },
+    {
+     "entree": "mods/configs/pmod/cameraOptions.json",
+     "chemin": "pmod/cameraOptions.json"
+    },
+    {
+     "entree": "mods/configs/pmod/detectionState/black.png",
+     "chemin": "pmod/detectionState/black.png"
+    },
+    {
+     "entree": "mods/configs/pmod/detectionState/gray.png",
+     "chemin": "pmod/detectionState/gray.png"
+    },
+    {
+     "entree": "mods/configs/pmod/detectionState/green.png",
+     "chemin": "pmod/detectionState/green.png"
+    },
+    {
+     "entree": "mods/configs/pmod/detectionState/red.png",
+     "chemin": "pmod/detectionState/red.png"
+    },
+    {
+     "entree": "mods/configs/pmod/detectionState/yellow.png",
+     "chemin": "pmod/detectionState/yellow.png"
+    },
+    {
+     "entree": "mods/configs/pmod/gunMarkers/blue/bottom.dds",
+     "chemin": "pmod/gunMarkers/blue/bottom.dds"
+    },
+    {
+     "entree": "mods/configs/pmod/gunMarkers/blue/center.dds",
+     "chemin": "pmod/gunMarkers/blue/center.dds"
+    },
+    {
+     "entree": "mods/configs/pmod/gunMarkers/blue/left.dds",
+     "chemin": "pmod/gunMarkers/blue/left.dds"
+    },
+    {
+     "entree": "mods/configs/pmod/gunMarkers/blue/right.dds",
+     "chemin": "pmod/gunMarkers/blue/right.dds"
+    },
+    {
+     "entree": "mods/configs/pmod/gunMarkers/blue/top.dds",
+     "chemin": "pmod/gunMarkers/blue/top.dds"
+    },
+    {
+     "entree": "mods/configs/pmod/gunMarkers/crakker/bottom.dds",
+     "chemin": "pmod/gunMarkers/crakker/bottom.dds"
+    },
+    {
+     "entree": "mods/configs/pmod/gunMarkers/crakker/center.dds",
+     "chemin": "pmod/gunMarkers/crakker/center.dds"
+    },
+    {
+     "entree": "mods/configs/pmod/gunMarkers/crakker/left.dds",
+     "chemin": "pmod/gunMarkers/crakker/left.dds"
+    },
+    {
+     "entree": "mods/configs/pmod/gunMarkers/crakker/right.dds",
+     "chemin": "pmod/gunMarkers/crakker/right.dds"
+    },
+    {
+     "entree": "mods/configs/pmod/gunMarkers/crakker/top.dds",
+     "chemin": "pmod/gunMarkers/crakker/top.dds"
+    },
+    {
+     "entree": "mods/configs/pmod/gunMarkers/green/bottom.dds",
+     "chemin": "pmod/gunMarkers/green/bottom.dds"
+    },
+    {
+     "entree": "mods/configs/pmod/gunMarkers/green/center.dds",
+     "chemin": "pmod/gunMarkers/green/center.dds"
+    },
+    {
+     "entree": "mods/configs/pmod/gunMarkers/green/left.dds",
+     "chemin": "pmod/gunMarkers/green/left.dds"
+    },
+    {
+     "entree": "mods/configs/pmod/gunMarkers/green/right.dds",
+     "chemin": "pmod/gunMarkers/green/right.dds"
+    },
+    {
+     "entree": "mods/configs/pmod/gunMarkers/green/top.dds",
+     "chemin": "pmod/gunMarkers/green/top.dds"
+    },
+    {
+     "entree": "mods/configs/pmod/gunMarkers/standard/bottom.dds",
+     "chemin": "pmod/gunMarkers/standard/bottom.dds"
+    },
+    {
+     "entree": "mods/configs/pmod/gunMarkers/standard/center.dds",
+     "chemin": "pmod/gunMarkers/standard/center.dds"
+    },
+    {
+     "entree": "mods/configs/pmod/gunMarkers/standard/left.dds",
+     "chemin": "pmod/gunMarkers/standard/left.dds"
+    },
+    {
+     "entree": "mods/configs/pmod/gunMarkers/standard/right.dds",
+     "chemin": "pmod/gunMarkers/standard/right.dds"
+    },
+    {
+     "entree": "mods/configs/pmod/gunMarkers/standard/top.dds",
+     "chemin": "pmod/gunMarkers/standard/top.dds"
+    },
+    {
+     "entree": "mods/configs/pmod/hangar.json",
+     "chemin": "pmod/hangar.json"
+    },
+    {
+     "entree": "mods/configs/pmod/horizontalStabilizer.json",
+     "chemin": "pmod/horizontalStabilizer.json"
+    },
+    {
+     "entree": "mods/configs/pmod/loginWindow.json",
+     "chemin": "pmod/loginWindow.json"
+    },
+    {
+     "entree": "mods/configs/pmod/markers.json",
+     "chemin": "pmod/markers.json"
+    },
+    {
+     "entree": "mods/configs/pmod/noBinoculars.json",
+     "chemin": "pmod/noBinoculars.json"
+    },
+    {
+     "entree": "mods/configs/pmod/noDynamic.json",
+     "chemin": "pmod/noDynamic.json"
+    },
+    {
+     "entree": "mods/configs/pmod/onStartDeadDistance.json",
+     "chemin": "pmod/onStartDeadDistance.json"
+    },
+    {
+     "entree": "mods/configs/pmod/pmod.json",
+     "chemin": "pmod/pmod.json"
+    },
+    {
+     "entree": "mods/configs/pmod/reducedArmor.json",
+     "chemin": "pmod/reducedArmor.json"
+    },
+    {
+     "entree": "mods/configs/pmod/scrollSensitivity.json",
+     "chemin": "pmod/scrollSensitivity.json"
+    },
+    {
+     "entree": "mods/configs/pmod/serverDispersionCircle.json",
+     "chemin": "pmod/serverDispersionCircle.json"
+    },
+    {
+     "entree": "mods/configs/pmod/sessionStatistic.json",
+     "chemin": "pmod/sessionStatistic.json"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/2rokk/battleChat.json",
+     "chemin": "pmod/skins/2rokk/battleChat.json"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/2rokk/images/all.png",
+     "chemin": "pmod/skins/2rokk/images/all.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/2rokk/images/bg/statBg_def.png",
+     "chemin": "pmod/skins/2rokk/images/bg/statBg_def.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/2rokk/images/bg/statBg_draw.png",
+     "chemin": "pmod/skins/2rokk/images/bg/statBg_draw.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/2rokk/images/bg/statBg_win.png",
+     "chemin": "pmod/skins/2rokk/images/bg/statBg_win.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/2rokk/images/bg/stat_bg_#00b414.png",
+     "chemin": "pmod/skins/2rokk/images/bg/stat_bg_#00b414.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/2rokk/images/bg/stat_bg_#02C9B3.png",
+     "chemin": "pmod/skins/2rokk/images/bg/stat_bg_#02C9B3.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/2rokk/images/bg/stat_bg_#D042F3.png",
+     "chemin": "pmod/skins/2rokk/images/bg/stat_bg_#D042F3.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/2rokk/images/bg/stat_bg_#F8F400.png",
+     "chemin": "pmod/skins/2rokk/images/bg/stat_bg_#F8F400.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/2rokk/images/bg/stat_bg_#FE7903.png",
+     "chemin": "pmod/skins/2rokk/images/bg/stat_bg_#FE7903.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/2rokk/images/bg/stat_bg_#ff0000.png",
+     "chemin": "pmod/skins/2rokk/images/bg/stat_bg_#ff0000.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/2rokk/images/bg/stat_bg_default.png",
+     "chemin": "pmod/skins/2rokk/images/bg/stat_bg_default.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/2rokk/images/comp.png",
+     "chemin": "pmod/skins/2rokk/images/comp.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/2rokk/images/cred.png",
+     "chemin": "pmod/skins/2rokk/images/cred.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/2rokk/images/def.png",
+     "chemin": "pmod/skins/2rokk/images/def.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/2rokk/images/draw.png",
+     "chemin": "pmod/skins/2rokk/images/draw.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/2rokk/images/exp.png",
+     "chemin": "pmod/skins/2rokk/images/exp.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/2rokk/images/flag.png",
+     "chemin": "pmod/skins/2rokk/images/flag.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/2rokk/images/flag_d.png",
+     "chemin": "pmod/skins/2rokk/images/flag_d.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/2rokk/images/flag_w.png",
+     "chemin": "pmod/skins/2rokk/images/flag_w.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/2rokk/images/GoldStarIcon-1.png",
+     "chemin": "pmod/skins/2rokk/images/GoldStarIcon-1.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/2rokk/images/href.png",
+     "chemin": "pmod/skins/2rokk/images/href.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/2rokk/images/href2.png",
+     "chemin": "pmod/skins/2rokk/images/href2.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/2rokk/images/href21.png",
+     "chemin": "pmod/skins/2rokk/images/href21.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/2rokk/images/jiv1.png",
+     "chemin": "pmod/skins/2rokk/images/jiv1.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/2rokk/images/jiv2.png",
+     "chemin": "pmod/skins/2rokk/images/jiv2.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/2rokk/images/map_.png",
+     "chemin": "pmod/skins/2rokk/images/map_.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/2rokk/images/peni.png",
+     "chemin": "pmod/skins/2rokk/images/peni.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/2rokk/images/PersonalAchievementsIcon-1.png",
+     "chemin": "pmod/skins/2rokk/images/PersonalAchievementsIcon-1.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/2rokk/images/PowerlevelIcon-1.png",
+     "chemin": "pmod/skins/2rokk/images/PowerlevelIcon-1.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/2rokk/images/rating/rating_#02C9B3.png",
+     "chemin": "pmod/skins/2rokk/images/rating/rating_#02C9B3.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/2rokk/images/rating/rating_#60FF00.png",
+     "chemin": "pmod/skins/2rokk/images/rating/rating_#60FF00.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/2rokk/images/rating/rating_#D042F3.png",
+     "chemin": "pmod/skins/2rokk/images/rating/rating_#D042F3.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/2rokk/images/rating/rating_#F8F400.png",
+     "chemin": "pmod/skins/2rokk/images/rating/rating_#F8F400.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/2rokk/images/rating/rating_#FE0E00.png",
+     "chemin": "pmod/skins/2rokk/images/rating/rating_#FE0E00.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/2rokk/images/rating/rating_#FE7903.png",
+     "chemin": "pmod/skins/2rokk/images/rating/rating_#FE7903.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/2rokk/images/survival40x32.png",
+     "chemin": "pmod/skins/2rokk/images/survival40x32.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/2rokk/images/tank.png",
+     "chemin": "pmod/skins/2rokk/images/tank.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/2rokk/images/time1.png",
+     "chemin": "pmod/skins/2rokk/images/time1.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/2rokk/images/time2.png",
+     "chemin": "pmod/skins/2rokk/images/time2.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/2rokk/images/win.png",
+     "chemin": "pmod/skins/2rokk/images/win.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/2rokk/images/wins40x32.png",
+     "chemin": "pmod/skins/2rokk/images/wins40x32.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/2rokk/images/wn.png",
+     "chemin": "pmod/skins/2rokk/images/wn.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/2rokk/sessionStatistic.json",
+     "chemin": "pmod/skins/2rokk/sessionStatistic.json"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/2rokk/systemMessages.json",
+     "chemin": "pmod/skins/2rokk/systemMessages.json"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/2rokk/_colors.json",
+     "chemin": "pmod/skins/2rokk/_colors.json"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/antoshkaaa/battleChat.json",
+     "chemin": "pmod/skins/antoshkaaa/battleChat.json"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/antoshkaaa/icons/#83be46.png",
+     "chemin": "pmod/skins/antoshkaaa/icons/#83be46.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/antoshkaaa/icons/#d3dad3.png",
+     "chemin": "pmod/skins/antoshkaaa/icons/#d3dad3.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/antoshkaaa/icons/BackgroundNull.png",
+     "chemin": "pmod/skins/antoshkaaa/icons/BackgroundNull.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/antoshkaaa/icons/WinRate#83be46.png",
+     "chemin": "pmod/skins/antoshkaaa/icons/WinRate#83be46.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/antoshkaaa/icons/WinRate#d3dad3.png",
+     "chemin": "pmod/skins/antoshkaaa/icons/WinRate#d3dad3.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/antoshkaaa/icons/WinRate#ee2222.png",
+     "chemin": "pmod/skins/antoshkaaa/icons/WinRate#ee2222.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/antoshkaaa/sessionStatistic.json",
+     "chemin": "pmod/skins/antoshkaaa/sessionStatistic.json"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/antoshkaaa/systemMessages.json",
+     "chemin": "pmod/skins/antoshkaaa/systemMessages.json"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/armagomen/battleChat.json",
+     "chemin": "pmod/skins/armagomen/battleChat.json"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/armagomen/images/#60FF00.png",
+     "chemin": "pmod/skins/armagomen/images/#60FF00.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/armagomen/images/#60FF00_ico.png",
+     "chemin": "pmod/skins/armagomen/images/#60FF00_ico.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/armagomen/images/#C0C0C0.png",
+     "chemin": "pmod/skins/armagomen/images/#C0C0C0.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/armagomen/images/#C0C0C0_ico.png",
+     "chemin": "pmod/skins/armagomen/images/#C0C0C0_ico.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/armagomen/images/assist.png",
+     "chemin": "pmod/skins/armagomen/images/assist.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/armagomen/images/base_attak.png",
+     "chemin": "pmod/skins/armagomen/images/base_attak.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/armagomen/images/base_def.png",
+     "chemin": "pmod/skins/armagomen/images/base_def.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/armagomen/images/BattleResult.png",
+     "chemin": "pmod/skins/armagomen/images/BattleResult.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/armagomen/images/battleResultDefeat.png",
+     "chemin": "pmod/skins/armagomen/images/battleResultDefeat.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/armagomen/images/battleResultDraw.png",
+     "chemin": "pmod/skins/armagomen/images/battleResultDraw.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/armagomen/images/battleResultWin.png",
+     "chemin": "pmod/skins/armagomen/images/battleResultWin.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/armagomen/images/Credits.png",
+     "chemin": "pmod/skins/armagomen/images/Credits.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/armagomen/images/damage.png",
+     "chemin": "pmod/skins/armagomen/images/damage.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/armagomen/images/destr.png",
+     "chemin": "pmod/skins/armagomen/images/destr.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/armagomen/images/exp.png",
+     "chemin": "pmod/skins/armagomen/images/exp.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/armagomen/images/found.png",
+     "chemin": "pmod/skins/armagomen/images/found.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/armagomen/images/freexp.png",
+     "chemin": "pmod/skins/armagomen/images/freexp.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/armagomen/images/Gold.png",
+     "chemin": "pmod/skins/armagomen/images/Gold.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/armagomen/images/Head.png",
+     "chemin": "pmod/skins/armagomen/images/Head.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/armagomen/images/hits.png",
+     "chemin": "pmod/skins/armagomen/images/hits.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/armagomen/images/line1.png",
+     "chemin": "pmod/skins/armagomen/images/line1.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/armagomen/images/line2.png",
+     "chemin": "pmod/skins/armagomen/images/line2.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/armagomen/images/marks.png",
+     "chemin": "pmod/skins/armagomen/images/marks.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/armagomen/sessionStatistic.json",
+     "chemin": "pmod/skins/armagomen/sessionStatistic.json"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/armagomen/systemMessages.json",
+     "chemin": "pmod/skins/armagomen/systemMessages.json"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/default/battleChat.json",
+     "chemin": "pmod/skins/default/battleChat.json"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/default/images/battleResultDefeat.png",
+     "chemin": "pmod/skins/default/images/battleResultDefeat.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/default/images/battleResultDraft.png",
+     "chemin": "pmod/skins/default/images/battleResultDraft.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/default/images/battleResultWin.png",
+     "chemin": "pmod/skins/default/images/battleResultWin.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/default/images/green.png",
+     "chemin": "pmod/skins/default/images/green.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/default/images/line.png",
+     "chemin": "pmod/skins/default/images/line.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/default/images/line2.png",
+     "chemin": "pmod/skins/default/images/line2.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/default/images/null.png",
+     "chemin": "pmod/skins/default/images/null.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/default/images/red.png",
+     "chemin": "pmod/skins/default/images/red.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/default/images/sessionStatisticBackgroundCyan.png",
+     "chemin": "pmod/skins/default/images/sessionStatisticBackgroundCyan.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/default/images/sessionStatisticBackgroundGreen.png",
+     "chemin": "pmod/skins/default/images/sessionStatisticBackgroundGreen.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/default/images/sessionStatisticBackgroundNull.png",
+     "chemin": "pmod/skins/default/images/sessionStatisticBackgroundNull.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/default/images/sessionStatisticBackgroundOrange.png",
+     "chemin": "pmod/skins/default/images/sessionStatisticBackgroundOrange.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/default/images/sessionStatisticBackgroundPurple.png",
+     "chemin": "pmod/skins/default/images/sessionStatisticBackgroundPurple.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/default/images/sessionStatisticBackgroundRed.png",
+     "chemin": "pmod/skins/default/images/sessionStatisticBackgroundRed.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/default/images/sessionStatisticBackgroundYellow.png",
+     "chemin": "pmod/skins/default/images/sessionStatisticBackgroundYellow.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/default/images/statOnTanks.png",
+     "chemin": "pmod/skins/default/images/statOnTanks.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/default/sessionStatistic.json",
+     "chemin": "pmod/skins/default/sessionStatistic.json"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/default/sessionStatistic_newFeatures.json",
+     "chemin": "pmod/skins/default/sessionStatistic_newFeatures.json"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/default/systemMessages.json",
+     "chemin": "pmod/skins/default/systemMessages.json"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/demon2597/battleChat.json",
+     "chemin": "pmod/skins/demon2597/battleChat.json"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/demon2597/img/battleResultDefeat-1.png",
+     "chemin": "pmod/skins/demon2597/img/battleResultDefeat-1.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/demon2597/img/battleResultDefeat.png",
+     "chemin": "pmod/skins/demon2597/img/battleResultDefeat.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/demon2597/img/battleResultDraw-1.png",
+     "chemin": "pmod/skins/demon2597/img/battleResultDraw-1.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/demon2597/img/battleResultDraw.png",
+     "chemin": "pmod/skins/demon2597/img/battleResultDraw.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/demon2597/img/battleResultWin-1.png",
+     "chemin": "pmod/skins/demon2597/img/battleResultWin-1.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/demon2597/img/battleResultWin.png",
+     "chemin": "pmod/skins/demon2597/img/battleResultWin.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/demon2597/img/buttonClear.png",
+     "chemin": "pmod/skins/demon2597/img/buttonClear.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/demon2597/img/buttonGeneral.png",
+     "chemin": "pmod/skins/demon2597/img/buttonGeneral.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/demon2597/img/buttonVehicle.png",
+     "chemin": "pmod/skins/demon2597/img/buttonVehicle.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/demon2597/img/page.png",
+     "chemin": "pmod/skins/demon2597/img/page.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/demon2597/img/StatBg#00CC00.png",
+     "chemin": "pmod/skins/demon2597/img/StatBg#00CC00.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/demon2597/img/StatBg#00CC00Cyan.png",
+     "chemin": "pmod/skins/demon2597/img/StatBg#00CC00Cyan.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/demon2597/img/StatBg#00CC00Green.png",
+     "chemin": "pmod/skins/demon2597/img/StatBg#00CC00Green.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/demon2597/img/StatBg#00CC00Orange.png",
+     "chemin": "pmod/skins/demon2597/img/StatBg#00CC00Orange.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/demon2597/img/StatBg#00CC00Purple.png",
+     "chemin": "pmod/skins/demon2597/img/StatBg#00CC00Purple.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/demon2597/img/StatBg#00CC00Red.png",
+     "chemin": "pmod/skins/demon2597/img/StatBg#00CC00Red.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/demon2597/img/StatBg#00CC00Yellow.png",
+     "chemin": "pmod/skins/demon2597/img/StatBg#00CC00Yellow.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/demon2597/img/StatBg#F01818.png",
+     "chemin": "pmod/skins/demon2597/img/StatBg#F01818.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/demon2597/img/StatBg#F01818Cyan.png",
+     "chemin": "pmod/skins/demon2597/img/StatBg#F01818Cyan.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/demon2597/img/StatBg#F01818Green.png",
+     "chemin": "pmod/skins/demon2597/img/StatBg#F01818Green.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/demon2597/img/StatBg#F01818Orange.png",
+     "chemin": "pmod/skins/demon2597/img/StatBg#F01818Orange.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/demon2597/img/StatBg#F01818Purple.png",
+     "chemin": "pmod/skins/demon2597/img/StatBg#F01818Purple.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/demon2597/img/StatBg#F01818Red.png",
+     "chemin": "pmod/skins/demon2597/img/StatBg#F01818Red.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/demon2597/img/StatBg#F01818Yellow.png",
+     "chemin": "pmod/skins/demon2597/img/StatBg#F01818Yellow.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/demon2597/img/StatBg#FFAA00.png",
+     "chemin": "pmod/skins/demon2597/img/StatBg#FFAA00.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/demon2597/img/StatBg#FFAA00Cyan.png",
+     "chemin": "pmod/skins/demon2597/img/StatBg#FFAA00Cyan.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/demon2597/img/StatBg#FFAA00Green.png",
+     "chemin": "pmod/skins/demon2597/img/StatBg#FFAA00Green.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/demon2597/img/StatBg#FFAA00Orange.png",
+     "chemin": "pmod/skins/demon2597/img/StatBg#FFAA00Orange.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/demon2597/img/StatBg#FFAA00Purple.png",
+     "chemin": "pmod/skins/demon2597/img/StatBg#FFAA00Purple.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/demon2597/img/StatBg#FFAA00Red.png",
+     "chemin": "pmod/skins/demon2597/img/StatBg#FFAA00Red.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/demon2597/img/StatBg#FFAA00Yellow.png",
+     "chemin": "pmod/skins/demon2597/img/StatBg#FFAA00Yellow.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/demon2597/img/StatBgNull.png",
+     "chemin": "pmod/skins/demon2597/img/StatBgNull.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/demon2597/sessionStatistic.json",
+     "chemin": "pmod/skins/demon2597/sessionStatistic.json"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/demon2597/systemMessages.json",
+     "chemin": "pmod/skins/demon2597/systemMessages.json"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/LeBwa/resources/background-logo.png",
+     "chemin": "pmod/skins/LeBwa/resources/background-logo.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/LeBwa/resources/buttons_compact.png",
+     "chemin": "pmod/skins/LeBwa/resources/buttons_compact.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/LeBwa/resources/buttons_compact_active.png",
+     "chemin": "pmod/skins/LeBwa/resources/buttons_compact_active.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/LeBwa/resources/buttons_detailed.png",
+     "chemin": "pmod/skins/LeBwa/resources/buttons_detailed.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/LeBwa/resources/buttons_detailed_active.png",
+     "chemin": "pmod/skins/LeBwa/resources/buttons_detailed_active.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/LeBwa/resources/buttons_tanks.png",
+     "chemin": "pmod/skins/LeBwa/resources/buttons_tanks.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/LeBwa/resources/buttons_tanks_active.png",
+     "chemin": "pmod/skins/LeBwa/resources/buttons_tanks_active.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/LeBwa/resources/buttons_trash.png",
+     "chemin": "pmod/skins/LeBwa/resources/buttons_trash.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/LeBwa/resources/icon-tank-link.png",
+     "chemin": "pmod/skins/LeBwa/resources/icon-tank-link.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/LeBwa/resources/icon-tank.png",
+     "chemin": "pmod/skins/LeBwa/resources/icon-tank.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/LeBwa/resources/line.png",
+     "chemin": "pmod/skins/LeBwa/resources/line.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/LeBwa/resources/null.png",
+     "chemin": "pmod/skins/LeBwa/resources/null.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/LeBwa/sessionStatistic.json",
+     "chemin": "pmod/skins/LeBwa/sessionStatistic.json"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/Meddio/battleChat.json",
+     "chemin": "pmod/skins/Meddio/battleChat.json"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/Meddio/images/#C3D84C.png",
+     "chemin": "pmod/skins/Meddio/images/#C3D84C.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/Meddio/images/#D44B5D.png",
+     "chemin": "pmod/skins/Meddio/images/#D44B5D.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/Meddio/images/background_default.png",
+     "chemin": "pmod/skins/Meddio/images/background_default.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/Meddio/images/line_chat.png",
+     "chemin": "pmod/skins/Meddio/images/line_chat.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/Meddio/images/pixels.png",
+     "chemin": "pmod/skins/Meddio/images/pixels.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/Meddio/images/pixel_00.png",
+     "chemin": "pmod/skins/Meddio/images/pixel_00.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/Meddio/images/pixel_01.png",
+     "chemin": "pmod/skins/Meddio/images/pixel_01.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/Meddio/images/pixel_02.png",
+     "chemin": "pmod/skins/Meddio/images/pixel_02.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/Meddio/images/pixel_03.png",
+     "chemin": "pmod/skins/Meddio/images/pixel_03.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/Meddio/images/pixel_04.png",
+     "chemin": "pmod/skins/Meddio/images/pixel_04.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/Meddio/images/pixel_05.png",
+     "chemin": "pmod/skins/Meddio/images/pixel_05.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/Meddio/images/pixel_06.png",
+     "chemin": "pmod/skins/Meddio/images/pixel_06.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/Meddio/images/pixel_07.png",
+     "chemin": "pmod/skins/Meddio/images/pixel_07.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/Meddio/images/pixel_08.png",
+     "chemin": "pmod/skins/Meddio/images/pixel_08.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/Meddio/images/pixel_09.png",
+     "chemin": "pmod/skins/Meddio/images/pixel_09.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/Meddio/images/pixel_10.png",
+     "chemin": "pmod/skins/Meddio/images/pixel_10.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/Meddio/images/pixel_11.png",
+     "chemin": "pmod/skins/Meddio/images/pixel_11.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/Meddio/images/pixel_12.png",
+     "chemin": "pmod/skins/Meddio/images/pixel_12.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/Meddio/images/pixel_13.png",
+     "chemin": "pmod/skins/Meddio/images/pixel_13.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/Meddio/images/pixel_14.png",
+     "chemin": "pmod/skins/Meddio/images/pixel_14.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/Meddio/images/pixel_15.png",
+     "chemin": "pmod/skins/Meddio/images/pixel_15.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/Meddio/images/pixel_16.png",
+     "chemin": "pmod/skins/Meddio/images/pixel_16.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/Meddio/images/pixel_17.png",
+     "chemin": "pmod/skins/Meddio/images/pixel_17.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/Meddio/images/pixel_18.png",
+     "chemin": "pmod/skins/Meddio/images/pixel_18.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/Meddio/images/pixel_19.png",
+     "chemin": "pmod/skins/Meddio/images/pixel_19.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/Meddio/images/pixel_20.png",
+     "chemin": "pmod/skins/Meddio/images/pixel_20.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/Meddio/images/wa_damage.png",
+     "chemin": "pmod/skins/Meddio/images/wa_damage.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/Meddio/images/wa_flag.png",
+     "chemin": "pmod/skins/Meddio/images/wa_flag.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/Meddio/images/wa_frags.png",
+     "chemin": "pmod/skins/Meddio/images/wa_frags.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/Meddio/images/wa_hits.png",
+     "chemin": "pmod/skins/Meddio/images/wa_hits.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/Meddio/images/wa_spotted.png",
+     "chemin": "pmod/skins/Meddio/images/wa_spotted.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/Meddio/images/wa_star.png",
+     "chemin": "pmod/skins/Meddio/images/wa_star.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/Meddio/images/wa_star_small.png",
+     "chemin": "pmod/skins/Meddio/images/wa_star_small.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/Meddio/images/wa_star_small_2.png",
+     "chemin": "pmod/skins/Meddio/images/wa_star_small_2.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/Meddio/images/xp_crew.png",
+     "chemin": "pmod/skins/Meddio/images/xp_crew.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/Meddio/sessionStatistic.json",
+     "chemin": "pmod/skins/Meddio/sessionStatistic.json"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/Meddio/systemMessages.json",
+     "chemin": "pmod/skins/Meddio/systemMessages.json"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/Meddio/_colors.json",
+     "chemin": "pmod/skins/Meddio/_colors.json"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/Meddio/_header4.json",
+     "chemin": "pmod/skins/Meddio/_header4.json"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/Meddio/_header5.json",
+     "chemin": "pmod/skins/Meddio/_header5.json"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/skinLoader.json",
+     "chemin": "pmod/skins/skinLoader.json"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/vava/battleChat.json",
+     "chemin": "pmod/skins/vava/battleChat.json"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/vava/images/battleResultDefeat.png",
+     "chemin": "pmod/skins/vava/images/battleResultDefeat.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/vava/images/battleResultDraft.png",
+     "chemin": "pmod/skins/vava/images/battleResultDraft.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/vava/images/battleResultWin.png",
+     "chemin": "pmod/skins/vava/images/battleResultWin.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/vava/images/green.png",
+     "chemin": "pmod/skins/vava/images/green.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/vava/images/line.png",
+     "chemin": "pmod/skins/vava/images/line.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/vava/images/line2.png",
+     "chemin": "pmod/skins/vava/images/line2.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/vava/images/null.png",
+     "chemin": "pmod/skins/vava/images/null.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/vava/images/red.png",
+     "chemin": "pmod/skins/vava/images/red.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/vava/images/sessionStatisticBackgroundCyan.png",
+     "chemin": "pmod/skins/vava/images/sessionStatisticBackgroundCyan.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/vava/images/sessionStatisticBackgroundGreen.png",
+     "chemin": "pmod/skins/vava/images/sessionStatisticBackgroundGreen.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/vava/images/sessionStatisticBackgroundNull.png",
+     "chemin": "pmod/skins/vava/images/sessionStatisticBackgroundNull.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/vava/images/sessionStatisticBackgroundOrange.png",
+     "chemin": "pmod/skins/vava/images/sessionStatisticBackgroundOrange.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/vava/images/sessionStatisticBackgroundPurple.png",
+     "chemin": "pmod/skins/vava/images/sessionStatisticBackgroundPurple.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/vava/images/sessionStatisticBackgroundRed.png",
+     "chemin": "pmod/skins/vava/images/sessionStatisticBackgroundRed.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/vava/images/sessionStatisticBackgroundYellow.png",
+     "chemin": "pmod/skins/vava/images/sessionStatisticBackgroundYellow.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/vava/images/statOnTanks.png",
+     "chemin": "pmod/skins/vava/images/statOnTanks.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/vava/sessionStatistic.json",
+     "chemin": "pmod/skins/vava/sessionStatistic.json"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/vava/systemMessages.json",
+     "chemin": "pmod/skins/vava/systemMessages.json"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/vlad_cs_sr/battleChat.json",
+     "chemin": "pmod/skins/vlad_cs_sr/battleChat.json"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/vlad_cs_sr/sessionStatistic.json",
+     "chemin": "pmod/skins/vlad_cs_sr/sessionStatistic.json"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/vlad_cs_sr/systemMessages.json",
+     "chemin": "pmod/skins/vlad_cs_sr/systemMessages.json"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/battleChat.json",
+     "chemin": "pmod/skins/xxx_mutant/battleChat.json"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/background/background_default.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/background/background_default.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/background/background_default0.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/background/background_default0.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/background/sessionStatisticBackground#02C9B3.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/background/sessionStatisticBackground#02C9B3.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/background/sessionStatisticBackground#60FF00.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/background/sessionStatisticBackground#60FF00.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/background/sessionStatisticBackground#EE0001.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/background/sessionStatisticBackground#EE0001.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/background/sessionStatisticBackground#F8F400.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/background/sessionStatisticBackground#F8F400.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/background/sessionStatisticBackground#FE0E00.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/background/sessionStatisticBackground#FE0E00.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/background/sessionStatisticBackground#FE7903.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/background/sessionStatisticBackground#FE7903.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/background/sessionStatisticBackgroundNull.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/background/sessionStatisticBackgroundNull.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/battleresults/battleResultDefeat.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/battleresults/battleResultDefeat.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/battleresults/battleResultDraft.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/battleresults/battleResultDraft.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/battleresults/battleResultWin.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/battleresults/battleResultWin.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/battleresults/Defeat.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/battleresults/Defeat.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/battleresults/Draw.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/battleresults/Draw.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/battleresults/Win.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/battleresults/Win.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/image/#4BFE85.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/image/#4BFE85.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/image/#D44B5D.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/image/#D44B5D.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/image/additionalBriefing.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/image/additionalBriefing.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/image/assist.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/image/assist.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/image/assist1.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/image/assist1.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/image/assist2.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/image/assist2.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/image/battle1.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/image/battle1.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/image/battle2.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/image/battle2.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/image/brotherhood.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/image/brotherhood.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/image/caterpillars.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/image/caterpillars.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/image/damage1.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/image/damage1.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/image/damage2.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/image/damage2.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/image/defender1.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/image/defender1.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/image/defender2.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/image/defender2.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/image/gunner_sniper.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/image/gunner_sniper.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/image/Image 100.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/image/Image 100.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/image/Image 16.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/image/Image 16.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/image/Image 178.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/image/Image 178.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/image/Image 179.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/image/Image 179.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/image/Image 180.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/image/Image 180.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/image/Image 181.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/image/Image 181.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/image/Image 182.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/image/Image 182.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/image/Image 183.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/image/Image 183.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/image/Image 184.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/image/Image 184.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/image/kill.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/image/kill.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/image/line.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/image/line.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/image/loader_intuition.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/image/loader_intuition.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/image/Money4.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/image/Money4.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/image/PersonalAchievementsIcon-1.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/image/PersonalAchievementsIcon-1.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/image/plusminus.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/image/plusminus.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/image/spotted.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/image/spotted.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/image/stereoscope1.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/image/stereoscope1.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/image/supporter1.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/image/supporter1.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/image/supporter2.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/image/supporter2.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/image/survival40x32.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/image/survival40x32.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/image/XXX_MUTANT.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/image/XXX_MUTANT.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/master/#02C9B3.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/master/#02C9B3.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/master/#60FF00.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/master/#60FF00.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/master/#D042F3.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/master/#D042F3.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/master/#EE0001.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/master/#EE0001.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/master/#F8F400.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/master/#F8F400.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/master/#FE0E00.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/master/#FE0E00.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/master/#FE7903.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/master/#FE7903.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/ranks/#000001.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/ranks/#000001.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/ranks/#000002.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/ranks/#000002.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/ranks/#000003.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/ranks/#000003.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/ranks/#000004.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/ranks/#000004.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/ranks/#000005.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/ranks/#000005.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/ranks/#000006.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/ranks/#000006.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/ranks/#000007.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/ranks/#000007.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/ranks/#000008.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/ranks/#000008.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/ranks/#000009.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/ranks/#000009.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/ranks/#000010.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/ranks/#000010.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/ranks/#000011.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/ranks/#000011.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/WinRate/#02C9B3.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/WinRate/#02C9B3.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/WinRate/#60FF00.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/WinRate/#60FF00.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/WinRate/#D042F3.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/WinRate/#D042F3.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/WinRate/#F8F400.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/WinRate/#F8F400.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/WinRate/#FE0E00.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/WinRate/#FE0E00.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/WinRate/#FE7903.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/WinRate/#FE7903.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/XpIcon/#62BDFF.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/XpIcon/#62BDFF.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/XpIcon/#62BEFF.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/XpIcon/#62BEFF.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/XpIcon/#62FE78.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/XpIcon/#62FE78.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/XpIcon/#62FF78.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/XpIcon/#62FF78.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/XpIcon/#BE61FF.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/XpIcon/#BE61FF.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/XpIcon/#BE62FF.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/XpIcon/#BE62FF.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/XpIcon/#EEFE62.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/XpIcon/#EEFE62.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/XpIcon/#EEFF62.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/XpIcon/#EEFF62.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/XpIcon/#FC6060.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/XpIcon/#FC6060.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/XpIcon/#FF6262.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/XpIcon/#FF6262.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/XpIcon/#FFA362.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/XpIcon/#FFA362.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/icons/XpIcon/#FFA462.png",
+     "chemin": "pmod/skins/xxx_mutant/icons/XpIcon/#FFA462.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/sessionStatistic.json",
+     "chemin": "pmod/skins/xxx_mutant/sessionStatistic.json"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/xxx_mutant/systemMessages.json",
+     "chemin": "pmod/skins/xxx_mutant/systemMessages.json"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/_magistr_/assets/buttons/overall-active.png",
+     "chemin": "pmod/skins/_magistr_/assets/buttons/overall-active.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/_magistr_/assets/buttons/overall-new.png",
+     "chemin": "pmod/skins/_magistr_/assets/buttons/overall-new.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/_magistr_/assets/buttons/reset-new.png",
+     "chemin": "pmod/skins/_magistr_/assets/buttons/reset-new.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/_magistr_/assets/buttons/tanks-active.png",
+     "chemin": "pmod/skins/_magistr_/assets/buttons/tanks-active.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/_magistr_/assets/buttons/tanks-new.png",
+     "chemin": "pmod/skins/_magistr_/assets/buttons/tanks-new.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/_magistr_/assets/colors.json",
+     "chemin": "pmod/skins/_magistr_/assets/colors.json"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/_magistr_/assets/lines/#02C9B3.png",
+     "chemin": "pmod/skins/_magistr_/assets/lines/#02C9B3.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/_magistr_/assets/lines/#60FF00.png",
+     "chemin": "pmod/skins/_magistr_/assets/lines/#60FF00.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/_magistr_/assets/lines/#D042F3.png",
+     "chemin": "pmod/skins/_magistr_/assets/lines/#D042F3.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/_magistr_/assets/lines/#F8F400.png",
+     "chemin": "pmod/skins/_magistr_/assets/lines/#F8F400.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/_magistr_/assets/lines/#FE0E00.png",
+     "chemin": "pmod/skins/_magistr_/assets/lines/#FE0E00.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/_magistr_/assets/lines/#FE7903.png",
+     "chemin": "pmod/skins/_magistr_/assets/lines/#FE7903.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/_magistr_/assets/rating/#02C9B3.png",
+     "chemin": "pmod/skins/_magistr_/assets/rating/#02C9B3.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/_magistr_/assets/rating/#60FF00.png",
+     "chemin": "pmod/skins/_magistr_/assets/rating/#60FF00.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/_magistr_/assets/rating/#D042F3.png",
+     "chemin": "pmod/skins/_magistr_/assets/rating/#D042F3.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/_magistr_/assets/rating/#F8F400.png",
+     "chemin": "pmod/skins/_magistr_/assets/rating/#F8F400.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/_magistr_/assets/rating/#FE0E00.png",
+     "chemin": "pmod/skins/_magistr_/assets/rating/#FE0E00.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/_magistr_/assets/rating/#FE7903.png",
+     "chemin": "pmod/skins/_magistr_/assets/rating/#FE7903.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/_magistr_/assets/rating/#FFFFFF.png",
+     "chemin": "pmod/skins/_magistr_/assets/rating/#FFFFFF.png"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/_magistr_/battleChat.json",
+     "chemin": "pmod/skins/_magistr_/battleChat.json"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/_magistr_/sessionStatistic.json",
+     "chemin": "pmod/skins/_magistr_/sessionStatistic.json"
+    },
+    {
+     "entree": "mods/configs/pmod/skins/_magistr_/systemMessages.json",
+     "chemin": "pmod/skins/_magistr_/systemMessages.json"
+    },
+    {
+     "entree": "mods/configs/pmod/systemMessages.json",
+     "chemin": "pmod/systemMessages.json"
+    },
+    {
+     "entree": "mods/configs/pmod/tankExpert/icon.png",
+     "chemin": "pmod/tankExpert/icon.png"
+    },
+    {
+     "entree": "mods/configs/pmod/tdBrakeRemover.json",
+     "chemin": "pmod/tdBrakeRemover.json"
+    },
+    {
+     "entree": "mods/configs/pmod/videomode.json",
+     "chemin": "pmod/videomode.json"
+    },
+    {
+     "entree": "mods/configs/pmod/zoomDistance.json",
+     "chemin": "pmod/zoomDistance.json"
+    },
+    {
+     "entree": "mods/configs/pmod/zoomIndicator.json",
+     "chemin": "pmod/zoomIndicator.json"
+    },
+    {
+     "entree": "mods/configs/pmod/zoomX.json",
+     "chemin": "pmod/zoomX.json"
+    },
+    {
+     "entree": "mods/configs/pmod/_multiple.json",
+     "chemin": "pmod/_multiple.json"
+    },
+    {
+     "entree": "mods/configs/pmod/_single.json",
+     "chemin": "pmod/_single.json"
+    }
+   ],
+   "type": "zip"
+  },
+  {
+   "nom": "Battle Result Unanonymizer",
+   "auteur": "Gravity_Assist",
+   "page": "https://wgmods.net/7507/",
+   "url": "https://modp.wgcdn.co/media/mod_files/gravity.unanonymizer.2.4.1.1.1.5.zip",
+   "taille": 271813,
+   "sha256": "726783593c07bfdc185cb384ca61f8819f2bf9df2d92b94b479e8df79302d6e7",
+   "principal": "battle_result_unanonymizer",
+   "mods": [
+    {
+     "id": "battle_result_unanonymizer",
+     "version": "1.5",
+     "nom": "Battle Result Unanonymizer",
+     "chemin": "gravity.unanonymizer.2.4.1.1.1.5.wotmod",
+     "entree": "gravity.unanonymizer.2.4.1.1.1.5.wotmod"
+    },
+    {
+     "id": "net.openwg.gameface",
+     "version": "1.2.2",
+     "nom": "net.openwg.gameface",
+     "chemin": "net.openwg.gameface_1.2.2.wotmod",
+     "entree": "net.openwg.gameface_1.2.2.wotmod"
+    },
+    {
+     "id": "gravity.error.reporter.log",
+     "version": "1.0.8",
+     "nom": "Error Reporter",
+     "chemin": "gravity.error.reporter.log.1.0.8.wotmod",
+     "entree": "gravity.error.reporter.log.1.0.8.wotmod"
+    },
+    {
+     "id": "gravity.game_service_monitor",
+     "version": "0.1.2",
+     "nom": "Game Service Monitor",
+     "chemin": "gravity.game_service_monitor.2.4.1.0.0.1.2.wotmod",
+     "entree": "gravity.game_service_monitor.2.4.1.0.0.1.2.wotmod"
+    }
+   ],
+   "configs": [],
+   "type": "zip"
+  },
+  {
+   "nom": "Pet Gift Auto Claim",
+   "auteur": "Gravity_Assist",
+   "page": "https://wgmods.net/7438/",
+   "url": "https://modp.wgcdn.co/media/mod_files/gravity.pet_gift_auto_claim.2.4.1.1.2.0.4.zip",
+   "taille": 218740,
+   "sha256": "c7f70c2c61137a64d74a9a1f3a6fec211db382ca68355a073ced125f79f6ec6b",
+   "principal": "pet.auto.claim",
+   "mods": [
+    {
+     "id": "pet.auto.claim",
+     "version": "2.0.4",
+     "nom": "Pet Auto Claim",
+     "chemin": "gravity.pet_gift_auto_claim.2.4.1.1.2.0.4.wotmod",
+     "entree": "gravity.pet_gift_auto_claim.2.4.1.1.2.0.4.wotmod"
+    },
+    {
+     "id": "gravity.error.reporter.log",
+     "version": "1.0.8",
+     "nom": "Error Reporter",
+     "chemin": "gravity.error.reporter.log.1.0.8.wotmod",
+     "entree": "gravity.error.reporter.log.1.0.8.wotmod"
+    },
+    {
+     "id": "gravity.game_service_monitor",
+     "version": "0.1.2",
+     "nom": "Game Service Monitor",
+     "chemin": "gravity.game_service_monitor.2.4.1.0.0.1.2.wotmod",
+     "entree": "gravity.game_service_monitor.2.4.1.0.0.1.2.wotmod"
+    }
+   ],
+   "configs": [],
+   "type": "zip"
+  },
+  {
+   "nom": "Responsive Reticle",
+   "auteur": "Pruszko",
+   "page": "https://wgmods.net/7413/",
+   "url": "https://modp.wgcdn.co/media/mod_files/pruszko.responsive_reticle_1.0.12_jKGpQOG.wotmod",
+   "taille": 21338,
+   "sha256": "97586a5ecaa389a130e48fdef1c32985527de152e312725737d78e73a3156ddd",
+   "principal": "com.github.pruszko.responsive_reticle",
+   "mods": [
+    {
+     "id": "com.github.pruszko.responsive_reticle",
+     "version": "1.0.12",
+     "nom": "Responsive reticle",
+     "chemin": "pruszko.responsive_reticle_1.0.12.wotmod",
+     "entree": null
+    }
+   ],
+   "configs": [],
+   "type": "wotmod"
+  },
+  {
+   "nom": "Fast Reconnect",
+   "auteur": "Pruszko",
+   "page": "https://wgmods.net/5473/",
+   "url": "https://modp.wgcdn.co/media/mod_files/FastReconnect_ilAvke5.wotmod",
+   "taille": 2567,
+   "sha256": "c8f545515e6b63b58f1d434c1bd06c84f1bb9c7b90d86fb560ae6d9245d75db5",
+   "principal": "com.github.pruszko.fastreconnect",
+   "mods": [
+    {
+     "id": "com.github.pruszko.fastreconnect",
+     "version": "1.0.0",
+     "nom": "FastReconnect",
+     "chemin": "FastReconnect.wotmod",
+     "entree": null
+    }
+   ],
+   "configs": [],
+   "type": "wotmod"
+  },
+  {
+   "nom": "ModsSettingsAPI",
+   "auteur": "izeberg",
+   "page": "https://github.com/izeberg/modssettingsapi",
+   "url": "https://github.com/izeberg/modssettingsapi/releases/download/1.7.1/izeberg.modssettingsapi_1.7.1.wotmod",
+   "taille": 162637,
+   "sha256": "439c0ed636ca8925a7029ceedb007d872b7bc7df16d41712e22b1a95083c239b",
+   "principal": "izeberg.modssettingsapi",
+   "mods": [
+    {
+     "id": "izeberg.modssettingsapi",
+     "version": "1.7.1",
+     "nom": "ModsSettings API",
+     "chemin": "izeberg.modssettingsapi_1.7.1.wotmod",
+     "entree": null
+    }
+   ],
+   "configs": [],
+   "type": "wotmod"
+  },
+  {
+   "nom": "ModsList API",
+   "auteur": "POLIROID",
+   "page": "https://gitlab.com/wot-public-mods/mods-list",
+   "url": "https://gitlab.com/-/project/26509092/uploads/5f859d1552fd2daa7896a28b67e4f132/me.poliroid.modslistapi_1.8.0.wotmod",
+   "taille": 167079,
+   "sha256": "c6e4a1d9476b0195c3b4fab392cf5d68c00f1d02fd79e29bd7424ebda88b498c",
+   "principal": "me.poliroid.modslistapi",
+   "mods": [
+    {
+     "id": "me.poliroid.modslistapi",
+     "version": "1.8.0",
+     "nom": "Modifications list",
+     "chemin": "me.poliroid.modslistapi_1.8.0.wotmod",
+     "entree": null
+    }
+   ],
+   "configs": [],
+   "type": "wotmod"
+  },
+  {
+   "nom": "Auto Equipment Return",
+   "auteur": "Kurzdor",
+   "page": "https://github.com/Kurzdor/wotmods-public/tree/HEAD/autoequipmentreturn",
+   "url": "https://raw.githubusercontent.com/Kurzdor/wotmods-public/master/autoequipmentreturn/me.kurzdor.autoequipmentreturn_1.5.0.zip",
+   "taille": 327688,
+   "sha256": "6ebef661b24f24a08f6a68435a8866e9e79d8e1d9537ca7ec71764976799765a",
+   "principal": "me.kurzdor.autoequipmentreturn",
+   "mods": [
+    {
+     "id": "izeberg.modssettingsapi",
+     "version": "1.7.1",
+     "nom": "ModsSettings API",
+     "chemin": "izeberg.modssettingsapi_1.7.1.wotmod",
+     "entree": "mods/2.4.1.0/izeberg.modssettingsapi_1.7.1.wotmod"
+    },
+    {
+     "id": "me.kurzdor.autoequipmentreturn",
+     "version": "1.5.0",
+     "nom": "Auto Equipment Return",
+     "chemin": "me.kurzdor.autoequipmentreturn_1.5.0.wotmod",
+     "entree": "mods/2.4.1.0/me.kurzdor.autoequipmentreturn_1.5.0.wotmod"
+    },
+    {
+     "id": "me.poliroid.modslistapi",
+     "version": "1.8.0",
+     "nom": "Modifications list",
+     "chemin": "me.poliroid.modslistapi_1.8.0.wotmod",
+     "entree": "mods/2.4.1.0/me.poliroid.modslistapi_1.8.0.wotmod"
+    },
+    {
+     "id": "net.openwg.gameface",
+     "version": "1.2.2",
+     "nom": "net.openwg.gameface",
+     "chemin": "net.openwg.gameface_1.2.2.wotmod",
+     "entree": "mods/2.4.1.0/net.openwg.gameface_1.2.2.wotmod"
+    }
+   ],
+   "configs": [
+    {
+     "entree": "mods/configs/kurzdor/autoequipmentreturn/config.json",
+     "chemin": "kurzdor/autoequipmentreturn/config.json"
+    }
+   ],
+   "type": "zip"
+  },
+  {
+   "nom": "Badge Overrider",
+   "auteur": "Kurzdor",
+   "page": "https://github.com/Kurzdor/wotmods-public/tree/HEAD/badgeoverrider",
+   "url": "https://raw.githubusercontent.com/Kurzdor/wotmods-public/master/badgeoverrider/me.kurzdor.badgeoverrider_1.3.1.zip",
+   "taille": 214798,
+   "sha256": "8d282a3eb76eaad65147ec9eed9ed3210446ac6ebfa816fe0f070f458a1e7628",
+   "principal": "me.kurzdor.badgeoverrider",
+   "mods": [
+    {
+     "id": "me.kurzdor.badgeoverrider",
+     "version": "1.3.1",
+     "nom": "Badge Overrider",
+     "chemin": "me.kurzdor.badgeoverrider_1.3.1.wotmod",
+     "entree": "mods/2.4.1.0/me.kurzdor.badgeoverrider_1.3.1.wotmod"
+    }
+   ],
+   "configs": [
+    {
+     "entree": "mods/configs/kurzdor/badgeoverrider/config.json",
+     "chemin": "kurzdor/badgeoverrider/config.json"
+    }
+   ],
+   "type": "zip"
+  },
+  {
+   "nom": "Battle Equipment",
+   "auteur": "Kurzdor",
+   "page": "https://github.com/Kurzdor/wotmods-public/tree/HEAD/battleequipment",
+   "url": "https://raw.githubusercontent.com/Kurzdor/wotmods-public/master/battleequipment/me.kurzdor.battleequipment_3.12.02.zip",
+   "taille": 409283,
+   "sha256": "2be5cef15abdee97b585cc0c94ec09851a9873ba8881c2e3d69616bb22d30155",
+   "principal": "me.kurzdor.battleequipment",
+   "mods": [
+    {
+     "id": "izeberg.modssettingsapi",
+     "version": "1.7.1",
+     "nom": "ModsSettings API",
+     "chemin": "izeberg.modssettingsapi_1.7.1.wotmod",
+     "entree": "mods/2.4.1.0/izeberg.modssettingsapi_1.7.1.wotmod"
+    },
+    {
+     "id": "me.kurzdor.battleequipment",
+     "version": "3.12.02",
+     "nom": "Battle Equipment",
+     "chemin": "me.kurzdor.battleequipment_3.12.02.wotmod",
+     "entree": "mods/2.4.1.0/me.kurzdor.battleequipment_3.12.02.wotmod"
+    },
+    {
+     "id": "me.poliroid.modslistapi",
+     "version": "1.8.0",
+     "nom": "Modifications list",
+     "chemin": "me.poliroid.modslistapi_1.8.0.wotmod",
+     "entree": "mods/2.4.1.0/me.poliroid.modslistapi_1.8.0.wotmod"
+    },
+    {
+     "id": "net.openwg.gameface",
+     "version": "1.2.2",
+     "nom": "net.openwg.gameface",
+     "chemin": "net.openwg.gameface_1.2.2.wotmod",
+     "entree": "mods/2.4.1.0/net.openwg.gameface_1.2.2.wotmod"
+    }
+   ],
+   "configs": [
+    {
+     "entree": "mods/configs/kurzdor/battleequipment/config.json",
+     "chemin": "kurzdor/battleequipment/config.json"
+    }
+   ],
+   "type": "zip"
+  },
+  {
+   "nom": "OpenWG GameFace",
+   "auteur": "OpenWG",
+   "page": "https://gitlab.com/openwg/wot.gameface",
+   "url": "https://gitlab.com/-/project/68695173/uploads/a802bb95952c95d37092baff511bc9e7/net.openwg.gameface_1.2.2.wotmod",
+   "taille": 48445,
+   "sha256": "2bb65f28663e3ab34b5a1102a1bbd1f6e17a65e1f6a898a8645c4ab732b50184",
+   "principal": "net.openwg.gameface",
+   "mods": [
+    {
+     "id": "net.openwg.gameface",
+     "version": "1.2.2",
+     "nom": "net.openwg.gameface",
+     "chemin": "net.openwg.gameface_1.2.2.wotmod",
+     "entree": null
+    }
+   ],
+   "configs": [],
+   "type": "wotmod"
+  },
+  {
+   "nom": "OpenWG : cache des résultats de bataille",
+   "auteur": "OpenWG",
+   "page": "https://gitlab.com/openwg/fixedbattleresultscache",
+   "url": "https://gitlab.com/-/project/15984869/uploads/d7f9476749f35bb61020d1d42d7cf0eb/net.openwg.fix.battleresultscache_1.9.0.wotmod",
+   "taille": 6563,
+   "sha256": "a98a724e5dac3a1147a0a99a0ba20866db33dcc1378b412e036998170c0f06ab",
+   "principal": "net.openwg.fix.battleresultscache",
+   "mods": [
+    {
+     "id": "net.openwg.fix.battleresultscache",
+     "version": "1.9.0",
+     "nom": "net.openwg.fix.battleresultscache",
+     "chemin": "net.openwg.fix.battleresultscache_1.9.0.wotmod",
+     "entree": null
+    }
+   ],
+   "configs": [],
+   "type": "wotmod"
+  },
+  {
+   "nom": "OpenWG : résultats de bataille des replays",
+   "auteur": "OpenWG",
+   "page": "https://gitlab.com/openwg/wot.fix.battleresultsreplays",
+   "url": "https://gitlab.com/-/project/59391713/uploads/733576b1db15ec9b7d4cfe20c67b1241/net.openwg.fix.battleresultsreplays_1.1.0.wotmod",
+   "taille": 14404,
+   "sha256": "98a3eb1c509b33c247abf65b99bae40d77873e8b4f2ec58237b711f2a7228f2a",
+   "principal": "net.openwg.fix.battleresultsreplays",
+   "mods": [
+    {
+     "id": "net.openwg.fix.battleresultsreplays",
+     "version": "1.1.0",
+     "nom": "net.openwg.fix.battleresultsreplays",
+     "chemin": "net.openwg.fix.battleresultsreplays_1.1.0.wotmod",
+     "entree": null
+    }
+   ],
+   "configs": [],
+   "type": "wotmod"
+  }
+ ],
+ "liens": [
+  {
+   "prefixe": "aslain.",
+   "nom": "Modpack d'Aslain",
+   "page": "https://wgmods.net/46/"
+  },
+  {
+   "prefixe": "oldskool.",
+   "nom": "OldSkools ProMod (installeur)",
+   "page": "https://wgmods.net/535/"
+  }
+ ]
+}
